@@ -41,11 +41,12 @@
 | Verrouillage de l'application | SAF-13 | Réglage propre à l'appareil (rien côté serveur) : déverrouillage par passkey (vérification locale de l'utilisateur, bit UV contrôlé, sans nouvelle session) ou par code de 4 à 6 chiffres (PBKDF2 salé dans le navigateur, 5 essais puis déconnexion), verrouillage à l'ouverture d'un onglet et après 0, 1, 5 ou 15 minutes en arrière-plan (marge de 10 s), script inline avec nonce qui masque l'app avant le premier rendu | `components/acces/lock/lock-config.test.ts`, e2e `lock.spec.ts` |
 | Filigrane dynamique | SAF-12 | Code propre au lecteur (« 7KQ2-XA9M », HMAC avec un contexte dédié, ni l'identifiant ni le pseudonyme de modération) répété en motif discret clair et sombre sur les photos : composants `WatermarkProvider` / `ViewerWatermark` / `Watermark` dans `@epilove/ui`, fournisseur dans la coquille de l'app (`account.watermark`) et dans le back-office (photos vues par le staff, avec le code du staff). Page `/filigrane` du back-office : retrouver le compte à l'origine d'une capture, avec justification journalisée | `packages/api/src/lib/watermark.test.ts`, `admin.test.ts`, `packages/ui/src/ui.test.tsx`, `apps/admin/e2e` |
 | Lighthouse CI | — | `pnpm lighthouse` (`apps/web/lighthouserc.cjs`, workflow `.github/workflows/lighthouse.yml`) : 4 pages (`/`, `/en`, `/legal/confidentialite`, `/connexion`), 3 passages, émulation mobile ; budgets bloquants : accessibilité 100, bonnes pratiques ≥ 95, CLS ≤ 0,05 partout ; performance, LCP, TBT et poids (script, polices, total) par page. Corrections faites pour les tenir : champ d'ions désactivé sur rendu logiciel et arrêté si l'appareil ne suit pas, moniteur d'images en temps réel, polices allégées (Bricolage 131 → 41 Ko hors vitrine ; instances titre et serif chargées sur la vitrine seulement) | `apps/web/lighthouserc.cjs`, `packages/three/src/ion-field/quality.test.ts` |
+| Design sonore de la vitrine | — | Interrupteur « Son d'ambiance » dans l'en-tête de la page d'accueil, désactivé par défaut, mémorisé dans le navigateur ; tout est synthétisé en Web Audio (aucun fichier) : nappe d'ambiance lente, tic au survol des liens et boutons (souris), cloche pentatonique au toucher du champ d'ions, souffle à l'entrée des sections ; silencieux en arrière-plan, limiteur en sortie. En-tête compacté sous 420 px (symbole seul) et sous 360 px (sans l'interrupteur) | `components/acces/marketing/sound/notes.test.ts`, e2e `sound.spec.ts` |
 
 ## Pas encore fait
 
-- Vitrine : performance Lighthouse mobile ~70 (cible 90) : LCP ~4–5 s, limité par les polices d'affichage (~250 Ko) et l'hydratation (TBT ~400 ms) ; connexion et pages légales ~85–90 (LCP ~3,5 s). Pistes : sous-ensemble de la police du titre, moins de JavaScript initial (196 Ko gzip, budget 180 Ko), relever les budgets de `lighthouserc.cjs` à mesure. WebGPU non vérifié sur un vrai GPU (en CI, rendu logiciel : le poster reste) ; effectifs par école estimés (à confirmer) ; pas de design sonore ni de préchargeur.
-- Palier 3 : Storybook, design sonore de la vitrine, connexion Microsoft (ONB-10).
+- Vitrine : performance Lighthouse mobile ~70 (cible 90) : LCP ~4–5 s, limité par les polices d'affichage (~250 Ko) et l'hydratation (TBT ~400 ms) ; connexion et pages légales ~85–90 (LCP ~3,5 s). Pistes : sous-ensemble de la police du titre, moins de JavaScript initial (196 Ko gzip, budget 180 Ko), relever les budgets de `lighthouserc.cjs` à mesure. WebGPU non vérifié sur un vrai GPU (en CI, rendu logiciel : le poster reste) ; effectifs par école estimés (à confirmer) ; pas de préchargeur.
+- Palier 3 : Storybook, connexion Microsoft (ONB-10).
 
 ## Fichiers partagés modifiés
 
@@ -97,7 +98,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 
 ## Dépendances ajoutées
 
-`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp` (binaires précompilés, aucun script d'installation), `thumbhash`, `fflate` (zip de l'export, worker) ; `motion` et `thumbhash` dans `apps/web` ; `three` et `@types/three` (`packages/three`, vitrine). ; `@lhci/cli` (développement, `apps/web`, aucun script d'installation).
+`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp` (binaires précompilés, aucun script d'installation), `thumbhash`, `fflate` (zip de l'export, worker) ; `motion` et `thumbhash` dans `apps/web` ; `three` et `@types/three` (`packages/three`, vitrine) ; `@lhci/cli` (développement, `apps/web`, aucun script d'installation).
 
 ## Migrations
 

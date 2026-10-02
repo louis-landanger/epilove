@@ -13,6 +13,7 @@ import { SafetySection } from "@/components/acces/marketing/safety-section";
 import { initialWaitlistStats } from "@/components/acces/marketing/server/api";
 import { SiteFooter } from "@/components/acces/marketing/site-footer";
 import { SiteHeader } from "@/components/acces/marketing/site-header";
+import { SoundDesign } from "@/components/acces/marketing/sound/sound-design";
 import { publicAlternates } from "@/i18n/paths";
 
 // The kinetic headline plays on optical size and width: its own instance, on the landing only.
@@ -64,6 +65,7 @@ export default async function HomePage() {
       </main>
       <SiteFooter />
       <LandingMotion />
+      <SoundDesign />
     </div>
   );
 }

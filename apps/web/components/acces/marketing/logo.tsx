@@ -22,11 +22,14 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Logotype({ className }: { className?: string }) {
+/** `compact`: the wordmark gives way to the mark alone on very narrow screens. */
+export function Logotype({ className, compact = false }: { className?: string; compact?: boolean }) {
   return (
     <span className={`inline-flex items-center gap-2 ${className ?? ""}`}>
       <LogoMark className="size-8 text-paper" />
-      <span className="font-semibold font-[family-name:var(--font-headline,var(--font-display))] text-xl lowercase tracking-tight [font-variation-settings:'wdth'_90]">
+      <span
+        className={`${compact ? "max-[419px]:hidden " : ""}font-semibold font-[family-name:var(--font-headline,var(--font-display))] text-xl lowercase tracking-tight [font-variation-settings:'wdth'_90]`}
+      >
         epilove
       </span>
     </span>

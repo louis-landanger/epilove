@@ -172,5 +172,8 @@
     "codename": "\"Epilove\" is a code name.",
     "made": "Made in Lyon, at night, in the lab.",
     "backToTop": "Back to top"
+  },
+  "sound": {
+    "label": "Ambient sound"
   }
 }

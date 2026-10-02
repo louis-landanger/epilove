@@ -172,5 +172,8 @@
     "codename": "« Epilove » est un nom de code.",
     "made": "Fait à Lyon, la nuit, au labo.",
     "backToTop": "Revenir en haut"
+  },
+  "sound": {
+    "label": "Son d'ambiance"
   }
 }
