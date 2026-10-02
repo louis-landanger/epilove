@@ -13,7 +13,7 @@
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
 | 1 | Notifications (NOT-01 à NOT-03) | ✅ fait et testé (API, worker, Playwright pour le service worker) ; push réel non testé en automatique (pas de service de push dans la session) |
-| 1 | Pacte | ⏳ |
+| 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
 
 ## Ce qui est fait
 
@@ -77,6 +77,19 @@
 - Interface : `(app)/notifications` (historique, non-lus, tout marqué lu à l'ouverture, mise à jour en direct), `(app)/reglages/notifications` (activation du push sur l'appareil, demande de permission uniquement au clic, consigne iPhone « écran d'accueil », préférences par groupe et canal, réglages de conversation : accusés de lecture et statut en ligne).
 - Le seed de développement crée aussi des notifications (likes reçus, matchs).
 
+### Pacte (PAC-02, PAC-03) et onglet Campus
+
+- Solveur Python `apps/pact-solver` (uv, Python 3.11, networkx 3.5, OR-Tools 9.14 en extra `cpsat`) : JSON sur l'entrée standard, paires sur la sortie standard, seuil, sparsification aux 50 meilleurs voisins, couplage de poids maximum sur graphe général (networkx) ou CP-SAT, vérification du couplage avant réponse, statistiques. 220 tests pytest (dont comparaison à une recherche exhaustive sur 150 graphes aléatoires), ruff. Voir `apps/pact-solver/README.md` pour les mesures.
+- `packages/core/src/pact/` : phases d'une saison (`pactPhase`, `canJoinPact`, `canViewPactResult`, `canComputePact`), éligibilité d'une paire (`pactEligibleModes` : `canSee` dans les deux sens, incognito levé car participer vaut consentement, paires déjà matchées exclues), compatibilité compilée en tableaux typés (`fastCompatibility`, testée par propriétés contre `compatibility`), sparsification par tas (`BestNeighbours`, testée contre un tri naïf, idempotente), compatibilité par section pour le radar, rapport de contrôle qualité (aucun identifiant, groupes de moins de 10 non détaillés), horloge du compte à rebours (décalage serveur, gigue de 0 à 3 s).
+- Base : `pact_season.report`, `computed_at`, `revealed_at` ; `pact_result.match_id` ; `PACT_STATUSES` déplacé dans `@epilove/core`. Dépôt `packages/db/src/repositories/pact.ts` (saison courante, participation sous verrou, enregistrement des résultats rejouable, révélation en une transaction idempotente). `loadRelationsAmong` dans `members.ts`. Outbox : entrées de diffusion (`channel: "broadcast:pact"`), ordre (created_at, id).
+- Worker `apps/worker/src/tasks/pact/` : `pnpm pact:compute [--season slug] [--engine auto|networkx|cpsat] [--power 1|2]` (calcul et rapport), `pnpm pact:compute --synthetic 3000` (à blanc, rien n'est écrit), `pnpm pact:demo [--reveal-in 60] [--open]` (développement : saison « Démo » avec les membres fictifs, révélée dans N secondes, ou ouverte aux inscriptions). Tâches `pact_reveal_due` (cron chaque minute, planifie à la seconde près) et `pact_reveal` (revérifie les politiques, crée les matchs `pact`, notifie tous les participants, diffuse `pact.reveal` en premier).
+- API `pact.current` (saison, phase, heure serveur, participation, nombre de participants, exigence de 30 réponses), `join` / `leave` (pendant l'ouverture seulement, modes du profil uniquement), `result` (après la révélation, participants seulement, profil revérifié : un blocage après la révélation masque le résultat), `liveCount` (présence Centrifugo sur `broadcast:pact`, mise en cache 5 s).
+- Interface `(app)/campus/pacte` : inscription (modes, consentement explicite sur l'incognito, progression du questionnaire), compte à rebours sur l'horloge du serveur, compteur en direct, attente « le campus retient son souffle », séquence théâtrale (l'échantillon s'ouvre, flash aux couleurs des écoles, cartes en ressort, score qui défile, radar qui se déploie), écran sobre sans match, écran « pas participé ». `useBroadcast` dans `RealtimeProvider` (abonnement au canal de diffusion seulement pendant l'affichage). Mouvement réduit respecté.
+- Onglet `(app)/campus` : hub (Pacte avec son état, questionnaire avec sa progression).
+- Playwright `apps/web/e2e/pacte.spec.ts` : deux participants regardent le compte à rebours, la diffusion démarre la séquence sur les deux écrans, chacun voit l'autre ; axe sans violation au compte à rebours et au résultat. `/campus` et `/campus/pacte` ajoutés au contrôle axe des écrans de B.
+- Mesures : séquence démarrée 830 ms après l'heure sur deux navigateurs (2 ms d'écart) ; dry run 3 000 membres en 2 min 30 s (détail dans le README du solveur).
+- Chorégraphie faite avec Motion (déjà présent) plutôt que GSAP (docs/02 le suggère) : pas de dépendance supplémentaire pour une séquence de quelques secondes.
+
 ### Divers
 
 - `packages/core/src/messaging/ids.ts` : génération et lecture d'UUIDv7 (messages envoyés par le client).
@@ -86,18 +99,20 @@
 
 | Fichier | Modification |
 |---|---|
-| `package.json` (racine) | script `db:seed:dev` |
+| `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo` |
 | `pnpm-workspace.yaml` | catalogue : `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendance `@epilove/crypto`, devDependency `aws4fetch`, script `db:seed:dev`, exports `./repositories/*`, `./dev-seed` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
-| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `discovery`, `matches`, `messaging`, `questionnaire`, `realtime` (ajouts) |
+| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `discovery`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
-| `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `likes`, `matches`, `questionnaire` (ajouts) |
-| `packages/core/src/index.ts` | `discovery/ranking`, `discovery/rules`, `matching/explain`, `messaging/ids`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
+| `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `likes`, `matches`, `notifications`, `pact`, `questionnaire` (ajouts) |
+| `packages/core/src/index.ts` | `discovery/ranking`, `discovery/rules`, `matching/explain`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
 | `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
-| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâche `outbox_purge` (ajouts) |
+| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due` (ajouts) |
+| `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo` |
+| `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
 | `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base) et second `webServer` pour le worker |
 | `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media`, `@epilove/realtime` ; `serverExternalPackages` : `esbuild`, `esbuild-wasm` (Serwist) |
 | `apps/web/tsconfig.json`, `apps/web/package.json` | `service-worker/` exclu du tsconfig principal et vérifié par son propre tsconfig (lib WebWorker) dans `typecheck` |
@@ -105,11 +120,15 @@
 
 ## Variables d'environnement
 
+- `PACT_SOLVER_COMMAND`, `PACT_SOLVER_DIRECTORY` (facultatives, worker) : commande et dossier du solveur du Pacte dans un conteneur (par défaut `uv run --frozen --extra cpsat python -m pact_solver` depuis `apps/pact-solver`).
+
 - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (section « Session B » de `.env.example`, paire de développement) : Web Push. Facultatives pour le worker et l'API (sans elles : centre de notifications seulement).
 - `CENTRIFUGO_WS_URL` (facultative, section « Session B » de `.env.example`) : URL WebSocket de Centrifugo vue par les navigateurs ; déduite de `CENTRIFUGO_URL` si absente.
 - Le worker lit désormais `CENTRIFUGO_URL` et `CENTRIFUGO_HTTP_API_KEY` (facultatives : sans elles, le relais de l'outbox ne démarre pas).
 
 ## Migrations
+
+- `0006_*` : `pact_season.report`, `computed_at`, `revealed_at` ; `pact_result.match_id` (+ index `(season_id, user_high)`).
 
 - `0005_*` : colonne `notification.pushed_at` (+ index partiel), table `notification_preference`.
 - `0004_*` : table `chat_preference`, index `message (sender_id, created_at)` (quota anti-spam).
@@ -120,7 +139,9 @@
 - docs/03 (PWA) : le service worker ne met en cache ni pages ni réponses d'API, par choix de confidentialité (appareils partagés).
 - Les réglages « accusés de lecture » et « statut en ligne » sont dans `(app)/reglages/notifications` (périmètre de B) ; A peut préférer les déplacer dans la confidentialité.
 
-- `CLAUDE.md`, section Commandes : ajouter `pnpm db:seed:dev` (membres fictifs, photos de synthèse, page `/dev`).
+- `CLAUDE.md`, section Commandes : ajouter `pnpm db:seed:dev` (membres fictifs, photos de synthèse, page `/dev`), `pnpm pact:compute` et `pnpm pact:demo --reveal-in 60` (le worker doit tourner), et l'installation de `uv` pour le solveur.
+- docs/06, section 9 : le solveur par défaut reste networkx (CP-SAT n'a pas prouvé l'optimum en 5 minutes sur des scores de questionnaire) ; le Pacte lève l'incognito pour la paire (participer vaut consentement, dit à l'inscription).
+- `pnpm test` relance le seed de développement (test d'intégration de `members.ts`) : la participation à un Pacte de démonstration est alors effacée ; relancer `pnpm pact:demo`.
 
 - `apps/web/AGENTS.md` et `apps/web/CLAUDE.md` sont générés par `next dev` (Next.js 16.3) et recommandent de les committer : ils renvoient vers la documentation embarquée dans `node_modules/next/dist/docs/`.
 
@@ -134,11 +155,14 @@
 - Harmoniser la règle « profil complet » avec la complétude de A (PRO-05).
 - `RencontreProviders` enregistre le service worker (PWA, push) : à remonter dans le layout racine à l'intégration pour couvrir toute l'app.
 - `RencontreProviders` monte une connexion temps réel par section ; à l'intégration, le remonter dans `(app)/layout.tsx` pour garder une seule connexion entre les onglets.
+- Administration du Pacte (ADM-07, A) : créer et ouvrir les saisons (`pact_season`, statut `open`), lancer `pnpm pact:compute` et lire `pact_season.report` ; la révélation est automatique à `reveal_at` une fois la saison `computed`.
+- Le worker doit disposer de Python et du solveur (`apps/pact-solver`) dans son conteneur, ou d'un conteneur dédié pour `pact:compute`.
 - Le menu de sécurité d'une conversation et le signalement d'un message appellent `safety.block` / `safety.report` (contexte `message`, `contextRef` = id du message) : à vérifier avec l'implémentation de A (copie chiffrée des messages précédents comme preuve).
 
 ## ADR
 
 - `docs/adr/0020-evenements-temps-reel-sans-donnees.md` : les événements Centrifugo ne transportent que des identifiants ; le contenu passe par l'API.
+- `docs/adr/0021-solveur-du-pacte.md` : solveur Python ponctuel (JSON sur stdin/stdout) appelé par le worker, règles et graphe en TypeScript, révélation par l'outbox.
 
 ## Questions ouvertes
 
