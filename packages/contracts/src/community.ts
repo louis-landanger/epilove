@@ -48,6 +48,21 @@ export const pactStatsView = z.object({
 });
 export type PactStatsView = z.infer<typeof pactStatsView>;
 
+/** Wrapped (COM-03): the member's own year, counts only. */
+export const wrappedView = z.object({
+  label: z.string(),
+  since: z.iso.datetime(),
+  matches: z.number().int(),
+  messages: z.number().int(),
+  conversations: z.number().int(),
+  likes: z.number().int(),
+  events: z.number().int(),
+  pacts: z.number().int(),
+  favoriteReaction: z.string().nullable(),
+  peakHour: z.number().int().nullable(),
+});
+export type WrappedView = z.infer<typeof wrappedView>;
+
 export const communityContract = {
   weekly: oc.input(z.object({ locale: contentLocale })).output(weeklyView),
   answerWeekly: oc
@@ -55,4 +70,6 @@ export const communityContract = {
     .output(weeklyView),
   crossSchool: oc.output(crossSchoolView),
   pactStats: oc.input(z.object({ locale: contentLocale })).output(pactStatsView),
+  /** The viewer's own Wrapped for the current academic year. */
+  wrapped: oc.output(wrappedView),
 };

@@ -1,5 +1,6 @@
 import {
   ANONYMITY_THRESHOLD,
+  academicYear,
   anonymousResults,
   canUseApp,
   crossSchoolIndex,
@@ -19,6 +20,7 @@ import {
   seasonFigures,
   weeklyAnswerOf,
   weeklyCounts,
+  wrappedFigures,
 } from "@epilove/db/repositories/campus-community";
 import { campusDate, type MemberRow } from "@epilove/db/repositories/members";
 import { ORPCError } from "@orpc/server";
@@ -161,5 +163,13 @@ export const community = {
           : null,
       facts: enough ? facts : [],
     };
+  }),
+
+  wrapped: os.community.wrapped.use(requireViewer).handler(async ({ context }) => {
+    const db = context.database();
+    const viewer = await requireParticipant(db, context.viewer.userId);
+    const year = academicYear(new Date(), TIME_ZONE);
+    const figures = await wrappedFigures(db, viewer.member.id, year.since, TIME_ZONE);
+    return { label: year.label, since: year.since.toISOString(), ...figures };
   }),
 };

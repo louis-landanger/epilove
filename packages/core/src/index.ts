@@ -2,6 +2,7 @@ export * from "./campus/schools";
 export * from "./community/availability";
 export * from "./community/badges";
 export * from "./community/community";
+export * from "./community/wrapped";
 export * from "./discovery/blind";
 export * from "./discovery/crush";
 export * from "./discovery/drop";

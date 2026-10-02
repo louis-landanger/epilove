@@ -12,6 +12,7 @@ import {
   weeklyAgreement,
   weekNumber,
 } from "./community";
+import { academicYear } from "./wrapped";
 
 const PARIS = "Europe/Paris";
 
@@ -171,5 +172,17 @@ describe("Dispo status (IRL-05)", () => {
     expect(availabilityShown({ until }, { status: "paused" }, now)).toBe(false);
     expect(availabilityShown({ until }, { status: "active" }, until)).toBe(false);
     expect(availabilityShown(null, { status: "active" }, now)).toBe(false);
+  });
+});
+
+describe("Wrapped (COM-03)", () => {
+  it("covers the academic year, from 1 September, campus time", () => {
+    expect(academicYear(new Date("2026-10-02T12:00:00Z"), "Europe/Paris")).toEqual({
+      label: "2026–2027",
+      since: new Date("2026-08-31T22:00:00Z"),
+    });
+    expect(academicYear(new Date("2027-05-20T12:00:00Z"), "Europe/Paris").label).toBe("2026–2027");
+    expect(academicYear(new Date("2027-08-31T21:59:00Z"), "Europe/Paris").label).toBe("2026–2027");
+    expect(academicYear(new Date("2027-08-31T22:00:00Z"), "Europe/Paris").label).toBe("2027–2028");
   });
 });

@@ -4,13 +4,18 @@ import type { Database } from "../client";
 import {
   appUser,
   availability,
+  event,
+  eventRsvp,
+  likeAction,
   match,
   memberBadge,
+  message,
   pactParticipant,
   pactResult,
   pactSeason,
   question,
   questionAnswer,
+  reaction,
   school,
   weeklyAnswer,
   weeklyQuestion,
@@ -223,4 +228,53 @@ export async function setAvailability(db: Database, userId: string, value: Avail
     .insert(availability)
     .values({ userId, ...value })
     .onConflictDoUpdate({ target: availability.userId, set: { ...value, updatedAt: new Date() } });
+}
+
+/**
+ * Wrapped (COM-03): the member's own figures since `since`. Counts only:
+ * never who, never what was said.
+ */
+export async function wrappedFigures(db: Database, userId: string, since: Date, timeZone: string) {
+  const from = since.toISOString();
+  const [row] = await db.execute<{
+    matches: number;
+    messages: number;
+    conversations: number;
+    likes: number;
+    events: number;
+    pacts: number;
+    favorite_reaction: string | null;
+    peak_hour: number | null;
+  }>(sql`
+    select
+      (select count(*)::int from ${match} m
+        where (m.user_low = ${userId} or m.user_high = ${userId}) and m.created_at >= ${from}) as matches,
+      (select count(*)::int from ${message} msg
+        where msg.sender_id = ${userId} and msg.created_at >= ${from} and msg.deleted_at is null) as messages,
+      (select count(distinct msg.match_id)::int from ${message} msg
+        where msg.sender_id = ${userId} and msg.created_at >= ${from}) as conversations,
+      (select count(*)::int from ${likeAction} l
+        where l.actor_id = ${userId} and l.kind <> 'pass' and l.created_at >= ${from}) as likes,
+      (select count(*)::int from ${eventRsvp} r join ${event} e on e.id = r.event_id
+        where r.user_id = ${userId} and r.status = 'going' and e.starts_at >= ${from} and e.starts_at <= now()
+          and e.status = 'published') as events,
+      (select count(*)::int from ${pactParticipant} p join ${pactSeason} s on s.id = p.season_id
+        where p.user_id = ${userId} and s.reveal_at >= ${from}) as pacts,
+      (select r.emoji from ${reaction} r
+        where r.user_id = ${userId} and r.created_at >= ${from}
+        group by r.emoji order by count(*) desc, r.emoji limit 1) as favorite_reaction,
+      (select extract(hour from msg.created_at at time zone ${timeZone})::int from ${message} msg
+        where msg.sender_id = ${userId} and msg.created_at >= ${from}
+        group by 1 order by count(*) desc, 1 limit 1) as peak_hour
+  `);
+  return {
+    matches: row?.matches ?? 0,
+    messages: row?.messages ?? 0,
+    conversations: row?.conversations ?? 0,
+    likes: row?.likes ?? 0,
+    events: row?.events ?? 0,
+    pacts: row?.pacts ?? 0,
+    favoriteReaction: row?.favorite_reaction ?? null,
+    peakHour: row?.peak_hour ?? null,
+  };
 }

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { uuidv7 } from "@epilove/core";
 import { createDatabase, schema } from "@epilove/db";
 import { deleteSeason, enrolMembers, upsertSeason } from "@epilove/db/repositories/pact";
 import {
@@ -153,5 +154,45 @@ describe.skipIf(!url)("campus community (COM-01, COM-02, PAC-04)", () => {
     expect(stats.facts.length).toBeLessThanOrEqual(5);
     // Everybody gave the same answers in this test.
     expect(stats.facts.every((f) => f.percent === 100)).toBe(true);
+  });
+
+  it("sums up the member's own year (COM-03)", async () => {
+    const a = await createTestMember(db, { graduationYear: 2037 });
+    const b = await createTestMember(db, { graduationYear: 2037 });
+    await as(a).discovery.decide({ targetId: b, kind: "like", content: null, comment: null });
+    const { matchId } = await as(b).discovery.decide({
+      targetId: a,
+      kind: "like",
+      content: null,
+      comment: null,
+    });
+    const id = () => uuidv7(Date.now(), crypto.getRandomValues(new Uint8Array(10)));
+    for (const text of ["Salut", "Ça va ?", "On se voit jeudi ?"]) {
+      await as(a).messaging.send({ id: id(), matchId: matchId ?? "", text, replyTo: null });
+    }
+    const { message } = await as(b).messaging.send({
+      id: id(),
+      matchId: matchId ?? "",
+      text: "Oui !",
+      replyTo: null,
+    });
+    await as(a).messaging.react({ matchId: matchId ?? "", messageId: message.id, emoji: "🔥" });
+
+    const wrapped = await as(a).community.wrapped();
+    expect(wrapped).toMatchObject({
+      matches: 1,
+      messages: 3,
+      conversations: 1,
+      likes: 1,
+      favoriteReaction: "🔥",
+      peakHour: Number(
+        new Intl.DateTimeFormat("en-GB", {
+          timeZone: "Europe/Paris",
+          hour: "2-digit",
+          hourCycle: "h23",
+        }).format(new Date()),
+      ),
+    });
+    expect(wrapped.label).toMatch(/^\d{4}–\d{4}$/);
   });
 });
