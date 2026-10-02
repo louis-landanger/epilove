@@ -1,3 +1,4 @@
+export * from "./campus/headcounts";
 export * from "./campus/schools";
 export * from "./matching/compatibility";
 export * from "./people/age";

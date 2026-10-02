@@ -14,7 +14,9 @@
   "dependencies": {
     "@epilove/contracts": "workspace:*",
     "@epilove/core": "workspace:*",
+    "@epilove/crypto": "workspace:*",
     "@epilove/db": "workspace:*",
+    "@epilove/email": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/server": "catalog:",
     "hono": "catalog:",
