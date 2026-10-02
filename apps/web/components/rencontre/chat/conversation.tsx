@@ -13,6 +13,7 @@ import { dequeueMessage, queuedMessages, queueMessage } from "@/lib/rencontre/se
 import { useOnline } from "@/lib/rencontre/use-online";
 import { ReportSheet, SafetyMenu } from "../safety/safety-menu";
 import { Sheet } from "../ui/sheet";
+import { AiIcebreakers } from "./ai-icebreakers";
 import { Avatar } from "./avatar";
 import { DateCard } from "./date-card";
 import { type DateDraft, DateSheet } from "./date-sheet";
@@ -862,6 +863,7 @@ export function Conversation({ thread }: { thread: ThreadView }) {
             setDraft("");
           }}
           icebreakers={thread.icebreakers}
+          ai={thread.aiIcebreakers ? { matchId: thread.matchId, ...thread.aiIcebreakers } : null}
           showIcebreakers={showIcebreakers}
           onToggleIcebreakers={() => setShowIcebreakers((v) => !v)}
           onPickIcebreaker={(text) => {
@@ -1260,6 +1262,7 @@ function Composer({
   onVoiceError,
   mediaBusy,
   icebreakers,
+  ai,
   showIcebreakers,
   onToggleIcebreakers,
   onPickIcebreaker,
@@ -1283,6 +1286,8 @@ function Composer({
   onVoiceError: (key: "microphone" | "maxDuration") => void;
   mediaBusy: boolean;
   icebreakers: IcebreakerView[];
+  /** AI conversation starters (CHAT-04), when the feature is on. */
+  ai: { matchId: string; consented: boolean } | null;
   showIcebreakers: boolean;
   onToggleIcebreakers: () => void;
   onPickIcebreaker: (text: string) => void;
@@ -1320,6 +1325,7 @@ function Composer({
               );
             })}
           </ul>
+          {ai && <AiIcebreakers matchId={ai.matchId} consented={ai.consented} onPick={onPickIcebreaker} />}
         </div>
       )}
       {picker && !editing && (

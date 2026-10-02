@@ -30,6 +30,12 @@ export default defineConfig({
     {
       command: `pnpm start --port ${port}`,
       url: `${baseURL}/api/health`,
+      // AI conversation starters (CHAT-04) on, against the local stand-in below.
+      env: {
+        AI_ICEBREAKERS_ENABLED: "1",
+        ANTHROPIC_API_KEY: "e2e",
+        ANTHROPIC_BASE_URL: "http://127.0.0.1:3102",
+      },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
@@ -40,6 +46,13 @@ export default defineConfig({
       env: { WORKER_HEALTH_PORT: "3101" },
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
+    },
+    {
+      // Stand-in for the Claude API: the scenarios never call the real one.
+      command: "node e2e/support/anthropic-mock.mjs",
+      url: "http://127.0.0.1:3102/health",
+      reuseExistingServer: !process.env.CI,
+      timeout: 10_000,
     },
   ],
 });

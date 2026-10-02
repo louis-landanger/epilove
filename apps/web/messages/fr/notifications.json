@@ -56,7 +56,9 @@
       "hour": "{hour} h",
       "allowMessages": "Laisser passer les messages",
       "allowMessagesHint": "Les nouveaux messages de tes liaisons sonnent quand même. La vérification après un date passe toujours."
-    }
+    },
+    "aiIcebreakers": "Idées de conversation par IA",
+    "aiIcebreakersHint": "Quand tu demandes des idées, un extrait de tes réponses aux prompts, sans prénom ni coordonnées, part chez Anthropic (États-Unis). Rien n'est envoyé à ta place."
   },
   "offline": {
     "title": "Pas de réseau",

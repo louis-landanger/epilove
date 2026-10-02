@@ -56,7 +56,9 @@
       "hour": "{hour}:00",
       "allowMessages": "Let messages through",
       "allowMessagesHint": "New messages from your bonds still ring. The check after a date always gets through."
-    }
+    },
+    "aiIcebreakers": "AI conversation ideas",
+    "aiIcebreakersHint": "When you ask for ideas, an excerpt of your prompt answers, without your first name or contact details, goes to Anthropic (United States). Nothing is sent on your behalf."
   },
   "offline": {
     "title": "No network",

@@ -316,5 +316,28 @@
       "foundYou": "{name} saw through you.",
       "fooled": "{name} got fooled."
     }
+  },
+  "ai": {
+    "button": "AI ideas",
+    "again": "More ideas",
+    "hint": "Optional",
+    "loading": "The AI is looking for ideas…",
+    "label": "AI suggestions: read and adapt them before sending.",
+    "notices": {
+      "nothing": "No idea this time. The suggestions above are still there.",
+      "quota": "You've used your AI ideas for today. Come back tomorrow!",
+      "unavailable": "The AI isn't answering right now. Try again later.",
+      "error": "That didn't work. Try again in a moment."
+    },
+    "consent": {
+      "title": "AI ideas to start the conversation?",
+      "what": "To suggest ideas, we send an excerpt of your prompt answers and interests, without your first name, contact details or photos.",
+      "other": "The other person's answers are only sent if they turned this option on too.",
+      "where": "The excerpt goes to Anthropic (Claude AI), in the United States. Epilove keeps neither the excerpt nor the ideas.",
+      "never": "Nothing is ever sent on your behalf: you pick an idea, edit it, and send it.",
+      "withdraw": "You can withdraw your consent at any time in Notification settings, under “In conversations”.",
+      "accept": "Turn on",
+      "decline": "No thanks"
+    }
   }
 }

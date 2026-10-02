@@ -316,5 +316,28 @@
       "foundYou": "{name} t'a démasqué·e.",
       "fooled": "{name} s'est fait avoir."
     }
+  },
+  "ai": {
+    "button": "Des idées par IA",
+    "again": "D'autres idées",
+    "hint": "Facultatif",
+    "loading": "L'IA cherche des idées…",
+    "label": "Suggestions de l'IA : relis-les et adapte-les avant d'envoyer.",
+    "notices": {
+      "nothing": "Pas d'idée cette fois. Les suggestions au-dessus sont toujours là.",
+      "quota": "Tu as utilisé tes idées par IA pour aujourd'hui. Reviens demain !",
+      "unavailable": "L'IA ne répond pas pour l'instant. Réessaie plus tard.",
+      "error": "Ça n'a pas marché. Réessaie dans un instant."
+    },
+    "consent": {
+      "title": "Des idées de début de conversation par IA ?",
+      "what": "Pour te proposer des idées, on envoie un extrait de tes réponses aux prompts et de tes centres d'intérêt, sans ton prénom, ni tes coordonnées, ni tes photos.",
+      "other": "Les réponses de l'autre personne ne sont envoyées que si elle a aussi activé cette option.",
+      "where": "L'extrait part chez Anthropic (IA Claude), aux États-Unis. Ni l'extrait ni les idées ne sont conservés par Epilove.",
+      "never": "Rien n'est jamais envoyé à ta place : tu choisis une idée, tu la modifies, tu l'envoies.",
+      "withdraw": "Tu peux retirer ton accord à tout moment dans Réglages des notifications, rubrique « Dans les conversations ».",
+      "accept": "Activer",
+      "decline": "Non merci"
+    }
   }
 }

@@ -9,6 +9,8 @@ const { db, close } = createDatabase(url ?? "postgres://invalid", { maxConnectio
 const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 test.skip(!url, "Needs DATABASE_URL and the local services (pnpm services:up).");
+// One database client per file, closed after the last test.
+test.describe.configure({ mode: "serial" });
 
 test.beforeAll(async () => {
   await prepareTestDatabase(db);

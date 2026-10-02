@@ -1,6 +1,6 @@
 "use client";
 
-import type { NotificationPreferencesView, QuietHoursView } from "@epilove/contracts";
+import type { AiIcebreakersState, NotificationPreferencesView, QuietHoursView } from "@epilove/contracts";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
@@ -9,20 +9,26 @@ const GROUPS = ["likes", "matches", "messages", "drop", "pact", "events"] as con
 type Group = (typeof GROUPS)[number];
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
-/** Notification preferences per group and channel (NOT-03), and conversation settings (CHAT-02). */
+/**
+ * Notification preferences per group and channel (NOT-03), conversation
+ * settings (CHAT-02) and the consent to AI conversation starters (CHAT-04).
+ */
 export function PreferencesForm({
   initial,
   chat,
   quiet: initialQuiet,
+  ai: initialAi,
 }: {
   initial: NotificationPreferencesView;
   chat: { readReceipts: boolean; onlineStatus: boolean };
   quiet: QuietHoursView;
+  ai: AiIcebreakersState;
 }) {
   const t = useTranslations("notifications.settings");
   const [groups, setGroups] = useState(initial.groups);
   const [chatSettings, setChatSettings] = useState(chat);
   const [quiet, setQuiet] = useState(initialQuiet);
+  const [ai, setAi] = useState(initialAi);
   const [saved, setSaved] = useState<string | null>(null);
 
   const flash = (message: string) => {
@@ -52,6 +58,18 @@ export function PreferencesForm({
       flash(t("saved"));
     } catch {
       setChatSettings(chatSettings);
+      flash(t("error"));
+    }
+  };
+
+  const toggleAi = async () => {
+    const previous = ai;
+    setAi({ ...ai, consented: !ai.consented });
+    try {
+      setAi(await api.messaging.setAiConsent({ consent: !previous.consented }));
+      flash(t("saved"));
+    } catch {
+      setAi(previous);
       flash(t("error"));
     }
   };
@@ -135,6 +153,16 @@ export function PreferencesForm({
             <Switch checked={chatSettings[key]} label={t(key)} onChange={() => toggleChat(key)} />
           </div>
         ))}
+        {/* Withdrawing stays possible even when the feature is off. */}
+        {(ai.available || ai.consented) && (
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p>{t("aiIcebreakers")}</p>
+              <p className="text-paper/60 text-xs">{t("aiIcebreakersHint")}</p>
+            </div>
+            <Switch checked={ai.consented} label={t("aiIcebreakers")} onChange={() => void toggleAi()} />
+          </div>
+        )}
       </section>
 
       <section

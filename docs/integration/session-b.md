@@ -28,6 +28,7 @@
 | 3 | Mini-jeux (CHAT-11) | ✅ fait et testé (cœur, API dont réponses simultanées, Playwright à deux navigateurs, axe) |
 | 3 | Flash (IRL-04) | ✅ fait et testé (cœur, API, Playwright à deux navigateurs, axe) |
 | 3 | Wrapped (COM-03) | ✅ fait et testé (API, Playwright avec l'image exportée, axe) |
+| 3 | Brise-glace par IA (CHAT-04) | ✅ fait et testé (cœur dont propriété sur les prénoms, API avec modèle simulé, Playwright contre un faux service Claude, axe) ; désactivé par défaut, jamais appelé pour de vrai dans la session (pas de clé) |
 | 3 | Mode à l'aveugle (DEC-10) | ✅ fait et testé (cœur, API avec horloge simulée) ; bandeau du jeudi soir non testé en automatique (le serveur décide de la soirée) |
 | 3 | Badges discrets (COM-04), statut « Dispo » (IRL-05) | ✅ fait et testé (cœur, API) ; affichage vérifié à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
@@ -171,6 +172,16 @@
 - API `community.wrapped`. Interface `(app)/campus/wrapped` : une carte par chiffre, animée à l'apparition ; les cartes sans donnée (réaction, heure de pointe) ne s'affichent pas. Carte dans l'onglet Campus.
 - Image 1080 × 1920 au format story : `(app)/campus/wrapped/image` (`next/og`), pour le membre connecté seulement (401 sinon), `Cache-Control: private, no-store`. Pas d'émoji dans l'image : le moteur de rendu les téléchargerait chez un tiers. Le partage reste un choix du membre (téléchargement, pas de lien public).
 
+### Brise-glace par IA (CHAT-04)
+
+- Décision et garde-fous : `docs/adr/0022-brise-glace-ia.md`.
+- Désactivé par défaut : il faut `AI_ICEBREAKERS_ENABLED=1` **et** `ANTHROPIC_API_KEY`, puis le consentement de la personne. Consentement enregistré dans la table commune `consent` (type `ai_features`, version `2026-10-icebreakers`), demandé au premier usage dans la conversation, retirable dans `(app)/reglages/notifications` (rubrique « Dans les conversations »).
+- `packages/core/src/messaging/ai-icebreakers.ts` : `pseudonymize` (prénoms des deux personnes, e-mails, liens, pseudos, numéros), `minimizeProfile` (3 réponses aux prompts de 240 caractères au plus, centres d'intérêt du catalogue), `acceptSuggestions` (longueur, doublons, marqueurs, prénoms, filtre des messages).
+- `packages/api/src/rencontre/ai-icebreakers.ts` : client `@anthropic-ai/sdk`, modèle `claude-opus-5-5`, `output_config: { effort: "low", format: json_schema }`, `stop_reason: "refusal"` traité comme un résultat (« pas d'idée cette fois »), délai de 20 s et une seule nouvelle tentative. Les réponses de l'autre personne ne partent que si elle a consenti aussi ; sinon, seulement celles de la personne qui demande (l'écran est le même, rien ne trahit le réglage de l'autre).
+- API `messaging.aiConsent`, `setAiConsent`, `aiIcebreakers` (conversation vérifiée par `canMessage`, 5 demandes par jour et par personne sous verrou, demande rendue si le service ne répond pas) ; `threadView.aiIcebreakers` (null si la fonction est coupée). Rien n'est conservé : ni l'extrait envoyé, ni les idées ; aucun contenu dans les journaux.
+- Interface : sous les brise-glace classiques, bouton « Des idées par IA », feuille de consentement, idées qui ne font que remplir la zone de saisie (jamais d'envoi automatique).
+- Tests : l'API et Playwright n'appellent jamais le vrai service (modèle simulé, et `apps/web/e2e/support/anthropic-mock.mjs` pour les scénarios). Le chemin complet du SDK a été vérifié à la main contre ce faux service (requête, schéma, extrait sans prénom).
+
 ### Mode à l'aveugle (DEC-10)
 
 - `packages/core/src/discovery/blind.ts` : la soirée à l'aveugle a lieu le jeudi de 19 h à minuit (heure de Lyon) ; une liaison à l'aveugle se dévoile quand les deux ont envoyé 10 messages.
@@ -240,14 +251,16 @@
 
 - `packages/core/src/messaging/ids.ts` : génération et lecture d'UUIDv7 (messages envoyés par le client).
 - Client API côté navigateur (`apps/web/lib/rencontre/api.client.ts`, TanStack Query via `@orpc/tanstack-query`) et côté serveur (`api.server.ts`, appel en mémoire de `apiApp` avec les cookies de la requête).
+- Écritures par lots et comptes supprimés : un compte supprimé entre la sélection et l'écriture faisait échouer tout le lot sur la clé étrangère (impressions du deck, relances CHAT-09). Les deux verrouillent désormais les membres (`FOR KEY SHARE`, même ordre que la suppression d'un compte) et ignorent ceux qui ont disparu, avec un test qui reproduit le cas. Le Drop et la révélation du Pacte lisent leurs destinataires dans la même transaction que l'écriture : la fenêtre est de quelques millisecondes, non traitée.
 
 ## Fichiers partagés modifiés
 
 | Fichier | Modification |
 |---|---|
 | `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo`, `drop:run` |
-| `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h), `nodemailer` (10.0.13, types inclus), `uqr` (0.1.3, QR codes sans dépendance) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
+| `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h), `nodemailer` (10.0.13, types inclus), `uqr` (0.1.3, QR codes sans dépendance), `@anthropic-ai/sdk` (0.131.0) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendances `@epilove/crypto` et `aws4fetch` (stockage des médias de conversation), script `db:seed:dev`, exports `./repositories/*`, `./dev-seed`, `./storage` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
+| `packages/api/package.json` | dépendances `@anthropic-ai/sdk` (brise-glace par IA), `@epilove/crypto`, `@epilove/media`, `@epilove/notifications`, `@epilove/realtime` ; `drizzle-orm` en dépendance de développement (tests) |
 | `apps/web/package.json` | dépendances `uqr`, `maplibre-gl`, `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `community`, `dateSafety`, `dev`, `discovery`, `events`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
@@ -261,7 +274,7 @@
 | `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `drop:run` |
 | `turbo.json` | `ENCRYPTION_KEYS`, `ENCRYPTION_CURRENT_KEY_ID` et `EMAIL_HMAC_SECRET` transmis aux tests : le test du dépôt `members` ré-exécute le seed de développement, qui chiffrait sinon les messages fictifs avec la clé de test, illisibles ensuite par `pnpm dev` |
 | `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
-| `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base) et second `webServer` pour le worker |
+| `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base), second `webServer` pour le worker, troisième pour le faux service Claude (`e2e/support/anthropic-mock.mjs`) ; le serveur Next des scénarios démarre avec `AI_ICEBREAKERS_ENABLED=1` et `ANTHROPIC_BASE_URL` vers ce faux service |
 | `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media`, `@epilove/realtime` ; `serverExternalPackages` : `esbuild`, `esbuild-wasm` (Serwist) ; `Permissions-Policy` avec `microphone=(self)` sur `/messages/*` seulement (messages vocaux), le reste du site garde `microphone=()` |
 | `apps/web/tsconfig.json`, `apps/web/package.json` | `service-worker/` exclu du tsconfig principal et vérifié par son propre tsconfig (lib WebWorker) dans `typecheck` |
 | `infra/scripts/cloud-docker.sh` | repli sur l'image Docker Hub `darthsim/imgproxy` (même version) quand le proxy de la session cloud bloque les téléchargements de ghcr.io |
@@ -272,6 +285,7 @@
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` (existantes) servent aussi aux médias de conversation ; `S3_REGION` facultative (`eu-west-1` par défaut). Les URL présignées des vocaux pointent vers `S3_ENDPOINT` : en production, il doit être joignable par les navigateurs (sinon prévoir un point d'accès public distinct). Sans S3 configuré, l'API garde les médias en mémoire (tests seulement).
 
 - `GIPHY_API_KEY` (facultative, API) : active les GIF (CHAT-05). Absente : stickers seulement.
+- `AI_ICEBREAKERS_ENABLED` et `ANTHROPIC_API_KEY` (facultatives, API, commentées dans la section « Session B » de `.env.example`) : brise-glace par IA (CHAT-04), actifs seulement avec les deux. `ANTHROPIC_BASE_URL` (lue par le SDK) sert aux scénarios Playwright pour viser le faux service local.
 
 - `PACT_SOLVER_COMMAND`, `PACT_SOLVER_DIRECTORY` (facultatives, worker) : commande et dossier du solveur du Pacte dans un conteneur (par défaut `uv run --frozen --extra cpsat python -m pact_solver` depuis `apps/pact-solver`).
 
@@ -281,6 +295,7 @@
 
 ## Migrations
 
+- `0022_*` : table `ai_icebreaker_request` (quota des brise-glace par IA, sans contenu).
 - `0021_*` : type de message `game`.
 - `0020_*` : table `flash_scan`.
 - `0019_*` : colonnes `like_action.blind` et `match.blind`.
@@ -337,6 +352,7 @@
 
 - `docs/adr/0020-evenements-temps-reel-sans-donnees.md` : les événements Centrifugo ne transportent que des identifiants ; le contenu passe par l'API.
 - `docs/adr/0021-solveur-du-pacte.md` : solveur Python ponctuel (JSON sur stdin/stdout) appelé par le worker, règles et graphe en TypeScript, révélation par l'outbox.
+- `docs/adr/0022-brise-glace-ia.md` : brise-glace par IA, consentement de chaque personne (table `consent`, type `ai_features`), extraits pseudonymisés, rien de conservé.
 
 ## Questions ouvertes
 
