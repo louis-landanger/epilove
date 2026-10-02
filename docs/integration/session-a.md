@@ -27,10 +27,16 @@
 | Recours | ADM-04 | `/compte/recours` côté membre, file `/recours` côté back-office, réexamen par une autre personne | API + e2e |
 | Mode partiels | SAF-08 | Pause programmée (1 jour à 2 mois), retour automatique (job horaire) | API, worker |
 | Export | SAF-14 | Zip (`donnees.json` + photos) construit par le worker, email, téléchargement réservé au titulaire pendant 7 jours | API, worker, e2e |
+| Re-vérification annuelle | ONB-09 | Échéance au 1er octobre de l'année universitaire suivante ; bannière dès le 1er septembre, rappel par email (job quotidien `accounts/reverification` 08:23), mise en pause automatique après l'échéance (`app_user.paused_for_reverification`), levée dès qu'un code reçu sur l'adresse d'école est validé (`/compte/verifier`) | `packages/core/src/accounts/onboarding.test.ts`, API, worker, e2e `account.spec.ts` |
+| Connexion Forge ID | ONB-11 | Fournisseur OpenID Connect `forge-id` (plugin `genericOAuth` de Better Auth), désactivé tant que `FORGE_ID_*` est vide ; refus hors campus de Lyon ou sans adresse d'école ; badge « Campus vérifié » (`app_user.campus_verified_at`) | `packages/auth/src/forge-id.test.ts` |
+| Mon son du moment | PRO-07 | Recherche dans le catalogue iTunes (côté serveur, sans cache ni compte), extrait de 30 s servi depuis les hôtes Apple validés, carte sur le profil | `packages/api/src/modules/profile.test.ts`, e2e |
+| Carte de profil partageable | PRO-08 | `/profil/carte` (image générée par `next/og`, effet holographique côté client), sans nom de famille ni données sensibles | e2e |
+| Easter eggs | COM-05 | 404 jouable (attrape les ions), code Konami, terminal caché `/terminal` | e2e `fun.spec.ts` |
+| Limitation de débit générique | — | Plafond par membre (600 appels par minute) ou par IP (120 par minute) sur toutes les procédures `/rpc/*`, en plus des quotas métier ; réponse 429 avec `Retry-After` | `packages/api/src/app.test.ts`, `lib/client-ip.test.ts` |
 
 ## Pas encore fait
 
-- Recours (ADM-04), tableaux de bord (ADM-09), page `/compte/recours` (lien présent dans les emails de décision).
+- Tableaux de bord (ADM-09).
 - Vitrine : JavaScript initial de `/` à 196 Ko gzip (budget 180 Ko, dont 185 Ko pour React, Next et next-intl) ; WebGPU non vérifié sur un vrai GPU ; limites de la liste d'attente en mémoire (à passer sur Valkey) ; effectifs par école estimés (à confirmer) ; pas de design sonore ni de préchargeur.
 - Paliers 2 et 3.
 
@@ -57,20 +63,24 @@
 | `apps/web/proxy.ts` | CSP `connect-src` : origine du stockage objet (envoi direct des photos) |
 | `pnpm-workspace.yaml` | Catalogue : `@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp`, `thumbhash` |
 | `.env.example` | Section `# Session A` |
+| `apps/web/app/layout.tsx` | `viewport.themeColor` aligné sur le jeton `ink` ; `app/manifest.ts` (à B) garde `#100e18` : à aligner à la fusion |
+| `apps/web/playwright.config.ts` | `API_RATE_LIMIT_ANONYMOUS=100000` pour le serveur de test (la suite e2e partage une seule IP) |
 
 ## Variables d'environnement (section `# Session A`)
 
-`EMAIL_FROM`, `APP_URL`, `AUTH_TRUSTED_ORIGINS`, `BETTER_AUTH_SECRET`, `PASSKEY_RP_ID`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `AUTH_IP_HEADERS`, `AUTH_TRUSTED_PROXIES`, `S3_PUBLIC_ENDPOINT`, `S3_REGION`, `ADMIN_URL`.
+`EMAIL_FROM`, `APP_URL`, `AUTH_TRUSTED_ORIGINS`, `BETTER_AUTH_SECRET`, `PASSKEY_RP_ID`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `AUTH_IP_HEADERS`, `AUTH_TRUSTED_PROXIES`, `S3_PUBLIC_ENDPOINT`, `S3_REGION`, `ADMIN_URL`, `SITE_URL`, `FORGE_ID_DISCOVERY_URL`, `FORGE_ID_CLIENT_ID`, `FORGE_ID_CLIENT_SECRET`, `FORGE_ID_CAMPUS_CLAIM`, `FORGE_ID_CAMPUS_VALUE`, `FORGE_ID_GRADUATION_CLAIM`, `NEXT_PUBLIC_FORGE_ID_ENABLED`, `API_IP_HEADERS`.
+
+Optionnelles (valeurs par défaut dans le code) : `API_RATE_LIMIT_MEMBER` (600), `API_RATE_LIMIT_ANONYMOUS` (120).
 
 En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle CORS (origine `APP_URL`) sont créés automatiquement au premier envoi de photo.
 
 ## Dépendances ajoutées
 
-`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp` (binaires précompilés, aucun script d'installation), `thumbhash` ; `motion` et `thumbhash` dans `apps/web`.
+`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp` (binaires précompilés, aucun script d'installation), `thumbhash`, `fflate` (zip de l'export, worker) ; `motion` et `thumbhash` dans `apps/web` ; `three` et `@types/three` (`packages/three`, vitrine).
 
 ## Migrations
 
-`0003_a_auth_and_identity_vault`, `0004_a_onboarding` (jetables, à régénérer à la fusion) : tables Better Auth, `identity_vault`, `onboarding_draft`, `signup_block`, colonne `photo.stage`.
+`0003_a_auth_and_identity_vault` à `0009_a_campus_verified` (jetables, à régénérer à la fusion) : tables Better Auth, `identity_vault`, `onboarding_draft`, `signup_block`, `data_export`, colonne `photo.stage`, `profile.hidden_at`, `hidden_contact` (identifiant, indice), colonnes `app_user.deletion_requested_at`, `paused_until`, `email_proven_at`, `reverify_reminded_at`, `paused_for_reverification`, `campus_verified_at`.
 
 ## Pour la session B (coutures)
 
@@ -86,12 +96,15 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 - **Comptes actifs** : `requireActiveMember` (`packages/api/src/procedures.ts`) refuse les comptes suspendus, bannis, en suppression ou en onboarding, même avec une session valide : à utiliser pour les likes, messages et autres actions sociales.
 - **Quotas** : `withinQuota(services, nom, userId, limite, fenêtre)` (`packages/api/src/lib/quota.ts`).
 - **Jobs** : `enqueueJob(tx, "tache", payload, { jobKey })` dans la transaction métier.
+- **Badge « Campus vérifié »** : `app_user.campus_verified_at` non nul (connexion Forge ID) ; à afficher sur les cartes de découverte si souhaité.
+- **Re-vérification** : un compte en pause pour re-vérification (`paused_for_reverification`) a le statut `paused` : il suit les mêmes règles de découvrabilité.
+- **Débit** : toutes les procédures passent déjà par le plafond générique ; les quotas métier de B (likes, messages) restent à poser avec `withinQuota`.
 
 ## Mises à jour souhaitées (CLAUDE.md, README, docs)
 
 - `CLAUDE.md`, tableau des commandes : ajouter `pnpm db:promote <email> <rôle>` et le back-office (http://localhost:3001) ; préciser que `pnpm db:migrate` crée aussi le schéma de Graphile Worker ; ajouter `pnpm --filter @epilove/worker dev` pour traiter les photos en local.
 - `docs/04-architecture.md`, section 4.4 : l'envoi utilise un **formulaire POST présigné** (politique S3 : taille 1 o à 10 Mo, `Content-Type` et clé imposés) plutôt qu'une URL PUT ; voir l'ADR 0010.
-- `docs/07-confiance-securite.md` : sessions stockées dans Valkey, révocation via `revokeAllSessions` ; en production, régler `AUTH_IP_HEADERS` (par exemple `cf-connecting-ip`) et `AUTH_TRUSTED_PROXIES`, sinon les quotas par IP retombent sur un compteur partagé.
+- `docs/07-confiance-securite.md` : sessions stockées dans Valkey, révocation via `revokeAllSessions` ; en production, régler `AUTH_IP_HEADERS` et `API_IP_HEADERS` (par exemple `cf-connecting-ip`) et `AUTH_TRUSTED_PROXIES`, sinon les quotas par IP retombent sur un compteur partagé.
 
 ## Points d'intégration et questions ouvertes
 
