@@ -1,0 +1,68 @@
+{
+  "metaTitle": "My profile",
+  "title": "My profile",
+  "tabs": {
+    "label": "My profile",
+    "preview": "Preview",
+    "edit": "Edit"
+  },
+  "previewNote": "This is what other members see. Photos being checked only show up for them once approved.",
+  "pendingPhoto": "Being checked",
+  "rejectedPhoto": "Rejected",
+  "noPhotos": "Add photos so others can discover you.",
+  "years": "{age}",
+  "classOf": "Class of {year}",
+  "languages": "Languages",
+  "interests": "Interests",
+  "lookingFor": "Here for",
+  "modes": {
+    "love": "Love",
+    "friends": "Friends"
+  },
+  "completeness": {
+    "label": "Profile {score}% complete",
+    "title": "Completeness",
+    "done": "Your profile is top-notch.",
+    "next": "To go further"
+  },
+  "tips": {
+    "add_photo": "Add a photo where your face is clearly visible",
+    "add_prompt": "Answer three prompts",
+    "add_interests": "Pick at least three interests",
+    "verify_photo": "Get your photo verified",
+    "add_program": "Add your programme or major",
+    "add_languages": "Add the languages you speak",
+    "add_anthem": "Pick your current song",
+    "add_alt_text": "Describe your photos for screen readers"
+  },
+  "sections": {
+    "photos": "Photos",
+    "basics": "Basics",
+    "prompts": "Prompts",
+    "interests": "Interests"
+  },
+  "fields": {
+    "firstName": "First name",
+    "gender": "Gender",
+    "pronouns": "Pronouns",
+    "program": "Programme or major",
+    "year": "Graduation year",
+    "languages": "Languages spoken",
+    "intentions": "In Love mode, you're rather…",
+    "birthDateLocked": "Your date of birth can't be changed. If it's wrong, write to us from the help page."
+  },
+  "save": "Save",
+  "saved": "Saved.",
+  "unsaved": "Unsaved changes",
+  "errors": {
+    "generic": "Saving failed. Try again.",
+    "firstName": "Only letters, spaces, hyphens or apostrophes.",
+    "pronouns": "30 characters max, no links.",
+    "program": "60 characters max.",
+    "interests": "Pick between 3 and 10 interests."
+  },
+  "links": {
+    "settings": "Settings",
+    "help": "Help and safety"
+  }
+}

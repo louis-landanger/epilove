@@ -1,4 +1,4 @@
-import { MAX_PHOTOS } from "@epilove/core";
+import { MAX_PHOTOS, PHOTO_ALT_TEXT_MAX_LENGTH } from "@epilove/core";
 import { MAX_UPLOAD_BYTES, UPLOAD_CONTENT_TYPES } from "@epilove/media/policy";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
@@ -55,6 +55,11 @@ export const mediaContract = {
     .errors({ INVALID_ORDER: { status: 422 } })
     .input(z.object({ photoIds: z.array(z.uuid()).min(1).max(MAX_PHOTOS) }))
     .output(photos),
+  /** Text alternative read by screen readers (PRO-11). */
+  setAltText: oc
+    .errors({ NOT_FOUND: { status: 404 } })
+    .input(z.object({ photoId: z.uuid(), altText: z.string().max(PHOTO_ALT_TEXT_MAX_LENGTH).nullable() }))
+    .output(ownPhoto),
   remove: oc
     .errors({ NOT_FOUND: { status: 404 }, MIN_PHOTOS: { status: 409 } })
     .input(z.object({ photoId: z.uuid() }))

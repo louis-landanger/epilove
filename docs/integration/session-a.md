@@ -14,10 +14,10 @@
 | Mineurs | ONB-04 | Une date de naissance de moins de 18 ans supprime le compte, révoque les sessions et bloque l'empreinte HMAC de l'adresse jusqu'aux 18 ans (`signup_block`) | API + e2e + `auth.test.ts` |
 | Photos | PRO-01 (partiel) | Recadrage 4:5 et compression dans le navigateur, formulaire POST présigné vers une clé de quarantaine (taille, type et clé imposés par la politique S3), confirmation, job `media/process-photo` (décodage réel, rotation EXIF, ré-encodage WebP, métadonnées supprimées, 2048 px max, thumbhash), purge horaire des envois abandonnés, réordonnancement, suppression (minimum 2 une fois le profil actif), URL imgproxy signées | `packages/media`, `apps/worker`, API, e2e |
 | Catalogues | PRO-02, PRO-04 | 40 prompts et 82 centres d'intérêt (fr/en), seeds idempotents | `pnpm db:seed` |
+| Mon profil | PRO-01 à PRO-05, PRO-11 | `/profil` rendu côté serveur (appel en processus de l'API) : aperçu « tel que les autres te voient » (photos et prompts intercalés, intérêts, langues), jauge de complétude et conseils, édition des photos (texte alternatif compris), des infos (prénom, genre, pronoms, cursus, promo, langues, intentions), des prompts et des intérêts. La date de naissance n'est pas modifiable | `packages/api/src/modules/profile.test.ts`, e2e `profile.spec.ts` |
 
 ## Pas encore fait
 
-- Mon profil (aperçu « tel que les autres te voient », édition directe), complétude affichée (PRO-05 : la fonction `profileCompleteness` existe), texte alternatif des photos (PRO-11).
 - Implémentation du contrat `safety`, réglages de confidentialité, pause, suppression de compte, page d'aide.
 - Back-office `apps/admin`.
 - Vitrine, liste d'attente et pages légales (en cours, branche de travail séparée, fusionnée dans cette branche à la fin).
@@ -36,6 +36,8 @@
 | `packages/db/src/migrations.ts`, `migrate.ts` | `pnpm db:migrate` crée aussi le schéma `graphile_worker` (`runJobQueueSchemaMigrations`) pour que l'API puisse enfiler des jobs avant le premier démarrage du worker |
 | `packages/db/src/schema/profiles.ts` | `INTENTIONS` et `MAX_PHOTOS` viennent de `@epilove/core` (réexportés) ; colonne `photo.stage` ; contrainte sur `profile.languages` |
 | `apps/worker/src/tasks/index.ts` | Ajout : `...mediaTasks()` et `mediaCrontab` |
+| `packages/api/src/app.ts` | `createServerClient(dependencies, viewer)` : appel des procédures en processus depuis les composants serveur (`serverApi()` dans `apps/web/lib/server/api-app.ts`) |
+| `apps/web/playwright.config.ts` | Second `webServer` : le worker tourne pendant les tests e2e (les photos sont réellement traitées) |
 | `apps/web/i18n/messages.ts` | Ajout : namespace `onboarding` |
 | `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media` ; `serverExternalPackages` : SDK S3 |
 | `apps/web/proxy.ts` | CSP `connect-src` : origine du stockage objet (envoi direct des photos) |
@@ -62,6 +64,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 - **Photos des autres** : `canViewPhoto(viewerId, photo)` (`packages/core/src/profiles/photos.ts`) puis `photoUrl()` ; ne jamais servir `storage_key` directement.
 - **Préférences** : `preferences.modes` est déjà filtré par le consentement (`effectiveModes`). `interested_in` est une donnée sensible : jamais dans les journaux, l'analytique ni les exports.
 - **Âge** : toujours calculé depuis `profile.birth_date` avec `ageOn` et la date du campus (`calendarDateIn(LYON_CAMPUS.timeZone, now)`).
+- **Appels serveur** : `serverApi()` (`apps/web/lib/server/api-app.ts`) donne un client typé des procédures pour les composants serveur, avec le membre connecté comme `viewer`.
 - **Quotas** : `withinQuota(services, nom, userId, limite, fenêtre)` (`packages/api/src/lib/quota.ts`).
 - **Jobs** : `enqueueJob(tx, "tache", payload, { jobKey })` dans la transaction métier.
 

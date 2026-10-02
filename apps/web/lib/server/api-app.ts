@@ -1,7 +1,9 @@
 import "server-only";
 import {
+  type AppDependencies,
   anonymous,
   createApp,
+  createServerClient,
   defaultServices,
   devHeaderResolver,
   type Role,
@@ -11,6 +13,7 @@ import { revokeAllSessions } from "@epilove/auth";
 import { createValkeyRateLimiter, valkeyFromEnv } from "@epilove/rate-limit";
 import { getAuth } from "./auth";
 import { getDatabase } from "./database";
+import { getCurrentMember } from "./session";
 
 /** Resolves the signed-in member from the Better Auth session cookie. */
 const sessionResolver: ViewerResolver = async (request) => {
@@ -35,13 +38,20 @@ function viewerResolver(): ViewerResolver {
 
 const defaults = defaultServices();
 
-export const apiApp = createApp({
+const dependencies: Omit<AppDependencies, "resolveViewer"> = {
   version: process.env.APP_VERSION ?? "dev",
   database: getDatabase,
-  resolveViewer: viewerResolver(),
   services: {
     ...defaults,
     limiter: process.env.VALKEY_URL ? createValkeyRateLimiter(valkeyFromEnv()) : defaults.limiter,
     revokeSessions: (userId) => revokeAllSessions(getAuth(), userId),
   },
-});
+};
+
+export const apiApp = createApp({ ...dependencies, resolveViewer: viewerResolver() });
+
+/** The API called in-process by server components, as the signed-in member. */
+export async function serverApi() {
+  const member = await getCurrentMember();
+  return createServerClient(dependencies, member ? { userId: member.userId, role: member.role } : null);
+}

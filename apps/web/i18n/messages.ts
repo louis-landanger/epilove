@@ -3,11 +3,13 @@ import commonEn from "../messages/en/common.json";
 import homeEn from "../messages/en/home.json";
 import navEn from "../messages/en/nav.json";
 import onboardingEn from "../messages/en/onboarding.json";
+import profileEn from "../messages/en/profile.json";
 import authFr from "../messages/fr/auth.json";
 import commonFr from "../messages/fr/common.json";
 import homeFr from "../messages/fr/home.json";
 import navFr from "../messages/fr/nav.json";
 import onboardingFr from "../messages/fr/onboarding.json";
+import profileFr from "../messages/fr/profile.json";
 
 export const LOCALES = ["fr", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -24,6 +26,7 @@ const namespaces = {
   home: { fr: homeFr, en: homeEn },
   nav: { fr: navFr, en: navEn },
   onboarding: { fr: onboardingFr, en: onboardingEn },
+  profile: { fr: profileFr, en: profileEn },
 } as const;
 
 type Namespaces = typeof namespaces;

@@ -13,4 +13,5 @@ export * from "./primitives/otp-input";
 export * from "./primitives/range-field";
 export * from "./primitives/spinner";
 export * from "./primitives/switch-field";
+export * from "./primitives/tabs";
 export * from "./primitives/toast";

@@ -11,10 +11,8 @@ import {
   missingSteps,
   nextReverificationDue,
   normalizeFirstName,
-  normalizePromptAnswer,
   normalizePronouns,
   type OnboardingProgress,
-  PROGRAM_MAX_LENGTH,
   profileCompleteness,
 } from "@epilove/core";
 import type { Database } from "@epilove/db";
@@ -32,8 +30,6 @@ import {
   withdrawConsent,
 } from "@epilove/db/repositories/accounts";
 import {
-  countActivePrompts,
-  countInterests,
   countUsablePhotos,
   listInterestIds,
   listPromptAnswers,
@@ -41,6 +37,7 @@ import {
   replacePromptAnswers,
 } from "@epilove/db/repositories/profiles";
 import { ORPCError } from "@orpc/server";
+import { checkedInterests, checkedProgram, checkedPromptAnswers, InvalidValue } from "../lib/profile-content";
 import { withinQuota } from "../lib/quota";
 import { campusToday } from "../lib/time";
 import { os, requireViewer } from "../procedures";
@@ -125,12 +122,6 @@ const requireOnboarding = os.middleware(async ({ context, next }) => {
   return next({ context: { account } });
 });
 
-class InvalidValue extends Error {
-  constructor(readonly field: string) {
-    super(`Invalid ${field}`);
-  }
-}
-
 async function saveStep(tx: Tx, userId: string, input: OnboardingSaveInput, now: Date) {
   const today = campusToday(now);
   switch (input.step) {
@@ -193,23 +184,11 @@ async function saveStep(tx: Tx, userId: string, input: OnboardingSaveInput, now:
       return;
     }
     case "prompts": {
-      const ids = input.answers.map((answer) => answer.promptId);
-      if (new Set(ids).size !== ids.length) throw new InvalidValue("promptId");
-      const answers = input.answers.map((answer, index) => {
-        const text = normalizePromptAnswer(answer.text);
-        if (!text) throw new InvalidValue(`answers.${index}`);
-        return { promptId: answer.promptId, text };
-      });
-      if ((await countActivePrompts(tx, ids)) !== ids.length) throw new InvalidValue("promptId");
-      await replacePromptAnswers(tx, userId, answers);
+      await replacePromptAnswers(tx, userId, await checkedPromptAnswers(tx, input.answers));
       return;
     }
     case "interests": {
-      const ids = [...new Set(input.interestIds)];
-      if (ids.length !== input.interestIds.length || (await countInterests(tx, ids)) !== ids.length) {
-        throw new InvalidValue("interestIds");
-      }
-      await replaceInterests(tx, userId, ids);
+      await replaceInterests(tx, userId, await checkedInterests(tx, input.interestIds));
       return;
     }
     case "campus": {
@@ -217,8 +196,7 @@ async function saveStep(tx: Tx, userId: string, input: OnboardingSaveInput, now:
       if (input.graduationYear < range.min || input.graduationYear > range.max) {
         throw new InvalidValue("graduationYear");
       }
-      const program = input.program?.replaceAll(/\s+/g, " ").trim() || null;
-      if (program && program.length > PROGRAM_MAX_LENGTH) throw new InvalidValue("program");
+      const program = checkedProgram(input.program);
       await mergeOnboardingDraft(tx, userId, {
         graduationYear: input.graduationYear,
         program,

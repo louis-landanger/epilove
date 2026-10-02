@@ -66,12 +66,18 @@
     "lead": "Tu pourras changer d'avis à tout moment dans les réglages.",
     "label": "Mode",
     "options": {
-      "love": { "label": "Love", "description": "Des rencontres, du flirt, peut-être plus." },
+      "love": {
+        "label": "Love",
+        "description": "Des rencontres, du flirt, peut-être plus."
+      },
       "friends": {
         "label": "Amis",
         "description": "Des potes de campus, un binôme de sport, une team de jeu."
       },
-      "both": { "label": "Les deux", "description": "Ouvert·e à tout, on verra bien." }
+      "both": {
+        "label": "Les deux",
+        "description": "Ouvert·e à tout, on verra bien."
+      }
     },
     "intentionsLabel": "En Love, tu es plutôt… (facultatif)",
     "intentions": {
@@ -128,7 +134,14 @@
     "cropHelp": "Fais glisser pour déplacer, utilise le curseur pour zoomer.",
     "zoom": "Zoom",
     "useCrop": "Utiliser cette photo",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "altText": "Texte alternatif",
+    "altTextTitle": "Décris cette photo",
+    "altTextHelp": "Lu par les lecteurs d'écran. Exemple : « Moi en randonnée au-dessus du lac d'Annecy ».",
+    "altTextLabel": "Description",
+    "altTextSave": "Enregistrer",
+    "altTextSaved": "Description enregistrée.",
+    "hasAltText": "Description ajoutée"
   },
   "prompts": {
     "title": "Trois prompts",

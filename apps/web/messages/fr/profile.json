@@ -1,0 +1,68 @@
+{
+  "metaTitle": "Mon profil",
+  "title": "Mon profil",
+  "tabs": {
+    "label": "Mon profil",
+    "preview": "Aperçu",
+    "edit": "Modifier"
+  },
+  "previewNote": "C'est ce que voient les autres membres. Les photos en vérification n'apparaissent pour eux qu'une fois validées.",
+  "pendingPhoto": "En vérification",
+  "rejectedPhoto": "Refusée",
+  "noPhotos": "Ajoute des photos pour que les autres te découvrent.",
+  "years": "{age} ans",
+  "classOf": "Promo {year}",
+  "languages": "Langues",
+  "interests": "Centres d'intérêt",
+  "lookingFor": "Ici pour",
+  "modes": {
+    "love": "Love",
+    "friends": "Amis"
+  },
+  "completeness": {
+    "label": "Profil complété à {score} %",
+    "title": "Complétude",
+    "done": "Ton profil est au top.",
+    "next": "Pour aller plus loin"
+  },
+  "tips": {
+    "add_photo": "Ajoute une photo où on voit bien ton visage",
+    "add_prompt": "Réponds à trois prompts",
+    "add_interests": "Choisis au moins trois centres d'intérêt",
+    "verify_photo": "Fais vérifier ta photo",
+    "add_program": "Indique ton cursus ou ta majeure",
+    "add_languages": "Ajoute les langues que tu parles",
+    "add_anthem": "Choisis ton son du moment",
+    "add_alt_text": "Décris tes photos pour les lecteurs d'écran"
+  },
+  "sections": {
+    "photos": "Photos",
+    "basics": "Infos",
+    "prompts": "Prompts",
+    "interests": "Centres d'intérêt"
+  },
+  "fields": {
+    "firstName": "Prénom",
+    "gender": "Genre",
+    "pronouns": "Pronoms",
+    "program": "Cursus ou majeure",
+    "year": "Année de diplôme",
+    "languages": "Langues parlées",
+    "intentions": "En Love, tu es plutôt…",
+    "birthDateLocked": "Ta date de naissance ne peut pas être modifiée. En cas d'erreur, écris-nous depuis la page d'aide."
+  },
+  "save": "Enregistrer",
+  "saved": "C'est enregistré.",
+  "unsaved": "Modifications non enregistrées",
+  "errors": {
+    "generic": "L'enregistrement a échoué. Réessaie.",
+    "firstName": "Juste des lettres, des espaces, des tirets ou des apostrophes.",
+    "pronouns": "30 caractères maximum, sans lien.",
+    "program": "60 caractères maximum.",
+    "interests": "Choisis entre 3 et 10 centres d'intérêt."
+  },
+  "links": {
+    "settings": "Réglages",
+    "help": "Aide et sécurité"
+  }
+}

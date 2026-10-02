@@ -1,6 +1,6 @@
-import { and, asc, count, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import type { Database } from "../client";
-import { interest, photo, profileInterest, prompt, promptAnswer } from "../schema";
+import { appUser, interest, photo, profile, profileInterest, prompt, promptAnswer, school } from "../schema";
 import type { PhotoStage } from "../schema/profiles";
 
 /** A database handle or an open transaction (drizzle query builder). */
@@ -212,4 +212,73 @@ export async function listAbandonedUploads(db: Db, olderThan: Date) {
     .from(photo)
     .where(and(eq(photo.stage, "uploading"), sql`${photo.createdAt} < ${olderThan.toISOString()}`))
     .limit(500);
+}
+
+// --- Own profile (PRO-03, PRO-05) ------------------------------------------------
+
+export async function findOwnProfile(db: Db, userId: string) {
+  const [row] = await db
+    .select({
+      firstName: profile.firstName,
+      birthDate: profile.birthDate,
+      gender: profile.gender,
+      pronouns: profile.pronouns,
+      program: profile.program,
+      graduationYear: profile.graduationYear,
+      languages: profile.languages,
+      intentions: profile.intentions,
+      anthem: profile.anthem,
+      completeness: profile.completeness,
+      schoolSlug: school.slug,
+    })
+    .from(profile)
+    .innerJoin(appUser, eq(appUser.id, profile.userId))
+    .innerJoin(school, eq(school.id, appUser.schoolId))
+    .where(eq(profile.userId, userId))
+    .limit(1);
+  return row ?? null;
+}
+
+export type ProfilePatch = Partial<{
+  firstName: string;
+  gender: "woman" | "man" | "nonbinary";
+  pronouns: string | null;
+  program: string | null;
+  graduationYear: number;
+  languages: string[];
+  intentions: string[];
+  completeness: number;
+}>;
+
+export async function updateProfile(db: Db, userId: string, patch: ProfilePatch) {
+  if (Object.keys(patch).length === 0) {
+    return;
+  }
+  await db.update(profile).set(patch).where(eq(profile.userId, userId));
+  if (patch.firstName) {
+    await db.update(appUser).set({ name: patch.firstName }).where(eq(appUser.id, userId));
+  }
+}
+
+/** Usable photos that carry a text alternative (PRO-11). */
+export async function countPhotosWithAltText(db: Db, userId: string) {
+  const [row] = await db
+    .select({ value: count() })
+    .from(photo)
+    .where(
+      and(
+        eq(photo.userId, userId),
+        inArray(photo.stage, ["processing", "ready"]),
+        ne(photo.status, "rejected"),
+        isNotNull(photo.altText),
+      ),
+    );
+  return row?.value ?? 0;
+}
+
+export async function setPhotoAltText(db: Db, userId: string, photoId: string, altText: string | null) {
+  await db
+    .update(photo)
+    .set({ altText })
+    .where(and(eq(photo.id, photoId), eq(photo.userId, userId)));
 }

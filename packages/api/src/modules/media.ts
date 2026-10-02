@@ -11,10 +11,12 @@ import {
   listOwnPhotos,
   type PhotoRow,
   reorderPhotos,
+  setPhotoAltText,
   setPhotoStage,
 } from "@epilove/db/repositories/profiles";
 import { type ImgproxyConfig, photoUrl, quarantineKey } from "@epilove/media";
 import { sql } from "drizzle-orm";
+import { refreshCompleteness } from "../lib/completeness";
 import { withinQuota } from "../lib/quota";
 import { os, requireViewer } from "../procedures";
 
@@ -120,6 +122,19 @@ export const media = {
     return ownPhotos(db, userId, context.services.imgproxy);
   }),
 
+  setAltText: os.media.setAltText.use(requireViewer).handler(async ({ context, input, errors }) => {
+    const { userId } = context.viewer;
+    const db = context.database();
+    const altText = input.altText?.replaceAll(/\s+/g, " ").trim() || null;
+    await setPhotoAltText(db, userId, input.photoId, altText);
+    const photo = await findOwnPhoto(db, userId, input.photoId);
+    if (!photo) {
+      throw errors.NOT_FOUND();
+    }
+    await refreshCompleteness(db, userId);
+    return toOwnPhoto(userId, photo, context.services.imgproxy);
+  }),
+
   remove: os.media.remove.use(requireViewer).handler(async ({ context, input, errors }) => {
     const { userId } = context.viewer;
     const db = context.database();
@@ -144,6 +159,7 @@ export const media = {
       );
       return photo;
     });
+    await refreshCompleteness(db, userId);
     // Objects are removed after the commit; a failure leaves an orphan for the purge job.
     const storage = context.services.storage();
     await Promise.all(

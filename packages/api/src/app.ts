@@ -1,9 +1,10 @@
 import { imgproxyConfigFromEnv } from "@epilove/media";
 import { createStorage, type Storage, storageConfigFromEnv } from "@epilove/media/storage";
 import { createMemoryRateLimiter } from "@epilove/rate-limit";
+import { createRouterClient } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Hono } from "hono";
-import type { ApiContext, ApiServices, ViewerResolver } from "./context";
+import type { ApiContext, ApiServices, Viewer, ViewerResolver } from "./context";
 import { router } from "./router";
 
 export const API_BASE_PATH = "/api";
@@ -78,4 +79,21 @@ export function createApp(dependencies: AppDependencies) {
   });
 
   return app;
+}
+
+/**
+ * Calls the procedures in-process, for server-rendered pages: same
+ * validation, policies and errors as over HTTP, without a network hop.
+ */
+export function createServerClient(
+  dependencies: Omit<AppDependencies, "resolveViewer">,
+  viewer: Viewer | null,
+) {
+  const context: ApiContext = {
+    version: dependencies.version,
+    database: dependencies.database,
+    viewer,
+    services: { ...defaultServices(), ...dependencies.services },
+  };
+  return createRouterClient(router, { context });
 }

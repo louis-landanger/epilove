@@ -1,9 +1,9 @@
 "use client";
 
 import type { OwnPhoto } from "@epilove/contracts";
-import { MAX_PHOTOS } from "@epilove/core";
-import { ActionMenu, cn, ProgressBar, Spinner, useToast } from "@epilove/ui";
-import { ArrowLeft, ArrowRight, ImagePlus, Star, Trash2 } from "lucide-react";
+import { MAX_PHOTOS, PHOTO_ALT_TEXT_MAX_LENGTH } from "@epilove/core";
+import { ActionMenu, Button, cn, Dialog, ProgressBar, Spinner, TextAreaField, useToast } from "@epilove/ui";
+import { ArrowLeft, ArrowRight, Captions, ImagePlus, Star, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ChangeEvent, type DragEvent, useCallback, useEffect, useRef, useState } from "react";
 import { thumbHashToDataURL } from "thumbhash";
@@ -43,16 +43,27 @@ function placeholder(thumbhash: string | null): string | undefined {
 export interface PhotoManagerProps {
   /** Called whenever the number of usable photos changes. */
   readonly onUsableCountChange?: (count: number) => void;
+  /** Called with the full list after every change (profile preview). */
+  readonly onPhotosChange?: (photos: readonly OwnPhoto[]) => void;
+  /** Offers the text alternative editor (PRO-11). */
+  readonly altTextEditable?: boolean;
+  readonly initialPhotos?: readonly OwnPhoto[];
 }
 
 /**
  * The member's photo grid (PRO-01): framing and compression in the browser,
  * direct upload to storage, processing status, reordering and removal.
  */
-export function PhotoManager({ onUsableCountChange }: PhotoManagerProps) {
+export function PhotoManager({
+  onUsableCountChange,
+  onPhotosChange,
+  altTextEditable = false,
+  initialPhotos,
+}: PhotoManagerProps) {
   const t = useTranslations("onboarding.photos");
   const toast = useToast();
-  const [photos, setPhotos] = useState<OwnPhoto[] | null>(null);
+  const [photos, setPhotos] = useState<OwnPhoto[] | null>(initialPhotos ? [...initialPhotos] : null);
+  const [describing, setDescribing] = useState<OwnPhoto | null>(null);
   const [uploads, setUploads] = useState<LocalUpload[]>([]);
   // Local previews kept after upload, until the processed photo has its own URL.
   const [previews, setPreviews] = useState<ReadonlyMap<string, string>>(new Map());
@@ -73,8 +84,9 @@ export function PhotoManager({ onUsableCountChange }: PhotoManagerProps) {
   useEffect(() => {
     if (photos) {
       onUsableCountChange?.(usablePhotoCount(photos));
+      onPhotosChange?.(photos);
     }
-  }, [photos, onUsableCountChange]);
+  }, [photos, onUsableCountChange, onPhotosChange]);
 
   // Once the processed photo is served, its local preview is no longer needed.
   useEffect(() => {
@@ -222,7 +234,7 @@ export function PhotoManager({ onUsableCountChange }: PhotoManagerProps) {
                 // biome-ignore lint/performance/noImgElement: signed imgproxy URLs and blob previews, already sized
                 <img
                   src={source}
-                  alt={t("photoAlt", { position: index + 1 })}
+                  alt={photo.altText ?? t("photoAlt", { position: index + 1 })}
                   className="absolute inset-0 size-full object-cover"
                   draggable={false}
                 />
@@ -252,6 +264,15 @@ export function PhotoManager({ onUsableCountChange }: PhotoManagerProps) {
                             label: t("moveRight"),
                             icon: <ArrowRight className="size-4" aria-hidden="true" />,
                             onSelect: () => move(photo.id, index + 1),
+                          },
+                        ]
+                      : []),
+                    ...(altTextEditable
+                      ? [
+                          {
+                            label: t("altText"),
+                            icon: <Captions className="size-4" aria-hidden="true" />,
+                            onSelect: () => setDescribing(photo),
                           },
                         ]
                       : []),
@@ -307,6 +328,17 @@ export function PhotoManager({ onUsableCountChange }: PhotoManagerProps) {
         onChange={(event) => void onFileChosen(event)}
         disabled={total >= MAX_PHOTOS}
       />
+      {describing ? (
+        <AltTextDialog
+          photo={describing}
+          onClose={() => setDescribing(null)}
+          onSaved={(saved) => {
+            setPhotos((current) => current?.map((item) => (item.id === saved.id ? saved : item)) ?? null);
+            setDescribing(null);
+            toast.success(t("altTextSaved"));
+          }}
+        />
+      ) : null}
       <PhotoCropDialog
         image={cropping}
         onCancel={() => {
@@ -350,5 +382,61 @@ function PhotoBadge({ photo, progress }: { photo: OwnPhoto; progress: number | u
       {photo.stage === "processing" || photo.stage === "uploading" ? <Spinner className="size-3" /> : null}
       {label}
     </span>
+  );
+}
+
+function AltTextDialog({
+  photo,
+  onClose,
+  onSaved,
+}: {
+  photo: OwnPhoto;
+  onClose: () => void;
+  onSaved: (photo: OwnPhoto) => void;
+}) {
+  const t = useTranslations("onboarding.photos");
+  const toast = useToast();
+  const [value, setValue] = useState(photo.altText ?? "");
+  const [pending, setPending] = useState(false);
+
+  async function save() {
+    setPending(true);
+    try {
+      onSaved(await api().media.setAltText({ photoId: photo.id, altText: value.trim() || null }));
+    } catch {
+      toast.error(t("uploadFailed"));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title={t("altTextTitle")}
+      description={t("altTextHelp")}
+      closeLabel={t("cancel")}
+      footer={
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button variant="ghost" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button onClick={() => void save()} loading={pending}>
+            {t("altTextSave")}
+          </Button>
+        </div>
+      }
+    >
+      <TextAreaField
+        label={t("altTextLabel")}
+        maxLength={PHOTO_ALT_TEXT_MAX_LENGTH}
+        rows={3}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+      />
+    </Dialog>
   );
 }

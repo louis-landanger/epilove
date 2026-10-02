@@ -66,9 +66,18 @@
     "lead": "You can change your mind any time in settings.",
     "label": "Mode",
     "options": {
-      "love": { "label": "Love", "description": "Dates, flirting, maybe more." },
-      "friends": { "label": "Friends", "description": "Campus friends, a sports buddy, a gaming squad." },
-      "both": { "label": "Both", "description": "Open to anything, we'll see." }
+      "love": {
+        "label": "Love",
+        "description": "Dates, flirting, maybe more."
+      },
+      "friends": {
+        "label": "Friends",
+        "description": "Campus friends, a sports buddy, a gaming squad."
+      },
+      "both": {
+        "label": "Both",
+        "description": "Open to anything, we'll see."
+      }
     },
     "intentionsLabel": "In Love mode, you're rather… (optional)",
     "intentions": {
@@ -125,7 +134,14 @@
     "cropHelp": "Drag to move, use the slider to zoom.",
     "zoom": "Zoom",
     "useCrop": "Use this photo",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "altText": "Alt text",
+    "altTextTitle": "Describe this photo",
+    "altTextHelp": "Read by screen readers. Example: \"Me hiking above Lake Annecy\".",
+    "altTextLabel": "Description",
+    "altTextSave": "Save",
+    "altTextSaved": "Description saved.",
+    "hasAltText": "Description added"
   },
   "prompts": {
     "title": "Three prompts",

@@ -51,3 +51,41 @@ export async function startOnboarding(page: Page, birthDate: string, firstName =
   await continueStep(page);
   await page.getByRole("button", { name: "Oui, c'est ça" }).click();
 }
+
+/** Signs up and completes the whole onboarding; ends on the app home. */
+export async function onboardMember(page: Page, firstName = "Camille") {
+  await startOnboarding(page, "2004-05-17", firstName);
+  await page.getByRole("button", { name: "Une femme" }).click();
+  await continueStep(page);
+  await page.getByRole("button", { name: /^Amis/ }).click();
+  await continueStep(page);
+  await expect(page.getByRole("heading", { name: "Qui veux-tu voir ?" })).toBeVisible();
+  await continueStep(page);
+  await expect(page.getByRole("heading", { name: "Tes photos" })).toBeVisible();
+  await pickGeneratedPhoto(page, 30);
+  await expect(page.getByRole("listitem").filter({ hasText: /Traitement|En vérification/ })).toHaveCount(1);
+  await pickGeneratedPhoto(page, 260);
+  await expect(page.getByRole("listitem").filter({ hasText: /Traitement|En vérification/ })).toHaveCount(2);
+  await continueStep(page);
+  await expect(page.getByRole("heading", { name: "Trois prompts" })).toBeVisible();
+  for (const answer of ["Réponse une.", "Réponse deux.", "Réponse trois."]) {
+    await page.getByRole("button", { name: "Choisir un prompt" }).first().click();
+    const picker = page.getByRole("dialog", { name: "Choisis un prompt" });
+    await picker.locator("li button").first().click();
+    await expect(picker).toBeHidden();
+    await page.locator("ol textarea").last().fill(answer);
+  }
+  await continueStep(page);
+  await expect(page.getByRole("heading", { name: "Tes centres d'intérêt" })).toBeVisible();
+  for (let index = 0; index < 3; index += 1) {
+    await page.locator("section ul button").nth(index).click();
+  }
+  await continueStep(page);
+  await page.getByRole("button", { name: "2028" }).click();
+  await page.getByRole("checkbox", { name: "J'étudie sur le campus de Lyon." }).click();
+  await page.getByRole("checkbox", { name: /Je suis étudiant·e/ }).click();
+  await continueStep(page);
+  await page.getByRole("button", { name: "Activer mon profil" }).click();
+  await page.getByRole("button", { name: "Plus tard" }).click();
+  await page.waitForURL("**/decouvrir");
+}

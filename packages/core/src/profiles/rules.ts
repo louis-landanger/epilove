@@ -5,6 +5,7 @@
 
 export const MIN_PHOTOS = 2;
 export const MAX_PHOTOS = 6;
+export const PHOTO_ALT_TEXT_MAX_LENGTH = 150;
 
 export const PROMPT_ANSWER_COUNT = 3;
 export const PROMPT_ANSWER_MAX_LENGTH = 200;
