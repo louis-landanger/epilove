@@ -1,0 +1,11 @@
+{
+  "name": "@epilove/pact-solver",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Python solver of the Pact, called by `pnpm pact:compute` (apps/worker).",
+  "scripts": {
+    "test:py": "uv run --frozen pytest -q",
+    "lint:py": "uv run --frozen ruff check . && uv run --frozen ruff format --check .",
+    "bench": "uv run --frozen python -m pact_solver.bench"
+  }
+}
