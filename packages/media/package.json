@@ -2,14 +2,23 @@
   "name": "@epilove/media",
   "version": "0.0.0",
   "private": true,
-  "description": "Media helpers: signed imgproxy URLs (and, later, the upload pipeline).",
+  "description": "Media: signed imgproxy URLs, upload policy, object storage and photo processing.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./policy": "./src/policy.ts",
+    "./processing": "./src/processing.ts",
+    "./storage": "./src/storage.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
+    "@aws-sdk/s3-presigned-post": "catalog:",
+    "sharp": "catalog:",
+    "thumbhash": "catalog:"
   },
   "devDependencies": {
     "@epilove/config": "workspace:*",

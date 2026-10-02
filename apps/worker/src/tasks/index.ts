@@ -1,4 +1,5 @@
 import type { TaskList } from "graphile-worker";
+import { mediaCrontab, mediaTasks } from "./media";
 
 /**
  * Every job the worker knows how to run. Jobs are added from the API inside
@@ -10,7 +11,8 @@ export const taskList: TaskList = {
   heartbeat: async (_payload, helpers) => {
     helpers.logger.info("heartbeat");
   },
+  ...mediaTasks(),
 };
 
 /** Graphile Worker crontab format: minute hour day month weekday task. */
-export const crontab = ["*/15 * * * * heartbeat"].join("\n");
+export const crontab = ["*/15 * * * * heartbeat", ...mediaCrontab].join("\n");

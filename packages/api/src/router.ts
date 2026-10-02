@@ -1,4 +1,7 @@
 import { campus } from "./modules/campus";
+import { media } from "./modules/media";
+import { onboarding } from "./modules/onboarding";
+import { profile } from "./modules/profile";
 import { safety } from "./modules/safety";
 import { system } from "./modules/system";
 import { os } from "./procedures";
@@ -9,6 +12,9 @@ import { os } from "./procedures";
  */
 export const router = os.router({
   campus,
+  media,
+  onboarding,
+  profile,
   safety,
   system,
 });

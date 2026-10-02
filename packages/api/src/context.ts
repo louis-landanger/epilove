@@ -1,4 +1,7 @@
 import type { Database, Role } from "@epilove/db";
+import type { ImgproxyConfig } from "@epilove/media";
+import type { Storage } from "@epilove/media/storage";
+import type { RateLimiter } from "@epilove/rate-limit";
 
 /** The authenticated member behind a request. */
 export interface Viewer {
@@ -6,11 +9,28 @@ export interface Viewer {
   readonly role: Role;
 }
 
+/**
+ * Infrastructure the procedures use besides the database. Factories are lazy
+ * so that procedures which do not need a service never require its settings.
+ */
+export interface ApiServices {
+  readonly storage: () => Storage;
+  readonly imgproxy: () => ImgproxyConfig;
+  /** Quotas on sensitive mutations (CLAUDE.md invariants). */
+  readonly limiter: RateLimiter;
+  /** Ends every session of a member at once (account deletion, underage declaration). */
+  readonly revokeSessions: (userId: string) => Promise<void>;
+  /** Secret for email fingerprints (`emailHmac`). */
+  readonly emailHmacSecret: () => string;
+  readonly now: () => Date;
+}
+
 export interface ApiContext {
   readonly version: string;
   /** Lazily opened: procedures that do not touch the database never need DATABASE_URL. */
   readonly database: () => Database;
   readonly viewer: Viewer | null;
+  readonly services: ApiServices;
 }
 
 /** Turns a request into a viewer (session cookie, or the development resolver). */

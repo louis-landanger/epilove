@@ -2,10 +2,12 @@ import authEn from "../messages/en/auth.json";
 import commonEn from "../messages/en/common.json";
 import homeEn from "../messages/en/home.json";
 import navEn from "../messages/en/nav.json";
+import onboardingEn from "../messages/en/onboarding.json";
 import authFr from "../messages/fr/auth.json";
 import commonFr from "../messages/fr/common.json";
 import homeFr from "../messages/fr/home.json";
 import navFr from "../messages/fr/nav.json";
+import onboardingFr from "../messages/fr/onboarding.json";
 
 export const LOCALES = ["fr", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -21,6 +23,7 @@ const namespaces = {
   common: { fr: commonFr, en: commonEn },
   home: { fr: homeFr, en: homeEn },
   nav: { fr: navFr, en: navEn },
+  onboarding: { fr: onboardingFr, en: onboardingEn },
 } as const;
 
 type Namespaces = typeof namespaces;

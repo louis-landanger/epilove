@@ -1,6 +1,9 @@
+import { imgproxyConfigFromEnv } from "@epilove/media";
+import { createStorage, type Storage, storageConfigFromEnv } from "@epilove/media/storage";
+import { createMemoryRateLimiter } from "@epilove/rate-limit";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Hono } from "hono";
-import type { ApiContext, ViewerResolver } from "./context";
+import type { ApiContext, ApiServices, ViewerResolver } from "./context";
 import { router } from "./router";
 
 export const API_BASE_PATH = "/api";
@@ -10,6 +13,35 @@ export interface AppDependencies {
   readonly version: string;
   readonly database: ApiContext["database"];
   readonly resolveViewer: ViewerResolver;
+  /** Missing services fall back to environment-based defaults (see `defaultServices`). */
+  readonly services?: Partial<ApiServices>;
+}
+
+/** Services built from environment variables, created on first use. */
+export function defaultServices(env: Record<string, string | undefined> = process.env): ApiServices {
+  let storage: Storage | undefined;
+  return {
+    storage: () => {
+      const local = env.APP_ENV === "development" || env.APP_ENV === "test";
+      storage ??= createStorage(storageConfigFromEnv(env), {
+        autoCreateBucketFor: local && env.APP_URL ? [env.APP_URL] : undefined,
+      });
+      return storage;
+    },
+    imgproxy: () => imgproxyConfigFromEnv(env),
+    limiter: createMemoryRateLimiter(),
+    revokeSessions: async () => {
+      throw new Error("revokeSessions is not configured.");
+    },
+    emailHmacSecret: () => {
+      const secret = env.EMAIL_HMAC_SECRET;
+      if (!secret || secret.length < 32) {
+        throw new Error("EMAIL_HMAC_SECRET must be set (32 characters or more).");
+      }
+      return secret;
+    },
+    now: () => new Date(),
+  };
 }
 
 /**
@@ -18,6 +50,7 @@ export interface AppDependencies {
  */
 export function createApp(dependencies: AppDependencies) {
   const rpc = new RPCHandler(router);
+  const services: ApiServices = { ...defaultServices(), ...dependencies.services };
   const app = new Hono().basePath(API_BASE_PATH);
 
   app.get("/health", (c) => c.json({ status: "ok", version: dependencies.version }));
@@ -27,6 +60,7 @@ export function createApp(dependencies: AppDependencies) {
       version: dependencies.version,
       database: dependencies.database,
       viewer: await dependencies.resolveViewer(c.req.raw),
+      services,
     };
     const { matched, response } = await rpc.handle(c.req.raw, { prefix: RPC_PREFIX, context });
     if (matched) {

@@ -17,6 +17,7 @@ type ErrorKey =
   | "too_many_attempts"
   | "too_many_codes"
   | "passkey_failed"
+  | "blocked"
   | "generic";
 
 const RESEND_DELAY_SECONDS = 30;
@@ -30,6 +31,8 @@ function errorKeyFor(error: { code?: string | undefined; status?: number | undef
       return "invalid_format";
     case "OTP_EMAIL_QUOTA":
       return "too_many_codes";
+    case "SIGNUP_BLOCKED":
+      return "blocked";
     case "TOO_MANY_ATTEMPTS":
       return "too_many_attempts";
     case "INVALID_OTP":

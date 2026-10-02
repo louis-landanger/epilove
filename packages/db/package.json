@@ -6,7 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./migrations": "./src/migrations.ts"
+    "./migrations": "./src/migrations.ts",
+    "./repositories/*": "./src/repositories/*.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
@@ -18,6 +19,7 @@
   "dependencies": {
     "@epilove/core": "workspace:*",
     "drizzle-orm": "catalog:",
+    "graphile-worker": "catalog:",
     "postgres": "catalog:"
   },
   "devDependencies": {

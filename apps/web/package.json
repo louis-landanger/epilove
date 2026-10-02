@@ -15,20 +15,24 @@
   "dependencies": {
     "@epilove/api": "workspace:*",
     "@epilove/auth": "workspace:*",
+    "@epilove/contracts": "workspace:*",
     "@epilove/core": "workspace:*",
     "@epilove/db": "workspace:*",
     "@epilove/email": "workspace:*",
+    "@epilove/media": "workspace:*",
     "@epilove/rate-limit": "workspace:*",
     "@epilove/tokens": "workspace:*",
     "@epilove/ui": "workspace:*",
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
     "lucide-react": "catalog:",
+    "motion": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "server-only": "catalog:"
+    "server-only": "catalog:",
+    "thumbhash": "catalog:"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",

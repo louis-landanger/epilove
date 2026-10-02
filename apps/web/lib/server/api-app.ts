@@ -1,5 +1,14 @@
 import "server-only";
-import { anonymous, createApp, devHeaderResolver, type Role, type ViewerResolver } from "@epilove/api";
+import {
+  anonymous,
+  createApp,
+  defaultServices,
+  devHeaderResolver,
+  type Role,
+  type ViewerResolver,
+} from "@epilove/api";
+import { revokeAllSessions } from "@epilove/auth";
+import { createValkeyRateLimiter, valkeyFromEnv } from "@epilove/rate-limit";
 import { getAuth } from "./auth";
 import { getDatabase } from "./database";
 
@@ -24,8 +33,15 @@ function viewerResolver(): ViewerResolver {
   return async (request) => (await sessionResolver(request)) ?? (await dev(request)) ?? anonymous(request);
 }
 
+const defaults = defaultServices();
+
 export const apiApp = createApp({
   version: process.env.APP_VERSION ?? "dev",
   database: getDatabase,
   resolveViewer: viewerResolver(),
+  services: {
+    ...defaults,
+    limiter: process.env.VALKEY_URL ? createValkeyRateLimiter(valkeyFromEnv()) : defaults.limiter,
+    revokeSessions: (userId) => revokeAllSessions(getAuth(), userId),
+  },
 });

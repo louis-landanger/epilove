@@ -1,4 +1,4 @@
-import { GENDERS, MODES } from "@epilove/core";
+import { GENDERS, INTENTIONS, LANGUAGES, MAX_PHOTOS, MODES, PROMPT_ANSWER_MAX_LENGTH } from "@epilove/core";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -18,9 +18,16 @@ import {
 import { createdAt, id, oneOf, subsetOf, timestamps } from "./columns";
 import { appUser } from "./users";
 
-export const INTENTIONS = ["relationship", "see_what_happens", "friendship"] as const;
+export { INTENTIONS, MAX_PHOTOS };
+
+/** Moderation status (ADM-01): only approved photos are shown to other members. */
 export const PHOTO_STATUSES = ["pending", "approved", "rejected"] as const;
-export const MAX_PHOTOS = 6;
+/**
+ * Processing stage: `uploading` until the browser confirms the upload,
+ * `processing` while the worker re-encodes it, then `ready` or `failed`.
+ */
+export const PHOTO_STAGES = ["uploading", "processing", "ready", "failed"] as const;
+export type PhotoStage = (typeof PHOTO_STAGES)[number];
 
 /** Public part of a member (visible to eligible members only, never on the open web). */
 export const profile = pgTable(
@@ -48,6 +55,7 @@ export const profile = pgTable(
   (t) => [
     check("profile_gender_check", oneOf(t.gender, GENDERS)),
     check("profile_intentions_check", subsetOf(t.intentions, INTENTIONS)),
+    check("profile_languages_check", subsetOf(t.languages, LANGUAGES)),
     check("profile_first_name_length", sql`char_length(${t.firstName}) between 1 and 40`),
     index("profile_embedding_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
   ],
@@ -95,6 +103,7 @@ export const photo = pgTable(
     height: integer(),
     thumbhash: text(),
     altText: text(),
+    stage: text({ enum: PHOTO_STAGES }).notNull().default("uploading"),
     status: text({ enum: PHOTO_STATUSES }).notNull().default("pending"),
     /** Classifier verdicts and moderator notes. */
     moderation: jsonb(),
@@ -102,6 +111,7 @@ export const photo = pgTable(
   },
   (t) => [
     check("photo_status_check", oneOf(t.status, PHOTO_STATUSES)),
+    check("photo_stage_check", oneOf(t.stage, PHOTO_STAGES)),
     check("photo_position_check", sql`${t.position} between 0 and ${sql.raw(String(MAX_PHOTOS - 1))}`),
     index().on(t.userId, t.position),
   ],
@@ -136,7 +146,10 @@ export const promptAnswer = pgTable(
   },
   (t) => [
     unique().on(t.userId, t.promptId),
-    check("prompt_answer_text_length", sql`${t.text} is null or char_length(${t.text}) <= 200`),
+    check(
+      "prompt_answer_text_length",
+      sql`${t.text} is null or char_length(${t.text}) <= ${sql.raw(String(PROMPT_ANSWER_MAX_LENGTH))}`,
+    ),
   ],
 );
 

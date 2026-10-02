@@ -14,9 +14,13 @@
   "dependencies": {
     "@epilove/contracts": "workspace:*",
     "@epilove/core": "workspace:*",
+    "@epilove/crypto": "workspace:*",
     "@epilove/db": "workspace:*",
+    "@epilove/media": "workspace:*",
+    "@epilove/rate-limit": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/server": "catalog:",
+    "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
   },

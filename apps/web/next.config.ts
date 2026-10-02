@@ -27,13 +27,21 @@ const nextConfig: NextConfig = {
     "@epilove/auth",
     "@epilove/contracts",
     "@epilove/core",
+    "@epilove/crypto",
     "@epilove/db",
     "@epilove/email",
+    "@epilove/media",
     "@epilove/rate-limit",
     "@epilove/tokens",
     "@epilove/ui",
   ],
-  serverExternalPackages: ["postgres", "ioredis", "nodemailer"],
+  serverExternalPackages: [
+    "postgres",
+    "ioredis",
+    "nodemailer",
+    "@aws-sdk/client-s3",
+    "@aws-sdk/s3-presigned-post",
+  ],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

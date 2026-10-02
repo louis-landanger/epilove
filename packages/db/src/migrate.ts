@@ -1,9 +1,11 @@
 import { createDatabase, databaseUrlFromEnv } from "./client";
-import { runMigrations } from "./migrations";
+import { runJobQueueSchemaMigrations, runMigrations } from "./migrations";
 
-const { db, close } = createDatabase(databaseUrlFromEnv(), { maxConnections: 1 });
+const url = databaseUrlFromEnv();
+const { db, close } = createDatabase(url, { maxConnections: 1 });
 try {
   await runMigrations(db);
+  await runJobQueueSchemaMigrations(url);
   console.log("Migrations applied.");
 } finally {
   await close();

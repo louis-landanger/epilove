@@ -1,0 +1,213 @@
+{
+  "metaTitle": "Création du profil",
+  "progress": "Étape {current} sur {total}",
+  "back": "Retour",
+  "continue": "Continuer",
+  "saved": "Enregistré",
+  "loading": "Chargement de ton profil…",
+  "errors": {
+    "generic": "Quelque chose a coincé. Réessaie.",
+    "network": "Connexion perdue. Vérifie ton réseau et réessaie.",
+    "rateLimited": "Doucement ! Réessaie dans quelques minutes."
+  },
+  "charter": {
+    "eyebrow": "La charte",
+    "screens": {
+      "respect": {
+        "title": "Respect, toujours.",
+        "body": "Pas d'insulte, de menace ni de propos haineux. Derrière chaque profil, il y a quelqu'un que tu croises peut-être à la cafét'."
+      },
+      "consent": {
+        "title": "Le consentement d'abord.",
+        "body": "Un « non », un silence ou un blocage se respectent. Aucune image sexuelle, jamais. Si quelqu'un te met mal à l'aise, signale : c'est anonyme."
+      },
+      "discretion": {
+        "title": "Ce qui se passe ici reste ici.",
+        "body": "Pas de capture d'écran partagée, pas d'outing. Tu es toi-même : tes photos, ton prénom, ton âge réel."
+      }
+    },
+    "next": "Suivant",
+    "accept": "J'accepte la charte",
+    "legal": "En acceptant, tu acceptes aussi les <terms>conditions d'utilisation</terms> et tu reconnais avoir lu la <privacy>politique de confidentialité</privacy>."
+  },
+  "name": {
+    "title": "Comment tu t'appelles ?",
+    "lead": "Ton prénom, tel que tes amis l'utilisent. Pas de nom de famille ici.",
+    "label": "Prénom",
+    "invalid": "Juste des lettres, des espaces, des tirets ou des apostrophes (40 caractères maximum)."
+  },
+  "birth": {
+    "title": "Ta date de naissance",
+    "lead": "Epilove est réservé aux personnes majeures. On affiche ton âge, jamais ta date de naissance.",
+    "label": "Date de naissance",
+    "invalid": "Cette date n'est pas valide.",
+    "confirmTitle": "Tu as {age} ans ?",
+    "confirmBody": "Ta date de naissance ne pourra plus être modifiée ensuite.",
+    "confirm": "Oui, c'est ça",
+    "edit": "Corriger"
+  },
+  "gender": {
+    "title": "Tu es…",
+    "lead": "Ça sert à proposer ton profil aux bonnes personnes.",
+    "label": "Genre",
+    "options": {
+      "woman": "Une femme",
+      "man": "Un homme",
+      "nonbinary": "Une personne non binaire"
+    },
+    "pronounsLabel": "Pronoms (facultatif)",
+    "pronounsHelp": "Affichés sur ton profil si tu les renseignes.",
+    "pronounsPlaceholder": "elle, il, iel…",
+    "pronounsInvalid": "30 caractères maximum, sans lien.",
+    "required": "Choisis une option pour continuer."
+  },
+  "seeking": {
+    "title": "Tu cherches quoi ?",
+    "lead": "Tu pourras changer d'avis à tout moment dans les réglages.",
+    "label": "Mode",
+    "options": {
+      "love": { "label": "Love", "description": "Des rencontres, du flirt, peut-être plus." },
+      "friends": {
+        "label": "Amis",
+        "description": "Des potes de campus, un binôme de sport, une team de jeu."
+      },
+      "both": { "label": "Les deux", "description": "Ouvert·e à tout, on verra bien." }
+    },
+    "intentionsLabel": "En Love, tu es plutôt… (facultatif)",
+    "intentions": {
+      "relationship": "Relation sérieuse",
+      "see_what_happens": "On verra bien",
+      "friendship": "D'abord l'amitié"
+    },
+    "required": "Choisis au moins un mode."
+  },
+  "audience": {
+    "title": "Qui veux-tu voir ?",
+    "consentTitle": "Une donnée sensible",
+    "consentBody": "Le genre des personnes que tu veux rencontrer peut révéler ton orientation sexuelle. C'est une donnée sensible au sens du RGPD : on ne l'utilise que pour te proposer des profils, elle n'est jamais affichée, jamais partagée et jamais exportée.",
+    "consentLabel": "J'accepte qu'Epilove utilise les genres que je recherche, une donnée sensible, pour me proposer des profils en mode Love.",
+    "consentHelp": "Tu peux retirer ce consentement à tout moment dans les réglages : le mode Love se désactive alors, le mode Amis reste disponible.",
+    "withoutConsent": "Continuer en mode Amis uniquement",
+    "withoutConsentNote": "Sans ce consentement, tu utilises Epilove en mode Amis.",
+    "interestedInLabel": "En Love, tu veux voir",
+    "interestedIn": {
+      "woman": "Des femmes",
+      "man": "Des hommes",
+      "nonbinary": "Des personnes non binaires"
+    },
+    "interestedInRequired": "Choisis au moins une option.",
+    "ageLabel": "Tranche d'âge",
+    "ageMin": "Âge minimum",
+    "ageMax": "Âge maximum",
+    "ageValue": "{age} ans",
+    "friendsOnlyLead": "En mode Amis, tout le monde peut te croiser. Choisis simplement la tranche d'âge."
+  },
+  "photos": {
+    "title": "Tes photos",
+    "lead": "Au moins 2, jusqu'à 6. La première est celle qu'on voit en premier.",
+    "add": "Ajouter une photo",
+    "addSlot": "Ajouter une photo, emplacement {position}",
+    "counter": "{count} sur 6",
+    "minimum": "Encore {count, plural, one {# photo} other {# photos}} pour continuer.",
+    "tips": "Ton visage bien visible, de la lumière naturelle, pas de lunettes de soleil sur toutes. Les photos sont vérifiées par l'équipe avant d'être visibles.",
+    "uploading": "Envoi…",
+    "processing": "Traitement…",
+    "pending": "En vérification",
+    "rejected": "Refusée",
+    "failed": "Ce fichier n'est pas une photo exploitable.",
+    "tooMany": "Tu as déjà 6 photos.",
+    "uploadFailed": "L'envoi a échoué. Réessaie.",
+    "unsupported": "Ce format n'est pas pris en charge. Essaie avec une photo JPEG ou PNG.",
+    "remove": "Supprimer",
+    "makeMain": "Mettre en premier",
+    "moveLeft": "Déplacer avant",
+    "moveRight": "Déplacer après",
+    "photoAlt": "Ta photo {position}",
+    "actions": "Actions pour la photo {position}",
+    "cropTitle": "Cadre ta photo",
+    "cropHelp": "Fais glisser pour déplacer, utilise le curseur pour zoomer.",
+    "zoom": "Zoom",
+    "useCrop": "Utiliser cette photo",
+    "cancel": "Annuler"
+  },
+  "prompts": {
+    "title": "Trois prompts",
+    "lead": "Des questions pour lancer la conversation. 200 caractères chacune, c'est court : vise juste.",
+    "choose": "Choisir un prompt",
+    "change": "Changer de prompt",
+    "slot": "Prompt {position}",
+    "answerLabel": "Ta réponse",
+    "answerRequired": "Écris une réponse (200 caractères maximum).",
+    "pickerTitle": "Choisis un prompt",
+    "search": "Rechercher un prompt",
+    "categories": {
+      "campus": "Campus",
+      "date": "Rendez-vous",
+      "lyon": "Lyon",
+      "music": "Musique",
+      "nerd": "Nerd",
+      "personality": "Personnalité",
+      "values": "Valeurs"
+    },
+    "missing": "Choisis trois prompts différents et réponds à chacun."
+  },
+  "interests": {
+    "title": "Tes centres d'intérêt",
+    "lead": "Entre 3 et 10. On s'en sert pour te montrer ce que vous avez en commun.",
+    "search": "Rechercher",
+    "counter": "{count} sur 10",
+    "minimum": "Encore {count, plural, one {# centre d'intérêt} other {# centres d'intérêt}} pour continuer.",
+    "noResults": "Aucun résultat pour « {query} ».",
+    "categories": {
+      "sport": "Sport",
+      "music": "Musique",
+      "gaming": "Jeux",
+      "tech": "Tech",
+      "science": "Sciences",
+      "arts": "Arts",
+      "outings": "Sorties",
+      "lifestyle": "Au quotidien",
+      "causes": "Engagements",
+      "travel": "Voyage"
+    }
+  },
+  "campus": {
+    "title": "Ton campus et ta promo",
+    "lead": "Ton école est déduite de ton email. Dis-nous juste quand tu termines.",
+    "school": "École",
+    "yearLabel": "Année de diplôme",
+    "yearRequired": "Choisis ton année de diplôme.",
+    "programLabel": "Cursus ou majeure (facultatif)",
+    "programPlaceholder": "Cycle ingénieur, Bachelor, MSc…",
+    "onCampus": "J'étudie sur le campus de Lyon.",
+    "student": "Je suis étudiant·e, pas membre du personnel.",
+    "declarationsHelp": "Epilove est réservé aux étudiantes et étudiants du campus. Un profil qui ne l'est pas peut être signalé et supprimé.",
+    "declarationsRequired": "Ces deux déclarations sont nécessaires."
+  },
+  "done": {
+    "title": "Tout est prêt, {name}.",
+    "lead": "Tes photos passent en vérification. En attendant, ton profil est créé et tu peux explorer.",
+    "summary": "Ton profil",
+    "modes": {
+      "love": "Love",
+      "friends": "Amis"
+    },
+    "photosPending": "{count, plural, one {# photo en vérification} other {# photos en vérification}}",
+    "finish": "Activer mon profil",
+    "incomplete": "Il manque encore une étape.",
+    "passkeyTitle": "Connexion plus rapide ?",
+    "passkeyBody": "Enregistre une passkey (Face ID, empreinte, Windows Hello) pour te reconnecter sans attendre un code.",
+    "passkeyAdd": "Enregistrer une passkey",
+    "passkeySkip": "Plus tard",
+    "passkeyAdded": "Passkey enregistrée.",
+    "passkeyFailed": "La passkey n'a pas pu être enregistrée. Tu pourras réessayer dans les réglages.",
+    "enter": "C'est parti"
+  },
+  "underage": {
+    "metaTitle": "Reviens plus tard",
+    "title": "Reviens à tes 18 ans.",
+    "body": "Epilove est réservé aux personnes majeures. Ton compte a été supprimé et aucune donnée n'a été conservée, hormis une empreinte chiffrée de ton adresse jusqu'à ta majorité.",
+    "help": "Si tu as besoin de parler à quelqu'un, le 3018 (harcèlement en ligne) et Fil Santé Jeunes (0 800 235 236) sont gratuits et anonymes.",
+    "home": "Retour à l'accueil"
+  }
+}

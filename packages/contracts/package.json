@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@epilove/core": "workspace:*",
+    "@epilove/media": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",
     "zod": "catalog:"

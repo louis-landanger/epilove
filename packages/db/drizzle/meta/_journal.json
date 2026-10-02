@@ -29,6 +29,13 @@
       "when": 1790948726748,
       "tag": "0003_a_auth_and_identity_vault",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790949808654,
+      "tag": "0004_a_onboarding",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 export * from "./app/avatar";
 export * from "./app/school-chip";
 export * from "./cn";
+export * from "./primitives/action-menu";
 export * from "./primitives/button";
 export * from "./primitives/checkbox-field";
 export * from "./primitives/choice-group";

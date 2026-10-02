@@ -10,6 +10,13 @@ const envSchema = z.object({
   EMAIL_HMAC_SECRET: z.string().min(32),
   PASSKEY_RP_ID: z.string().min(1),
   TURNSTILE_SECRET_KEY: z.string().optional(),
+  /**
+   * Headers carrying the client IP, most trusted first (for example
+   * `cf-connecting-ip` behind Cloudflare). Used by the per-IP rate limits.
+   */
+  AUTH_IP_HEADERS: z.string().default("x-forwarded-for"),
+  /** CIDR ranges of the reverse proxies allowed to append to `x-forwarded-for`. */
+  AUTH_TRUSTED_PROXIES: z.string().default(""),
   VALKEY_URL: z.string().optional(),
 });
 

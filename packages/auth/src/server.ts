@@ -1,8 +1,9 @@
 import { passkey } from "@better-auth/passkey";
-import { parseSchoolEmail, uuidv7 } from "@epilove/core";
+import { calendarDateIn, LYON_CAMPUS, parseSchoolEmail, uuidv7 } from "@epilove/core";
 import { emailHmac } from "@epilove/crypto";
 import type { Database } from "@epilove/db";
 import { schema } from "@epilove/db";
+import { isSignupBlocked } from "@epilove/db/repositories/accounts";
 import { type Mailer, signInCodeEmail } from "@epilove/email";
 import type { RateLimiter } from "@epilove/rate-limit";
 import { betterAuth, type SecondaryStorage } from "better-auth";
@@ -25,6 +26,12 @@ export interface AuthDependencies {
 const EMAIL_ENDPOINTS = new Set(["/email-otp/send-verification-otp", "/sign-in/email-otp"]);
 
 export class SchoolEmailError extends APIError {}
+
+const list = (value: string) =>
+  value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 /**
  * Better Auth configuration (docs/07-confiance-securite.md, part B):
@@ -70,6 +77,10 @@ export function createAuth({ env, db, mailer, limiter, secondaryStorage }: AuthD
       cookiePrefix: "epilove",
       useSecureCookies: env.APP_ENV === "production" || env.APP_ENV === "staging",
       database: { generateId: () => uuidv7() },
+      ipAddress: {
+        ipAddressHeaders: list(env.AUTH_IP_HEADERS),
+        trustedProxies: list(env.AUTH_TRUSTED_PROXIES),
+      },
     },
     rateLimit: {
       enabled: true,
@@ -101,8 +112,15 @@ export function createAuth({ env, db, mailer, limiter, secondaryStorage }: AuthD
             message: "Adresse non canonique.",
           });
         }
+        const fingerprint = emailHmac(env.EMAIL_HMAC_SECRET, parsed.canonicalEmail);
+        // A person who declared being under 18 cannot come back before their birthday (ONB-04).
+        if (await isSignupBlocked(db, fingerprint, calendarDateIn(LYON_CAMPUS.timeZone, new Date()))) {
+          throw new APIError("FORBIDDEN", {
+            code: "SIGNUP_BLOCKED",
+            message: "Cette adresse ne peut pas être utilisée pour le moment.",
+          });
+        }
         if (ctx.path === "/email-otp/send-verification-otp") {
-          const fingerprint = emailHmac(env.EMAIL_HMAC_SECRET, parsed.canonicalEmail);
           const quota = await limiter.consume(`otp-email:${fingerprint}`, OTP_POLICY.perEmailPerHour, 3600);
           if (!quota.allowed) {
             throw new APIError("TOO_MANY_REQUESTS", {
@@ -179,3 +197,12 @@ export function createAuth({ env, db, mailer, limiter, secondaryStorage }: AuthD
 }
 
 export type Auth = ReturnType<typeof createAuth>;
+
+/**
+ * Ends every session of a member, including the copies cached in Valkey
+ * (account deletion, underage declaration, ban).
+ */
+export async function revokeAllSessions(auth: Auth, userId: string): Promise<void> {
+  const context = await auth.$context;
+  await context.internalAdapter.deleteUserSessions(userId);
+}

@@ -15,7 +15,17 @@ export async function latestCode(to: string): Promise<string> {
   throw new Error(`No sign-in code received for ${to}`);
 }
 
+/**
+ * Gives the page its own client IP, so that per-IP sign-in limits do not
+ * add up across tests (every test runs from 127.0.0.1).
+ */
+export async function isolateClientIp(page: Page) {
+  const part = () => Math.floor(Math.random() * 254) + 1;
+  await page.setExtraHTTPHeaders({ "x-forwarded-for": `10.${part()}.${part()}.${part()}` });
+}
+
 export async function signUp(page: Page, school = "epita.fr"): Promise<string> {
+  await isolateClientIp(page);
   const email = `e2e.${Date.now()}.${Math.floor(Math.random() * 1e6)}@${school}`;
   await page.goto("/connexion");
   await page.getByLabel("Email d'école").fill(email);

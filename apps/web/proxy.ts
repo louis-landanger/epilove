@@ -36,6 +36,8 @@ function contentSecurityPolicy(nonce: string) {
   const development = process.env.NODE_ENV !== "production";
   const media = originOf(process.env.IMGPROXY_URL);
   const realtime = process.env.NEXT_PUBLIC_CENTRIFUGO_URL ?? "";
+  // Photos are posted straight to object storage with a presigned form.
+  const uploads = originOf(process.env.S3_PUBLIC_ENDPOINT || process.env.S3_ENDPOINT);
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
@@ -43,7 +45,9 @@ function contentSecurityPolicy(nonce: string) {
     `img-src 'self' blob: data: ${media}`.trim(),
     `media-src 'self' blob: ${media}`.trim(),
     "font-src 'self'",
-    `connect-src 'self' ${realtime}${development ? " ws: wss:" : ""}`.trim(),
+    `connect-src 'self' ${realtime} ${uploads}${development ? " ws: wss:" : ""}`
+      .replaceAll(/\s+/g, " ")
+      .trim(),
     "frame-src https://challenges.cloudflare.com",
     "worker-src 'self' blob:",
     "object-src 'none'",

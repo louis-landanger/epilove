@@ -1,6 +1,6 @@
-import { ACCOUNT_STATUSES } from "@epilove/core";
+import { ACCOUNT_STATUSES, type Gender } from "@epilove/core";
 import { sql } from "drizzle-orm";
-import { boolean, check, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { school } from "./campus";
 import { createdAt, id, oneOf, timestamps } from "./columns";
 
@@ -90,3 +90,47 @@ export const identityVault = pgTable("identity_vault", {
   closedAt: createdAt(),
   purgeAfter: timestamp({ withTimezone: true }).notNull(),
 });
+
+/**
+ * Answers given during onboarding that have no final home until the profile
+ * is created (ONB-06: saved at every step, resumable). Deleted on completion.
+ * Sensitive preferences never transit here: they go straight to `preferences`.
+ */
+export interface OnboardingDraftData {
+  firstName?: string;
+  birthDate?: string;
+  gender?: Gender;
+  pronouns?: string | null;
+  graduationYear?: number;
+  program?: string | null;
+  intentions?: string[];
+  audienceSetAt?: string;
+  campusDeclaredAt?: string;
+  charterAcceptedAt?: string;
+}
+
+export const onboardingDraft = pgTable("onboarding_draft", {
+  userId: uuid()
+    .primaryKey()
+    .references(() => appUser.id, { onDelete: "cascade" }),
+  data: jsonb().$type<OnboardingDraftData>().notNull().default({}),
+  ...timestamps,
+});
+
+export const SIGNUP_BLOCK_REASONS = ["underage"] as const;
+
+/**
+ * Addresses that cannot sign up again before a date: a person who declared
+ * being under 18 has their account deleted, and only the HMAC of their
+ * address is kept, until their 18th birthday (ONB-04).
+ */
+export const signupBlock = pgTable(
+  "signup_block",
+  {
+    emailHmac: text().primaryKey(),
+    reason: text({ enum: SIGNUP_BLOCK_REASONS }).notNull(),
+    until: date({ mode: "string" }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [check("signup_block_reason_check", oneOf(t.reason, SIGNUP_BLOCK_REASONS))],
+);

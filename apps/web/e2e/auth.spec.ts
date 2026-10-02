@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { latestCode, signUp } from "./support/auth";
+import { isolateClientIp, latestCode, signUp } from "./support/auth";
 
 test.describe("sign-in", () => {
   test("a school address receives a code and lands on onboarding", async ({ page }) => {
@@ -17,6 +17,7 @@ test.describe("sign-in", () => {
 
   test("a wrong code is rejected", async ({ page }) => {
     const email = `e2e.wrong.${Date.now()}@esme.fr`;
+    await isolateClientIp(page);
     await page.goto("/connexion");
     await page.getByLabel("Email d'école").fill(email);
     await page.getByRole("button", { name: "Recevoir mon code" }).click();
