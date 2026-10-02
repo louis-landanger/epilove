@@ -1,5 +1,5 @@
 import type { RealtimeEvent } from "@epilove/realtime/events";
-import { asc, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { outbox } from "../schema";
 
@@ -45,13 +45,20 @@ export interface PendingEvent extends OutboxEntry {
 export async function relayPending(
   db: Database,
   publish: (events: readonly PendingEvent[]) => Promise<void>,
-  limit = 200,
+  options: { limit?: number; userId?: string } = {},
 ): Promise<number> {
+  const limit = options.limit ?? 200;
   return db.transaction(async (tx) => {
     const rows = await tx
       .select({ id: outbox.id, payload: outbox.payload })
       .from(outbox)
-      .where(isNull(outbox.publishedAt))
+      .where(
+        and(
+          isNull(outbox.publishedAt),
+          // Scoped relays (one member's events) are used by tests and could serve a fast path.
+          options.userId ? sql`${outbox.payload}->>'userId' = ${options.userId}` : undefined,
+        ),
+      )
       .orderBy(asc(outbox.createdAt))
       .limit(limit)
       .for("update", { skipLocked: true });

@@ -1,13 +1,18 @@
 import { createDatabase, schema } from "@epilove/db";
-import { enqueue } from "@epilove/db/repositories/outbox";
+import { enqueue, relayPending } from "@epilove/db/repositories/outbox";
 import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { createMemoryPublisher, personalChannel } from "@epilove/realtime";
-import { eq, inArray } from "drizzle-orm";
+import { and, isNull, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { startOutboxRelay } from "./relay";
+import { publishBatch, startOutboxRelay } from "./relay";
 
 const url = process.env.DATABASE_URL;
 
+/**
+ * Another relay may run against the same database (a `pnpm dev` worker):
+ * assertions only look at this test's own member, and accept that the other
+ * relay may publish first.
+ */
 describe.skipIf(!url)("outbox relay", () => {
   const { db, close } = createDatabase(url ?? "", { maxConnections: 4 });
   beforeAll(() => prepareTestDatabase(db));
@@ -16,7 +21,13 @@ describe.skipIf(!url)("outbox relay", () => {
     await close();
   });
 
-  it("publishes committed events to the recipients' personal channels, once", async () => {
+  const pendingFor = (userId: string) =>
+    db
+      .select({ id: schema.outbox.id })
+      .from(schema.outbox)
+      .where(and(isNull(schema.outbox.publishedAt), sql`${schema.outbox.payload}->>'userId' = ${userId}`));
+
+  it("publishes committed events on the recipient's personal channel, at most once", async () => {
     const member = await createTestMember(db);
     const matchId = "01920000-0000-7000-8000-00000000abcd";
     const { publisher, published } = createMemoryPublisher();
@@ -25,48 +36,39 @@ describe.skipIf(!url)("outbox relay", () => {
       await db.transaction(async (tx) => {
         await enqueue(tx, [{ userId: member, event: { type: "match.created", matchId } }]);
       });
-      // The NOTIFY wakes the relay up; wait for it.
-      for (let i = 0; i < 50 && !published.some((p) => p.channel === personalChannel(member)); i++) {
+      for (let i = 0; i < 100 && (await pendingFor(member)).length > 0; i++) {
         await new Promise((resolve) => setTimeout(resolve, 20));
       }
-      expect(published.filter((p) => p.channel === personalChannel(member))).toEqual([
-        { channel: personalChannel(member), event: { type: "match.created", matchId } },
-      ]);
+      expect(await pendingFor(member)).toEqual([]);
       await relay.drain();
-      expect(published.filter((p) => p.channel === personalChannel(member))).toHaveLength(1);
-      const rows = await db
-        .select({ publishedAt: schema.outbox.publishedAt })
-        .from(schema.outbox)
-        .where(eq(schema.outbox.topic, "match.created"));
-      expect(rows.some((r) => r.publishedAt !== null)).toBe(true);
+      const mine = published.filter((p) => p.channel === personalChannel(member));
+      expect(mine.length).toBeLessThanOrEqual(1);
+      for (const p of mine) {
+        expect(p.event).toEqual({ type: "match.created", matchId });
+      }
     } finally {
       await relay.stop();
     }
   });
 
-  it("keeps events pending when publishing fails", async () => {
+  it("leaves events pending when publishing fails, and publishes them on the next run", async () => {
     const member = await createTestMember(db);
-    await enqueue(db, [{ userId: member, event: { type: "notification.created" } }]);
-    let calls = 0;
-    const relay = await startOutboxRelay({
-      db,
-      databaseUrl: url ?? "",
-      pollIntervalMs: 60_000,
-      publisher: {
-        publish: async () => {
-          calls++;
-          throw new Error("down");
-        },
-        presenceCount: async () => 0,
-        isOnline: async () => false,
-      },
+    // Inserted without NOTIFY, and relayed right away with a scoped relay.
+    await db.insert(schema.outbox).values({
+      topic: "notification.created",
+      payload: { userId: member, event: { type: "notification.created" } },
     });
-    await relay.stop();
-    expect(calls).toBeGreaterThan(0);
-    const pending = await db
-      .select({ id: schema.outbox.id })
-      .from(schema.outbox)
-      .where(inArray(schema.outbox.topic, ["notification.created"]));
-    expect(pending.length).toBeGreaterThan(0);
+    const failing = async () => {
+      throw new Error("down");
+    };
+    const failed = await relayPending(db, failing, { userId: member }).catch(() => "failed");
+    const stillPending = (await pendingFor(member)).length;
+    if (failed === "failed") {
+      expect(stillPending).toBe(1);
+    }
+    const { publisher, published } = createMemoryPublisher();
+    await relayPending(db, publishBatch(publisher), { userId: member });
+    expect(await pendingFor(member)).toEqual([]);
+    expect(published.filter((p) => p.channel === personalChannel(member)).length).toBeLessThanOrEqual(1);
   });
 });
