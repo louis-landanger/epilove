@@ -11,7 +11,8 @@
     "test": "vitest run",
     "drop:run": "tsx --env-file-if-exists=../../.env src/tasks/drop/cli.ts",
     "pact:compute": "tsx --env-file-if-exists=../../.env src/tasks/pact/cli.ts compute",
-    "pact:demo": "tsx --env-file-if-exists=../../.env src/tasks/pact/cli.ts demo"
+    "pact:demo": "tsx --env-file-if-exists=../../.env src/tasks/pact/cli.ts demo",
+    "pact:load": "tsx --env-file-if-exists=../../.env src/tasks/pact/cli.ts load"
   },
   "dependencies": {
     "@epilove/core": "workspace:*",

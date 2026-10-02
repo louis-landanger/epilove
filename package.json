@@ -25,6 +25,7 @@
     "db:seed:dev": "pnpm --filter @epilove/db db:seed:dev",
     "pact:compute": "pnpm --filter @epilove/worker pact:compute",
     "pact:demo": "pnpm --filter @epilove/worker pact:demo",
+    "pact:load": "pnpm --filter @epilove/worker pact:load",
     "drop:run": "pnpm --filter @epilove/worker drop:run"
   },
   "devDependencies": {

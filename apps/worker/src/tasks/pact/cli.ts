@@ -7,6 +7,7 @@ import { answerSheets } from "@epilove/db/repositories/questionnaire";
 import { and, eq, like, sql } from "drizzle-orm";
 import { quickAddJob } from "graphile-worker";
 import { computePact } from "./compute";
+import { clearLoad, prepareLoad } from "./load";
 import { type PactReport, runPact } from "./pipeline";
 import { createSolver, type SolverRequest } from "./solver";
 import { syntheticPact } from "./synthetic";
@@ -19,7 +20,10 @@ import { syntheticPact } from "./synthetic";
  * - `pnpm pact:compute --synthetic 3000 [--seed 7]` is a dry run on a
  *   synthetic campus, in memory (nothing written);
  * - `pnpm pact:demo [--reveal-in 60] [--open]` (development only) prepares a
- *   demo season with the development members, revealed in N seconds.
+ *   demo season with the development members, revealed in N seconds;
+ * - `pnpm pact:load [--members 3000] [--reveal-in 180] [--clean]` (development
+ *   only) prepares the k6 load test (infra/load): load members paired in a
+ *   « Charge » season revealed in N seconds; `--clean` removes them.
  *
  * Output: the quality report (aggregates only, no identifiers).
  */
@@ -35,6 +39,8 @@ const { positionals, values } = parseArgs({
     "reveal-in": { type: "string", default: "60" },
     open: { type: "boolean", default: false },
     full: { type: "boolean", default: false },
+    members: { type: "string", default: "3000" },
+    clean: { type: "boolean", default: false },
   },
 });
 
@@ -185,11 +191,41 @@ async function demoCommand() {
   }
 }
 
+async function loadCommand() {
+  if (process.env.APP_ENV !== "development" && process.env.APP_ENV !== "test") {
+    throw new Error("pnpm pact:load requires APP_ENV=development or APP_ENV=test.");
+  }
+  const url = databaseUrlFromEnv();
+  const { db, close } = createDatabase(url, { maxConnections: 4 });
+  try {
+    if (values.clean) {
+      await clearLoad(db);
+      console.log("Load members and season removed.");
+      return;
+    }
+    const now = new Date();
+    const revealAt = new Date(now.getTime() + Math.max(30, Number(values["reveal-in"])) * 1000);
+    const count = Math.max(2, Number(values.members));
+    const seasonId = await prepareLoad(db, { count, revealAt, now });
+    await quickAddJob(
+      { connectionString: url },
+      "pact_reveal",
+      { seasonId },
+      { runAt: revealAt, jobKey: `pact_reveal:${seasonId}`, maxAttempts: 20 },
+    );
+    console.log(JSON.stringify({ members: count - (count % 2), revealAt: revealAt.toISOString() }));
+  } finally {
+    await close();
+  }
+}
+
 const command = positionals[0];
 if (command === "compute") {
   await computeCommand();
 } else if (command === "demo") {
   await demoCommand();
+} else if (command === "load") {
+  await loadCommand();
 } else {
-  throw new Error("Usage: cli.ts compute|demo [options]");
+  throw new Error("Usage: cli.ts compute|demo|load [options]");
 }

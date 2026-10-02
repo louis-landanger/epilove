@@ -28,6 +28,7 @@
 | 3 | Mini-jeux (CHAT-11) | ✅ fait et testé (cœur, API dont réponses simultanées, Playwright à deux navigateurs, axe) |
 | 3 | Flash (IRL-04) | ✅ fait et testé (cœur, API, Playwright à deux navigateurs, axe) |
 | 3 | Wrapped (COM-03) | ✅ fait et testé (API, Playwright avec l'image exportée, axe) |
+| 3 | Tests de charge k6 (docs/11) | ✅ scénario écrit et exécuté (3 000 connexions, révélation, rafale de messages) ; ❌ la vague de `pact.result` dépasse l'objectif sur un seul processus (voir « Tests de charge » et « Questions ouvertes ») |
 | 3 | Brise-glace par IA (CHAT-04) | ✅ fait et testé (cœur dont propriété sur les prénoms, API avec modèle simulé, Playwright contre un faux service Claude, axe) ; désactivé par défaut, jamais appelé pour de vrai dans la session (pas de clé) |
 | 3 | Mode à l'aveugle (DEC-10) | ✅ fait et testé (cœur, API avec horloge simulée) ; bandeau du jeudi soir non testé en automatique (le serveur décide de la soirée) |
 | 3 | Badges discrets (COM-04), statut « Dispo » (IRL-05) | ✅ fait et testé (cœur, API) ; affichage vérifié à la main |
@@ -182,6 +183,12 @@
 - Interface : sous les brise-glace classiques, bouton « Des idées par IA », feuille de consentement, idées qui ne font que remplir la zone de saisie (jamais d'envoi automatique).
 - Tests : l'API et Playwright n'appellent jamais le vrai service (modèle simulé, et `apps/web/e2e/support/anthropic-mock.mjs` pour les scénarios). Le chemin complet du SDK a été vérifié à la main contre ce faux service (requête, schéma, extrait sans prénom).
 
+### Tests de charge (k6)
+
+- `infra/load/` : scénario `pact-reveal.js`, lanceur `run.sh`, résultats et recommandations dans `infra/load/README.md`. Données : `pnpm pact:load [--members 3000] [--reveal-in 180] [--clean]` (développement seulement ; membres fictifs `10ad0000-…` associés deux à deux dans une saison « Charge », révélée par le worker comme une vraie). k6 tourne dans Docker (`grafana/k6:2.3.0`).
+- Mesuré sur un conteneur de 4 vCPU qui fait tout tourner : 3 000 connexions tenues, révélation reçue par tous en p95 2,2 s après la minute annoncée, jetons p95 4 ms. Mais un processus de l'app ne sert qu'environ 110 `pact.result` par seconde (≈ 6 ms de CPU par résultat, ≈ 14 requêtes SQL, plus ≈ 3 ms de Next.js) : 3 000 résultats demandent ≈ 30 s (p95 34 s, 46 % reçus en moins de 30 s). Quatre processus sur les mêmes 4 vCPU : 99 % reçus, p95 29 s (machine saturée).
+- Corrigé en chemin : `calendarDateIn` (`packages/core/src/time/calendar.ts`, socle commun) recréait un `Intl.DateTimeFormat` à chaque appel, soit 9,5 % du CPU de `pact.result` (formateur gardé par fuseau horaire) ; l'écran de révélation rafraîchissait `pact.current` sur tous les écrans à la même milliseconde (désormais étalé comme le résultat).
+
 ### Mode à l'aveugle (DEC-10)
 
 - `packages/core/src/discovery/blind.ts` : la soirée à l'aveugle a lieu le jeudi de 19 h à minuit (heure de Lyon) ; une liaison à l'aveugle se dévoile quand les deux ont envoyé 10 messages.
@@ -257,7 +264,7 @@
 
 | Fichier | Modification |
 |---|---|
-| `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo`, `drop:run` |
+| `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo`, `pact:load`, `drop:run` |
 | `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h), `nodemailer` (10.0.13, types inclus), `uqr` (0.1.3, QR codes sans dépendance), `@anthropic-ai/sdk` (0.131.0) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendances `@epilove/crypto` et `aws4fetch` (stockage des médias de conversation), script `db:seed:dev`, exports `./repositories/*`, `./dev-seed`, `./storage` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `packages/api/package.json` | dépendances `@anthropic-ai/sdk` (brise-glace par IA), `@epilove/crypto`, `@epilove/media`, `@epilove/notifications`, `@epilove/realtime` ; `drizzle-orm` en dépendance de développement (tests) |
@@ -271,7 +278,9 @@
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
 | `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `media_purge`, `date_check_in`, `weekly_digest`, `chat_nudge` (ajouts) |
-| `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `drop:run` |
+| `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `pact:load`, `drop:run` |
+| `packages/core/src/time/calendar.ts` (socle commun) | `calendarDateIn` garde un `Intl.DateTimeFormat` par fuseau horaire au lieu d'en recréer un à chaque appel (mesuré par les tests de charge) ; comportement inchangé |
+| `infra/load/**` (nouveau) | tests de charge k6 |
 | `turbo.json` | `ENCRYPTION_KEYS`, `ENCRYPTION_CURRENT_KEY_ID` et `EMAIL_HMAC_SECRET` transmis aux tests : le test du dépôt `members` ré-exécute le seed de développement, qui chiffrait sinon les messages fictifs avec la clé de test, illisibles ensuite par `pnpm dev` |
 | `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
 | `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base), second `webServer` pour le worker, troisième pour le faux service Claude (`e2e/support/anthropic-mock.mjs`) ; le serveur Next des scénarios démarre avec `AI_ICEBREAKERS_ENABLED=1` et `ANTHROPIC_BASE_URL` vers ce faux service |
@@ -319,6 +328,7 @@
 
 ## Mises à jour souhaitées dans CLAUDE.md / README / docs
 
+- docs/11 (tests de charge) et `CLAUDE.md` (commandes) : `infra/load/run.sh 3000 180` (app compilée, worker et services lancés ; prépare et nettoie ses données avec `pnpm pact:load`), résultats de référence dans `infra/load/README.md`.
 - docs/03 (PWA) : le service worker ne met en cache ni pages ni réponses d'API, par choix de confidentialité (appareils partagés).
 - Les réglages « accusés de lecture » et « statut en ligne » sont dans `(app)/reglages/notifications` (périmètre de B) ; A peut préférer les déplacer dans la confidentialité.
 
@@ -356,4 +366,4 @@
 
 ## Questions ouvertes
 
-- Aucune pour l'instant.
+- **Capacité de la révélation du Pacte à 3 000** (exploitation, avec A) : un processus de l'app sert ≈ 110 résultats par seconde. Pour que chacun voie son résultat moins de 8 s après la minute annoncée, il faut ≈ 4 processus de l'API sur des vCPU qui ne servent pas à PostgreSQL pendant la révélation, à valider en préproduction avec `infra/load` (k6 lancé depuis une autre machine). À défaut : allonger `PACT_RULES.revealJitterMs` et le suspense de la séquence (décision produit), ou alléger `pact.result`. Détails et chiffres : `infra/load/README.md`.
