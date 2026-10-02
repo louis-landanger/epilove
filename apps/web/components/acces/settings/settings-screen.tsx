@@ -1,7 +1,7 @@
 "use client";
 
 import type { PrivacySettings } from "@epilove/contracts";
-import { GENDERS, type Gender, MINIMUM_AGE, type Mode, parseSchoolEmail } from "@epilove/core";
+import { GENDERS, type Gender, type Locale, MINIMUM_AGE, type Mode, parseSchoolEmail } from "@epilove/core";
 import {
   Button,
   CheckboxField,
@@ -15,8 +15,9 @@ import {
 import { ChevronRight, ShieldAlert, X } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { type FormEvent, type ReactNode, useState } from "react";
+import { publicHref } from "@/i18n/paths";
 import { api, errorCode } from "../api-client";
 import { LocaleSwitcher } from "../locale/locale-switcher";
 import { DataExport } from "./data-export";
@@ -40,6 +41,7 @@ const AGE_SLIDER_MAX = 45;
 /** Settings (SAF-03 to SAF-07, SAF-14, ONB-05 withdrawal). */
 export function SettingsScreen({ account, settings: initial, hiddenContacts, blocked }: SettingsScreenProps) {
   const t = useTranslations("settings");
+  const locale = useLocale() as Locale;
   const toast = useToast();
   const [settings, setSettings] = useState(initial);
   const [status, setStatus] = useState(account.status);
@@ -143,8 +145,9 @@ export function SettingsScreen({ account, settings: initial, hiddenContacts, blo
 
       <Section id="links" title={t("links.title")}>
         <RowLink href={"/aide" as Route}>{t("links.help")}</RowLink>
-        <RowLink href={"/legal/cgu" as Route}>{t("links.terms")}</RowLink>
-        <RowLink href={"/legal/confidentialite" as Route}>{t("links.privacy")}</RowLink>
+        <RowLink href={"/aide/installer" as Route}>{t("links.install")}</RowLink>
+        <RowLink href={publicHref(locale, "/legal/cgu")}>{t("links.terms")}</RowLink>
+        <RowLink href={publicHref(locale, "/legal/confidentialite")}>{t("links.privacy")}</RowLink>
       </Section>
     </main>
   );

@@ -5,20 +5,47 @@
   "emergency": {
     "title": "In an emergency",
     "items": {
-      "police": { "number": "17", "label": "Police" },
-      "eu": { "number": "112", "label": "European emergency number" },
-      "samu": { "number": "15", "label": "Medical emergency (SAMU)" },
-      "sms": { "number": "114", "label": "Emergencies by text, if you can't speak" }
+      "police": {
+        "number": "17",
+        "label": "Police"
+      },
+      "eu": {
+        "number": "112",
+        "label": "European emergency number"
+      },
+      "samu": {
+        "number": "15",
+        "label": "Medical emergency (SAMU)"
+      },
+      "sms": {
+        "number": "114",
+        "label": "Emergencies by text, if you can't speak"
+      }
     }
   },
   "listen": {
     "title": "To talk about it",
     "items": {
-      "violence": { "number": "3919", "label": "Violence against women helpline, 24/7, anonymous" },
-      "cyber": { "number": "3018", "label": "Online harassment and violence" },
-      "suicide": { "number": "3114", "label": "Suicide prevention, 24/7" },
-      "youth": { "number": "0 800 235 236", "label": "Fil Santé Jeunes, anonymous" },
-      "lgbt": { "number": "01 48 06 42 41", "label": "SOS Homophobie helpline" }
+      "violence": {
+        "number": "3919",
+        "label": "Violence against women helpline, 24/7, anonymous"
+      },
+      "cyber": {
+        "number": "3018",
+        "label": "Online harassment and violence"
+      },
+      "suicide": {
+        "number": "3114",
+        "label": "Suicide prevention, 24/7"
+      },
+      "youth": {
+        "number": "0 800 235 236",
+        "label": "Fil Santé Jeunes, anonymous"
+      },
+      "lgbt": {
+        "number": "01 48 06 42 41",
+        "label": "SOS Homophobie helpline"
+      }
     }
   },
   "report": {
@@ -43,5 +70,93 @@
     "hide": "Hide specific people or your school, from settings.",
     "settings": "Open settings"
   },
-  "call": "Call {number}"
+  "call": "Call {number}",
+  "install": {
+    "metaTitle": "Install Epilove",
+    "title": "Epilove on your home screen",
+    "lead": "Full screen, one tap to open, and notifications. No store: the app installs from your browser in thirty seconds.",
+    "installed": "Already done: you are using the installed app.",
+    "device": "Your device",
+    "platforms": {
+      "ios": "iPhone",
+      "android": "Android",
+      "desktop": "Computer"
+    },
+    "detected": "Detected automatically, change it if needed.",
+    "player": {
+      "steps": "Steps",
+      "play": "Play the animation",
+      "pause": "Pause the animation",
+      "step": "Step {current} of {total}"
+    },
+    "ios": {
+      "steps": {
+        "share": {
+          "title": "Tap Share",
+          "body": "The square with an arrow pointing up, at the bottom of Safari (top right in Chrome)."
+        },
+        "add": {
+          "title": "Add to Home Screen",
+          "body": "Scroll through the options if needed, then tap “Add to Home Screen”."
+        },
+        "confirm": {
+          "title": "Add",
+          "body": "Tap “Add” at the top right: the Epilove icon lands on your home screen."
+        }
+      },
+      "note": "On iPhone, notifications only work from the installed app (iOS 16.4 or later)."
+    },
+    "android": {
+      "steps": {
+        "menu": {
+          "title": "Open the menu",
+          "body": "The three dots at the top right of Chrome."
+        },
+        "install": {
+          "title": "Install app",
+          "body": "Or “Add to home screen”, depending on your browser."
+        },
+        "confirm": {
+          "title": "Confirm",
+          "body": "Epilove joins your apps, like any other."
+        }
+      },
+      "button": "Install Epilove",
+      "buttonHelp": "Your browser supports direct installation."
+    },
+    "desktop": {
+      "steps": {
+        "icon": {
+          "title": "Find the install icon",
+          "body": "On the right of the address bar in Chrome and Edge. In Safari (macOS), File menu, then “Add to Dock”."
+        },
+        "install": {
+          "title": "Install",
+          "body": "Confirm: Epilove opens in its own window, without tabs."
+        }
+      },
+      "note": "Firefox cannot install web apps yet: use Chrome, Edge or Safari."
+    },
+    "mock": {
+      "copy": "Copy",
+      "bookmark": "Add Bookmark",
+      "homeScreen": "Add to Home Screen",
+      "cancel": "Cancel",
+      "add": "Add",
+      "newTab": "New tab",
+      "history": "History",
+      "installApp": "Install app",
+      "installQuestion": "Install app?",
+      "install": "Install"
+    },
+    "banner": {
+      "text": "Install Epilove on your home screen: full screen and notifications.",
+      "cta": "Show me how",
+      "dismiss": "Hide this message"
+    },
+    "helpLink": {
+      "title": "Install the app",
+      "body": "The step-by-step guide for iPhone, Android and computers."
+    }
+  }
 }

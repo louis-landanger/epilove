@@ -1,6 +1,6 @@
 import { SCHOOLS, type SchoolSlug } from "@epilove/core";
 import { SchoolChip } from "@epilove/ui";
-import { ExternalLink, Phone, Settings } from "lucide-react";
+import { ExternalLink, Phone, Settings, Smartphone } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
@@ -134,6 +134,19 @@ export async function HelpResources({ embedded = false }: { embedded?: boolean }
           {t("inApp.settings")}
         </Link>
       </section>
+
+      {embedded ? null : (
+        <Link
+          href={"/aide/installer" as Route}
+          className="flex items-center gap-4 rounded-3xl border border-paper/10 bg-paper/[0.03] p-5 transition-colors hover:bg-paper/5 focus-visible:outline-2 focus-visible:outline-volt"
+        >
+          <Smartphone className="size-6 shrink-0 text-volt" aria-hidden="true" />
+          <span className="flex flex-col gap-1">
+            <span className="font-semibold">{t("install.helpLink.title")}</span>
+            <span className="text-paper/70 text-sm">{t("install.helpLink.body")}</span>
+          </span>
+        </Link>
+      )}
     </Root>
   );
 }

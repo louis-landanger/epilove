@@ -115,6 +115,7 @@
   "links": {
     "title": "Aide et informations",
     "help": "Aide et sécurité",
+    "install": "Installer l'application",
     "terms": "Conditions d'utilisation",
     "privacy": "Politique de confidentialité"
   },
