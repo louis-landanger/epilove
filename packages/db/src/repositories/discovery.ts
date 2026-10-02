@@ -56,6 +56,28 @@ export async function swipeHistory(db: Database, viewerId: string): Promise<Map<
   return new Map(rows.map((r) => [r.targetId, { kind: r.kind, at: r.at }]));
 }
 
+/**
+ * When each member's profile last changed significantly (DEC-09): a photo
+ * approved or a prompt answer written or edited. Basic fields do not count.
+ */
+export async function lastSignificantChanges(
+  db: Database,
+  ids: readonly string[],
+): Promise<Map<string, Date>> {
+  if (ids.length === 0) {
+    return new Map();
+  }
+  const rows = await db.execute<{ user_id: string; changed_at: string | Date }>(sql`
+    select user_id, max(changed_at) as changed_at from (
+      select ${photo.userId} as user_id, ${photo.updatedAt} as changed_at from ${photo}
+        where ${photo.status} = 'approved' and ${inArray(photo.userId, [...ids])}
+      union all
+      select ${promptAnswer.userId}, ${promptAnswer.updatedAt} from ${promptAnswer}
+        where ${inArray(promptAnswer.userId, [...ids])}
+    ) changes group by user_id`);
+  return new Map(rows.map((row) => [row.user_id, new Date(row.changed_at)]));
+}
+
 const reverse = alias(likeAction, "reverse_like");
 
 /** Likes received and not answered yet, per member (attention cap of the ranking). */

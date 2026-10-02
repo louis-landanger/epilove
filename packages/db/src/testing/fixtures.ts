@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Gender, Importance, Mode } from "@epilove/core";
+import { emailHmac } from "@epilove/crypto";
 import { eq, inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import { runMigrations } from "../migrations";
@@ -25,6 +26,8 @@ export interface TestMemberOptions {
   readonly ageMin?: number;
   readonly ageMax?: number;
   readonly createdAt?: Date;
+  /** Fingerprint the address with this secret (secret crush tests); a placeholder otherwise. */
+  readonly emailHmacSecret?: string;
 }
 
 let prepared: Promise<void> | undefined;
@@ -38,6 +41,9 @@ export function prepareTestDatabase(db: Database): Promise<void> {
   })();
   return prepared;
 }
+
+/** School address of a fixture member (always on the EPITA domain). */
+export const testMemberEmail = (id: string) => `test-${id}@epita.fr`;
 
 export async function createTestMember(db: Database, options: TestMemberOptions = {}): Promise<string> {
   const id = randomUUID();
@@ -54,8 +60,10 @@ export async function createTestMember(db: Database, options: TestMemberOptions 
   await db.insert(appUser).values({
     id,
     schoolId: target.id,
-    email: `test-${id}@epita.fr`,
-    emailHmac: `test-hmac-${id}`,
+    email: testMemberEmail(id),
+    emailHmac: options.emailHmacSecret
+      ? emailHmac(options.emailHmacSecret, testMemberEmail(id))
+      : `test-hmac-${id}`,
     emailVerified: true,
     name: options.firstName ?? "Test",
     status: options.status ?? "active",

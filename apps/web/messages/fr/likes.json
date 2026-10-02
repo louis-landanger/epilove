@@ -9,5 +9,36 @@
   "open": "Voir le profil",
   "empty": "Pas encore de like.",
   "emptyLead": "Les meilleures réactions prennent du temps. Un profil complet aide beaucoup.",
-  "count": "{count, plural, one {# personne t'a liké} other {# personnes t'ont liké}}"
+  "count": "{count, plural, one {# personne t'a liké} other {# personnes t'ont liké}}",
+  "entry": "Un crush secret ?",
+  "entryLead": "Tu as quelqu'un en tête ? Si c'est réciproque, c'est un match.",
+  "crush": {
+    "title": "Crush secret",
+    "back": "Retour aux likes",
+    "lead": "Entre l'email d'école de quelqu'un que tu connais. Si cette personne fait pareil, c'est un match immédiat. Sinon, personne n'en saura jamais rien.",
+    "label": "Email d'école",
+    "placeholder": "prenom.nom@ecole.fr",
+    "add": "Ajouter",
+    "added": "C'est noté. Si c'est réciproque, tu le sauras tout de suite.",
+    "slots": "{active} sur {max} crushs actifs",
+    "listTitle": "Tes crushs",
+    "empty": "Aucun crush pour l'instant.",
+    "status": {
+      "active": "Actif jusqu'au {date}",
+      "matched": "C'était réciproque",
+      "expired": "Expiré"
+    },
+    "remove": "Retirer",
+    "privacyTitle": "Confidentialité",
+    "privacy": "On ne garde jamais l'adresse elle-même, seulement une empreinte chiffrée qui sert à la comparer. Rien n'est envoyé à la personne si ce n'est pas réciproque, qu'elle soit inscrite ou non. Trois crushs actifs au maximum, pendant 90 jours.",
+    "errors": {
+      "invalid_email": "Cette adresse n'est pas une adresse d'école du campus.",
+      "self": "Ça, c'est ta propre adresse.",
+      "crush_limit": "Tu as déjà trois crushs actifs. Retires-en un pour en ajouter un autre.",
+      "crush_rate": "Tu as ajouté beaucoup de crushs ce mois-ci. Réessaie dans quelques jours.",
+      "cannot_crush": "Termine ton profil pour ajouter un crush.",
+      "generic": "Ça n'a pas marché. Réessaie dans un instant."
+    },
+    "removeLabel": "Retirer le crush {hint}"
+  }
 }

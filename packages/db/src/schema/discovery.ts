@@ -184,3 +184,26 @@ export const discoveryUndo = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.day] })],
 );
+
+/**
+ * Secret crushes (DEC-08): only the HMAC fingerprint of the target's school
+ * email is stored, never the address. Withdrawn crushes stay (soft delete) to
+ * count additions against the anti-probing limit.
+ */
+export const secretCrush = pgTable(
+  "secret_crush",
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    targetEmailHmac: text().notNull(),
+    /** First letter and school domain ("a•••@epita.fr"), for the member's own list. */
+    hint: text().notNull(),
+    createdAt: createdAt(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    matchedAt: timestamp({ withTimezone: true }),
+    withdrawnAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [unique().on(t.userId, t.targetEmailHmac), index().on(t.targetEmailHmac)],
+);

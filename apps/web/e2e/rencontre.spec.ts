@@ -1,6 +1,11 @@
 import AxeBuilder from "@axe-core/playwright";
 import { createDatabase } from "@epilove/db";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import {
+  cleanupTestMembers,
+  createTestMember,
+  prepareTestDatabase,
+  testMemberEmail,
+} from "@epilove/db/testing";
 import { type Browser, expect, type Page, test } from "@playwright/test";
 
 /**
@@ -95,6 +100,7 @@ test("the discovery, likes, messages and campus screens have no detectable acces
   for (const path of [
     "/decouvrir",
     "/likes",
+    "/likes/crush",
     "/messages",
     "/campus",
     "/campus/pacte",
@@ -107,6 +113,43 @@ test("the discovery, likes, messages and campus screens have no detectable acces
     const results = await new AxeBuilder({ page }).withTags(WCAG).analyze();
     expect(results.violations, path).toEqual([]);
   }
+});
+
+test("a mutual secret crush becomes a match", async ({ browser, baseURL }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Two-browser scenario runs once.");
+  const secret = process.env.EMAIL_HMAC_SECRET;
+  test.skip(!secret, "Needs EMAIL_HMAC_SECRET.");
+  const iris = await createTestMember(db, {
+    firstName: "Iris",
+    gender: "woman",
+    interestedIn: ["man"],
+    graduationYear: 2039,
+    emailHmacSecret: secret,
+  });
+  const jules = await createTestMember(db, {
+    firstName: "Jules",
+    gender: "man",
+    interestedIn: ["woman"],
+    graduationYear: 2039,
+    emailHmacSecret: secret,
+  });
+  const irisPage = await signIn(browser, iris, baseURL);
+  const julesPage = await signIn(browser, jules, baseURL);
+
+  // One-sided: nothing happens, and nothing tells Iris whether Jules is a member.
+  await irisPage.goto("/likes/crush");
+  await irisPage.getByLabel("Email d'école").fill(testMemberEmail(jules));
+  await irisPage.getByRole("button", { name: "Ajouter" }).click();
+  await expect(irisPage.getByRole("status")).toContainText("Si c'est réciproque");
+  await expect(irisPage.getByText("t•••@epita.fr")).toBeVisible();
+
+  // Mutual: Jules gets the match screen right away.
+  await julesPage.goto("/likes/crush");
+  await julesPage.getByLabel("Email d'école").fill(testMemberEmail(iris));
+  await julesPage.getByRole("button", { name: "Ajouter" }).click();
+  const liaison = julesPage.getByRole("dialog");
+  await expect(liaison.getByRole("heading")).toContainText("établie");
+  await expect(liaison.getByRole("link", { name: "Écrire à Iris" })).toBeVisible();
 });
 
 test("pages ask to sign in without a member", async ({ page }) => {

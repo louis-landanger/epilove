@@ -1,9 +1,12 @@
-import type { QuotaView } from "@epilove/contracts";
+import type { MemberCard, QuotaView } from "@epilove/contracts";
 import {
+  CRUSH_RULES,
   canSee,
   canViewProfile,
   checkDecision,
   compatibility,
+  crushHint,
+  crushMatchMode,
   DISCOVERY_RULES,
   dailyLikeQuota,
   daysBetween,
@@ -15,11 +18,13 @@ import {
   type Mode,
   matchesDeckFilter,
   nextDropAt,
+  parseSchoolEmail,
   quotaStatus,
   type RankingCandidate,
   rankDeck,
   sharedModes,
   startOfCampusDay,
+  swipeBlocksCandidate,
   violatesDealbreaker,
 } from "@epilove/core";
 import type { Database } from "@epilove/db";
@@ -29,6 +34,7 @@ import {
   decisionAbout,
   getDeckFilter,
   impressionsToday,
+  lastSignificantChanges,
   likesReceived,
   listSchools,
   loadProfileContent,
@@ -39,6 +45,12 @@ import {
   swipeHistory,
   undoLastPass,
 } from "@epilove/db/repositories/discovery";
+import {
+  addCrush,
+  confirmCrushMatch,
+  crushesOf,
+  withdrawCrush,
+} from "@epilove/db/repositories/discovery-crush";
 import { markDropOpened, publishedDropOf } from "@epilove/db/repositories/discovery-drop";
 import {
   campusDate,
@@ -54,6 +66,7 @@ import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
 import { loadPairAccess, requireMemberRow } from "../rencontre/access";
 import { buildCards } from "../rencontre/cards";
+import { emailFingerprint } from "../rencontre/email";
 import { signedPhotoUrl } from "../rencontre/media";
 
 const DAY_MS = 86_400_000;
@@ -75,6 +88,24 @@ function matchModeFor(modes: readonly Mode[]): Mode | null {
 
 const completenessOf = (row: MemberRow) => Math.max(0, Math.min(1, row.completeness / 100));
 
+async function crushListOf(db: Database, userId: string, now: Date) {
+  const rows = await crushesOf(db, userId);
+  return {
+    maxActive: CRUSH_RULES.maxActive,
+    crushes: rows.map((row) => ({
+      id: row.id,
+      hint: row.hint,
+      createdAt: row.createdAt.toISOString(),
+      expiresAt: row.expiresAt.toISOString(),
+      status: row.matchedAt
+        ? ("matched" as const)
+        : row.expiresAt <= now
+          ? ("expired" as const)
+          : ("active" as const),
+    })),
+  };
+}
+
 export const discovery = {
   deck: os.discovery.deck.use(requireViewer).handler(async ({ context, input }) => {
     const db = context.database();
@@ -93,7 +124,7 @@ export const discovery = {
 
     const candidates = await loadDiscoverableMembers(db, viewer.member.id);
     const ids = candidates.map((c) => c.member.id);
-    const [relations, history, sheets, filter, interests, pending, impressions] = await Promise.all([
+    const [relations, history, sheets, filter, interests, pending, impressions, changes] = await Promise.all([
       loadRelations(db, viewer.member.id, ids),
       swipeHistory(db, viewer.member.id),
       answerSheets(db, [viewer.member.id, ...ids]),
@@ -101,21 +132,20 @@ export const discovery = {
       interestIdsOf(db, [viewer.member.id, ...ids]),
       pendingLikesReceived(db, ids),
       impressionsToday(db, ids, today),
+      lastSignificantChanges(db, ids),
     ]);
     const viewerSheet = sheets.get(viewer.member.id) ?? new Map();
     const viewerInterests = interests.get(viewer.member.id) ?? new Set<string>();
     // The profiles of the current Drop stay in the Drop (docs/06, section 8).
     const currentDrop = await publishedDropOf(db, viewer.member.id, dropDayAt(now, LYON_CAMPUS.timeZone));
     const excluded = new Set([...input.exclude, ...(currentDrop?.candidates ?? [])]);
-    const passCooldown = DISCOVERY_RULES.passCooldownDays * DAY_MS;
 
     const deckContext = {
       today,
       relations,
-      hasRecentlySwiped: (_actor: string, target: string) => {
-        const record = history.get(target);
-        return !!record && (record.kind !== "pass" || now.getTime() - record.at.getTime() < passCooldown);
-      },
+      // Second chance (DEC-09): a pass comes back after 45 days if the profile changed since.
+      hasRecentlySwiped: (_actor: string, target: string) =>
+        swipeBlocksCandidate(history.get(target), changes.get(target) ?? null, now),
       violatesDealbreaker: (_viewer: string, target: string) =>
         violatesDealbreaker(viewerSheet, sheets.get(target) ?? new Map()),
     };
@@ -176,7 +206,12 @@ export const discovery = {
       "deck",
       today,
     );
-    return { cards, quota, empty: cards.length === 0 ? ("exhausted" as const) : null };
+    return {
+      cards,
+      quota,
+      empty: cards.length === 0 ? ("exhausted" as const) : null,
+      secondChance: cards.filter((c) => history.get(c.userId)?.kind === "pass").map((c) => c.userId),
+    };
   }),
 
   decide: os.discovery.decide.use(requireViewer).handler(async ({ context, input }) => {
@@ -421,6 +456,73 @@ export const discovery = {
     const filter = { ...input, ageMax };
     await saveDeckFilter(db, context.viewer.userId, filter);
     return filter;
+  }),
+
+  crushes: os.discovery.crushes.use(requireViewer).handler(async ({ context }) => {
+    const db = context.database();
+    await requireMemberRow(db, context.viewer.userId);
+    return crushListOf(db, context.viewer.userId, new Date());
+  }),
+
+  addCrush: os.discovery.addCrush.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const viewer = await requireMemberRow(db, context.viewer.userId);
+    if (viewer.member.status !== "active" || !viewer.member.profileComplete) {
+      throw new ORPCError("FORBIDDEN", { message: "cannot_crush" });
+    }
+    const parsed = parseSchoolEmail(input.email);
+    if (!parsed.ok) {
+      throw new ORPCError("BAD_REQUEST", { message: "invalid_email" });
+    }
+    const target = emailFingerprint(parsed.canonicalEmail);
+    if (target === viewer.member.emailHmac) {
+      throw new ORPCError("BAD_REQUEST", { message: "self" });
+    }
+    const result = await addCrush(db, {
+      userId: viewer.member.id,
+      userEmailHmac: viewer.member.emailHmac,
+      targetEmailHmac: target,
+      hint: crushHint(parsed.canonicalEmail),
+      now,
+      expiresAt: new Date(now.getTime() + CRUSH_RULES.durationDays * DAY_MS),
+      maxActive: CRUSH_RULES.maxActive,
+      addsPer30Days: CRUSH_RULES.addsPer30Days,
+    });
+    if (!result.ok) {
+      throw new ORPCError("FORBIDDEN", { message: result.reason === "limit" ? "crush_limit" : "crush_rate" });
+    }
+    let matched: { matchId: string; card: MemberCard } | null = null;
+    if (result.reverse) {
+      // Mutual: the policies decide whether the pair may match; if not, nothing happens and nobody knows.
+      const otherId = result.reverse.userId;
+      const [rows, relations] = await Promise.all([
+        loadMembers(db, [otherId]),
+        loadRelations(db, viewer.member.id, [otherId]),
+      ]);
+      const other = rows.get(otherId);
+      const today = campusDate(now);
+      const mode = other ? crushMatchMode(viewer.member, other.member, { today, relations }) : null;
+      if (other && mode) {
+        const matchId = await confirmCrushMatch(db, {
+          a: viewer.member.id,
+          b: otherId,
+          crushIds: [result.crushId, result.reverse.crushId],
+          mode,
+          now,
+        });
+        const [card] = await buildCards(db, viewer, [{ row: other, modes: [mode] }], input.locale, today);
+        matched = card ? { matchId, card } : null;
+      }
+    }
+    return { ...(await crushListOf(db, viewer.member.id, now)), matched };
+  }),
+
+  removeCrush: os.discovery.removeCrush.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    await withdrawCrush(db, context.viewer.userId, input.crushId, now);
+    return crushListOf(db, context.viewer.userId, now);
   }),
 
   drop: os.discovery.drop.use(requireViewer).handler(async ({ context, input }) => {

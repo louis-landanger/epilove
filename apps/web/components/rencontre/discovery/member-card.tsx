@@ -18,12 +18,15 @@ export type LikedContent =
 export function MemberCard({
   card,
   interactive,
+  secondChance = false,
   onLike,
   onOpen,
 }: {
   card: MemberCardData;
   /** Only the top card of the deck reacts to the pointer and exposes its buttons. */
   interactive: boolean;
+  /** Passed more than 45 days ago, changed since (DEC-09). */
+  secondChance?: boolean;
   onLike?: (content: LikedContent) => void;
   onOpen?: () => void;
 }) {
@@ -100,6 +103,15 @@ export function MemberCard({
       <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 bg-gradient-to-t from-ink via-ink/85 to-transparent px-5 pt-24 pb-5">
         <div className="flex flex-wrap items-center gap-2">
           <SchoolBadge slug={card.school.slug} name={card.school.name} />
+          {secondChance && (
+            <span
+              className="rounded-full bg-volt/15 px-2.5 py-1 font-mono text-[11px] text-volt uppercase tracking-wider"
+              title={t("card.secondChanceHelp")}
+            >
+              {t("card.secondChance")}
+              <span className="sr-only"> : {t("card.secondChanceHelp")}</span>
+            </span>
+          )}
           {card.modes.length === 1 && card.modes[0] === "friends" && (
             <span className="rounded-full bg-paper/10 px-2.5 py-1 font-mono text-[11px] text-paper/80 uppercase tracking-wider">
               {t("card.modeFriends")}

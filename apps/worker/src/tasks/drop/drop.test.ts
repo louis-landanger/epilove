@@ -31,20 +31,27 @@ describe.skipIf(!url)("evening Drop", () => {
       firstName: "Vera",
       gender: "woman",
       interestedIn: ["man"],
-      graduationYear: 2039,
+      schoolSlug: "ipsa",
+      graduationYear: 2040,
     });
-    const man = () => createTestMember(db, { gender: "man", interestedIn: ["woman"], graduationYear: 2039 });
+    const man = () =>
+      createTestMember(db, {
+        gender: "man",
+        interestedIn: ["woman"],
+        schoolSlug: "ipsa",
+        graduationYear: 2040,
+      });
     const candidates = [await man(), await man(), await man()];
     const blocked = await man();
     const passed = await man();
     for (const member of [viewer, ...candidates, blocked, passed]) {
       await answerQuestionnaire(db, member);
     }
-    // Only this test's year: the development members do not interfere with the assertions.
+    // Only this test's school and year: other members (development data, other tests) stay out.
     await saveDeckFilter(db, viewer, {
       mode: "all",
-      schoolSlugs: [],
-      graduationYears: [2039],
+      schoolSlugs: ["ipsa"],
+      graduationYears: [2040],
       intentions: [],
       ageMin: null,
       ageMax: null,

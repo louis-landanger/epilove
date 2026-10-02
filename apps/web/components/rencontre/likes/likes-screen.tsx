@@ -3,6 +3,7 @@
 import type { LikeReceived, MemberCard, QuotaView } from "@epilove/contracts";
 import { ORPCError } from "@orpc/client";
 import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useTransition, ViewTransition } from "react";
@@ -60,6 +61,13 @@ export function LikesScreen({
         <h1 className="font-display font-semibold text-3xl tracking-tight">{t("title")}</h1>
         <p className="text-paper/70">{likes.length > 0 ? t("count", { count: likes.length }) : t("lead")}</p>
         <p className="font-mono text-paper/60 text-xs">{discovery("quota", { count: quota.likesLeft })}</p>
+        <Link
+          href="/likes/crush"
+          className="mt-3 flex flex-col gap-0.5 self-start rounded-2xl border border-plasma/40 px-4 py-3 transition hover:border-plasma focus-visible:outline-2 focus-visible:outline-volt focus-visible:outline-offset-2"
+        >
+          <span className="font-semibold">{t("entry")} →</span>
+          <span className="text-paper/70 text-sm">{t("entryLead")}</span>
+        </Link>
       </header>
 
       {error && (

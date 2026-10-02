@@ -19,6 +19,8 @@ export interface DeckInitial {
   readonly cards: MemberCardData[];
   readonly quota: QuotaView;
   readonly empty: EmptyReason | null;
+  /** Profiles back for a second chance (DEC-09). */
+  readonly secondChance?: readonly string[];
 }
 
 const THROW_DISTANCE = 120;
@@ -56,6 +58,7 @@ export function Deck({
   const router = useRouter();
   const online = useOnline();
   const [cards, setCards] = useState(initial.cards);
+  const [secondChance, setSecondChance] = useState(() => new Set(initial.secondChance ?? []));
   const [quota, setQuota] = useState(initial.quota);
   const [empty, setEmpty] = useState<EmptyReason | null>(initial.empty);
   const [exit, setExit] = useState<Kind>("pass");
@@ -99,6 +102,7 @@ export function Deck({
       })
       .then((result) => {
         setQuota(result.quota);
+        setSecondChance((current) => new Set([...current, ...result.secondChance]));
         setCards((current) => {
           const known = new Set(current.map((c) => c.userId));
           return [...current, ...result.cards.filter((c) => !known.has(c.userId))];
@@ -241,7 +245,11 @@ export function Deck({
                     animate={{ scale: 1 - depth * 0.045, y: depth * 14, opacity: 1 - depth * 0.25 }}
                     transition={{ type: "spring", stiffness: 200, damping: 26 }}
                   >
-                    <MemberCard card={card} interactive={false} />
+                    <MemberCard
+                      card={card}
+                      interactive={false}
+                      secondChance={secondChance.has(card.userId)}
+                    />
                   </motion.div>
                 );
               })}
@@ -250,6 +258,7 @@ export function Deck({
                 <SwipeCard
                   key={top.userId}
                   card={top}
+                  secondChance={secondChance.has(top.userId)}
                   disabled={actionsDisabled}
                   onPass={() => void send(top, "pass", null, null)}
                   onLike={() => like(top)}
@@ -366,6 +375,7 @@ export function Deck({
 
 function SwipeCard({
   card,
+  secondChance,
   disabled,
   onPass,
   onLike,
@@ -374,6 +384,7 @@ function SwipeCard({
   onOpen,
 }: {
   card: MemberCardData;
+  secondChance: boolean;
   disabled: boolean;
   onPass: () => void;
   onLike: () => void;
@@ -426,7 +437,13 @@ function SwipeCard({
       exit="exit"
       transition={{ type: "spring", stiffness: 320, damping: 26 }}
     >
-      <MemberCard card={card} interactive onLike={onLikeContent} onOpen={onOpen} />
+      <MemberCard
+        card={card}
+        interactive
+        secondChance={secondChance}
+        onLike={onLikeContent}
+        onOpen={onOpen}
+      />
       <Stamp opacity={likeOpacity} className="top-10 left-6 -rotate-12 border-volt text-volt">
         {t("like")}
       </Stamp>

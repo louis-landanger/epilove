@@ -26,7 +26,9 @@
     "photo": "Photo {current} of {total}",
     "previousPhoto": "Previous photo",
     "nextPhoto": "Next photo",
-    "noPhoto": "No photo yet"
+    "noPhoto": "No photo yet",
+    "secondChance": "Second chance",
+    "secondChanceHelp": "Their profile changed since last time."
   },
   "keyboard": "Keyboard: ← pass, → like, ↑ crush, Enter to open the profile.",
   "likeSheet": {

@@ -92,6 +92,18 @@ export const profileView = z.object({
 });
 export type ProfileView = z.infer<typeof profileView>;
 
+export const crushView = z.object({
+  id: z.uuid(),
+  /** First letter and school domain only ("a•••@epita.fr"). */
+  hint: z.string(),
+  createdAt: z.iso.datetime(),
+  expiresAt: z.iso.datetime(),
+  status: z.enum(["active", "matched", "expired"]),
+});
+export type CrushView = z.infer<typeof crushView>;
+
+export const crushList = z.object({ crushes: z.array(crushView), maxActive: z.number().int() });
+
 export const discoveryContract = {
   /**
    * The next cards of the deck (DEC-01). The deck is recomputed on every call:
@@ -105,7 +117,15 @@ export const discoveryContract = {
         exclude: z.array(z.uuid()).max(100).default([]),
       }),
     )
-    .output(z.object({ cards: z.array(memberCard), quota: quotaView, empty: deckEmptyReason.nullable() })),
+    .output(
+      z.object({
+        cards: z.array(memberCard),
+        quota: quotaView,
+        empty: deckEmptyReason.nullable(),
+        /** Cards back for a second chance (DEC-09): passed more than 45 days ago, changed since. */
+        secondChance: z.array(z.uuid()).default([]),
+      }),
+    ),
   /** Like (optionally on a photo or prompt, with a comment), super like or pass (DEC-02, DEC-03). Idempotent. */
   decide: oc
     .input(
@@ -141,6 +161,16 @@ export const discoveryContract = {
    * The evening Drop (DEC-07): the profiles of the current Drop not decided
    * yet, and when the next one arrives (on the server's clock).
    */
+  /** The member's secret crushes (DEC-08). */
+  crushes: oc.output(crushList),
+  /**
+   * Adds a secret crush by school email. The answer never says whether the
+   * address belongs to a member; `matched` is set only for a mutual crush.
+   */
+  addCrush: oc
+    .input(z.object({ email: z.string().max(254), locale: contentLocale }))
+    .output(crushList.extend({ matched: z.object({ matchId: z.uuid(), card: memberCard }).nullable() })),
+  removeCrush: oc.input(z.object({ crushId: z.uuid() })).output(crushList),
   drop: oc.input(z.object({ locale: contentLocale })).output(
     z.object({
       cards: z.array(memberCard),

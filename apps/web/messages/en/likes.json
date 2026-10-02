@@ -9,5 +9,36 @@
   "open": "Open profile",
   "empty": "No likes yet.",
   "emptyLead": "The best reactions take time. A complete profile helps a lot.",
-  "count": "{count, plural, one {# person liked you} other {# people liked you}}"
+  "count": "{count, plural, one {# person liked you} other {# people liked you}}",
+  "entry": "A secret crush?",
+  "entryLead": "Someone on your mind? If it's mutual, it's a match.",
+  "crush": {
+    "title": "Secret crush",
+    "back": "Back to likes",
+    "lead": "Type the school email of someone you know. If they do the same, it's an instant match. Otherwise, nobody will ever know.",
+    "label": "School email",
+    "placeholder": "first.last@school.fr",
+    "add": "Add",
+    "added": "Noted. If it's mutual, you'll know right away.",
+    "slots": "{active} of {max} active crushes",
+    "listTitle": "Your crushes",
+    "empty": "No crush yet.",
+    "status": {
+      "active": "Active until {date}",
+      "matched": "It was mutual",
+      "expired": "Expired"
+    },
+    "remove": "Remove",
+    "privacyTitle": "Privacy",
+    "privacy": "We never keep the address itself, only an encrypted fingerprint used to compare it. Nothing is sent to the person if it isn't mutual, whether they're a member or not. Three active crushes at most, for 90 days.",
+    "errors": {
+      "invalid_email": "This isn't a school address from the campus.",
+      "self": "That's your own address.",
+      "crush_limit": "You already have three active crushes. Remove one to add another.",
+      "crush_rate": "You've added a lot of crushes this month. Try again in a few days.",
+      "cannot_crush": "Finish your profile to add a crush.",
+      "generic": "That didn't work. Try again in a moment."
+    },
+    "removeLabel": "Remove the crush {hint}"
+  }
 }

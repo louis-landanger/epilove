@@ -13,6 +13,7 @@
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
 | 1 | Notifications (NOT-01 à NOT-03) | ✅ fait et testé (API, worker, Playwright pour le service worker) ; push réel non testé en automatique (pas de service de push dans la session) |
+| 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
 
@@ -91,6 +92,15 @@
 - Mesures : séquence démarrée 830 ms après l'heure sur deux navigateurs (2 ms d'écart) ; dry run 3 000 membres en 2 min 30 s (détail dans le README du solveur).
 - Chorégraphie faite avec Motion (déjà présent) plutôt que GSAP (docs/02 le suggère) : pas de dépendance supplémentaire pour une séquence de quelques secondes.
 
+### Crush secret (DEC-08) et seconde chance (DEC-09)
+
+- `packages/core/src/discovery/crush.ts` : règles (3 crushs actifs, 90 jours, 10 ajouts par 30 jours retraits compris, contre le sondage), indice affiché au membre (« a•••@epita.fr »), mode du match (`crushMatchMode` : mêmes règles que la découverte dans les deux sens, incognito levé comme pour un like réciproque, Love si possible sinon Amis).
+- Table `secret_crush` (empreinte HMAC de l'adresse seulement, jamais l'adresse ; retrait logique pour compter les ajouts), dépôt `packages/db/src/repositories/discovery-crush.ts` : ajout sous double verrou consultatif (la paire d'empreintes, puis le quota) pour que deux crushs réciproques simultanés se trouvent, recherche du crush inverse, création du match `source = crush` (notifications et événements comme un match par like).
+- API `discovery.crushes`, `addCrush` (même réponse que la personne soit inscrite ou non ; `matched` seulement si réciproque et autorisé par les politiques), `removeCrush`. Empreinte calculée par `packages/api/src/rencontre/email.ts` (`EMAIL_HMAC_SECRET`).
+- Interface `(app)/likes/crush` (saisie, liste avec indice et échéance, retrait, texte de confidentialité sobre, écran « Liaison établie » si réciproque) et entrée depuis « Likes ».
+- `packages/core/src/discovery/second-chance.ts` : un profil passé revient après 45 jours seulement s'il a changé depuis (photo approuvée, réponse à un prompt écrite ou modifiée) ; un like ne revient jamais. Appliqué au deck et au Drop (`lastSignificantChanges`), badge « Seconde chance » sur la carte (`deck.secondChance`).
+- Fabrique de test : option `emailHmacSecret` et `testMemberEmail`.
+
 ### Drop du soir (DEC-07)
 
 - `packages/core/src/discovery/drop.ts` : règles (5 profils, 10 apparitions au plus par profil et par jour, calcul à 20 h 30, publication à 21 h, 24 heures), heures du campus avec changement d'heure (`campusInstant`), jour du Drop visible (`dropDayAt`), affectation gloutonne sous contrainte de capacité (`assignDrops`, docs/06 section 8, version 1), testée par propriétés (taille, plafond, paires proposées seulement, maximalité).
@@ -116,7 +126,7 @@
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `discovery`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
 | `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `likes`, `matches`, `notifications`, `pact`, `questionnaire` (ajouts) |
-| `packages/core/src/index.ts` | `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/rules`, `matching/explain`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
+| `packages/core/src/index.ts` | `discovery/crush`, `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/second-chance`, `discovery/rules`, `matching/explain`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
 | `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
@@ -138,6 +148,7 @@
 
 ## Migrations
 
+- `0008_*` : table `secret_crush`.
 - `0007_*` : table `drop_run`, index `drop (day)`.
 - `0006_*` : `pact_season.report`, `computed_at`, `revealed_at` ; `pact_result.match_id` (+ index `(season_id, user_high)`).
 

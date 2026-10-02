@@ -26,7 +26,9 @@
     "photo": "Photo {current} sur {total}",
     "previousPhoto": "Photo précédente",
     "nextPhoto": "Photo suivante",
-    "noPhoto": "Pas encore de photo"
+    "noPhoto": "Pas encore de photo",
+    "secondChance": "Seconde chance",
+    "secondChanceHelp": "Son profil a changé depuis la dernière fois."
   },
   "keyboard": "Clavier : ← passer, → liker, ↑ coup de cœur, Entrée pour ouvrir le profil.",
   "likeSheet": {

@@ -3,7 +3,6 @@ import {
   type CompiledSheet,
   canSee,
   compileSheets,
-  DISCOVERY_RULES,
   DROP_RULES,
   type DropCandidate,
   daysBetween,
@@ -12,9 +11,10 @@ import {
   jaccard,
   matchesDeckFilter,
   reciprocalScore,
+  swipeBlocksCandidate,
 } from "@epilove/core";
 import type { Database } from "@epilove/db";
-import { DEFAULT_DECK_FILTER } from "@epilove/db/repositories/discovery";
+import { DEFAULT_DECK_FILTER, lastSignificantChanges } from "@epilove/db/repositories/discovery";
 import { claimDropRun, deckFiltersOf, saveDrops, swipesBy } from "@epilove/db/repositories/discovery-drop";
 import {
   interestIdsOf,
@@ -24,7 +24,7 @@ import {
 } from "@epilove/db/repositories/members";
 import { answerSheets } from "@epilove/db/repositories/questionnaire";
 
-const DAY_MS = 86_400_000;
+const _DAY_MS = 86_400_000;
 /** No one is excluded from the pre-filter: every discoverable member is both a viewer and a candidate. */
 const NOBODY = "00000000-0000-0000-0000-000000000000";
 
@@ -55,17 +55,17 @@ export async function computeDrops(
   const started = performance.now();
   const members = await loadDiscoverableMembers(db, NOBODY);
   const ids = members.map((m) => m.member.id);
-  const [relations, swipes, sheets, interests, filters] = await Promise.all([
+  const [relations, swipes, sheets, interests, filters, changes] = await Promise.all([
     loadRelationsAmong(db, ids),
     swipesBy(db, ids),
     answerSheets(db, ids),
     interestIdsOf(db, ids),
     deckFiltersOf(db, ids),
+    lastSignificantChanges(db, ids),
   ]);
   const compiled = compileSheets(ids.map((id) => sheets.get(id) ?? new Map()));
   const index = new Map(ids.map((id, position) => [id, position]));
   const context = { today: day, relations };
-  const passCooldown = DISCOVERY_RULES.passCooldownDays * DAY_MS;
   const completeness = (row: MemberRow) => Math.max(0, Math.min(1, row.completeness / 100));
 
   // A restricted account can be seen but cannot like: no Drop for it.
@@ -81,8 +81,7 @@ export async function computeDrops(
       if (target.member.id === viewer.member.id) {
         continue;
       }
-      const swipe = history.get(target.member.id);
-      if (swipe && (swipe.kind !== "pass" || now.getTime() - swipe.at.getTime() < passCooldown)) {
+      if (swipeBlocksCandidate(history.get(target.member.id), changes.get(target.member.id) ?? null, now)) {
         continue;
       }
       const decision = canSee(viewer.member, target.member, context);
