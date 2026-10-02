@@ -11,7 +11,8 @@
     "match_created": "Nouvelle liaison ! Écris le premier message.",
     "message_received": "Nouveau message dans une conversation.",
     "drop_ready": "Ton Drop du soir est arrivé.",
-    "pact_reveal": "C'est l'heure : les résultats du Pacte sont là."
+    "pact_reveal": "C'est l'heure : les résultats du Pacte sont là.",
+    "chat_nudge": "Une conversation attend une relance. Une idée pour repartir ?"
   },
   "settings": {
     "title": "Réglages des notifications",

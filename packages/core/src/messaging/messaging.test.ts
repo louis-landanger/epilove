@@ -1,6 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { CAMPUS_ICEBREAKERS, pickIcebreakers } from "./icebreakers";
+import { isSilent, needsNudge } from "./nudge";
 import {
   checkMessageChange,
   cleanMessage,
@@ -92,5 +93,19 @@ describe("message changes (CHAT-08) and warnings (SAF-09, SAF-10)", () => {
     expect(needsSendWarning(screenMessage("on se voit samedi ?"))).toBe(false);
     expect(isPotentiallyOffensive(["shouting"])).toBe(true);
     expect(isPotentiallyOffensive(["link"])).toBe(false);
+  });
+});
+
+describe("gentle nudges (CHAT-09)", () => {
+  const last = new Date("2026-10-01T18:00:00Z");
+  const days = (n: number) => new Date(last.getTime() + n * 86_400_000);
+
+  it("nudges once per silence of three days", () => {
+    expect(needsNudge(last, null, days(2.9))).toBe(false);
+    expect(needsNudge(last, null, days(3))).toBe(true);
+    expect(needsNudge(last, days(3), days(5))).toBe(false);
+    // A new message, then a new silence: one more nudge.
+    expect(needsNudge(days(6), days(3), days(9))).toBe(true);
+    expect(isSilent(last, days(1))).toBe(false);
   });
 });

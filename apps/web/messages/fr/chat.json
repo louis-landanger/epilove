@@ -109,5 +109,9 @@
     "voice": "Message vocal",
     "date_proposal": "Proposition de date",
     "system": "Message"
+  },
+  "nudge": {
+    "lead": "Ça fait quelques jours avec {name}. Envie de relancer ?",
+    "action": "Des idées"
   }
 }

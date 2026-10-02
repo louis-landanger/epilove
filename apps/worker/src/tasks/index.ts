@@ -1,5 +1,6 @@
 import type { TaskList } from "graphile-worker";
 import { dropTickTask } from "./drop/tick";
+import { chatNudgeTick } from "./messaging/nudge";
 import { messagePurge } from "./messaging/purge";
 import { outboxPurge } from "./outbox/purge";
 import { pactReveal, pactRevealDue } from "./pact/reveal";
@@ -14,6 +15,7 @@ export const taskList: TaskList = {
   heartbeat: async (_payload, helpers) => {
     helpers.logger.info("heartbeat");
   },
+  chat_nudge: chatNudgeTick,
   drop_tick: dropTickTask,
   message_purge: messagePurge,
   outbox_purge: outboxPurge,
@@ -28,4 +30,5 @@ export const crontab = [
   "* * * * * pact_reveal_due",
   "* * * * * drop_tick",
   "23 4 * * * message_purge",
+  "7 * * * * chat_nudge",
 ].join("\n");

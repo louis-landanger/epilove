@@ -570,6 +570,22 @@ export function Conversation({ thread }: { thread: ThreadView }) {
         </div>
       </Sheet>
 
+      {!closed &&
+        thread.nudge &&
+        !showIcebreakers &&
+        messages.length > 0 &&
+        messages.at(-1)?.id === thread.messages.at(-1)?.id && (
+          <div className="mx-4 mb-2 flex flex-wrap items-center gap-2 rounded-2xl bg-volt/10 px-4 py-2 text-sm">
+            <span className="mr-auto">{t("nudge.lead", { name: thread.other.firstName })}</span>
+            <button
+              type="button"
+              onClick={() => setShowIcebreakers(true)}
+              className="font-semibold underline underline-offset-4"
+            >
+              {t("nudge.action")}
+            </button>
+          </div>
+        )}
       {closed ? (
         <p className="border-paper/10 border-t px-4 py-5 text-center text-paper/70">{t("composer.closed")}</p>
       ) : (

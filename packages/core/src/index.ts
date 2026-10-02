@@ -9,6 +9,7 @@ export * from "./matching/compatibility";
 export * from "./matching/explain";
 export * from "./messaging/icebreakers";
 export * from "./messaging/ids";
+export * from "./messaging/nudge";
 export * from "./messaging/rules";
 export * from "./messaging/stickers";
 export * from "./pact/clock";

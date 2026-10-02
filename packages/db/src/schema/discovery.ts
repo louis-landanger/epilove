@@ -69,6 +69,8 @@ export const match = pgTable(
     unmatchedBy: uuid().references(() => appUser.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     lastMessageAt: timestamp({ withTimezone: true }),
+    /** Last gentle nudge after a silence (CHAT-09). */
+    nudgedAt: timestamp({ withTimezone: true }),
   },
   (t) => [
     unique().on(t.userLow, t.userHigh),

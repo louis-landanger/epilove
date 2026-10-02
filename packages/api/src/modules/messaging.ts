@@ -6,6 +6,7 @@ import {
   explainCompatibility,
   isPotentiallyOffensive,
   isReaction,
+  isSilent,
   isSticker,
   MESSAGING_RULES,
   pickIcebreakers,
@@ -290,6 +291,7 @@ export const messaging = {
         sharedAnswers: agreements,
         seed: match.id,
       }).map((i) => ({ key: i.key, params: { ...i.params } })),
+      nudge: isSilent(match.lastMessageAt ?? match.createdAt, now),
       messages: await toChatMessages(db, page.messages),
       hasMore: page.hasMore,
     };

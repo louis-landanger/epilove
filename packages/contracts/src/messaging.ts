@@ -69,6 +69,8 @@ export const threadView = z.object({
   /** Only when both members share their online status, and only between matches. */
   otherOnline: z.boolean().nullable(),
   icebreakers: z.array(icebreaker),
+  /** Silent for a few days (CHAT-09): the screen suggests restarting with an icebreaker. */
+  nudge: z.boolean(),
   messages: z.array(chatMessage),
   hasMore: z.boolean(),
 });

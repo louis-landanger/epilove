@@ -1,0 +1,1 @@
+ALTER TABLE "match" ADD COLUMN "nudged_at" timestamp with time zone;

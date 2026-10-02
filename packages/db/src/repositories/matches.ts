@@ -1,4 +1,4 @@
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { match, message, messageRead, notification } from "../schema";
 import { enqueue } from "./outbox";
@@ -98,5 +98,57 @@ export async function unmatch(db: Database, matchId: string, userId: string): Pr
         ),
       );
     return true;
+  });
+}
+
+/**
+ * Active matches silent for `silenceDays` and not nudged since their last
+ * activity (CHAT-09). The caller checks the access policies.
+ */
+export async function matchesToNudge(db: Database, now: Date, silenceDays: number, limit = 500) {
+  const activity = sql`coalesce(${match.lastMessageAt}, ${match.createdAt})`;
+  const cutoff = new Date(now.getTime() - silenceDays * 86_400_000).toISOString();
+  return db
+    .select({ id: match.id, userLow: match.userLow, userHigh: match.userHigh })
+    .from(match)
+    .where(
+      and(
+        eq(match.status, "active"),
+        sql`${activity} <= ${cutoff}::timestamptz`,
+        sql`(${match.nudgedAt} is null or ${match.nudgedAt} < ${activity})`,
+      ),
+    )
+    .limit(limit);
+}
+
+/** Marks the matches nudged and notifies both members of each (one grouped notification per conversation). */
+export async function recordNudges(
+  db: Database,
+  matches: readonly { id: string; members: readonly string[] }[],
+  now: Date,
+) {
+  if (matches.length === 0) {
+    return;
+  }
+  await db.transaction(async (tx) => {
+    await tx
+      .update(match)
+      .set({ nudgedAt: now })
+      .where(
+        inArray(
+          match.id,
+          matches.map((m) => m.id),
+        ),
+      );
+    const rows = matches.flatMap((m) =>
+      m.members.map((userId) => ({ userId, type: "chat_nudge", payload: { matchId: m.id } })),
+    );
+    for (let start = 0; start < rows.length; start += 1000) {
+      await tx.insert(notification).values(rows.slice(start, start + 1000));
+    }
+    await enqueue(
+      tx,
+      rows.map((row) => ({ userId: row.userId, event: { type: "notification.created" as const } })),
+    );
   });
 }

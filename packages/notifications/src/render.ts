@@ -24,6 +24,8 @@ const TEXTS = {
     match_created_named: "Liaison établie avec {name} !",
     message_received: "Nouveau message",
     message_received_named: "Nouveau message de {name}",
+    chat_nudge: "Une conversation attend une relance.",
+    chat_nudge_named: "Ça fait quelques jours avec {name}. Une idée pour relancer ?",
     drop_ready: "Ton Drop est arrivé.",
     pact_reveal: "C'est l'heure : les résultats du Pacte sont là.",
   },
@@ -35,6 +37,8 @@ const TEXTS = {
     match_created_named: "Bond formed with {name}!",
     message_received: "New message",
     message_received_named: "New message from {name}",
+    chat_nudge: "A conversation is waiting for a nudge.",
+    chat_nudge_named: "It's been a few days with {name}. An idea to restart?",
     drop_ready: "Your Drop is here.",
     pact_reveal: "It's time: the Pact results are in.",
   },
@@ -56,7 +60,9 @@ export function renderPush(type: NotificationType, options: RenderOptions): Push
       ? texts.match_created_named.replace("{name}", name)
       : type === "message_received" && name
         ? texts.message_received_named.replace("{name}", name)
-        : texts[type];
+        : type === "chat_nudge" && name
+          ? texts.chat_nudge_named.replace("{name}", name)
+          : texts[type];
   return {
     title: texts.title,
     body,

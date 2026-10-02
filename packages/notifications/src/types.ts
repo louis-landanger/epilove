@@ -7,6 +7,7 @@ export const NOTIFICATION_TYPES = [
   "superlike_received",
   "match_created",
   "message_received",
+  "chat_nudge",
   "drop_ready",
   "pact_reveal",
 ] as const;
@@ -19,7 +20,7 @@ export const isNotificationType = (value: string): value is NotificationType =>
 export const NOTIFICATION_GROUPS = {
   likes: ["like_received", "superlike_received"],
   matches: ["match_created"],
-  messages: ["message_received"],
+  messages: ["message_received", "chat_nudge"],
   drop: ["drop_ready"],
   pact: ["pact_reveal"],
 } as const satisfies Record<string, readonly NotificationType[]>;
@@ -43,6 +44,7 @@ export function notificationUrl(type: NotificationType, payload: { matchId?: str
   switch (type) {
     case "match_created":
     case "message_received":
+    case "chat_nudge":
       return payload?.matchId ? `/messages/${payload.matchId}` : "/messages";
     case "like_received":
     case "superlike_received":

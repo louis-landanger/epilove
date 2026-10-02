@@ -13,6 +13,7 @@
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
 | 1 | Notifications (NOT-01 à NOT-03) | ✅ fait et testé (API, worker, Playwright pour le service worker) ; push réel non testé en automatique (pas de service de push dans la session) |
+| 2 | Relances douces (CHAT-09) | ✅ fait et testé (cœur, worker) |
 | 2 | Stickers maison et GIF (CHAT-05) | ✅ fait et testé (API avec GIPHY simulé) ; GIPHY désactivé sans clé |
 | 2 | Modifier / supprimer (CHAT-08), avertissement avant envoi (SAF-09), « Ce message te dérange ? » (SAF-10) | ✅ fait et testé (cœur, API, Playwright) |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
@@ -94,6 +95,11 @@
 - Mesures : séquence démarrée 830 ms après l'heure sur deux navigateurs (2 ms d'écart) ; dry run 3 000 membres en 2 min 30 s (détail dans le README du solveur).
 - Chorégraphie faite avec Motion (déjà présent) plutôt que GSAP (docs/02 le suggère) : pas de dépendance supplémentaire pour une séquence de quelques secondes.
 
+### Relances douces (CHAT-09)
+
+- Les matchs n'expirent pas. Après 3 jours de silence (`packages/core/src/messaging/nudge.ts`), les deux membres reçoivent une notification discrète `chat_nudge` (groupe « Messages »), une seule fois par silence (colonne `match.nudged_at`, migration 0010), à 18 h heure du campus (tâche horaire `chat_nudge`, `apps/worker/src/tasks/messaging/nudge.ts`), seulement si `canMessage` l'autorise toujours.
+- La conversation affiche « Ça fait quelques jours avec … Envie de relancer ? » qui ouvre les brise-glace (`thread.nudge`).
+
 ### Stickers et GIF (CHAT-05)
 
 - 13 stickers maison (`packages/core/src/messaging/stickers.ts` pour les identifiants, dessins SVG dans `apps/web/components/rencontre/chat/stickers.tsx`) : atomes, liaison, étincelle, café, visages, et un sticker par école aux couleurs et glyphes de l'app (jamais un logo d'école).
@@ -147,7 +153,7 @@
 | `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
-| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge` (ajouts) |
+| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `chat_nudge` (ajouts) |
 | `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `drop:run` |
 | `turbo.json` | `ENCRYPTION_KEYS`, `ENCRYPTION_CURRENT_KEY_ID` et `EMAIL_HMAC_SECRET` transmis aux tests : le test du dépôt `members` ré-exécute le seed de développement, qui chiffrait sinon les messages fictifs avec la clé de test, illisibles ensuite par `pnpm dev` |
 | `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
@@ -168,6 +174,7 @@
 
 ## Migrations
 
+- `0010_*` : colonne `match.nudged_at`.
 - `0009_*` : type de message `sticker`.
 - `0008_*` : table `secret_crush`.
 - `0007_*` : table `drop_run`, index `drop (day)`.
