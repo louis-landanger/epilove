@@ -1,24 +1,28 @@
 "use client";
 
-import type { NotificationPreferencesView } from "@epilove/contracts";
+import type { NotificationPreferencesView, QuietHoursView } from "@epilove/contracts";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
 
 const GROUPS = ["likes", "matches", "messages", "drop", "pact", "events"] as const;
 type Group = (typeof GROUPS)[number];
+const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
 /** Notification preferences per group and channel (NOT-03), and conversation settings (CHAT-02). */
 export function PreferencesForm({
   initial,
   chat,
+  quiet: initialQuiet,
 }: {
   initial: NotificationPreferencesView;
   chat: { readReceipts: boolean; onlineStatus: boolean };
+  quiet: QuietHoursView;
 }) {
   const t = useTranslations("notifications.settings");
   const [groups, setGroups] = useState(initial.groups);
   const [chatSettings, setChatSettings] = useState(chat);
+  const [quiet, setQuiet] = useState(initialQuiet);
   const [saved, setSaved] = useState<string | null>(null);
 
   const flash = (message: string) => {
@@ -51,6 +55,20 @@ export function PreferencesForm({
       flash(t("error"));
     }
   };
+
+  const saveQuiet = async (next: QuietHoursView) => {
+    const previous = quiet;
+    setQuiet(next);
+    try {
+      setQuiet(await api.notifications.saveQuietHours(next));
+      flash(t("saved"));
+    } catch {
+      setQuiet(previous);
+      flash(t("error"));
+    }
+  };
+
+  const hourLabel = (hour: number) => t("quiet.hour", { hour: String(hour).padStart(2, "0") });
 
   return (
     <>
@@ -117,6 +135,58 @@ export function PreferencesForm({
             <Switch checked={chatSettings[key]} label={t(key)} onChange={() => toggleChat(key)} />
           </div>
         ))}
+      </section>
+
+      <section
+        aria-labelledby="quiet-title"
+        className="flex flex-col gap-4 rounded-3xl border border-paper/10 p-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="quiet-title" className="font-semibold">
+              {t("quiet.title")}
+            </h2>
+            <p className="text-paper/60 text-xs">{t("quiet.hint")}</p>
+          </div>
+          <Switch
+            checked={quiet.enabled}
+            label={t("quiet.title")}
+            onChange={() => void saveQuiet({ ...quiet, enabled: !quiet.enabled })}
+          />
+        </div>
+        {quiet.enabled && (
+          <>
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              {(["startHour", "endHour"] as const).map((key) => (
+                <label key={key} className="flex items-center gap-2">
+                  {t(`quiet.${key}`)}
+                  <select
+                    value={quiet[key]}
+                    onChange={(event) => void saveQuiet({ ...quiet, [key]: Number(event.target.value) })}
+                    className="rounded-xl border border-paper/20 bg-ink px-3 py-2"
+                  >
+                    {HOURS.map((hour) => (
+                      <option key={hour} value={hour}>
+                        {hourLabel(hour)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p>{t("quiet.allowMessages")}</p>
+                <p className="text-paper/60 text-xs">{t("quiet.allowMessagesHint")}</p>
+              </div>
+              <Switch
+                checked={quiet.allowMessages}
+                label={t("quiet.allowMessages")}
+                onChange={() => void saveQuiet({ ...quiet, allowMessages: !quiet.allowMessages })}
+              />
+            </div>
+          </>
+        )}
       </section>
 
       <p aria-live="polite" className="min-h-5 text-center text-sm text-volt">

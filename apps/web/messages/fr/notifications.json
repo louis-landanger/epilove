@@ -47,7 +47,16 @@
     "readReceiptsHint": "Si tu les désactives, tu ne vois plus ceux des autres non plus.",
     "onlineStatus": "Statut « En ligne »",
     "onlineStatusHint": "Visible uniquement par tes liaisons, et seulement si vous le partagez tous les deux.",
-    "discreet": "Les notifications sont discrètes par défaut : ce réglage se trouve dans la confidentialité."
+    "discreet": "Les notifications sont discrètes par défaut : ce réglage se trouve dans la confidentialité.",
+    "quiet": {
+      "title": "Heures calmes",
+      "hint": "Pas de notification push pendant ces heures (heure de Lyon). Tout reste dans le centre de notifications.",
+      "startHour": "De",
+      "endHour": "à",
+      "hour": "{hour} h",
+      "allowMessages": "Laisser passer les messages",
+      "allowMessagesHint": "Les nouveaux messages de tes liaisons sonnent quand même. La vérification après un date passe toujours."
+    }
   },
   "offline": {
     "title": "Pas de réseau",

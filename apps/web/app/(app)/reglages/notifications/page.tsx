@@ -14,11 +14,13 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function NotificationSettingsPage() {
   const t = await getTranslations("notifications.settings");
   const api = await serverApi();
-  const result = await gated(() => Promise.all([api.notifications.preferences(), api.messaging.settings()]));
+  const result = await gated(() =>
+    Promise.all([api.notifications.preferences(), api.messaging.settings(), api.notifications.quietHours()]),
+  );
   if (!result.ok) {
     return <GateScreen gate={result.gate} />;
   }
-  const [preferences, chat] = result.data;
+  const [preferences, chat, quiet] = result.data;
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-5 px-4 pt-6 pb-10">
       <a href="/notifications" className="text-paper/60 text-sm hover:text-paper">
@@ -26,7 +28,7 @@ export default async function NotificationSettingsPage() {
       </a>
       <h1 className="font-display font-semibold text-3xl tracking-tight">{t("title")}</h1>
       <PushToggle />
-      <PreferencesForm initial={preferences} chat={chat} />
+      <PreferencesForm initial={preferences} chat={chat} quiet={quiet} />
     </main>
   );
 }

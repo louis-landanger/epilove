@@ -47,7 +47,16 @@
     "readReceiptsHint": "If you turn them off, you no longer see other people's either.",
     "onlineStatus": "\"Online\" status",
     "onlineStatusHint": "Only visible to your bonds, and only if you both share it.",
-    "discreet": "Notifications are discreet by default: this setting is in privacy."
+    "discreet": "Notifications are discreet by default: this setting is in privacy.",
+    "quiet": {
+      "title": "Quiet hours",
+      "hint": "No push notifications during these hours (Lyon time). Everything stays in the notification centre.",
+      "startHour": "From",
+      "endHour": "to",
+      "hour": "{hour}:00",
+      "allowMessages": "Let messages through",
+      "allowMessagesHint": "New messages from your bonds still ring. The check after a date always gets through."
+    }
   },
   "offline": {
     "title": "No network",

@@ -19,6 +19,7 @@
 | 2 | Stickers maison et GIF (CHAT-05) | ✅ fait et testé (API avec GIPHY simulé) ; GIPHY désactivé sans clé |
 | 2 | Modifier / supprimer (CHAT-08), avertissement avant envoi (SAF-09), « Ce message te dérange ? » (SAF-10) | ✅ fait et testé (cœur, API, Playwright) |
 | 2 | Photos, photo éphémère, flou explicite (CHAT-06) ; messages vocaux (CHAT-07) | ✅ fait et testé (API, worker, Playwright à deux navigateurs avec micro simulé) ; transcription non faite, classifieur d'images à brancher (SAF-11) |
+| 2 | Heures calmes (NOT-04), résumé hebdomadaire par e-mail (NOT-05) | ✅ fait et testé (règles, worker avec expéditeur simulé, envoi réel vérifié dans Mailpit) |
 | 2 | Question de la semaine (COM-01), indice inter-écoles (COM-02), statistiques du Pacte (PAC-04) | ✅ fait et testé (cœur dont propriété d'anonymat, API, Playwright, axe) |
 | 2 | Kit sécurité date (IRL-03) | ✅ fait et testé (cœur, API, Playwright avec une personne de confiance sans compte, axe) |
 | 2 | Événements (IRL-01) | ✅ fait et testé (cœur, API, Playwright à trois navigateurs, axe) ; pas d'image de couverture |
@@ -144,6 +145,13 @@
 - Interface : bouton photo (aperçu, case « Éphémère : une seule ouverture »), bouton micro à la place d'« Envoyer » quand le champ est vide (enregistrement MediaRecorder 64 kbit/s, arrêt automatique à 2 minutes, écoute avant envoi), lecteur avec forme d'onde et vitesses 1×/1,5×/2×, photo floutée avec « Afficher quand même » et « Signaler » quand le classifieur la signale. Sur téléphone, les outils de la zone de saisie se replient derrière « + ».
 - **Non fait** : transcription des vocaux (CHAT-07, accessibilité) ; classifieur réel (SAF-11, aujourd'hui aucun signalement : toutes les photos s'affichent nettes).
 
+### Heures calmes (NOT-04) et résumé hebdomadaire (NOT-05)
+
+- `packages/notifications/src/quiet-hours.ts` : par défaut aucune notification push de 23 h à 8 h (heure de Lyon) ; réglable (activé, début, fin, « laisser passer les messages ») dans `(app)/reglages/notifications`. Une notification retenue n'est pas envoyée plus tard : elle attend dans le centre de notifications. La vérification après un date (IRL-03) passe toujours ; les relances (CHAT-09) jamais.
+- Table `quiet_hours` (pas de ligne = valeurs par défaut), API `notifications.quietHours` et `saveQuietHours`, appliquées par la livraison push du worker.
+- `packages/notifications/src/digest.ts` et `email.ts` : résumé du dimanche soir (à partir de 18 h, heure de Lyon) pour les membres qui ont coché l'e-mail d'au moins un groupe dans leurs préférences : likes reçus (sans les personnes bloquées), nouvelles liaisons, conversations en attente, événements des 7 prochains jours ouverts à leur école, Pacte ouvert. Seuls les groupes choisis figurent ; aucun prénom ni message ; rien n'est envoyé s'il n'y a rien à dire. Lien « Ne plus recevoir » et en-tête `List-Unsubscribe` vers les réglages.
+- Envoi SMTP par `nodemailer` (`SMTP_URL`, Mailpit en local). Table `email_digest` : un envoi par membre et par semaine ISO, réservé avant l'envoi et rendu en cas d'échec (nouvel essai à l'heure suivante). Tâche `weekly_digest` toutes les heures le dimanche (`11 * * * 0`), l'heure du campus est vérifiée dans la tâche. Ni adresse ni cause d'échec dans les journaux.
+
 ### Question de la semaine (COM-01), indice inter-écoles (COM-02), statistiques du Pacte (PAC-04)
 
 - `packages/core/src/community/community.ts` : semaine ISO à l'heure du campus (`isoWeek`, `weekEndsAt`), rotation de la banque (`questionForWeek`), accord sur les questions récentes (`weeklyAgreement`), et les règles d'anonymat communes : `ANONYMITY_THRESHOLD = 10`, `anonymousResults` (une école n'apparaît qu'à partir de 10 réponses, et le total du campus n'est affiché que si ce qui est caché est nul ou d'au moins 10 : pas de déduction par soustraction ; testé par propriété), `crossSchoolIndex` (paires d'écoles différentes d'au moins 10 liaisons, sans total).
@@ -199,7 +207,7 @@
 | Fichier | Modification |
 |---|---|
 | `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo`, `drop:run` |
-| `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
+| `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h), `nodemailer` (10.0.13, types inclus) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendances `@epilove/crypto` et `aws4fetch` (stockage des médias de conversation), script `db:seed:dev`, exports `./repositories/*`, `./dev-seed`, `./storage` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `maplibre-gl`, `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `community`, `dateSafety`, `dev`, `discovery`, `events`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
@@ -210,7 +218,7 @@
 | `packages/db/src/schema/index.ts` | `community`, `date-safety`, `events`, `spots` (ajouts) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
-| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `media_purge`, `date_check_in`, `chat_nudge` (ajouts) |
+| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `media_purge`, `date_check_in`, `weekly_digest`, `chat_nudge` (ajouts) |
 | `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `drop:run` |
 | `turbo.json` | `ENCRYPTION_KEYS`, `ENCRYPTION_CURRENT_KEY_ID` et `EMAIL_HMAC_SECRET` transmis aux tests : le test du dépôt `members` ré-exécute le seed de développement, qui chiffrait sinon les messages fictifs avec la clé de test, illisibles ensuite par `pnpm dev` |
 | `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
@@ -221,6 +229,7 @@
 
 ## Variables d'environnement
 
+- `EMAIL_FROM` et `APP_PUBLIC_URL` (section « Session B » de `.env.example`, worker) : expéditeur et adresse publique de l'app dans les liens du résumé hebdomadaire. Le résumé utilise `SMTP_URL` (existante) ; sans elle, il ne part pas. **À voir avec A** : le même transport SMTP servira aux codes de connexion (Better Auth) ; on pourra mutualiser `smtpSender`.
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` (existantes) servent aussi aux médias de conversation ; `S3_REGION` facultative (`eu-west-1` par défaut). Les URL présignées des vocaux pointent vers `S3_ENDPOINT` : en production, il doit être joignable par les navigateurs (sinon prévoir un point d'accès public distinct). Sans S3 configuré, l'API garde les médias en mémoire (tests seulement).
 
 - `GIPHY_API_KEY` (facultative, API) : active les GIF (CHAT-05). Absente : stickers seulement.
@@ -233,6 +242,7 @@
 
 ## Migrations
 
+- `0016_*` : tables `quiet_hours` et `email_digest`.
 - `0015_*` : tables `weekly_question` et `weekly_answer`.
 - `0014_*` : table `date_share`.
 - `0013_*` : tables `event` et `event_rsvp`.
