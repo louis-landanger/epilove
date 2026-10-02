@@ -11,6 +11,7 @@ export const NOTIFICATION_TYPES = [
   "drop_ready",
   "pact_reveal",
   "event_cancelled",
+  "date_check_in",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -21,7 +22,7 @@ export const isNotificationType = (value: string): value is NotificationType =>
 export const NOTIFICATION_GROUPS = {
   likes: ["like_received", "superlike_received"],
   matches: ["match_created"],
-  messages: ["message_received", "chat_nudge"],
+  messages: ["message_received", "chat_nudge", "date_check_in"],
   drop: ["drop_ready"],
   pact: ["pact_reveal"],
   events: ["event_cancelled"],
@@ -44,7 +45,7 @@ export const DEFAULT_CHANNELS: Readonly<Record<NotificationChannel, boolean>> = 
 /** Where a notification leads in the app. */
 export function notificationUrl(
   type: NotificationType,
-  payload: { matchId?: string; eventId?: string } | null,
+  payload: { matchId?: string; eventId?: string; shareId?: string } | null,
 ): string {
   switch (type) {
     case "match_created":
@@ -58,6 +59,8 @@ export function notificationUrl(
       return "/decouvrir";
     case "pact_reveal":
       return "/campus/pacte";
+    case "date_check_in":
+      return payload?.shareId ? `/messages/securite/${payload.shareId}` : "/messages";
     case "event_cancelled":
       return payload?.eventId ? `/campus/evenements/${payload.eventId}` : "/campus/evenements";
   }

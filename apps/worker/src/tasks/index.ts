@@ -1,5 +1,6 @@
 import type { TaskList } from "graphile-worker";
 import { dropTickTask } from "./drop/tick";
+import { dateCheckIn } from "./messaging/check-in";
 import { chatNudgeTick } from "./messaging/nudge";
 import { mediaPurge, messagePurge } from "./messaging/purge";
 import { outboxPurge } from "./outbox/purge";
@@ -16,6 +17,7 @@ export const taskList: TaskList = {
     helpers.logger.info("heartbeat");
   },
   chat_nudge: chatNudgeTick,
+  date_check_in: dateCheckIn,
   drop_tick: dropTickTask,
   media_purge: mediaPurge,
   message_purge: messagePurge,
@@ -33,4 +35,5 @@ export const crontab = [
   "23 4 * * * message_purge",
   "7 * * * * chat_nudge",
   "*/5 * * * * media_purge",
+  "*/5 * * * * date_check_in",
 ].join("\n");

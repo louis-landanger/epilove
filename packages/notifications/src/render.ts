@@ -29,6 +29,7 @@ const TEXTS = {
     drop_ready: "Ton Drop est arrivé.",
     pact_reveal: "C'est l'heure : les résultats du Pacte sont là.",
     event_cancelled: "Un événement auquel tu as répondu est annulé.",
+    date_check_in: "Petite vérification : tout va bien ?",
   },
   en: {
     title: "Epilove",
@@ -43,6 +44,7 @@ const TEXTS = {
     drop_ready: "Your Drop is here.",
     pact_reveal: "It's time: the Pact results are in.",
     event_cancelled: "An event you answered has been cancelled.",
+    date_check_in: "Quick check: is everything OK?",
   },
 } as const;
 
@@ -51,7 +53,7 @@ export interface RenderOptions {
   /** First name of the other member, only used when discretion is off. */
   readonly otherFirstName?: string | null;
   readonly locale?: Locale;
-  readonly payload?: { matchId?: string; eventId?: string } | null;
+  readonly payload?: { matchId?: string; eventId?: string; shareId?: string } | null;
 }
 
 export function renderPush(type: NotificationType, options: RenderOptions): PushContent {

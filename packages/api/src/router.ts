@@ -1,5 +1,6 @@
 import { campus } from "./modules/campus";
 import { campusLife } from "./modules/campus-life";
+import { dateSafety } from "./modules/date-safety";
 import { dev } from "./modules/dev";
 import { discovery } from "./modules/discovery";
 import { events } from "./modules/events";
@@ -20,6 +21,7 @@ import { os } from "./procedures";
 export const router = os.router({
   campus,
   campusLife,
+  dateSafety,
   dev,
   discovery,
   events,

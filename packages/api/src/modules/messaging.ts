@@ -70,7 +70,7 @@ import { realtimePublisher } from "../rencontre/realtime";
  * participant, unmatched, blocked, hidden, banned…) is a NOT_FOUND: a refusal
  * never tells why.
  */
-async function requireConversation(db: Database, viewerId: string, matchId: string, now = new Date()) {
+export async function requireConversation(db: Database, viewerId: string, matchId: string, now = new Date()) {
   const found = await matchForMember(db, matchId, viewerId);
   if (!found) {
     throw new ORPCError("NOT_FOUND");
@@ -311,7 +311,7 @@ async function alreadySent(
 }
 
 /** A date proposal of this conversation, with its decrypted payload (CHAT-10). */
-async function requireDateProposal(db: Database, matchId: string, messageId: string) {
+export async function requireDateProposal(db: Database, matchId: string, messageId: string) {
   const [message] = await messagesByIds(db, [messageId]);
   if (!message || message.matchId !== matchId || message.kind !== "date_proposal" || message.deletedAt) {
     throw new ORPCError("NOT_FOUND");
