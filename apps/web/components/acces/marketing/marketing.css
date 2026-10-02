@@ -1,0 +1,1021 @@
+/*
+ * Marketing site: "atomes crochus", a lab after dark (docs/02-design.md).
+ * Only transform, opacity and light filters are animated. The global
+ * reduced-motion rule (app/globals.css) stops every animation and transition.
+ */
+
+.marketing {
+  --tube-h: clamp(14rem, 46vw, 25rem);
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  interpolate-size: allow-keywords;
+}
+
+/* ------------------------------------------------------------------ chrome */
+
+.skip-link {
+  position: absolute;
+  top: -5rem;
+  left: 1rem;
+  z-index: 60;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  background: var(--color-volt);
+  color: var(--color-ink);
+  font-weight: 600;
+  transition: top 0.2s var(--ease-out);
+}
+
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+.cta-primary,
+.cta-ghost,
+.cta-small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition:
+    background-color 0.25s var(--ease-out),
+    box-shadow 0.35s var(--ease-out),
+    color 0.25s var(--ease-out),
+    border-color 0.25s var(--ease-out);
+}
+
+.cta-primary {
+  min-height: 3.5rem;
+  padding: 0 1.75rem;
+  background: var(--color-plasma);
+  color: var(--color-ink);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, white 45%, transparent),
+    0 18px 50px -18px var(--color-plasma);
+}
+
+.cta-primary:hover {
+  background: color-mix(in oklch, var(--color-plasma) 82%, white);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, white 45%, transparent),
+    0 22px 70px -12px var(--color-plasma);
+}
+
+.cta-primary:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.cta-ghost {
+  min-height: 3.5rem;
+  padding: 0 1.5rem;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 28%, transparent);
+  background: color-mix(in oklch, var(--color-ink) 45%, transparent);
+  color: var(--color-paper);
+  backdrop-filter: blur(10px);
+}
+
+.cta-ghost:hover {
+  border-color: var(--color-paper);
+}
+
+.cta-small {
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--color-ink) 12%, transparent);
+}
+
+.cta-small:hover {
+  background: var(--color-volt);
+}
+
+/* ------------------------------------------------------------------- hero */
+
+.hero-vignette {
+  background:
+    radial-gradient(
+      55% 50% at 24% 70%,
+      color-mix(in oklch, var(--color-ink) 62%, transparent),
+      transparent 75%
+    ),
+    radial-gradient(
+      130% 90% at 65% 35%,
+      transparent 45%,
+      color-mix(in oklch, var(--color-ink) 75%, transparent) 100%
+    ),
+    linear-gradient(
+      to top,
+      var(--color-ink) 0%,
+      color-mix(in oklch, var(--color-ink) 62%, transparent) 24%,
+      transparent 52%
+    );
+}
+
+.headline {
+  font-size: clamp(3.5rem, 12.6vw, 13.75rem);
+}
+
+.headline-word {
+  display: inline-block;
+  animation: focus-pull 1.5s var(--ease-out) both;
+}
+
+.headline-kinetic {
+  font-variation-settings:
+    "wdth" 100,
+    "opsz" 96;
+}
+
+/* Text is painted from the first frame (no hidden LCP): it only comes into focus. */
+@keyframes focus-pull {
+  from {
+    filter: blur(16px);
+    transform: translateY(0.16em) scale(1.03);
+  }
+  to {
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+.kinetic-char {
+  --pull: 0;
+  display: inline-block;
+  text-align: center;
+  font-variation-settings:
+    "wdth" calc(100 - var(--pull) * 28),
+    "opsz" 96;
+  font-weight: calc(600 + var(--pull) * 200);
+  transition:
+    font-variation-settings 0.45s var(--ease-out),
+    font-weight 0.45s var(--ease-out);
+}
+
+.hero-fade {
+  animation: rise-in 1.4s var(--ease-out) 0.45s both;
+}
+
+@keyframes rise-in {
+  from {
+    transform: translateY(1.25rem);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.field-hint {
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-out) 0.8s;
+}
+
+.marketing:has(canvas[data-live="true"]) .field-hint {
+  opacity: 1;
+}
+
+.hint-coarse {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .hint-fine {
+    display: none;
+  }
+
+  .hint-coarse {
+    display: inline;
+  }
+}
+
+.scroll-cue-line {
+  display: block;
+  width: 3rem;
+  height: 1px;
+  background: currentColor;
+  transform-origin: left;
+  animation: cue 2.6s var(--ease-in-out) infinite;
+}
+
+@keyframes cue {
+  0% {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  50% {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  50.1% {
+    transform-origin: right;
+  }
+  100% {
+    transform: scaleX(0);
+    transform-origin: right;
+  }
+}
+
+.logo-electron {
+  offset-path: path("M51.05 21A22 9 -30 1 1 12.95 43A22 9 -30 1 1 51.05 21");
+  offset-rotate: 0deg;
+  animation: logo-orbit 7s linear infinite;
+}
+
+@keyframes logo-orbit {
+  to {
+    offset-distance: 100%;
+  }
+}
+
+/* ------------------------------------------------------------------ steps */
+
+.glass-card {
+  border: 1px solid color-mix(in oklch, var(--color-paper) 14%, transparent);
+  border-radius: 1.75rem;
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklch, var(--color-paper) 10%, transparent),
+    color-mix(in oklch, var(--color-paper) 3%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, var(--color-paper) 22%, transparent),
+    0 40px 90px -40px oklch(0 0 0 / 0.85);
+  backdrop-filter: blur(16px);
+}
+
+.step-stage {
+  perspective: 1100px;
+}
+
+.step-card-3d {
+  transform-style: preserve-3d;
+}
+
+.step-panel article {
+  transform-origin: 50% 0;
+}
+
+.code-digit {
+  animation: digit-in 0.8s var(--ease-out) both;
+}
+
+@keyframes digit-in {
+  from {
+    transform: translateY(35%) rotateX(60deg);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.bond-arc {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 220;
+  animation: bond-draw 3.6s var(--ease-in-out) infinite;
+  filter: drop-shadow(0 0 6px oklch(1 0 0 / 0.5));
+}
+
+@keyframes bond-draw {
+  0% {
+    stroke-dashoffset: 220;
+  }
+  45%,
+  80% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -220;
+  }
+}
+
+.bond-atom {
+  transform-box: fill-box;
+  transform-origin: center;
+  filter: drop-shadow(0 0 18px currentColor);
+  animation: atom-pulse 3.6s var(--ease-in-out) infinite;
+}
+
+.bond-atom-late {
+  animation-delay: 0.3s;
+}
+
+@keyframes atom-pulse {
+  0%,
+  100% {
+    transform: scale(0.92);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.bond-flash {
+  animation: flash 3.6s var(--ease-out) infinite;
+}
+
+@keyframes flash {
+  0%,
+  40% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0;
+  }
+  55% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+  }
+  85% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0;
+  }
+}
+
+/* ------------------------------------------------------------------- race */
+
+.race-glow {
+  position: absolute;
+  inset: 20% 0 auto;
+  height: 60%;
+  background: radial-gradient(
+    45% 50% at 30% 50%,
+    color-mix(in oklch, var(--color-plasma) 14%, transparent),
+    transparent 70%
+  );
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.race-rack {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.race-scale {
+  position: relative;
+  height: var(--tube-h);
+  margin-top: 1.75rem;
+  border-right: 1px solid color-mix(in oklch, var(--color-paper) 14%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: color-mix(in oklch, var(--color-paper) 62%, transparent);
+}
+
+.race-scale span {
+  position: absolute;
+  right: 0.4rem;
+  transform: translateY(50%);
+  white-space: nowrap;
+}
+
+.race-tubes {
+  display: flex;
+}
+
+.tube-slot {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 1s var(--ease-out);
+}
+
+.tube {
+  position: relative;
+  width: min(70%, 4.5rem);
+  height: var(--tube-h);
+}
+
+/* Lip of the test tube, slightly wider than the glass. */
+.tube-rim {
+  position: absolute;
+  top: -0.3rem;
+  left: -0.3rem;
+  right: -0.3rem;
+  z-index: 2;
+  height: 0.6rem;
+  border: 1.5px solid color-mix(in oklch, var(--color-paper) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}
+
+/* Glow pooled on the bench under the tube. */
+.tube::after {
+  content: "";
+  position: absolute;
+  bottom: -1.1rem;
+  left: -20%;
+  right: -20%;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--school), transparent);
+  opacity: calc(0.12 + var(--level) * 0.75);
+  filter: blur(6px);
+  transition: opacity 1.8s var(--ease-out);
+}
+
+.tube-glass {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 1.5px solid color-mix(in oklch, var(--color-paper) 32%, transparent);
+  border-top: 0;
+  border-radius: 0 0 999px 999px;
+  background:
+    radial-gradient(
+      120% 40% at 50% 100%,
+      color-mix(in oklch, var(--school) 22%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--color-paper) 9%, transparent),
+      color-mix(in oklch, var(--color-paper) 2%, transparent) 45%,
+      color-mix(in oklch, var(--color-paper) 10%, transparent)
+    );
+  box-shadow: 0 0 calc(var(--level) * 70px) color-mix(in oklch, var(--school) 45%, transparent);
+  transition: box-shadow 1.8s var(--ease-out);
+}
+
+.tube-slot[data-leader] .tube-glass,
+.tube-slot[data-leader] .tube-rim {
+  border-color: color-mix(in oklch, var(--school) 75%, var(--color-paper));
+}
+
+/* Etched graduations on the glass. */
+.tube-graduations {
+  position: absolute;
+  inset: 8% 55% 14% 14%;
+  background: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--color-paper) 32%, transparent) 0 1px,
+    transparent 1px 10%
+  );
+  mask-image: linear-gradient(to right, black 55%, transparent);
+  pointer-events: none;
+}
+
+.tube-liquid {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in oklch, var(--school) 88%, black),
+    var(--school) 55%,
+    color-mix(in oklch, var(--school) 70%, white)
+  );
+  box-shadow: inset 0 0 24px color-mix(in oklch, white 30%, transparent);
+  transform: translateY(calc((1 - var(--level)) * 100% + 0.7rem));
+  transition: transform 1.8s var(--ease-out);
+}
+
+.tube-wave {
+  position: absolute;
+  top: -0.6rem;
+  left: 0;
+  width: 200%;
+  height: 0.75rem;
+  fill: color-mix(in oklch, var(--school) 60%, white);
+  animation: wave 2.8s linear infinite;
+}
+
+.tube-wave-back {
+  top: -0.5rem;
+  opacity: 0.55;
+  animation-duration: 4.4s;
+  animation-direction: reverse;
+}
+
+@keyframes wave {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.tube-bubble {
+  position: absolute;
+  bottom: 6%;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: color-mix(in oklch, white 70%, transparent);
+  animation: bubble 4.2s ease-in infinite;
+}
+
+@keyframes bubble {
+  from {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  to {
+    transform: translateY(calc(var(--tube-h) * var(--level) * -0.9)) scale(1);
+    opacity: 0;
+  }
+}
+
+.tube-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 12%,
+    color-mix(in oklch, white 22%, transparent) 22%,
+    transparent 34%,
+    transparent 72%,
+    color-mix(in oklch, white 10%, transparent) 82%,
+    transparent 92%
+  );
+  pointer-events: none;
+}
+
+.race-table {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-paper);
+}
+
+.race-table th,
+.race-table td {
+  padding: 0.7rem 0.35rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
+}
+
+.race-table thead th {
+  font-size: 0.66rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--color-paper) 72%, transparent);
+}
+
+.race-table tbody th {
+  font-family: var(--font-sans);
+}
+
+.goal-bar {
+  position: relative;
+  height: 0.75rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--color-paper) 10%, transparent);
+}
+
+.goal-bar-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-plasma), var(--color-volt));
+  transform-origin: left;
+  transition: transform 1.8s var(--ease-out);
+}
+
+/* ------------------------------------------------------------------- join */
+
+.join-panel {
+  background:
+    radial-gradient(
+      110% 130% at 0% 0%,
+      color-mix(in oklch, var(--color-plasma) 20%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 110% at 100% 100%,
+      color-mix(in oklch, var(--color-volt) 11%, transparent),
+      transparent 55%
+    ),
+    oklch(0.18 0.025 285);
+}
+
+.waitlist-input {
+  min-height: 3.5rem;
+  padding: 0 1.4rem;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 30%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  color: var(--color-paper);
+  font-size: 1.05rem;
+  transition: border-color 0.2s var(--ease-out);
+}
+
+.waitlist-input::placeholder {
+  color: color-mix(in oklch, var(--color-paper) 60%, transparent);
+}
+
+.waitlist-input:hover {
+  border-color: color-mix(in oklch, var(--color-paper) 55%, transparent);
+}
+
+.waitlist-input[aria-invalid="true"] {
+  border-color: oklch(0.72 0.17 25);
+}
+
+.waitlist-success {
+  animation: rise-in 0.8s var(--ease-out) both;
+}
+
+.waitlist-success:focus {
+  outline: none;
+}
+
+.waitlist-success:focus-visible {
+  outline: 2px solid var(--color-volt);
+}
+
+/* ------------------------------------------------------------------- pact */
+
+.pact-stage {
+  display: grid;
+  place-items: center;
+}
+
+.pact-ring {
+  position: absolute;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
+  border-radius: 50%;
+}
+
+.pact-ring-1 {
+  inset: 2%;
+  border-top-color: color-mix(in oklch, var(--color-plasma) 70%, transparent);
+  animation: spin 38s linear infinite;
+}
+
+.pact-ring-2 {
+  inset: 13%;
+  border-left-color: color-mix(in oklch, var(--color-volt) 60%, transparent);
+  animation: spin 26s linear infinite reverse;
+}
+
+.pact-ring-3 {
+  inset: 25%;
+  border-style: dashed;
+  animation: spin 70s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pact-vial {
+  position: relative;
+  width: 24%;
+  height: 58%;
+  overflow: hidden;
+  border: 1.5px solid color-mix(in oklch, var(--color-paper) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--color-paper) 5%, transparent);
+  box-shadow: 0 0 120px -10px color-mix(in oklch, var(--color-plasma) 55%, transparent);
+}
+
+.pact-vial-liquid {
+  position: absolute;
+  inset: 36% -20% -10%;
+  border-radius: 45% 55% 0 0;
+  background: linear-gradient(
+    to top,
+    var(--color-plasma),
+    color-mix(in oklch, var(--color-plasma) 55%, var(--color-volt))
+  );
+  animation: slosh 6s var(--ease-in-out) infinite;
+}
+
+@keyframes slosh {
+  0%,
+  100% {
+    transform: rotate(-6deg) translateY(0);
+  }
+  50% {
+    transform: rotate(6deg) translateY(-4%);
+  }
+}
+
+.pact-vial-shine {
+  position: absolute;
+  inset: 6% 58% 10% 16%;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, color-mix(in oklch, white 35%, transparent), transparent);
+}
+
+.pact-seal {
+  position: absolute;
+  top: 21%;
+  left: 50%;
+  display: grid;
+  width: clamp(4.5rem, 18%, 6rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in oklch, var(--color-volt) 80%, white),
+    var(--color-volt) 55%,
+    color-mix(in oklch, var(--color-volt) 70%, black)
+  );
+  box-shadow: 0 14px 40px -10px var(--color-volt);
+  transform: translate(-50%, -50%) rotate(-8deg);
+}
+
+.countdown-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0.25rem;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
+  border-radius: 1.25rem;
+  background: color-mix(in oklch, var(--color-paper) 4%, transparent);
+}
+
+/* ----------------------------------------------------------------- safety */
+
+.safety-section :focus-visible {
+  outline-color: var(--color-ink);
+}
+
+/* -------------------------------------------------------------------- faq */
+
+.faq-summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-summary {
+  transition: color 0.2s var(--ease-out);
+}
+
+.faq-summary:hover {
+  color: var(--color-plasma);
+}
+
+.faq-icon::before,
+.faq-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.1rem;
+  height: 1.5px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  transition: transform 0.45s var(--ease-out);
+}
+
+.faq-icon::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.faq-item[open] .faq-icon::after {
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+.faq-item::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height 0.5s var(--ease-out),
+    content-visibility 0.5s allow-discrete;
+}
+
+.faq-item[open]::details-content {
+  height: auto;
+}
+
+/* ----------------------------------------------------------------- footer */
+
+.marquee {
+  overflow: hidden;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 36s linear infinite;
+}
+
+.marquee-group {
+  display: flex;
+  gap: 2rem;
+  padding-right: 2rem;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.footer-link {
+  color: color-mix(in oklch, var(--color-paper) 82%, transparent);
+  transition: color 0.2s var(--ease-out);
+}
+
+.footer-link:hover {
+  color: var(--color-plasma);
+}
+
+.footer-giant {
+  margin: 1rem 0 -0.16em;
+  color: color-mix(in oklch, var(--color-paper) 94%, transparent);
+  font-family: var(--font-display);
+  font-size: 38vw;
+  font-weight: 700;
+  line-height: 0.8;
+  letter-spacing: -0.065em;
+  text-align: center;
+  font-variation-settings: "wdth" 85;
+}
+
+/* ------------------------------------------------------------- textures */
+
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 50;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.075;
+  pointer-events: none;
+  animation: grain 0.9s steps(5) infinite;
+}
+
+@keyframes grain {
+  0% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-3%, 2%);
+  }
+  40% {
+    transform: translate(2%, -4%);
+  }
+  60% {
+    transform: translate(-4%, -2%);
+  }
+  80% {
+    transform: translate(3%, 3%);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+.ion-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 70;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: -1.125rem 0 0 -1.125rem;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 55%, transparent);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.3s var(--ease-out),
+    width 0.35s var(--ease-out),
+    height 0.35s var(--ease-out),
+    margin 0.35s var(--ease-out),
+    background-color 0.35s var(--ease-out),
+    border-color 0.35s var(--ease-out);
+}
+
+.ion-cursor::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin: -0.15rem 0 0 -0.15rem;
+  border-radius: 50%;
+  background: var(--color-volt);
+  box-shadow: 0 0 10px var(--color-volt);
+}
+
+.cursor-visible .ion-cursor {
+  opacity: 1;
+}
+
+.ion-cursor.is-active {
+  width: 4rem;
+  height: 4rem;
+  margin: -2rem 0 0 -2rem;
+  border-color: var(--color-plasma);
+  background: color-mix(in oklch, var(--color-plasma) 14%, transparent);
+}
+
+/* Lenis (smooth scrolling on the landing only). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ legal */
+
+.legal-body h2 {
+  margin-top: 3.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-paper);
+  scroll-margin-top: 6rem;
+}
+
+.legal-body p,
+.legal-body li {
+  max-width: 46rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: color-mix(in oklch, var(--color-paper) 86%, transparent);
+}
+
+.legal-body p {
+  margin-top: 1rem;
+}
+
+.legal-body ul {
+  margin-top: 1rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.legal-body li + li {
+  margin-top: 0.5rem;
+}
+
+.legal-body li::marker {
+  color: var(--color-plasma);
+}
+
+.legal-body mark {
+  padding: 0 0.25em;
+  border-radius: 0.3em;
+  background: color-mix(in oklch, var(--color-volt) 22%, transparent);
+  color: var(--color-paper);
+}
+
+.legal-table-wrapper {
+  margin-top: 1.25rem;
+  overflow-x: auto;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
+  border-radius: 1rem;
+}
+
+.legal-body table {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.legal-body caption {
+  padding: 0.9rem 1rem 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-align: left;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--color-paper) 72%, transparent);
+}
+
+.legal-body table th,
+.legal-body table td {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid color-mix(in oklch, var(--color-paper) 10%, transparent);
+  line-height: 1.5;
+  text-align: left;
+  vertical-align: top;
+  color: color-mix(in oklch, var(--color-paper) 88%, transparent);
+}
+
+.legal-body table thead th {
+  font-weight: 600;
+  color: var(--color-paper);
+}

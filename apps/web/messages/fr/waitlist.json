@@ -1,0 +1,24 @@
+{
+  "eyebrow": "Liste d’attente",
+  "title": "Fais monter <em>ton école</em>.",
+  "lead": "Inscris-toi avec ton email d’école : ton inscription compte pour ton école dans la course, et tu reçois ton lien de parrainage.",
+  "label": "Ton email d’école",
+  "placeholder": "prenom.nom@ecole.fr",
+  "hint": "Adresses en @epita.fr, @esme.fr, @supbiotech.fr, @isg.fr ou @ipsa.fr.",
+  "submit": "Rejoindre la liste",
+  "submitting": "Inscription…",
+  "referral": "Lien de parrainage reconnu : ton inscription fera aussi avancer la personne qui te l’a envoyé.",
+  "errors": {
+    "required": "Entre ton adresse email d’école.",
+    "invalid_format": "Cette adresse ne ressemble pas à une adresse email. Vérifie qu’il ne manque rien.",
+    "domain_not_allowed": "Cette adresse n’appartient pas à une école participante. Utilise ton email en @epita.fr, @esme.fr, @supbiotech.fr, @isg.fr ou @ipsa.fr.",
+    "rate_limited": "Trop de tentatives en peu de temps. Réessaie dans quelques minutes.",
+    "server_error": "Quelque chose a planté de notre côté. On relance ?"
+  },
+  "success": {
+    "title": "C’est noté.",
+    "body": "Si c’est ta première inscription, ton lien de parrainage arrive dans ta boîte mail d’école d’ici quelques minutes. Pense à jeter un œil aux indésirables.",
+    "again": "Inscrire une autre adresse"
+  },
+  "privacy": "Ton adresse n’est pas conservée : seule une empreinte chiffrée est gardée pour éviter les doublons. Détails dans la <link>politique de confidentialité</link>."
+}

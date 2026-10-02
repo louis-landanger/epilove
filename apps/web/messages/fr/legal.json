@@ -1,0 +1,446 @@
+{
+  "draft": "Brouillon — à valider par un juriste",
+  "draftNote": "Document de travail, rédigé avant la création de l’association. Les éléments entre crochets sont à compléter. Il sera relu et validé avant l’ouverture du service.",
+  "version": "Version de travail du 2 octobre 2026",
+  "toc": "Sur cette page",
+  "back": "Retour à l’accueil",
+  "nav": {
+    "label": "Pages légales",
+    "legalNotice": "Mentions légales",
+    "terms": "Conditions d’utilisation",
+    "privacy": "Confidentialité",
+    "transparency": "Transparence du classement"
+  },
+  "legalNotice": {
+    "title": "Mentions légales",
+    "description": "Éditeur, hébergeur et points de contact du service Epilove.",
+    "sections": [
+      {
+        "id": "editeur",
+        "title": "Éditeur du service",
+        "blocks": [
+          "Le service Epilove (nom de code) est édité par l’association [Nom de l’association], association régie par la loi du 1er juillet 1901, déclarée à la préfecture du Rhône le [date de déclaration] sous le numéro RNA [W000000000], dont le siège est situé [adresse du siège], Lyon.",
+          "Téléphone : [numéro de téléphone]. Email : [contact@domaine]."
+        ]
+      },
+      {
+        "id": "publication",
+        "title": "Direction de la publication",
+        "blocks": ["[Prénom Nom], au titre de la présidence de l’association."]
+      },
+      {
+        "id": "hebergement",
+        "title": "Hébergement",
+        "blocks": [
+          "[Raison sociale de l’hébergeur : Hetzner Online GmbH ou Scaleway SAS, à confirmer], [adresse], [téléphone]. Les serveurs et les données sont situés dans l’Union européenne."
+        ]
+      },
+      {
+        "id": "contact",
+        "title": "Points de contact",
+        "blocks": [
+          "Conformément aux articles 11 et 12 du règlement européen sur les services numériques (DSA) :",
+          {
+            "list": [
+              "autorités des États membres, Commission européenne et Comité européen des services numériques : [autorites@domaine] ;",
+              "utilisatrices et utilisateurs : [contact@domaine], en français ou en anglais ;",
+              "signalement d’un contenu illicite hors de l’application : [signalement@domaine]. Dans l’application, chaque contenu se signale en deux gestes."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "propriete",
+        "title": "Propriété intellectuelle",
+        "blocks": [
+          "Les textes, éléments graphiques, animations et le code du site appartiennent à l’association ou à leurs autrices et auteurs. Les polices Bricolage Grotesque, Instrument Serif, Geist et Geist Mono sont distribuées sous licence libre (SIL Open Font License) et servies depuis nos propres serveurs."
+        ]
+      },
+      {
+        "id": "independance",
+        "title": "Indépendance",
+        "blocks": [
+          "Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées. Les noms des écoles servent uniquement à indiquer qui peut s’inscrire ; aucun logo ni élément d’identité visuelle des écoles n’est utilisé.",
+          "« Epilove » est un nom de code provisoire. Le nom public du service sera annoncé avant l’ouverture."
+        ]
+      }
+    ]
+  },
+  "terms": {
+    "title": "Conditions générales d’utilisation",
+    "description": "Les règles d’utilisation d’Epilove, de la liste d’attente à la modération.",
+    "sections": [
+      {
+        "id": "objet",
+        "title": "Objet",
+        "blocks": [
+          "Ces conditions encadrent l’utilisation d’Epilove, service gratuit de rencontre et d’amitié réservé aux étudiantes et étudiants des écoles participantes du campus de Lyon, édité par l’association [Nom de l’association]. En créant un compte, tu les acceptes."
+        ]
+      },
+      {
+        "id": "eligibilite",
+        "title": "Qui peut utiliser le service",
+        "blocks": [
+          {
+            "list": [
+              "Avoir 18 ans révolus. L’âge est contrôlé à l’inscription et ce contrôle est bloquant.",
+              "Être en cours de scolarité à l’EPITA, l’ESME, Sup'Biotech, l’ISG ou l’IPSA, sur le campus de Lyon, et disposer d’une adresse email fournie par l’école.",
+              "N’avoir qu’un seul compte : une adresse d’école correspond à une personne et à un compte.",
+              "Ne pas faire l’objet d’un bannissement ni d’une décision de justice interdisant l’usage du service."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "liste-attente",
+        "title": "Liste d’attente",
+        "blocks": [
+          "Avant l’ouverture, une liste d’attente permet de s’inscrire avec son adresse d’école. Cette inscription ne crée pas de compte et n’engage à rien. Elle compte pour ton école dans la course des écoles, classée en part de l’effectif estimé de chaque école. Ton lien de parrainage est personnel."
+        ]
+      },
+      {
+        "id": "compte",
+        "title": "Ton compte",
+        "blocks": [
+          "Tu es responsable de l’exactitude des informations que tu fournis : ton prénom, ton âge et tes propres photos. La connexion se fait par un code à usage unique envoyé sur ton adresse d’école, ou par passkey.",
+          "Ton adresse d’école est vérifiée de nouveau chaque année en septembre. Les personnes diplômées gardent un accès en lecture pendant trois mois pour récupérer leurs conversations."
+        ]
+      },
+      {
+        "id": "charte",
+        "title": "Règles de la communauté",
+        "blocks": [
+          {
+            "list": [
+              "Respecte les autres : pas d’insulte, de menace ni de propos haineux.",
+              "Le consentement d’abord : un refus, un silence ou un blocage se respectent. Aucune image sexuelle.",
+              "Sois toi-même : tes photos, ton prénom, ton âge réel.",
+              "Ce qui se passe dans l’application y reste : pas de capture partagée, pas de révélation de l’orientation ou de la présence de quelqu’un sur l’application.",
+              "Pas de commerce ni de promotion.",
+              "En cas de problème, signale : la personne signalée ne sait pas qui l’a signalée."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "moderation",
+        "title": "Modération et sanctions",
+        "blocks": [
+          "Chaque profil, photo et message peut être signalé. Les signalements sont examinés par des modératrices et modérateurs bénévoles formés, aidés d’outils automatiques qui ne décident jamais seuls d’une sanction.",
+          "Les sanctions sont graduées : avertissement, restriction, suspension de 7 jours, suspension de 30 jours, bannissement définitif. Les faits les plus graves (menaces, violences, contenu sexuel non consenti, personne mineure) entraînent un bannissement immédiat.",
+          "Chaque décision t’est notifiée avec ses motifs : faits reprochés, règle enfreinte, sanction et voie de recours. Tu peux contester une décision une fois ; elle est alors réexaminée par une autre personne.",
+          "Les menaces pour la vie ou la sécurité d’une personne sont signalées aux autorités, et les contenus manifestement illicites sur la plateforme PHAROS."
+        ]
+      },
+      {
+        "id": "contenus",
+        "title": "Tes contenus",
+        "blocks": [
+          "Tu restes propriétaire de ce que tu publies. Tu accordes à l’association une licence limitée, gratuite et non exclusive pour l’afficher dans le service uniquement, tant que le contenu ou ton compte existe. Ne publie pas de photo d’une autre personne sans son accord."
+        ]
+      },
+      {
+        "id": "gratuite",
+        "title": "Gratuité et recommandations",
+        "blocks": [
+          "Le service est gratuit. Aucune option payante ne donne d’avantage et aucune publicité ciblée n’est affichée. Les profils proposés sont classés selon des critères expliqués sur la page Transparence du classement, et certains réglages te permettent d’agir dessus."
+        ]
+      },
+      {
+        "id": "responsabilite",
+        "title": "Disponibilité et responsabilité",
+        "blocks": [
+          "Le service est fourni par une association étudiante, sans garantie de disponibilité permanente. Les rencontres hors de l’application se font sous ta responsabilité : lis nos conseils de sécurité avant un premier rendez-vous. Rien dans ces conditions ne limite les droits que la loi te reconnaît."
+        ]
+      },
+      {
+        "id": "suppression",
+        "title": "Suppression du compte",
+        "blocks": [
+          "Tu peux supprimer ton compte à tout moment depuis les réglages. Tes données sont effacées définitivement sous 30 jours, sous réserve des durées de conservation légales décrites dans la politique de confidentialité."
+        ]
+      },
+      {
+        "id": "modifications",
+        "title": "Modifications et droit applicable",
+        "blocks": [
+          "Toute modification importante de ces conditions est annoncée dans l’application au moins 15 jours avant son entrée en vigueur. Ces conditions sont soumises au droit français. En cas de désaccord, écris-nous d’abord à [contact@domaine] ; à défaut d’accord amiable, les tribunaux compétents sont ceux désignés par la loi."
+        ]
+      }
+    ]
+  },
+  "privacy": {
+    "title": "Politique de confidentialité",
+    "description": "Quelles données Epilove traite, pourquoi, combien de temps, et comment exercer tes droits.",
+    "sections": [
+      {
+        "id": "essentiel",
+        "title": "L’essentiel",
+        "blocks": [
+          {
+            "list": [
+              "On collecte le minimum nécessaire au fonctionnement du service.",
+              "Aucune publicité, aucune revente ni aucun partage de données à des fins commerciales.",
+              "Le genre que tu recherches et ton orientation ne sont traités qu’avec ton consentement explicite et séparé. Ils ne sont jamais exportés.",
+              "Tes messages sont chiffrés et tes photos ne sont accessibles que par des liens temporaires.",
+              "Tu peux exporter ou supprimer tes données à tout moment depuis les réglages."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "responsable",
+        "title": "Responsable du traitement",
+        "blocks": [
+          "L’association [Nom de l’association], [adresse du siège], Lyon. Référent données personnelles : [Prénom Nom], [donnees@domaine]."
+        ]
+      },
+      {
+        "id": "liste-attente",
+        "title": "Liste d’attente",
+        "blocks": [
+          "Ton adresse email d’école sert une seule fois : pour t’envoyer ton lien de parrainage. Elle n’est pas enregistrée. On conserve uniquement une empreinte non réversible de l’adresse (HMAC-SHA256 avec une clé secrète), ton école, ton code de parrainage, l’éventuel code de la personne qui t’a parrainé et la date d’inscription.",
+          "Base légale : mesures précontractuelles prises à ta demande (article 6.1.b du RGPD). Durée : jusqu’à l’ouverture du service, puis [3 mois] au plus. Tu peux demander la suppression de ton inscription à tout moment."
+        ]
+      },
+      {
+        "id": "finalites",
+        "title": "Finalités et bases légales",
+        "blocks": [
+          {
+            "table": {
+              "caption": "Finalités, données et bases légales",
+              "head": ["Finalité", "Données", "Base légale"],
+              "rows": [
+                [
+                  "Liste d’attente et course des écoles",
+                  "Empreinte de l’email, école, code de parrainage",
+                  "Mesures précontractuelles (6.1.b)"
+                ],
+                [
+                  "Compte et vérification de l’appartenance à une école",
+                  "Email d’école, date de naissance",
+                  "Exécution du contrat (6.1.b)"
+                ],
+                [
+                  "Profil et mise en relation",
+                  "Prénom, photos, réponses, centres d’intérêt, école, promo",
+                  "Exécution du contrat (6.1.b)"
+                ],
+                [
+                  "Préférences de genre et orientation",
+                  "Genres recherchés",
+                  "Consentement explicite (9.2.a)"
+                ],
+                ["Messagerie", "Messages, médias", "Exécution du contrat (6.1.b)"],
+                [
+                  "Modération et sécurité",
+                  "Signalements, contenus signalés, signaux d’abus",
+                  "Intérêt légitime (6.1.f) et obligations légales"
+                ],
+                [
+                  "Conservation des données d’identification",
+                  "Voir les durées ci-dessous",
+                  "Obligation légale (6.1.c)"
+                ],
+                [
+                  "Mesure d’audience",
+                  "Statistiques anonymes",
+                  "Exemption de consentement si les conditions de la CNIL sont remplies, sinon consentement"
+                ],
+                [
+                  "Brise-glace par IA (facultatif)",
+                  "Extraits de réponses pseudonymisés",
+                  "Consentement (6.1.a)"
+                ],
+                ["Emails de résumé (facultatif)", "Email", "Consentement (6.1.a)"]
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "sensibles",
+        "title": "Données sensibles",
+        "blocks": [
+          "Le genre que tu recherches révèle ton orientation : c’est une donnée sensible au sens de l’article 9 du RGPD. Elle n’est traitée qu’avec ton consentement explicite, recueilli par une case distincte, non cochée par défaut, qui nomme la nature sensible de la donnée. Tu peux le retirer à tout moment : le mode Love est alors désactivé et le mode Amis reste disponible. La preuve du consentement (version du texte, date) est conservée.",
+          "Aucune autre donnée sensible n’est collectée : ni religion, ni opinions politiques, ni santé, ni origine, y compris dans le questionnaire du Pacte. Le simple fait d’utiliser l’application est traité comme une information à protéger : discrétion par défaut, aucune liste publique, notifications neutres."
+        ]
+      },
+      {
+        "id": "durees",
+        "title": "Durées de conservation",
+        "blocks": [
+          {
+            "table": {
+              "caption": "Durées de conservation",
+              "head": ["Données", "Durée"],
+              "rows": [
+                ["Liste d’attente", "Jusqu’à l’ouverture du service, puis [3 mois] au plus"],
+                ["Profil, photos, préférences", "Durée du compte, puis effacement définitif sous 30 jours"],
+                [
+                  "Conversations",
+                  "Durée du match ; effacées 30 jours après une rupture du match ou la suppression du compte, sauf si elles ont été signalées"
+                ],
+                [
+                  "Contenus signalés et décisions de modération",
+                  "1 an après la décision (plus si une procédure est en cours)"
+                ],
+                [
+                  "Identité déclarée (email, prénom, date de naissance)",
+                  "5 ans après la clôture du compte, dans un coffre séparé à accès restreint (décret n° 2021-1362, applicabilité à confirmer)"
+                ],
+                ["Données de compte et de vérification", "1 an après la clôture du compte"],
+                ["Données techniques de connexion (IP, horodatage)", "1 an"],
+                ["Statistiques d’audience", "25 mois au plus"],
+                ["Journaux applicatifs, sans données personnelles", "90 jours"]
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "sous-traitants",
+        "title": "Destinataires et sous-traitants",
+        "blocks": [
+          "Tes données ne sont accessibles qu’aux membres de l’association qui en ont besoin, avec des droits limités et tracés. Elles ne sont jamais transmises aux écoles, sauf obligation légale. Nos sous-traitants agissent sur nos instructions, dans le cadre d’accords de traitement des données :",
+          {
+            "table": {
+              "caption": "Sous-traitants",
+              "head": ["Sous-traitant", "Rôle", "Localisation et garanties"],
+              "rows": [
+                ["[Hetzner ou Scaleway, à confirmer]", "Hébergement des serveurs", "Union européenne"],
+                [
+                  "Cloudflare",
+                  "Réseau, protection anti-robot, stockage des médias",
+                  "Stockage dans l’UE ; société américaine : Data Privacy Framework et clauses contractuelles types"
+                ],
+                [
+                  "[Brevo ou Scaleway, à confirmer]",
+                  "Envoi des emails (codes de connexion, liste d’attente)",
+                  "Union européenne"
+                ],
+                ["PostHog (région UE)", "Statistiques produit, sans donnée sensible", "Union européenne"],
+                [
+                  "Sentry (région UE)",
+                  "Suivi des erreurs, données personnelles masquées",
+                  "Union européenne"
+                ],
+                [
+                  "Anthropic",
+                  "Aide à la modération des cas ambigus, brise-glace facultatifs",
+                  "États-Unis : données minimisées et pseudonymisées, garanties contractuelles à vérifier avant usage"
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "securite",
+        "title": "Sécurité",
+        "blocks": [
+          "Chiffrement des échanges (TLS) et des disques, chiffrement applicatif du contenu des messages et des signalements, photos servies uniquement par des liens signés et temporaires, métadonnées des photos (dont la position) supprimées, journaux techniques sans données personnelles, accès de l’équipe limités au strict nécessaire et tracés."
+        ]
+      },
+      {
+        "id": "droits",
+        "title": "Tes droits",
+        "blocks": [
+          "Tu disposes des droits d’accès, de rectification, d’effacement, de portabilité, d’opposition et de limitation, et tu peux retirer ton consentement à tout moment. L’export de tes données et la suppression de ton compte sont disponibles directement dans les réglages ; pour le reste, écris à [donnees@domaine]. Réponse sous un mois.",
+          "Si tu estimes que tes droits ne sont pas respectés, tu peux adresser une réclamation à la CNIL (www.cnil.fr)."
+        ]
+      },
+      {
+        "id": "cookies",
+        "title": "Cookies et traceurs",
+        "blocks": [
+          "Uniquement des cookies strictement nécessaires (session, sécurité, préférences) : ils ne demandent pas de consentement. La mesure d’audience, si elle est mise en place, respecte les conditions d’exemption de la CNIL (statistiques anonymes, pour notre seul compte, sans suivi entre sites) ; à défaut, ton consentement sera demandé. Aucun pixel publicitaire, et les polices sont servies depuis nos serveurs."
+        ]
+      },
+      {
+        "id": "automatise",
+        "title": "Recommandations et décisions automatisées",
+        "blocks": [
+          "Les profils qui te sont proposés sont classés automatiquement selon des critères publiés sur la page Transparence du classement. Les outils de modération automatique servent à prioriser les signalements : ils ne prennent jamais seuls une sanction."
+        ]
+      }
+    ]
+  },
+  "transparency": {
+    "title": "Transparence du classement",
+    "description": "Comment Epilove choisit les profils qui te sont proposés, et ce qui n’est jamais utilisé.",
+    "sections": [
+      {
+        "id": "principe",
+        "title": "Pourquoi cette page",
+        "blocks": [
+          "Tu as le droit de comprendre pourquoi un profil t’est proposé. Cette page décrit les principaux paramètres du classement, en suivant volontairement l’article 27 du règlement européen sur les services numériques. Les règles sont explicites, sans apprentissage profond : le bassin est petit et chaque choix doit rester explicable."
+        ]
+      },
+      {
+        "id": "eligibilite",
+        "title": "Qui peut t’être proposé",
+        "blocks": [
+          "Une personne ne t’est proposée que si toutes ces conditions sont vraies, dans les deux sens :",
+          {
+            "list": [
+              "vous partagez au moins un mode actif (Love ou Amis) ;",
+              "en mode Love, chacune des deux personnes fait partie des genres recherchés par l’autre ;",
+              "l’âge de chacune est dans la tranche choisie par l’autre ;",
+              "aucun blocage ni masquage (école, promo ou personne) n’existe entre vous ;",
+              "les deux comptes sont actifs, sans pause ni suspension, et le profil est complet ;",
+              "la personne a été active dans les 21 derniers jours."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "parametres",
+        "title": "Les principaux paramètres",
+        "blocks": [
+          {
+            "list": [
+              "Compatibilité : calculée à partir du questionnaire, en tenant compte de tes réponses, des réponses que tu acceptes chez l’autre et de l’importance que tu leur donnes. Elle est réciproque et n’est affichée qu’à partir de 12 questions en commun.",
+              "Affinités : centres d’intérêt et réponses aux questions du profil, comparés sur nos propres serveurs, sans envoi à un tiers.",
+              "Intérêt mutuel : on cherche les paires qui ont des chances de s’apprécier toutes les deux, pas seulement ce qui te plairait à toi.",
+              "Activité récente : une personne active est plus souvent proposée.",
+              "Équité d’exposition : les profils très sollicités sont moins mis en avant tant qu’ils n’ont pas répondu, chaque profil vise une exposition quotidienne raisonnable, et les nouveaux profils sont un peu plus visibles pendant 72 heures.",
+              "Bonus inter-écoles : un léger avantage aux rencontres entre deux écoles différentes, désactivable dans tes réglages.",
+              "Diversité : on alterne les écoles et on évite d’enchaîner des profils trop semblables ; environ une carte sur quatre est une personne qui t’a déjà liké, s’il y en a."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "drop-pacte",
+        "title": "Le Drop et le Pacte",
+        "blocks": [
+          "Le Drop te propose 5 profils chaque soir à 21 h ; un même profil n’apparaît pas dans plus d’une dizaine de Drops par jour, pour que les profils populaires ne soient pas partout.",
+          "Le Pacte attribue au plus un match par personne et par mode, en maximisant la qualité de l’ensemble des paires. Une paire n’est retenue que si sa compatibilité dépasse un seuil (0,60 au départ) : mieux vaut aucun match qu’un mauvais match."
+        ]
+      },
+      {
+        "id": "jamais",
+        "title": "Ce qui n’est jamais utilisé",
+        "blocks": [
+          {
+            "list": [
+              "Ton apparence physique : aucune analyse automatique des photos pour classer les profils, aucune note d’attractivité.",
+              "Ton origine, ta religion, tes opinions politiques ou ta santé, qui ne sont d’ailleurs jamais collectées.",
+              "Une donnée sensible en dehors des préférences que tu as déclarées avec ton consentement.",
+              "L’argent : aucun boost ni aucune option payante ne change le classement."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "reglages",
+        "title": "Tes réglages",
+        "blocks": [
+          "Tu peux ajuster tes filtres (âge, mode, écoles), désactiver le bonus inter-écoles, choisir un ordre aléatoire pour le deck, te masquer de certaines personnes ou passer en mode incognito. Chaque évolution importante du classement est documentée par l’équipe et annoncée sur cette page."
+        ]
+      }
+    ]
+  }
+}

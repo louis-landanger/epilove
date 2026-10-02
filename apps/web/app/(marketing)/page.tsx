@@ -1,61 +1,47 @@
-import { SCHOOLS } from "@epilove/core";
-import { schoolColors } from "@epilove/tokens";
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { FaqSection } from "@/components/acces/marketing/faq-section";
+import { Hero, IonFieldBackdrop } from "@/components/acces/marketing/hero";
+import { HowItWorks } from "@/components/acces/marketing/how-it-works";
+import { Manifesto } from "@/components/acces/marketing/manifesto";
+import { LandingMotion } from "@/components/acces/marketing/motion/landing-motion";
+import { PactSection } from "@/components/acces/marketing/pact-section";
+import { JoinSection, RaceSection } from "@/components/acces/marketing/race-section";
+import { SafetySection } from "@/components/acces/marketing/safety-section";
+import { initialWaitlistStats } from "@/components/acces/marketing/server/api";
+import { SiteFooter } from "@/components/acces/marketing/site-footer";
+import { SiteHeader } from "@/components/acces/marketing/site-header";
 
-/**
- * Temporary home page until the real landing (docs/02-design.md, section 5)
- * ships with the waitlist in week 45.
- */
-export default async function HomePage() {
-  const t = await getTranslations("home");
-  const common = await getTranslations("common");
-  return (
-    <main className="relative isolate flex min-h-dvh flex-col justify-between overflow-hidden px-4 py-8 sm:px-10 sm:py-12">
-      <Orbit />
+// Static page, refreshed every 30 s with the latest race standings; the
+// client polls in between.
+export const revalidate = 30;
 
-      <p className="font-mono text-paper/70 text-xs uppercase tracking-[0.2em]">{common("campus")}</p>
-
-      <section className="max-w-5xl">
-        <h1 className="font-display font-semibold text-[clamp(3.5rem,11vw,10rem)] leading-[0.9] tracking-tight">
-          {t("titleStart")} <em className="font-normal font-serif text-plasma italic">{t("titleAccent")}</em>.
-        </h1>
-        <p className="mt-8 max-w-xl text-lg text-paper/80 sm:text-xl">{t("lead")}</p>
-        <ul aria-label={t("schools")} className="mt-8 flex flex-wrap gap-2">
-          {SCHOOLS.map((school) => (
-            <li
-              key={school.slug}
-              className="flex items-center gap-2 rounded-full border border-paper/15 px-4 py-2 font-mono text-sm"
-            >
-              <span
-                aria-hidden="true"
-                className="size-2.5 rounded-full"
-                style={{ backgroundColor: schoolColors[school.slug] }}
-              />
-              {school.name}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <footer className="text-paper/60 text-xs">{common("notAffiliated")}</footer>
-    </main>
-  );
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("marketing.meta");
+  return { description: t("description") };
 }
 
-function Orbit() {
+/** The landing page (docs/02-design.md, section 5) and the waiting list (ONB-01). */
+export default async function HomePage() {
+  const stats = await initialWaitlistStats();
   return (
-    <div
-      aria-hidden="true"
-      className="-z-10 pointer-events-none absolute top-1/2 right-[-20vmin] size-[90vmin] -translate-y-1/2 opacity-60"
-    >
-      <div className="absolute inset-0 rounded-full border border-paper/10" />
-      <div className="absolute inset-[18%] rounded-full border border-paper/10" />
-      <div className="absolute inset-0 animate-[orbit_24s_linear_infinite]">
-        <span className="-translate-x-1/2 absolute top-0 left-1/2 size-3 rounded-full bg-plasma shadow-[0_0_24px_var(--color-plasma)]" />
-      </div>
-      <div className="absolute inset-[18%] animate-[orbit_14s_linear_infinite_reverse]">
-        <span className="-translate-x-1/2 absolute bottom-0 left-1/2 size-2 rounded-full bg-volt shadow-[0_0_18px_var(--color-volt)]" />
-      </div>
-    </div>
+    <>
+      <SiteHeader />
+      <main id="contenu" tabIndex={-1} className="outline-none">
+        <div data-field-scope className="relative">
+          <IonFieldBackdrop />
+          <Hero stats={stats} />
+          <Manifesto />
+        </div>
+        <HowItWorks />
+        <RaceSection stats={stats} />
+        <JoinSection />
+        <PactSection />
+        <SafetySection />
+        <FaqSection />
+      </main>
+      <SiteFooter />
+      <LandingMotion />
+    </>
   );
 }

@@ -1,7 +1,13 @@
 import commonEn from "../messages/en/common.json";
 import homeEn from "../messages/en/home.json";
+import legalEn from "../messages/en/legal.json";
+import marketingEn from "../messages/en/marketing.json";
+import waitlistEn from "../messages/en/waitlist.json";
 import commonFr from "../messages/fr/common.json";
 import homeFr from "../messages/fr/home.json";
+import legalFr from "../messages/fr/legal.json";
+import marketingFr from "../messages/fr/marketing.json";
+import waitlistFr from "../messages/fr/waitlist.json";
 
 export const LOCALES = ["fr", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -15,6 +21,9 @@ export const DEFAULT_LOCALE: Locale = "fr";
 const namespaces = {
   common: { fr: commonFr, en: commonEn },
   home: { fr: homeFr, en: homeEn },
+  legal: { fr: legalFr, en: legalEn },
+  marketing: { fr: marketingFr, en: marketingEn },
+  waitlist: { fr: waitlistFr, en: waitlistEn },
 } as const;
 
 type Namespaces = typeof namespaces;

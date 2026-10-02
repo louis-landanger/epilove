@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const port = 3100;
+// Overridable so several checkouts can run their end-to-end tests side by side.
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 3100);
 const baseURL = `http://127.0.0.1:${port}`;
 // Lets environments with a preinstalled Chromium skip `playwright install`.
 const executablePath = process.env.PW_CHROMIUM_PATH;
