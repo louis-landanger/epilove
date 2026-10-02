@@ -86,10 +86,10 @@ export function LikeSheet({
             rows={3}
             onChange={(event) => setComment(event.target.value)}
             placeholder={t("placeholder")}
-            className="resize-none rounded-2xl border border-paper/20 bg-transparent p-3 text-paper placeholder:text-paper/40 focus:border-volt focus:outline-none"
+            className="resize-none rounded-2xl border border-paper/20 bg-transparent p-3 text-paper placeholder:text-paper/50 focus:border-volt focus:outline-none"
           />
         </label>
-        <div id={hintId} className="flex justify-between text-paper/50 text-xs">
+        <div id={hintId} className="flex justify-between text-paper/60 text-xs">
           <span>{superlike ? t("commentRequired") : t("commentOptional")}</span>
           <span className="font-mono">{t("remaining", { count: comment.length })}</span>
         </div>

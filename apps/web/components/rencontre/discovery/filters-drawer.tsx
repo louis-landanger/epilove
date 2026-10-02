@@ -181,7 +181,7 @@ export function FiltersDrawer({
             />
           </label>
         </div>
-        <p className="text-paper/50 text-xs">{t("ageHint")}</p>
+        <p className="text-paper/60 text-xs">{t("ageHint")}</p>
       </fieldset>
 
       <div className="flex gap-3">

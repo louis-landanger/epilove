@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig } from "motion/react";
 import { type ReactNode, useState } from "react";
+import { RealtimeProvider } from "@/lib/rencontre/realtime";
 
 /**
  * Client providers of the dating features: one query cache per tab, and
@@ -20,7 +21,9 @@ export function RencontreProviders({ children }: { children: ReactNode }) {
   );
   return (
     <QueryClientProvider client={client}>
-      <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      <MotionConfig reducedMotion="user">
+        <RealtimeProvider>{children}</RealtimeProvider>
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

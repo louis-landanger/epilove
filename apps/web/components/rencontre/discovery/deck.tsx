@@ -297,7 +297,7 @@ export function Deck({
           <path d="M12 20.5 10.6 19.2C5.7 14.8 2.5 11.9 2.5 8.3 2.5 5.4 4.8 3.2 7.6 3.2c1.6 0 3.2.8 4.4 2 1.2-1.2 2.8-2 4.4-2 2.8 0 5.1 2.2 5.1 5.1 0 3.6-3.2 6.5-8.1 10.9z" />
         </RoundButton>
       </div>
-      <p className="hidden text-center text-paper/40 text-xs sm:block">{t("keyboard")}</p>
+      <p className="hidden text-center text-paper/60 text-xs sm:block">{t("keyboard")}</p>
 
       <div
         aria-live="polite"

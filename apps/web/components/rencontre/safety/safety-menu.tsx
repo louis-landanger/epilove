@@ -33,9 +33,6 @@ export function SafetyMenu({
   const t = useTranslations("matches");
   const titleId = useId();
   const [panel, setPanel] = useState<Panel>(null);
-  const [reason, setReason] = useState<ReportReason | null>(null);
-  const [details, setDetails] = useState("");
-  const [alsoBlock, setAlsoBlock] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,7 +74,23 @@ export function SafetyMenu({
         </svg>
       </button>
 
-      <Sheet open={panel !== null} onClose={close} labelledBy={titleId}>
+      <ReportSheet
+        open={panel === "report"}
+        userId={userId}
+        name={name}
+        context={context}
+        contextRef={contextRef}
+        onClose={close}
+        onDone={() => {
+          close();
+          onDone("reported");
+        }}
+      />
+      <Sheet
+        open={panel === "menu" || panel === "block" || panel === "unmatch"}
+        onClose={close}
+        labelledBy={titleId}
+      >
         {panel === "menu" && (
           <>
             <h2 id={titleId} className="font-display font-semibold text-xl">
@@ -108,7 +121,7 @@ export function SafetyMenu({
                 {t("profile.report")}
               </button>
             </div>
-            <p className="text-paper/50 text-xs">{t("safety.help")}</p>
+            <p className="text-paper/60 text-xs">{t("safety.help")}</p>
           </>
         )}
 
@@ -146,93 +159,140 @@ export function SafetyMenu({
             </div>
           </>
         )}
-
-        {panel === "report" && (
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!reason) {
-                return;
-              }
-              void run(
-                () =>
-                  api.safety.report({
-                    reportedId: userId,
-                    context,
-                    contextRef,
-                    reason,
-                    details: details.trim() || undefined,
-                    alsoBlock,
-                  }),
-                "reported",
-              );
-            }}
-          >
-            <h2 id={titleId} className="font-display font-semibold text-xl">
-              {t("safety.reportTitle", { name })}
-            </h2>
-            <p className="text-paper/70 text-sm">{t("safety.reportLead")}</p>
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 font-semibold text-sm">{t("safety.reason")}</legend>
-              {REPORT_REASONS.map((value) => (
-                <label
-                  key={value}
-                  className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm has-focus-visible:outline-2 has-focus-visible:outline-volt ${
-                    reason === value ? "border-plasma bg-plasma/10" : "border-paper/15"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="report-reason"
-                    className="sr-only"
-                    checked={reason === value}
-                    onChange={() => setReason(value)}
-                  />
-                  {t(`safety.reasons.${value}`)}
-                </label>
-              ))}
-            </fieldset>
-            <label className="flex flex-col gap-2 text-sm">
-              {t("safety.details")}
-              <textarea
-                value={details}
-                maxLength={2000}
-                rows={3}
-                onChange={(event) => setDetails(event.target.value)}
-                className="resize-none rounded-2xl border border-paper/20 bg-transparent p-3"
-              />
-            </label>
-            <label className="flex items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                checked={alsoBlock}
-                onChange={(event) => setAlsoBlock(event.target.checked)}
-                className="size-5"
-              />
-              {t("safety.alsoBlock")}
-            </label>
-            {error && (
-              <p role="alert" className="text-plasma text-sm">
-                {error}
-              </p>
-            )}
-            <p className="text-paper/50 text-xs">{t("safety.help")}</p>
-            <div className="flex gap-3">
-              <button type="button" onClick={close} className="rounded-full border border-paper/20 px-5 py-3">
-                {t("safety.cancel")}
-              </button>
-              <button
-                type="submit"
-                disabled={!reason || pending}
-                className="ml-auto rounded-full bg-plasma px-6 py-3 font-semibold text-ink disabled:opacity-40"
-              >
-                {t("safety.send")}
-              </button>
-            </div>
-          </form>
-        )}
       </Sheet>
     </>
+  );
+}
+
+/** Report flow (SAF-02): structured reason, optional details, "also block" ticked by default. */
+export function ReportSheet({
+  open,
+  userId,
+  name,
+  context,
+  contextRef,
+  onClose,
+  onDone,
+}: {
+  open: boolean;
+  userId: string;
+  name: string;
+  context: "profile" | "message";
+  contextRef?: string;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const t = useTranslations("matches");
+  const titleId = useId();
+  const [reason, setReason] = useState<ReportReason | null>(null);
+  const [details, setDetails] = useState("");
+  const [alsoBlock, setAlsoBlock] = useState(true);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const close = onClose;
+
+  const run = async (action: () => Promise<unknown>) => {
+    setPending(true);
+    setError(null);
+    try {
+      await action();
+      setReason(null);
+      setDetails("");
+      onDone();
+    } catch (cause) {
+      setError(
+        cause instanceof ORPCError && cause.code === "NOT_IMPLEMENTED"
+          ? t("safety.notAvailable")
+          : t("safety.error"),
+      );
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <Sheet open={open} onClose={onClose} labelledBy={titleId}>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!reason) {
+            return;
+          }
+          void run(() =>
+            api.safety.report({
+              reportedId: userId,
+              context,
+              contextRef,
+              reason,
+              details: details.trim() || undefined,
+              alsoBlock,
+            }),
+          );
+        }}
+      >
+        <h2 id={titleId} className="font-display font-semibold text-xl">
+          {t("safety.reportTitle", { name })}
+        </h2>
+        <p className="text-paper/70 text-sm">{t("safety.reportLead")}</p>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 font-semibold text-sm">{t("safety.reason")}</legend>
+          {REPORT_REASONS.map((value) => (
+            <label
+              key={value}
+              className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm has-focus-visible:outline-2 has-focus-visible:outline-volt ${
+                reason === value ? "border-plasma bg-plasma/10" : "border-paper/15"
+              }`}
+            >
+              <input
+                type="radio"
+                name="report-reason"
+                className="sr-only"
+                checked={reason === value}
+                onChange={() => setReason(value)}
+              />
+              {t(`safety.reasons.${value}`)}
+            </label>
+          ))}
+        </fieldset>
+        <label className="flex flex-col gap-2 text-sm">
+          {t("safety.details")}
+          <textarea
+            value={details}
+            maxLength={2000}
+            rows={3}
+            onChange={(event) => setDetails(event.target.value)}
+            className="resize-none rounded-2xl border border-paper/20 bg-transparent p-3"
+          />
+        </label>
+        <label className="flex items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={alsoBlock}
+            onChange={(event) => setAlsoBlock(event.target.checked)}
+            className="size-5"
+          />
+          {t("safety.alsoBlock")}
+        </label>
+        {error && (
+          <p role="alert" className="text-plasma text-sm">
+            {error}
+          </p>
+        )}
+        <p className="text-paper/60 text-xs">{t("safety.help")}</p>
+        <div className="flex gap-3">
+          <button type="button" onClick={close} className="rounded-full border border-paper/20 px-5 py-3">
+            {t("safety.cancel")}
+          </button>
+          <button
+            type="submit"
+            disabled={!reason || pending}
+            className="ml-auto rounded-full bg-plasma px-6 py-3 font-semibold text-ink disabled:opacity-40"
+          >
+            {t("safety.send")}
+          </button>
+        </div>
+      </form>
+    </Sheet>
   );
 }

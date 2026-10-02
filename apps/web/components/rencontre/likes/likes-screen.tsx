@@ -59,7 +59,7 @@ export function LikesScreen({
       <header className="flex flex-col gap-1">
         <h1 className="font-display font-semibold text-3xl tracking-tight">{t("title")}</h1>
         <p className="text-paper/70">{likes.length > 0 ? t("count", { count: likes.length }) : t("lead")}</p>
-        <p className="font-mono text-paper/50 text-xs">{discovery("quota", { count: quota.likesLeft })}</p>
+        <p className="font-mono text-paper/60 text-xs">{discovery("quota", { count: quota.likesLeft })}</p>
       </header>
 
       {error && (

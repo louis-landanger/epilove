@@ -11,7 +11,7 @@
 | 1 | Questionnaire (PAC-01, DEC-05) | ✅ fait et testé (API) ; interface vérifiée à la main |
 | 1 | Découverte (DEC-01 à DEC-06, DEC-11) | ✅ fait et testé (API, dont concurrence) ; interface vérifiée à la main |
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
-| 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ⏳ API, relais et paquet `realtime` faits et testés ; interface en cours |
+| 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
 | 1 | Notifications | ⏳ |
 | 1 | Pacte | ⏳ |
 
@@ -58,6 +58,16 @@
 - `Relations.hasEndedMatch` : un unmatch ferme tout, comme un blocage (`canSee`, `canViewProfile`, `canMessage`), testé par propriétés.
 - Menu de sécurité (profil, et bientôt conversation) : annuler le match, bloquer, signaler (motifs de `REPORT_REASONS`, précisions, « bloquer aussi » coché par défaut), en deux gestes. Message sobre tant que A renvoie NOT_IMPLEMENTED.
 
+### Messagerie temps réel (CHAT-02, CHAT-03)
+
+- `packages/realtime` : schéma Zod des événements (identifiants seulement, ADR 0020), jeton de connexion HS256, publication HTTP Centrifugo (`publish` avec clé d'idempotence, `presence_stats`).
+- Outbox : `enqueue` (insertion + `pg_notify` délivré au commit), relais du worker (`apps/worker/src/tasks/outbox/relay.ts`, LISTEN + sondage de secours toutes les 5 s, `SKIP LOCKED`), purge quotidienne.
+- Procédures `messaging.thread` (brise-glace tirés des intérêts communs, des prompts de l'autre et des réponses partagées ; statut en ligne et accusés de lecture seulement si les deux les partagent), `history` (`before` / `after`), `send` (UUIDv7 client, idempotent, corps chiffré, palier 1 de modération qui signale sans bloquer, 20 messages par minute, identifiant à ± 5 min de l'heure serveur), `read`, `react` (6 réactions), `typing` (publié directement, au mieux), `settings` / `saveSettings` ; `realtime.token`.
+- Une conversation n'est accessible que si `canMessage` l'autorise et que le match est actif (sinon NOT_FOUND, sans dire pourquoi).
+- Interface `(app)/messages` (vue scindée sur desktop, liste puis conversation sur mobile) : nouvelles liaisons en carrousel, conversations avec aperçu et non-lus, envoi optimiste, file d'envoi hors ligne en IndexedDB (`lib/rencontre/send-queue.ts`), rattrapage après reconnexion par l'API, indicateur de saisie en électrons en orbite, réponses citées, réactions (menu, double appui avec explosion, appui long sur mobile), « Vu », signalement d'un message, brise-glace, états hors ligne / reconnexion / conversation fermée.
+- `RealtimeProvider` (`lib/rencontre/realtime.tsx`) : une connexion Centrifugo par onglet, canal personnel, signal `resync` après reconnexion ; monté dans `RencontreProviders`.
+- Playwright (`apps/web/e2e/rencontre.spec.ts`) : deux membres créés en base, like avec commentaire depuis le profil, like retour depuis « Likes », écran de match, conversation en direct dans les deux sens, « Vu », axe sans violation sur les écrans de B. Le worker est démarré par Playwright (second `webServer`, santé sur `WORKER_HEALTH_PORT=3101`).
+
 ### Divers
 
 - `packages/core/src/messaging/ids.ts` : génération et lecture d'UUIDv7 (messages envoyés par le client).
@@ -71,14 +81,16 @@
 | `pnpm-workspace.yaml` | catalogue : `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendance `@epilove/crypto`, devDependency `aws4fetch`, script `db:seed:dev`, exports `./repositories/*`, `./dev-seed` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
-| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `discovery`, `matches`, `questionnaire` (ajouts) |
+| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `discovery`, `matches`, `messaging`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
-| `apps/web/i18n/messages.ts` | namespaces `campus`, `discovery`, `likes`, `matches`, `questionnaire` (ajouts) |
+| `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `likes`, `matches`, `questionnaire` (ajouts) |
 | `packages/core/src/index.ts` | `discovery/ranking`, `discovery/rules`, `matching/explain`, `messaging/ids`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
 | `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
-| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, tâche `outbox_purge` (ajouts) |
+| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâche `outbox_purge` (ajouts) |
+| `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base) et second `webServer` pour le worker |
+| `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media`, `@epilove/realtime` |
 | `infra/scripts/cloud-docker.sh` | repli sur l'image Docker Hub `darthsim/imgproxy` (même version) quand le proxy de la session cloud bloque les téléchargements de ghcr.io |
 
 ## Variables d'environnement
@@ -105,6 +117,8 @@
 - Les pages `/dev` et les clients API lisent le cookie de développement ; une fois Better Auth branché par A, `serverApi()` transmet déjà les cookies de la requête : rien à changer côté B.
 - Remplacer les prompts et intérêts `dev-` par le catalogue de A (le seed de développement les réutilisera s'ils existent, ou on adaptera `content.ts`).
 - Harmoniser la règle « profil complet » avec la complétude de A (PRO-05).
+- `RencontreProviders` monte une connexion temps réel par section ; à l'intégration, le remonter dans `(app)/layout.tsx` pour garder une seule connexion entre les onglets.
+- Le menu de sécurité d'une conversation et le signalement d'un message appellent `safety.block` / `safety.report` (contexte `message`, `contextRef` = id du message) : à vérifier avec l'implémentation de A (copie chiffrée des messages précédents comme preuve).
 
 ## ADR
 

@@ -138,7 +138,7 @@ export function Questionnaire({
           <button
             type="button"
             onClick={() => go(index + 1)}
-            className="px-3 py-3 text-paper/50 text-sm underline-offset-4 hover:underline"
+            className="px-3 py-3 text-paper/60 text-sm underline-offset-4 hover:underline"
           >
             {t("skip")}
           </button>
@@ -151,7 +151,7 @@ export function Questionnaire({
             {save.isError ? t("retry") : index === questions.length - 1 ? t("finish") : t("next")}
           </button>
         </div>
-        <p className="hidden text-center text-paper/40 text-xs sm:block">{t("keyboardHint")}</p>
+        <p className="hidden text-center text-paper/60 text-xs sm:block">{t("keyboardHint")}</p>
       </footer>
     </main>
   );
@@ -331,7 +331,7 @@ function QuestionForm({
         >
           <fieldset className="flex flex-col gap-3">
             <legend className="mb-1 text-paper/70 text-sm">{t("acceptable")}</legend>
-            <p className="text-paper/50 text-xs">{t("acceptableHint")}</p>
+            <p className="text-paper/60 text-xs">{t("acceptableHint")}</p>
             <div className="flex flex-wrap gap-2">
               {question.options.map((option) => {
                 const checked = draft.acceptable.includes(option.value);

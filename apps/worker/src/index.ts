@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { createDatabase } from "@epilove/db";
 import { createPublisher } from "@epilove/realtime";
 import { run } from "graphile-worker";
@@ -18,6 +19,13 @@ if (env.CENTRIFUGO_URL && env.CENTRIFUGO_HTTP_API_KEY) {
   });
 } else {
   console.warn("[worker] CENTRIFUGO_URL is not set: realtime events are not relayed.");
+}
+
+if (env.WORKER_HEALTH_PORT) {
+  createServer((request, response) => {
+    response.writeHead(request.url === "/health" ? 200 : 404, { "content-type": "application/json" });
+    response.end(JSON.stringify({ status: request.url === "/health" ? "ok" : "not_found" }));
+  }).listen(env.WORKER_HEALTH_PORT, "127.0.0.1");
 }
 
 const runner = await run({

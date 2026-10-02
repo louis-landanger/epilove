@@ -1,0 +1,70 @@
+{
+  "title": "Messages",
+  "newMatches": "New bonds",
+  "newMatchesEmpty": "No bond yet. The best reactions take time.",
+  "conversations": "Conversations",
+  "conversationsEmpty": "No conversation yet. Send the first message to a new bond!",
+  "you": "You: {text}",
+  "unread": "{count, plural, one {# unread message} other {# unread messages}}",
+  "friendsMode": "Friends",
+  "selectConversation": "Pick a conversation.",
+  "back": "Back to messages",
+  "openProfile": "Open {name}'s profile",
+  "online": "Online",
+  "matchedOn": "Bond formed on {date}",
+  "composer": {
+    "label": "Write to {name}",
+    "placeholder": "Your message…",
+    "send": "Send",
+    "replyingTo": "Replying to {name}",
+    "cancelReply": "Cancel reply",
+    "closed": "This conversation is closed.",
+    "replyingToSelf": "Replying to your message"
+  },
+  "icebreakers": {
+    "title": "Need an icebreaker?",
+    "sharedInterest": "You both like \"{interest}\": what's your best memory with it?",
+    "theirPrompt": "Your answer to \"{question}\" intrigues me: tell me more!",
+    "sharedAnswer": "We both answered \"{answer}\" to \"{question}\". Promising!",
+    "campus": {
+      "0": "Your favourite quiet spot to study on campus?",
+      "1": "Best lunch place around for a quick break between classes?",
+      "2": "Front row or back row in lectures?",
+      "3": "Your ideal Sunday plan in Lyon?",
+      "4": "The subject that surprised you the most this year?",
+      "5": "Tell me about your best student party (the publishable version).",
+      "6": "If you could add one room to the campus, what would it be?",
+      "7": "Your most memorable group project, in one word?"
+    }
+  },
+  "status": {
+    "sending": "Sending…",
+    "failed": "Not sent. Tap to retry.",
+    "queued": "Waiting for network",
+    "seen": "Seen",
+    "edited": "edited",
+    "deleted": "Message deleted"
+  },
+  "actions": {
+    "reply": "Reply",
+    "react": "React",
+    "report": "Report this message",
+    "reactionLabel": "React with {emoji}",
+    "menu": "Message actions"
+  },
+  "typing": "{name} is typing…",
+  "loadOlder": "Earlier messages",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "errors": {
+    "rate_limited": "Easy! Wait a few seconds before sending more.",
+    "notFound": "This conversation is no longer available.",
+    "generic": "That didn't go through. Try again?"
+  },
+  "flags": {
+    "contact_handle": "A quick reminder: take the time to get to know each other here before sharing other contacts."
+  },
+  "offline": "Connection lost. Your messages will be sent once you're back online.",
+  "reconnecting": "Reconnecting…",
+  "reported": "Thank you, your report was received."
+}

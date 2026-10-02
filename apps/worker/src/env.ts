@@ -6,6 +6,8 @@ const envSchema = z.object({
   // Session B: realtime relay. Without them the outbox is not relayed (development without Centrifugo).
   CENTRIFUGO_URL: z.url().optional(),
   CENTRIFUGO_HTTP_API_KEY: z.string().min(1).optional(),
+  // Optional health endpoint (deployment checks, Playwright).
+  WORKER_HEALTH_PORT: z.coerce.number().int().min(1).max(65535).optional(),
 });
 
 export type WorkerEnv = z.infer<typeof envSchema>;

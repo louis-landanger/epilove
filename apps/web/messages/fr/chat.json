@@ -1,0 +1,70 @@
+{
+  "title": "Messages",
+  "newMatches": "Nouvelles liaisons",
+  "newMatchesEmpty": "Pas encore de liaison. Les meilleures réactions prennent du temps.",
+  "conversations": "Conversations",
+  "conversationsEmpty": "Aucune conversation pour l'instant. Écris le premier message à une nouvelle liaison !",
+  "you": "Toi : {text}",
+  "unread": "{count, plural, one {# message non lu} other {# messages non lus}}",
+  "friendsMode": "Amis",
+  "selectConversation": "Choisis une conversation.",
+  "back": "Retour aux messages",
+  "openProfile": "Voir le profil de {name}",
+  "online": "En ligne",
+  "matchedOn": "Liaison établie le {date}",
+  "composer": {
+    "label": "Écrire à {name}",
+    "placeholder": "Ton message…",
+    "send": "Envoyer",
+    "replyingTo": "Réponse à {name}",
+    "cancelReply": "Annuler la réponse",
+    "closed": "Cette conversation est fermée.",
+    "replyingToSelf": "Réponse à ton message"
+  },
+  "icebreakers": {
+    "title": "Besoin d'un brise-glace ?",
+    "sharedInterest": "Vous aimez tous les deux « {interest} » : c'est quoi ton meilleur souvenir avec ça ?",
+    "theirPrompt": "Ta réponse à « {question} » m'intrigue : raconte !",
+    "sharedAnswer": "On a tous les deux répondu « {answer} » à « {question} ». Ça promet !",
+    "campus": {
+      "0": "Ton spot préféré pour bosser au calme sur le campus ?",
+      "1": "Le meilleur plat du coin pour un midi entre deux cours ?",
+      "2": "Tu es plutôt premier rang ou dernier rang en amphi ?",
+      "3": "Ton plan idéal pour un dimanche à Lyon ?",
+      "4": "La matière qui t'a le plus surpris·e cette année ?",
+      "5": "Raconte-moi ta meilleure soirée BDE (version publiable).",
+      "6": "Si tu pouvais ajouter une salle au campus, ce serait quoi ?",
+      "7": "Ton projet de groupe le plus mémorable, en un mot ?"
+    }
+  },
+  "status": {
+    "sending": "Envoi…",
+    "failed": "Pas envoyé. Toucher pour réessayer.",
+    "queued": "En attente du réseau",
+    "seen": "Vu",
+    "edited": "modifié",
+    "deleted": "Message supprimé"
+  },
+  "actions": {
+    "reply": "Répondre",
+    "react": "Réagir",
+    "report": "Signaler ce message",
+    "reactionLabel": "Réagir avec {emoji}",
+    "menu": "Actions sur le message"
+  },
+  "typing": "{name} écrit…",
+  "loadOlder": "Messages précédents",
+  "today": "Aujourd'hui",
+  "yesterday": "Hier",
+  "errors": {
+    "rate_limited": "Doucement ! Attends quelques secondes avant d'envoyer la suite.",
+    "notFound": "Cette conversation n'est plus disponible.",
+    "generic": "Ça n'est pas passé. On réessaie ?"
+  },
+  "flags": {
+    "contact_handle": "Petit rappel : prends le temps de faire connaissance ici avant d'échanger d'autres contacts."
+  },
+  "offline": "Connexion perdue. Tes messages partiront dès le retour du réseau.",
+  "reconnecting": "Reconnexion…",
+  "reported": "Merci, ton signalement a bien été reçu."
+}

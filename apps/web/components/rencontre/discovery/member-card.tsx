@@ -56,7 +56,7 @@ export function MemberCard({
           />
         </ViewTransition>
       ) : (
-        <div className="absolute inset-0 grid place-items-center bg-paper/5 text-paper/50">
+        <div className="absolute inset-0 grid place-items-center bg-paper/5 text-paper/60">
           {t("card.noPhoto")}
         </div>
       )}

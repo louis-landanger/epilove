@@ -295,6 +295,9 @@ importers:
       '@epilove/media':
         specifier: workspace:*
         version: link:../../packages/media
+      '@epilove/realtime':
+        specifier: workspace:*
+        version: link:../../packages/realtime
       '@epilove/tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
