@@ -95,6 +95,10 @@ export type IcebreakerView = z.infer<typeof icebreaker>;
 
 export const chatSettings = z.object({ readReceipts: z.boolean(), onlineStatus: z.boolean() });
 
+/** AI conversation starters (CHAT-04): whether they are offered, and the viewer's consent. */
+export const aiIcebreakersState = z.object({ available: z.boolean(), consented: z.boolean() });
+export type AiIcebreakersState = z.infer<typeof aiIcebreakersState>;
+
 export const threadView = z.object({
   matchId: z.uuid(),
   mode: z.enum(MODES),
@@ -117,6 +121,8 @@ export const threadView = z.object({
   /** A blind match not revealed yet (DEC-10): messages sent by each, out of `needed`. */
   blind: z.object({ mine: z.number().int(), theirs: z.number().int(), needed: z.number().int() }).nullable(),
   icebreakers: z.array(icebreaker),
+  /** AI conversation starters (CHAT-04): null when the feature is off. */
+  aiIcebreakers: z.object({ consented: z.boolean() }).nullable(),
   /** Silent for a few days (CHAT-09): the screen suggests restarting with an icebreaker. */
   nudge: z.boolean(),
   messages: z.array(chatMessage),
@@ -284,4 +290,16 @@ export const messagingContract = {
   typing: oc.input(z.object({ matchId: z.uuid() })).output(z.object({ ok: z.literal(true) })),
   settings: oc.output(chatSettings),
   saveSettings: oc.input(chatSettings).output(chatSettings),
+  /** AI conversation starters (CHAT-04): availability and the viewer's consent. */
+  aiConsent: oc.output(aiIcebreakersState),
+  /** Grants or withdraws the consent to the AI features (versioned, historised). */
+  setAiConsent: oc.input(z.object({ consent: z.boolean() })).output(aiIcebreakersState),
+  /**
+   * Three AI conversation starters for a conversation. Never sent on the
+   * member's behalf: they pick one, edit it, and send it themselves.
+   * `refused`: the model declined; `empty`: nothing passed the filters.
+   */
+  aiIcebreakers: oc
+    .input(z.object({ matchId: z.uuid(), locale: contentLocale }))
+    .output(z.object({ status: z.enum(["ok", "refused", "empty"]), suggestions: z.array(z.string()) })),
 };

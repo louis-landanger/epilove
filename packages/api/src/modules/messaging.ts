@@ -1,5 +1,7 @@
 import type { ChatMessage, MessageAttachment } from "@epilove/contracts";
 import {
+  AI_ICEBREAKER_RULES,
+  acceptSuggestions,
   availabilityShown,
   BLIND_RULES,
   canMessage,
@@ -17,6 +19,7 @@ import {
   isSilent,
   isSticker,
   MESSAGING_RULES,
+  minimizeProfile,
   pickIcebreakers,
   pickPrompt,
   promptOf,
@@ -57,11 +60,18 @@ import {
   setReaction,
   updateMessageBody,
 } from "@epilove/db/repositories/messaging";
+import {
+  aiConsentsOf,
+  releaseAiIcebreaker,
+  reserveAiIcebreaker,
+  setAiConsent,
+} from "@epilove/db/repositories/messaging-ai";
 import { answerSheets, listActiveQuestions } from "@epilove/db/repositories/questionnaire";
 import { personalChannel } from "@epilove/realtime";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { os, requireViewer } from "../procedures";
+import { aiIcebreakersEnabled, icebreakerModel } from "../rencontre/ai-icebreakers";
 import { hiddenPhotos } from "../rencontre/blind";
 import { optionLabel, questionText } from "../rencontre/compatibility";
 import { gifById, giphyEnabled, searchGifs } from "../rencontre/giphy";
@@ -515,6 +525,9 @@ export const messaging = {
     const blind = await hiddenPhotos(db, viewer.member.id, [other.member.id]);
     const blindMatch = blind.states.get(other.member.id)?.match ?? null;
     const photoHidden = blind.hidden.has(other.member.id);
+    const aiConsented = aiIcebreakersEnabled()
+      ? (await aiConsentsOf(db, [viewer.member.id])).has(viewer.member.id)
+      : null;
 
     return {
       matchId: match.id,
@@ -549,6 +562,7 @@ export const messaging = {
         sharedAnswers: agreements,
         seed: match.id,
       }).map((i) => ({ key: i.key, params: { ...i.params } })),
+      aiIcebreakers: aiConsented === null ? null : { consented: aiConsented },
       nudge: isSilent(match.lastMessageAt ?? match.createdAt, now),
       messages: await toChatMessages(db, page.messages, viewer.member.id),
       hasMore: page.hasMore,
@@ -1021,5 +1035,78 @@ export const messaging = {
   saveSettings: os.messaging.saveSettings.use(requireViewer).handler(async ({ context, input }) => {
     await saveChatSettings(context.database(), context.viewer.userId, input);
     return input;
+  }),
+
+  aiConsent: os.messaging.aiConsent.use(requireViewer).handler(async ({ context }) => {
+    const consents = await aiConsentsOf(context.database(), [context.viewer.userId]);
+    return { available: aiIcebreakersEnabled(), consented: consents.has(context.viewer.userId) };
+  }),
+
+  setAiConsent: os.messaging.setAiConsent.use(requireViewer).handler(async ({ context, input }) => {
+    // Withdrawing always works, even with the feature off.
+    if (input.consent && !aiIcebreakersEnabled()) {
+      throw new ORPCError("FORBIDDEN", { message: "ai_disabled" });
+    }
+    await setAiConsent(
+      context.database(),
+      context.viewer.userId,
+      input.consent,
+      AI_ICEBREAKER_RULES.consentVersion,
+    );
+    return { available: aiIcebreakersEnabled(), consented: input.consent };
+  }),
+
+  aiIcebreakers: os.messaging.aiIcebreakers.use(requireViewer).handler(async ({ context, input }) => {
+    const model = icebreakerModel();
+    if (!model) {
+      throw new ORPCError("FORBIDDEN", { message: "ai_disabled" });
+    }
+    const db = context.database();
+    const { viewer, other } = await requireConversation(db, context.viewer.userId, input.matchId);
+    const consents = await aiConsentsOf(db, [viewer.member.id, other.member.id]);
+    if (!consents.has(viewer.member.id)) {
+      throw new ORPCError("FORBIDDEN", { message: "consent_required" });
+    }
+    const reservation = await reserveAiIcebreaker(db, viewer.member.id, AI_ICEBREAKER_RULES.dailyLimit);
+    if (!reservation) {
+      throw new ORPCError("TOO_MANY_REQUESTS", { message: "quota_exceeded" });
+    }
+    // The other member's answers only go out if they consented too.
+    const shareOther = consents.has(other.member.id);
+    const content = await loadProfileContent(
+      db,
+      shareOther ? [viewer.member.id, other.member.id] : [viewer.member.id],
+    );
+    const names = [viewer.firstName, other.firstName];
+    const excerpt = (id: string) => {
+      const c = content.get(id);
+      return minimizeProfile(
+        {
+          prompts: (c?.prompts ?? []).map((p) => ({
+            question: input.locale === "en" ? p.questionEn : p.questionFr,
+            answer: p.answer,
+          })),
+          interests: (c?.interests ?? []).map((i) => (input.locale === "en" ? i.labelEn : i.labelFr)),
+        },
+        names,
+      );
+    };
+    let outcome: Awaited<ReturnType<typeof model.suggest>>;
+    try {
+      outcome = await model.suggest({
+        locale: input.locale,
+        viewer: excerpt(viewer.member.id),
+        other: shareOther ? excerpt(other.member.id) : null,
+      });
+    } catch {
+      // Nothing about the request in the logs: the class of failure is enough upstream.
+      await releaseAiIcebreaker(db, reservation);
+      throw new ORPCError("SERVICE_UNAVAILABLE", { message: "ai_unavailable" });
+    }
+    if (outcome.status === "refused") {
+      return { status: "refused" as const, suggestions: [] };
+    }
+    const suggestions = acceptSuggestions(outcome.suggestions, names);
+    return { status: suggestions.length > 0 ? ("ok" as const) : ("empty" as const), suggestions };
   }),
 };

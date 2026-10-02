@@ -14,6 +14,7 @@ export * from "./events/events";
 export * from "./events/flash";
 export * from "./matching/compatibility";
 export * from "./matching/explain";
+export * from "./messaging/ai-icebreakers";
 export * from "./messaging/date-proposal";
 export * from "./messaging/date-safety";
 export * from "./messaging/games";

@@ -9,7 +9,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import { bytea, createdAt, oneOf, timestamps } from "./columns";
+import { bytea, createdAt, id, oneOf, timestamps } from "./columns";
 import { match } from "./discovery";
 import { appUser } from "./users";
 
@@ -97,6 +97,22 @@ export const chatPreference = pgTable("chat_preference", {
   onlineStatus: boolean().notNull().default(true),
   ...timestamps,
 });
+
+/**
+ * AI conversation starter requests (CHAT-04), for the daily quota only:
+ * neither the excerpts sent nor the suggestions are kept.
+ */
+export const aiIcebreakerRequest = pgTable(
+  "ai_icebreaker_request",
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("ai_icebreaker_request_user_idx").on(t.userId, t.createdAt)],
+);
 
 /**
  * Stored media waiting for deletion (CHAT-06, CHAT-07): a view-once photo a

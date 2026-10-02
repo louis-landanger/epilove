@@ -21,6 +21,7 @@ allowBuilds:
 
 # Shared dependency versions, referenced as "catalog:" in package.json files.
 catalog:
+  '@anthropic-ai/sdk': 0.131.0
   '@axe-core/playwright': 4.13.0
   '@orpc/client': 1.15.4
   '@orpc/contract': 1.15.4
