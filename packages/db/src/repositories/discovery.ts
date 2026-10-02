@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, inArray, isNull, ne, notExists, or, sql } from
 import { alias } from "drizzle-orm/pg-core";
 import type { Database } from "../client";
 import {
+  appUser,
   discoveryFilter,
   discoveryUndo,
   impression,
@@ -134,13 +135,19 @@ export async function recordImpressions(
   if (targetIds.length === 0) {
     return;
   }
-  await db
-    .insert(impression)
-    .values(targetIds.map((targetId) => ({ viewerId, targetId, surface, day })))
-    .onConflictDoUpdate({
-      target: [impression.viewerId, impression.targetId, impression.surface, impression.day],
-      set: { count: sql`${impression.count} + 1` },
-    });
+  // Only members who still exist, locked against deletion until the insert: an
+  // account deleted while the deck was loading must not fail the viewer's page.
+  await db.execute(sql`
+    insert into ${impression} (viewer_id, target_id, surface, day)
+    select ${viewerId}, u.id, ${surface}, ${day}
+    from ${appUser} u
+    where u.id in (${sql.join(
+      targetIds.map((id) => sql`${id}::uuid`),
+      sql`, `,
+    )})
+    for key share
+    on conflict (viewer_id, target_id, surface, day) do update set count = ${impression}.count + 1
+  `);
 }
 
 export type { DeckFilter };
