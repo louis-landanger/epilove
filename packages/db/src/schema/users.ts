@@ -38,6 +38,8 @@ export const appUser = pgTable(
     verifiedAt: timestamp({ withTimezone: true }),
     reverifyDueAt: timestamp({ withTimezone: true }),
     lastActiveAt: timestamp({ withTimezone: true }),
+    /** Scheduled pause (SAF-08, "mode partiels"): the account comes back by itself after this date. */
+    pausedUntil: timestamp({ withTimezone: true }),
     /** Self-service deletion (SAF-14): content is purged 30 days later. */
     deletionRequestedAt: timestamp({ withTimezone: true }),
     ...timestamps,
@@ -135,4 +137,23 @@ export const signupBlock = pgTable(
     createdAt: createdAt(),
   },
   (t) => [check("signup_block_reason_check", oneOf(t.reason, SIGNUP_BLOCK_REASONS))],
+);
+
+export const DATA_EXPORT_STATUSES = ["pending", "ready", "failed"] as const;
+
+/** Self-service data exports (SAF-14): a zip in object storage, downloadable by its owner for 7 days. */
+export const dataExport = pgTable(
+  "data_export",
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    status: text({ enum: DATA_EXPORT_STATUSES }).notNull().default("pending"),
+    storageKey: text(),
+    createdAt: createdAt(),
+    readyAt: timestamp({ withTimezone: true }),
+    expiresAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [check("data_export_status_check", oneOf(t.status, DATA_EXPORT_STATUSES)), index().on(t.userId)],
 );

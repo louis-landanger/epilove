@@ -38,6 +38,13 @@ test.describe("settings and safety", () => {
     await expect(page.getByText("mo…@epita.fr")).toBeVisible();
     await expect(page.getByText("Cet appareil")).toBeVisible();
 
+    await page.getByRole("button", { name: "Télécharger mes données" }).click();
+    const download = page.getByRole("link", { name: "Télécharger", exact: true });
+    await expect(download).toBeVisible({ timeout: 30_000 });
+    const zip = await page.request.get((await download.getAttribute("href")) ?? "");
+    expect(zip.status()).toBe(200);
+    expect(zip.headers()["content-type"]).toBe("application/zip");
+
     await page.getByRole("button", { name: "Supprimer mon compte" }).click();
     const dialog = page.getByRole("dialog", { name: "Supprimer ton compte ?" });
     const confirm = dialog.getByRole("button", { name: "Supprimer définitivement" });

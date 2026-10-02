@@ -18,11 +18,12 @@ import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { api, errorCode } from "../api-client";
+import { DataExport } from "./data-export";
 import { DeleteAccount } from "./delete-account";
 import { Section } from "./section";
 import { SecuritySection } from "./security-section";
 
-type Account = { email: string; schoolSlug: string; status: string };
+type Account = { email: string; schoolSlug: string; status: string; pausedUntil: string | null };
 type HiddenContact = { id: string; hint: string; createdAt: string };
 type Blocked = { userId: string; firstName: string | null; blockedAt: string };
 
@@ -41,6 +42,7 @@ export function SettingsScreen({ account, settings: initial, hiddenContacts, blo
   const toast = useToast();
   const [settings, setSettings] = useState(initial);
   const [status, setStatus] = useState(account.status);
+  const [pausedUntil, setPausedUntil] = useState(account.pausedUntil);
 
   async function update(patch: Parameters<ReturnType<typeof api>["preferences"]["update"]>[0]) {
     const previous = settings;
@@ -53,13 +55,16 @@ export function SettingsScreen({ account, settings: initial, hiddenContacts, blo
     }
   }
 
-  async function togglePause(paused: boolean) {
+  async function togglePause(paused: boolean, until: string | null = null) {
     try {
-      const next = paused ? await api().account.pause() : await api().account.resume();
+      const next = paused ? await api().account.pause({ until }) : await api().account.resume();
       setStatus(next.status);
+      setPausedUntil(next.pausedUntil);
       toast.success(paused ? t("visibility.paused") : t("visibility.resumed"));
+      return true;
     } catch {
-      toast.error(t("error"));
+      toast.error(until ? t("visibility.partialsInvalid") : t("error"));
+      return false;
     }
   }
 
@@ -74,6 +79,11 @@ export function SettingsScreen({ account, settings: initial, hiddenContacts, blo
           checked={status === "paused"}
           disabled={status !== "active" && status !== "paused"}
           onCheckedChange={(checked) => void togglePause(checked)}
+        />
+        <ScheduledPause
+          pausedUntil={status === "paused" ? pausedUntil : null}
+          disabled={status !== "active" && status !== "paused"}
+          onSchedule={(until) => togglePause(true, until)}
         />
         <SwitchField
           label={t("visibility.incognito")}
@@ -121,6 +131,7 @@ export function SettingsScreen({ account, settings: initial, hiddenContacts, blo
       <SecuritySection email={account.email} />
 
       <Section id="data" title={t("data.title")}>
+        <DataExport />
         <DeleteAccount />
       </Section>
 
@@ -130,6 +141,67 @@ export function SettingsScreen({ account, settings: initial, hiddenContacts, blo
         <RowLink href={"/confidentialite" as Route}>{t("links.privacy")}</RowLink>
       </Section>
     </main>
+  );
+}
+
+function ScheduledPause({
+  pausedUntil,
+  disabled,
+  onSchedule,
+}: {
+  pausedUntil: string | null;
+  disabled: boolean;
+  onSchedule: (until: string) => Promise<boolean>;
+}) {
+  const t = useTranslations("settings.visibility");
+  const format = useFormatter();
+  const [date, setDate] = useState("");
+  const [pending, setPending] = useState(false);
+  const today = new Date();
+  const min = new Date(today.getTime() + 86_400_000 * 1.5).toISOString().slice(0, 10);
+  const max = new Date(today.getTime() + 86_400_000 * 61).toISOString().slice(0, 10);
+
+  if (pausedUntil) {
+    return (
+      <p className="rounded-2xl bg-volt/10 p-3 text-sm text-volt">
+        {t("pausedUntil", { date: format.dateTime(new Date(pausedUntil), { dateStyle: "long" }) })}
+      </p>
+    );
+  }
+  return (
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        setPending(true);
+        // End of the chosen day, campus time.
+        if (await onSchedule(new Date(`${date}T23:59:00+02:00`).toISOString())) {
+          setDate("");
+        }
+        setPending(false);
+      }}
+    >
+      <div className="flex flex-col gap-1">
+        <span className="font-medium">{t("partials")}</span>
+        <span className="text-paper/60 text-sm">{t("partialsHelp")}</span>
+      </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <TextField
+          className="flex-1"
+          label={t("partialsUntil")}
+          type="date"
+          min={min}
+          max={max}
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+          inputClassName="[color-scheme:dark]"
+          disabled={disabled}
+        />
+        <Button type="submit" variant="secondary" loading={pending} disabled={!date || disabled}>
+          {t("partialsStart")}
+        </Button>
+      </div>
+    </form>
   );
 }
 

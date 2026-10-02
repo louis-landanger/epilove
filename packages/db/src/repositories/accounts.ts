@@ -20,6 +20,7 @@ type Db = Pick<Database, "select" | "insert" | "update" | "delete" | "execute">;
 export async function findAccount(db: Db, userId: string) {
   const [row] = await db
     .select({
+      pausedUntil: appUser.pausedUntil,
       id: appUser.id,
       email: appUser.email,
       emailHmac: appUser.emailHmac,
@@ -220,10 +221,11 @@ export async function transitionStatus(
   userId: string,
   from: "active" | "paused",
   to: "active" | "paused",
+  pausedUntil: Date | null = null,
 ): Promise<boolean> {
   const updated = await db
     .update(appUser)
-    .set({ status: to })
+    .set({ status: to, pausedUntil: to === "paused" ? pausedUntil : null })
     .where(and(eq(appUser.id, userId), eq(appUser.status, from)))
     .returning({ id: appUser.id });
   return updated.length > 0;
@@ -293,4 +295,14 @@ export async function purgeExpiredSignupBlocks(db: Db, today: string) {
     .where(lt(signupBlock.until, today))
     .returning({ emailHmac: signupBlock.emailHmac });
   return deleted.length;
+}
+
+/** Scheduled pauses that are over (SAF-08): the members come back automatically. */
+export async function resumeScheduledPauses(db: Db, now: Date) {
+  const resumed = await db
+    .update(appUser)
+    .set({ status: "active", pausedUntil: null })
+    .where(and(eq(appUser.status, "paused"), lt(appUser.pausedUntil, now)))
+    .returning({ id: appUser.id });
+  return resumed.length;
 }

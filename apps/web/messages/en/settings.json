@@ -15,7 +15,13 @@
     "hideSchool": "Hide me from students of my school",
     "hideSchoolHelp": "Neither you nor they will see each other in discovery.",
     "hideYear": "Hide me from my class",
-    "hideYearHelp": "People from your school and class won't see you, and vice versa."
+    "hideYearHelp": "People from your school and class won't see you, and vice versa.",
+    "partials": "Exam mode",
+    "partialsHelp": "A scheduled pause: notifications go quiet and your profile comes back by itself on the chosen date.",
+    "partialsUntil": "Until",
+    "partialsStart": "Schedule the pause",
+    "pausedUntil": "Paused until {date}. You'll come back automatically.",
+    "partialsInvalid": "Pick a date between tomorrow and two months from now."
   },
   "discovery": {
     "title": "Who I see",
@@ -92,7 +98,15 @@
     "confirmLabel": "Type SUPPRIMER to confirm",
     "confirmWord": "SUPPRIMER",
     "confirm": "Delete for good",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "export": "Download my data",
+    "exportHelp": "A zip file with your profile, photos, consents and the history about you. We email you when it's ready.",
+    "exportRequested": "On it: you'll get an email within a few minutes.",
+    "exportRateLimited": "You've already asked for two exports today.",
+    "exportPending": "Being prepared…",
+    "exportReady": "Ready, available until {date}",
+    "exportFailed": "Preparation failed. Try again.",
+    "exportDownload": "Download"
   },
   "links": {
     "title": "Help and information",

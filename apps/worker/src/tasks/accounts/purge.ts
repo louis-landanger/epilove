@@ -7,6 +7,7 @@ import {
   purgeExpiredIdentities,
   purgeExpiredSignupBlocks,
 } from "@epilove/db/repositories/accounts";
+import { deleteExport, listExpiredExports } from "@epilove/db/repositories/exports";
 import { writeAudit } from "@epilove/db/repositories/safety";
 import type { Storage } from "@epilove/media/storage";
 import type { Task } from "graphile-worker";
@@ -34,6 +35,12 @@ export function purgeTask({ database, storage, now = () => new Date() }: Account
         await storage().remove(key);
       }
       await deleteAccountRow(db, id);
+    }
+    for (const expired of await listExpiredExports(db, at)) {
+      if (expired.storageKey) {
+        await storage().remove(expired.storageKey);
+      }
+      await deleteExport(db, expired.id);
     }
     const identities = await purgeExpiredIdentities(db, at);
     const blocks = await purgeExpiredSignupBlocks(db, calendarDateIn(LYON_CAMPUS.timeZone, at));

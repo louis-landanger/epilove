@@ -233,6 +233,9 @@ catalogs:
     fast-check:
       specifier: 4.10.2
       version: 4.10.2
+    fflate:
+      specifier: 0.8.3
+      version: 0.8.3
     graphile-worker:
       specifier: 0.18.0
       version: 0.18.0
@@ -513,12 +516,18 @@ importers:
       '@epilove/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@epilove/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@epilove/media':
         specifier: workspace:*
         version: link:../../packages/media
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)(postgres@3.4.9)
+      fflate:
+        specifier: 'catalog:'
+        version: 0.8.3
       graphile-worker:
         specifier: 'catalog:'
         version: 0.18.0(supports-color@7.2.0)(typescript@7.0.2)
@@ -3058,6 +3067,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   framer-motion@13.5.0:
     resolution: {integrity: sha512-5KDKvhGTKKEQPWl8xg2mZRC+pGsenooz9v+ar6BpoXcD1mae4wdhvjxLaK+3jvFbge0jk4C8JeIjIC8m98z7hg==}
@@ -5609,6 +5621,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
       picomatch: 4.0.7
+
+  fflate@0.8.3: {}
 
   framer-motion@13.5.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:

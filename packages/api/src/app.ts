@@ -1,4 +1,6 @@
 import { type KeyRing, keyRingFromEnv } from "@epilove/crypto";
+import { findExport } from "@epilove/db/repositories/exports";
+import { writeAudit } from "@epilove/db/repositories/safety";
 import { createMailer, type Mailer, mailerConfigFromEnv } from "@epilove/email";
 import { imgproxyConfigFromEnv } from "@epilove/media";
 import { createStorage, type Storage, storageConfigFromEnv } from "@epilove/media/storage";
@@ -81,6 +83,39 @@ export function createApp(dependencies: AppDependencies) {
       return c.newResponse(response.body, response);
     }
     await next();
+  });
+
+  // Data export download (SAF-14): only for its owner, only while ready and not expired.
+  app.get("/export/:id", async (c) => {
+    const viewer = await dependencies.resolveViewer(c.req.raw);
+    const id = c.req.param("id");
+    if (!viewer || !/^[0-9a-f-]{36}$/.test(id)) {
+      return c.json({ error: "not_found" }, 404);
+    }
+    const db = dependencies.database();
+    const row = await findExport(db, id);
+    if (
+      !row ||
+      row.userId !== viewer.userId ||
+      row.status !== "ready" ||
+      !row.storageKey ||
+      !row.expiresAt ||
+      row.expiresAt <= services.now()
+    ) {
+      return c.json({ error: "not_found" }, 404);
+    }
+    const body = await services.storage().read(row.storageKey);
+    await writeAudit(db, {
+      actorId: viewer.userId,
+      action: "export.downloaded",
+      targetType: "export",
+      targetId: id,
+    });
+    return c.body(body as Uint8Array<ArrayBuffer>, 200, {
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="epilove-export-${row.createdAt.toISOString().slice(0, 10)}.zip"`,
+      "Cache-Control": "no-store",
+    });
   });
 
   app.notFound((c) => c.json({ error: "not_found" }, 404));

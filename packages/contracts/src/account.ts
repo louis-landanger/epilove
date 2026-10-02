@@ -6,13 +6,18 @@ export const accountSummary = z.object({
   email: z.string(),
   schoolSlug: z.string(),
   status: z.enum(ACCOUNT_STATUSES),
+  /** End of a scheduled pause (SAF-08), `null` for an open-ended pause. */
+  pausedUntil: z.iso.datetime().nullable(),
 });
 
 /** The member's account: pause (SAF-05) and self-service deletion (SAF-14). */
 export const accountContract = {
   summary: oc.output(accountSummary),
   /** The profile leaves discovery; conversations stay available. */
-  pause: oc.errors({ NOT_ALLOWED: { status: 409 } }).output(accountSummary),
+  pause: oc
+    .errors({ NOT_ALLOWED: { status: 409 }, INVALID_VALUE: { status: 422 } })
+    .input(z.object({ until: z.iso.datetime().nullable().default(null) }).default({ until: null }))
+    .output(accountSummary),
   resume: oc.errors({ NOT_ALLOWED: { status: 409 } }).output(accountSummary),
   /**
    * Immediate and final: the account disappears at once, sessions end, and
@@ -40,6 +45,22 @@ export const accountContract = {
     .errors({ NOT_ALLOWED: { status: 409 }, NOT_FOUND: { status: 404 } })
     .input(z.object({ decisionId: z.uuid(), text: z.string().min(20).max(2000) }))
     .output(z.object({ ok: z.literal(true) })),
+  /** Asks for a zip of the member's data (SAF-14); built in the background, emailed when ready. */
+  requestExport: oc.errors({ RATE_LIMITED: { status: 429 } }).output(z.object({ exportId: z.uuid() })),
+  exports: oc.output(
+    z.object({
+      exports: z.array(
+        z.object({
+          id: z.uuid(),
+          status: z.enum(["pending", "ready", "failed"]),
+          createdAt: z.iso.datetime(),
+          expiresAt: z.iso.datetime().nullable(),
+          /** Same-origin download path, only while the export is ready and not expired. */
+          downloadPath: z.string().nullable(),
+        }),
+      ),
+    }),
+  ),
   delete: oc
     .errors({ NOT_ALLOWED: { status: 409 } })
     .input(z.object({ confirm: z.literal(true) }))

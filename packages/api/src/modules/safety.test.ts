@@ -1,6 +1,6 @@
 import { decryptText } from "@epilove/crypto";
 import { schema } from "@epilove/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi, insertActiveMember, TEST_KEY_RING } from "../test-support";
 
@@ -177,5 +177,45 @@ describe.skipIf(!url)("safety, privacy and account", () => {
     expect(vault?.purgeAfter.getUTCFullYear()).toBe(2031);
     await expect(client.account.delete({ confirm: true })).rejects.toMatchObject({ code: "NOT_ALLOWED" });
     await expect(client.account.pause()).rejects.toMatchObject({ code: "NOT_ALLOWED" });
+  });
+
+  it("exports data on request, downloadable by its owner only", async () => {
+    const me = await insertActiveMember(api.db);
+    const client = api.clientFor(me);
+    const { exportId } = await client.account.requestExport();
+    const [job] = await api.db.execute<{ task_identifier: string }>(
+      sql`select task_identifier from graphile_worker.jobs where key = ${`export:${exportId}`}`,
+    );
+    expect(job?.task_identifier).toBe("accounts/export");
+    await api.db.execute(sql`select graphile_worker.remove_job(${`export:${exportId}`})`);
+    expect((await client.account.exports()).exports[0]).toMatchObject({
+      status: "pending",
+      downloadPath: null,
+    });
+
+    // Simulate the worker.
+    await api.storage.write(`exports/${me}/${exportId}.zip`, new Uint8Array([80, 75]), "application/zip");
+    await api.db
+      .update(schema.dataExport)
+      .set({
+        status: "ready",
+        storageKey: `exports/${me}/${exportId}.zip`,
+        expiresAt: new Date("2026-10-09T10:00:00Z"),
+      })
+      .where(eq(schema.dataExport.id, exportId));
+    expect((await client.account.exports()).exports[0]?.downloadPath).toBe(`/api/export/${exportId}`);
+
+    const download = (userId: string) =>
+      api.app.request(`/api/export/${exportId}`, { headers: { "x-test-user": userId } });
+    const mine = await download(me);
+    expect(mine.status).toBe(200);
+    expect(mine.headers.get("content-type")).toBe("application/zip");
+    expect(new Uint8Array(await mine.arrayBuffer())).toEqual(new Uint8Array([80, 75]));
+    expect((await download(await insertActiveMember(api.db))).status).toBe(404);
+    expect((await api.app.request(`/api/export/${exportId}`)).status).toBe(404);
+
+    const second = await client.account.requestExport();
+    await api.db.execute(sql`select graphile_worker.remove_job(${`export:${second.exportId}`})`);
+    await expect(client.account.requestExport()).rejects.toMatchObject({ code: "RATE_LIMITED" });
   });
 });

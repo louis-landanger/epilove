@@ -7,6 +7,7 @@ import type { JobHelpers } from "graphile-worker";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { liftSanctionsTask } from "./lift-sanctions";
 import { purgeTask } from "./purge";
+import { resumePausedTask } from "./resume-paused";
 
 const url = process.env.DATABASE_URL;
 const helpers = {
@@ -97,6 +98,35 @@ describe.skipIf(!url)("retention purge", () => {
     expect(Object.fromEntries(rows.map((row) => [row.id, row.status]))).toEqual({
       [lapsed]: "active",
       [running]: "suspended",
+    });
+  });
+
+  it("ends scheduled pauses once their date has passed", async () => {
+    const [school] = await db.select({ id: schema.school.id }).from(schema.school).limit(1);
+    const make = async (pausedUntil: Date | null) => {
+      const id = uuidv7();
+      await db.insert(schema.appUser).values({
+        id,
+        schoolId: school?.id ?? "",
+        email: `pause.${id}@epita.fr`,
+        emailHmac: `pause-${id}`,
+        status: "paused",
+        pausedUntil,
+      });
+      return id;
+    };
+    const over = await make(new Date("2026-10-01T00:00:00Z"));
+    const running = await make(new Date("2026-10-15T00:00:00Z"));
+    const openEnded = await make(null);
+    await resumePausedTask({ database: () => db, storage: () => storage, now: () => now })({}, helpers);
+    const rows = await db
+      .select({ id: schema.appUser.id, status: schema.appUser.status })
+      .from(schema.appUser)
+      .where(inArray(schema.appUser.id, [over, running, openEnded]));
+    expect(Object.fromEntries(rows.map((row) => [row.id, row.status]))).toEqual({
+      [over]: "active",
+      [running]: "paused",
+      [openEnded]: "paused",
     });
   });
 });

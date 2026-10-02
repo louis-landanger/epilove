@@ -13,8 +13,10 @@
   "dependencies": {
     "@epilove/core": "workspace:*",
     "@epilove/db": "workspace:*",
+    "@epilove/email": "workspace:*",
     "@epilove/media": "workspace:*",
     "drizzle-orm": "catalog:",
+    "fflate": "catalog:",
     "graphile-worker": "catalog:",
     "tsx": "catalog:",
     "zod": "catalog:"

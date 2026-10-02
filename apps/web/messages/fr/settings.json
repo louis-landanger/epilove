@@ -15,7 +15,13 @@
     "hideSchool": "Me masquer des étudiants de mon école",
     "hideSchoolHelp": "Ni toi ni eux ne vous verrez dans la découverte.",
     "hideYear": "Me masquer de ma promo",
-    "hideYearHelp": "Les personnes de ton école et de ta promo ne te verront pas, et inversement."
+    "hideYearHelp": "Les personnes de ton école et de ta promo ne te verront pas, et inversement.",
+    "partials": "Mode partiels",
+    "partialsHelp": "Une pause programmée : tes notifications se taisent et ton profil revient tout seul à la date choisie.",
+    "partialsUntil": "Jusqu'au",
+    "partialsStart": "Programmer la pause",
+    "pausedUntil": "En pause jusqu'au {date}. Tu reviendras automatiquement.",
+    "partialsInvalid": "Choisis une date entre demain et dans deux mois."
   },
   "discovery": {
     "title": "Qui je vois",
@@ -92,7 +98,15 @@
     "confirmLabel": "Écris SUPPRIMER pour confirmer",
     "confirmWord": "SUPPRIMER",
     "confirm": "Supprimer définitivement",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "export": "Télécharger mes données",
+    "exportHelp": "Un fichier zip avec ton profil, tes photos, tes consentements et l'historique qui te concerne. On t'envoie un email quand il est prêt.",
+    "exportRequested": "C'est parti : tu recevras un email d'ici quelques minutes.",
+    "exportRateLimited": "Tu as déjà demandé deux exports aujourd'hui.",
+    "exportPending": "En préparation…",
+    "exportReady": "Prêt, disponible jusqu'au {date}",
+    "exportFailed": "La préparation a échoué. Réessaie.",
+    "exportDownload": "Télécharger"
   },
   "links": {
     "title": "Aide et informations",

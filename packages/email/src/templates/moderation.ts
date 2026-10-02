@@ -103,3 +103,22 @@ export function appealOutcomeEmail(options: { overturned: boolean; statement: st
     }),
   };
 }
+
+/** The data export is ready (SAF-14). The link requires being signed in. */
+export function dataExportReadyEmail(downloadUrl: string, days: number): RenderedEmail {
+  const lines = [
+    "L'export de tes données Epilove est prêt : un fichier zip avec tes informations et tes photos.",
+    `Le lien reste valable ${days} jours et ne fonctionne que si tu es connecté·e à ton compte.`,
+  ];
+  return {
+    subject: "Ton export de données est prêt",
+    text: [...lines, "", `Télécharger : ${downloadUrl}`, "", FOOTER].join("\n"),
+    html: layout({
+      preheader: "Ton fichier est prêt.",
+      footer: FOOTER,
+      body: `<p style="margin:0 0 16px 0;font-size:22px;font-weight:600;">Ton export est prêt</p>
+${paragraphs(lines)}
+<p style="margin:16px 0 0 0;"><a href="${escapeHtml(downloadUrl)}" style="color:#c2187a;font-weight:600;">Télécharger mes données</a></p>`,
+    }),
+  };
+}

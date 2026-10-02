@@ -29,3 +29,11 @@ export function plusYears(date: Date, years: number): Date {
 export function plusDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * 86_400_000);
 }
+
+/** A scheduled pause lasts one day to two months (exam session, internship abroad…). */
+export const MAX_SCHEDULED_PAUSE_DAYS = 62;
+
+export function isValidPauseEnd(until: Date, now: Date): boolean {
+  const days = (until.getTime() - now.getTime()) / 86_400_000;
+  return days >= 1 && days <= MAX_SCHEDULED_PAUSE_DAYS;
+}
