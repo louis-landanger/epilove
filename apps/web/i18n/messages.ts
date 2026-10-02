@@ -2,6 +2,7 @@ import campusEn from "../messages/en/campus.json";
 import chatEn from "../messages/en/chat.json";
 import commonEn from "../messages/en/common.json";
 import discoveryEn from "../messages/en/discovery.json";
+import eventsEn from "../messages/en/events.json";
 import homeEn from "../messages/en/home.json";
 import likesEn from "../messages/en/likes.json";
 import matchesEn from "../messages/en/matches.json";
@@ -13,6 +14,7 @@ import campusFr from "../messages/fr/campus.json";
 import chatFr from "../messages/fr/chat.json";
 import commonFr from "../messages/fr/common.json";
 import discoveryFr from "../messages/fr/discovery.json";
+import eventsFr from "../messages/fr/events.json";
 import homeFr from "../messages/fr/home.json";
 import likesFr from "../messages/fr/likes.json";
 import matchesFr from "../messages/fr/matches.json";
@@ -35,6 +37,7 @@ const namespaces = {
   chat: { fr: chatFr, en: chatEn },
   common: { fr: commonFr, en: commonEn },
   discovery: { fr: discoveryFr, en: discoveryEn },
+  events: { fr: eventsFr, en: eventsEn },
   home: { fr: homeFr, en: homeEn },
   likes: { fr: likesFr, en: likesEn },
   matches: { fr: matchesFr, en: matchesEn },

@@ -12,7 +12,8 @@
     "message_received": "New message in a conversation.",
     "drop_ready": "Your evening Drop is here.",
     "pact_reveal": "It's time: the Pact results are in.",
-    "chat_nudge": "A conversation is waiting for a nudge. An idea to restart?"
+    "chat_nudge": "A conversation is waiting for a nudge. An idea to restart?",
+    "event_cancelled": "An event you answered has been cancelled."
   },
   "settings": {
     "title": "Notification settings",
@@ -36,7 +37,8 @@
       "matches": "New bonds",
       "messages": "Messages",
       "drop": "Evening Drop",
-      "pact": "The Pact"
+      "pact": "The Pact",
+      "events": "Events"
     },
     "saved": "Saved.",
     "chatTitle": "In conversations",

@@ -19,6 +19,7 @@
 | 2 | Stickers maison et GIF (CHAT-05) | ✅ fait et testé (API avec GIPHY simulé) ; GIPHY désactivé sans clé |
 | 2 | Modifier / supprimer (CHAT-08), avertissement avant envoi (SAF-09), « Ce message te dérange ? » (SAF-10) | ✅ fait et testé (cœur, API, Playwright) |
 | 2 | Photos, photo éphémère, flou explicite (CHAT-06) ; messages vocaux (CHAT-07) | ✅ fait et testé (API, worker, Playwright à deux navigateurs avec micro simulé) ; transcription non faite, classifieur d'images à brancher (SAF-11) |
+| 2 | Événements (IRL-01) | ✅ fait et testé (cœur, API, Playwright à trois navigateurs, axe) ; pas d'image de couverture |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
@@ -141,6 +142,16 @@
 - Interface : bouton photo (aperçu, case « Éphémère : une seule ouverture »), bouton micro à la place d'« Envoyer » quand le champ est vide (enregistrement MediaRecorder 64 kbit/s, arrêt automatique à 2 minutes, écoute avant envoi), lecteur avec forme d'onde et vitesses 1×/1,5×/2×, photo floutée avec « Afficher quand même » et « Signaler » quand le classifieur la signale. Sur téléphone, les outils de la zone de saisie se replient derrière « + ».
 - **Non fait** : transcription des vocaux (CHAT-07, accessibilité) ; classifieur réel (SAF-11, aujourd'hui aucun signalement : toutes les photos s'affichent nettes).
 
+### Événements (IRL-01)
+
+- `packages/core/src/events/events.ts` : règles (titre, lieu, au plus un an à l'avance, 24 heures au plus, 3 heures par défaut sans heure de fin), `canOrganize` (rôles `organizer` et `admin`), `attendanceVisible` (réciprocité). `canUseApp` ajouté aux politiques (compte utilisable et majeur).
+- Tables `event` (nom de l'asso affiché, jamais le nom de la personne qui publie ; `school_ids` vide = tout le campus ; lieu libre ou Spot, dont le nom devient le lieu) et `event_rsvp` (« J'y vais » / « Peut-être », partage avec ses matchs, désactivé par défaut). Dépôt `packages/db/src/repositories/campus-events.ts`.
+- API `events.list` (à venir / mes événements ; un événement annulé reste visible pour qui avait répondu), `get` (avec les matchs qui y vont **seulement si la personne partage aussi sa réponse**, filtrés par `canViewProfile` : bloquer ou masquer fait disparaître), `rsvp` (idempotent, `null` pour retirer), `create`, `update`, `cancel` (notification `event_cancelled` aux personnes qui avaient répondu, nouveau groupe de préférences « Événements »).
+- Le rôle d'organisateur est relu en base à chaque action (`roleOf`) plutôt que pris dans la session : un rôle retiré s'applique tout de suite, et le résolveur de développement ne connaît que `moderator` et `admin`.
+- Interface `(app)/campus/evenements` (liste à venir / mes événements, détail avec réponse, partage, matchs présents, fichier `.ics`, édition et annulation pour l'organisateur, formulaire de création avec Spot ou lieu libre et écoles concernées). Carte « Événements » dans l'onglet Campus.
+- Données de développement : Sarah (membre 3, ISG) est organisatrice et publie 6 événements fictifs (associations inventées) avec des réponses ; Inès et Hugo partagent leur venue au premier.
+- **Non fait** : image de couverture (`cover_key` prévu, l'en-tête utilise un dégradé) ; signalement d'un événement (le contrat `safety.report` prévoit le contexte `event`, il faudra choisir qui est signalé : l'organisateur).
+
 ### Crush secret (DEC-08) et seconde chance (DEC-09)
 
 - `packages/core/src/discovery/crush.ts` : règles (3 crushs actifs, 90 jours, 10 ajouts par 30 jours retraits compris, contre le sondage), indice affiché au membre (« a•••@epita.fr »), mode du match (`crushMatchMode` : mêmes règles que la découverte dans les deux sens, incognito levé comme pour un like réciproque, Love si possible sinon Amis).
@@ -172,12 +183,12 @@
 | `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendances `@epilove/crypto` et `aws4fetch` (stockage des médias de conversation), script `db:seed:dev`, exports `./repositories/*`, `./dev-seed`, `./storage` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `maplibre-gl`, `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
-| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `dev`, `discovery`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
+| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `dev`, `discovery`, `events`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
-| `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `likes`, `matches`, `notifications`, `pact`, `questionnaire`, `spots` (ajouts) |
-| `packages/core/src/index.ts` | `discovery/crush`, `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/second-chance`, `discovery/rules`, `matching/explain`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
+| `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `events`, `likes`, `matches`, `notifications`, `pact`, `questionnaire`, `spots` (ajouts) |
+| `packages/core/src/index.ts` | `discovery/crush`, `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/second-chance`, `discovery/rules`, `events/events`, `matching/explain`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
 | `packages/db/src/seeds/index.ts` | seeds `questions`, `spots` (ajouts) |
-| `packages/db/src/schema/index.ts` | `spots` (ajout) |
+| `packages/db/src/schema/index.ts` | `events`, `spots` (ajouts) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
 | `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `media_purge`, `chat_nudge` (ajouts) |
@@ -203,6 +214,7 @@
 
 ## Migrations
 
+- `0013_*` : tables `event` et `event_rsvp`.
 - `0012_*` : table `media_deletion`.
 - `0011_*` : table `spot`.
 - `0010_*` : colonne `match.nudged_at`.
@@ -241,6 +253,7 @@
 - CSP (A, `proxy.ts`) : autoriser l'hôte d'imgproxy dans `img-src` (photos de conversation, déjà le cas des photos de profil), l'hôte S3 public dans `media-src` (URL présignées des vocaux) et `blob:` dans `img-src` et `media-src` (aperçus locaux avant envoi).
 - Suppression de compte (A) : effacer aussi les médias de conversation (préfixe `chat/<matchId>/` des matchs du membre), par exemple en les mettant dans `media_deletion`.
 - Modération (SAF-11, A) : brancher le vrai classifieur via `setImageClassifier` ; les photos signalées portent le drapeau `explicit_image` dans `message.moderation`.
+- Rôle `organizer` (IRL-01) : l'espace organisateurs du back-office (ADM-08) attribue ce rôle aux comptes des BDE ; l'app lit `app_user.role`.
 - Le menu de sécurité d'une conversation et le signalement d'un message appellent `safety.block` / `safety.report` (contexte `message`, `contextRef` = id du message) : à vérifier avec l'implémentation de A (copie chiffrée des messages précédents comme preuve).
 
 ## ADR

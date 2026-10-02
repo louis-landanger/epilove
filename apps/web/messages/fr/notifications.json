@@ -12,7 +12,8 @@
     "message_received": "Nouveau message dans une conversation.",
     "drop_ready": "Ton Drop du soir est arrivé.",
     "pact_reveal": "C'est l'heure : les résultats du Pacte sont là.",
-    "chat_nudge": "Une conversation attend une relance. Une idée pour repartir ?"
+    "chat_nudge": "Une conversation attend une relance. Une idée pour repartir ?",
+    "event_cancelled": "Un événement auquel tu as répondu est annulé."
   },
   "settings": {
     "title": "Réglages des notifications",
@@ -36,7 +37,8 @@
       "matches": "Nouvelles liaisons",
       "messages": "Messages",
       "drop": "Drop du soir",
-      "pact": "Le Pacte"
+      "pact": "Le Pacte",
+      "events": "Événements"
     },
     "saved": "Enregistré.",
     "chatTitle": "Dans les conversations",

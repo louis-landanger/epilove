@@ -38,6 +38,11 @@
       "title": "Spots",
       "lead": "Parcs, places et berges autour du campus pour un premier date.",
       "action": "Explorer"
+    },
+    "events": {
+      "title": "Événements",
+      "lead": "Soirées, tournois, sorties : ce que les assos organisent, et qui de tes liaisons y va.",
+      "action": "Voir le programme"
     }
   }
 }

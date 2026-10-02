@@ -68,6 +68,16 @@ export async function CampusHub({ pact }: { pact: PactCurrent }) {
         </li>
         <li>
           <Link
+            href="/campus/evenements"
+            className="flex h-full flex-col gap-3 rounded-3xl border border-paper/10 bg-paper/[0.03] p-5 transition hover:border-volt/60 focus-visible:outline-2 focus-visible:outline-volt focus-visible:outline-offset-2"
+          >
+            <h2 className="font-display font-semibold text-2xl">{t("events.title")}</h2>
+            <p className="text-paper/75 text-sm">{t("events.lead")}</p>
+            <span className="mt-auto font-semibold text-sm">{t("events.action")} →</span>
+          </Link>
+        </li>
+        <li>
+          <Link
             href="/campus/spots"
             className="flex h-full flex-col gap-3 rounded-3xl border border-paper/10 bg-paper/[0.03] p-5 transition hover:border-volt/60 focus-visible:outline-2 focus-visible:outline-volt focus-visible:outline-offset-2"
           >

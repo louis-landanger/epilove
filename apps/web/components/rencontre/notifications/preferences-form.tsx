@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
 
-const GROUPS = ["likes", "matches", "messages", "drop", "pact"] as const;
+const GROUPS = ["likes", "matches", "messages", "drop", "pact", "events"] as const;
 type Group = (typeof GROUPS)[number];
 
 /** Notification preferences per group and channel (NOT-03), and conversation settings (CHAT-02). */

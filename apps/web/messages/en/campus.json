@@ -38,6 +38,11 @@
       "title": "Spots",
       "lead": "Parks, squares and riverbanks around campus for a first date.",
       "action": "Explore"
+    },
+    "events": {
+      "title": "Events",
+      "lead": "Parties, tournaments, outings: what the societies put on, and which of your bonds are going.",
+      "action": "See what's on"
     }
   }
 }
