@@ -1,0 +1,24 @@
+{
+  "eyebrow": "Waiting list",
+  "title": "Push <em>your school</em> up.",
+  "lead": "Sign up with your school email: your sign-up counts for your school in the race, and you get your referral link.",
+  "label": "Your school email",
+  "placeholder": "first.last@school.fr",
+  "hint": "Addresses ending in @epita.fr, @esme.fr, @supbiotech.fr, @isg.fr or @ipsa.fr.",
+  "submit": "Join the list",
+  "submitting": "Signing up…",
+  "referral": "Referral link recognised: your sign-up will also help the person who sent it to you.",
+  "errors": {
+    "required": "Enter your school email address.",
+    "invalid_format": "This does not look like an email address. Check that nothing is missing.",
+    "domain_not_allowed": "This address does not belong to a participating school.",
+    "rate_limited": "Too many attempts in a short time. Try again in a few minutes.",
+    "server_error": "Something broke on our side. Shall we try again?"
+  },
+  "success": {
+    "title": "You're in.",
+    "body": "If this is your first sign-up, your referral link will reach your school inbox within a few minutes. Have a look in your spam folder too.",
+    "again": "Sign up another address"
+  },
+  "privacy": "Your address is not stored: only an encrypted fingerprint is kept to avoid duplicates. Details in the <link>privacy policy</link>."
+}

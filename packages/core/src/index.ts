@@ -1,5 +1,6 @@
 export * from "./accounts/lifecycle";
 export * from "./accounts/onboarding";
+export * from "./campus/headcounts";
 export * from "./campus/schools";
 export * from "./ids/uuidv7";
 export * from "./matching/compatibility";

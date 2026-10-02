@@ -1,0 +1,437 @@
+{
+  "draft": "Draft — to be reviewed by a lawyer",
+  "draftNote": "Working document, written before the association is created. Items in square brackets are to be completed. It will be reviewed and approved before the service opens. The French version prevails.",
+  "version": "Working version of 2 October 2026",
+  "toc": "On this page",
+  "back": "Back to the home page",
+  "nav": {
+    "label": "Legal pages",
+    "legalNotice": "Legal notice",
+    "terms": "Terms of use",
+    "privacy": "Privacy",
+    "transparency": "Ranking transparency"
+  },
+  "legalNotice": {
+    "title": "Legal notice",
+    "description": "Publisher, host and points of contact of the Epilove service.",
+    "sections": [
+      {
+        "id": "editeur",
+        "title": "Publisher",
+        "blocks": [
+          "The Epilove service (code name) is published by the association [Association name], a non-profit governed by the French law of 1 July 1901, registered with the Rhône prefecture on [registration date] under RNA number [W000000000], with its registered office at [registered address], Lyon.",
+          "Phone: [phone number]. Email: [contact@domain]."
+        ]
+      },
+      {
+        "id": "publication",
+        "title": "Publication director",
+        "blocks": ["[First Last], as president of the association."]
+      },
+      {
+        "id": "hebergement",
+        "title": "Hosting",
+        "blocks": [
+          "[Host company name: Hetzner Online GmbH or Scaleway SAS, to be confirmed], [address], [phone]. Servers and data are located in the European Union."
+        ]
+      },
+      {
+        "id": "contact",
+        "title": "Points of contact",
+        "blocks": [
+          "In accordance with Articles 11 and 12 of the EU Digital Services Act (DSA):",
+          {
+            "list": [
+              "Member State authorities, the European Commission and the European Board for Digital Services: [authorities@domain];",
+              "users: [contact@domain], in French or English;",
+              "reporting illegal content outside the app: [report@domain]. In the app, any content can be reported in two taps."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "propriete",
+        "title": "Intellectual property",
+        "blocks": [
+          "The texts, graphics, animations and code of the site belong to the association or to their authors. The Bricolage Grotesque, Instrument Serif, Geist and Geist Mono typefaces are distributed under a free licence (SIL Open Font License) and served from our own servers."
+        ]
+      },
+      {
+        "id": "independance",
+        "title": "Independence",
+        "blocks": [
+          "Independent student project, not affiliated with IONIS Education Group or the schools listed. School names are only used to state who can sign up; no school logo or visual identity element is used.",
+          "\"Epilove\" is a temporary code name. The public name of the service will be announced before it opens."
+        ]
+      }
+    ]
+  },
+  "terms": {
+    "title": "Terms of use",
+    "description": "The rules for using Epilove, from the waiting list to moderation.",
+    "sections": [
+      {
+        "id": "objet",
+        "title": "Purpose",
+        "blocks": [
+          "These terms govern the use of Epilove, a free dating and friendship service reserved for students of the participating schools on the Lyon campus, published by the association [Association name]. By creating an account, you accept them."
+        ]
+      },
+      {
+        "id": "eligibilite",
+        "title": "Who can use the service",
+        "blocks": [
+          {
+            "list": [
+              "Be at least 18 years old. Age is checked at sign-up and this check is blocking.",
+              "Be enrolled at EPITA, ESME, Sup'Biotech, ISG or IPSA on the Lyon campus, with an email address provided by the school.",
+              "Hold a single account: one school address is one person and one account.",
+              "Not be subject to a ban or to a court decision forbidding the use of the service."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "liste-attente",
+        "title": "Waiting list",
+        "blocks": [
+          "Before opening, a waiting list lets you sign up with your school address. Signing up does not create an account and commits you to nothing. It counts for your school in the school race, ranked by share of each school's estimated headcount. Your referral link is personal."
+        ]
+      },
+      {
+        "id": "compte",
+        "title": "Your account",
+        "blocks": [
+          "You are responsible for the accuracy of the information you provide: your first name, your age and your own photos. You sign in with a one-time code sent to your school address, or with a passkey.",
+          "Your school address is verified again every September. Graduates keep read-only access for three months to retrieve their conversations."
+        ]
+      },
+      {
+        "id": "charte",
+        "title": "Community rules",
+        "blocks": [
+          {
+            "list": [
+              "Respect others: no insults, threats or hate speech.",
+              "Consent first: a no, a silence or a block must be respected. No sexual images.",
+              "Be yourself: your photos, your first name, your real age.",
+              "What happens in the app stays in the app: no shared screenshots, no revealing someone's orientation or presence on the app.",
+              "No selling or promotion.",
+              "If something goes wrong, report it: the reported person does not know who reported them."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "moderation",
+        "title": "Moderation and sanctions",
+        "blocks": [
+          "Every profile, photo and message can be reported. Reports are reviewed by trained volunteer moderators, assisted by automated tools that never decide a sanction on their own.",
+          "Sanctions are graduated: warning, restriction, 7-day suspension, 30-day suspension, permanent ban. The most serious facts (threats, violence, non-consensual sexual content, a minor) lead to an immediate ban.",
+          "Every decision is sent to you with its reasons: the facts, the rule broken, the sanction and how to appeal. You can appeal a decision once; it is then reviewed by another person.",
+          "Threats to someone's life or safety are reported to the authorities, and manifestly illegal content to the PHAROS platform."
+        ]
+      },
+      {
+        "id": "contenus",
+        "title": "Your content",
+        "blocks": [
+          "You remain the owner of what you post. You grant the association a limited, free, non-exclusive licence to display it within the service only, for as long as the content or your account exists. Do not post photos of another person without their consent."
+        ]
+      },
+      {
+        "id": "gratuite",
+        "title": "Free service and recommendations",
+        "blocks": [
+          "The service is free. No paid option gives an advantage and no targeted advertising is shown. Suggested profiles are ranked according to criteria explained on the Ranking transparency page, and some settings let you influence them."
+        ]
+      },
+      {
+        "id": "responsabilite",
+        "title": "Availability and liability",
+        "blocks": [
+          "The service is provided by a student association, with no guarantee of permanent availability. Meetings outside the app are your own responsibility: read our safety tips before a first date. Nothing in these terms limits the rights the law grants you."
+        ]
+      },
+      {
+        "id": "suppression",
+        "title": "Deleting your account",
+        "blocks": [
+          "You can delete your account at any time from the settings. Your data is permanently erased within 30 days, subject to the legal retention periods described in the privacy policy."
+        ]
+      },
+      {
+        "id": "modifications",
+        "title": "Changes and governing law",
+        "blocks": [
+          "Any significant change to these terms is announced in the app at least 15 days before it takes effect. These terms are governed by French law. In case of disagreement, write to us first at [contact@domain]; failing an amicable agreement, the competent courts are those designated by law."
+        ]
+      }
+    ]
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "description": "What data Epilove processes, why, for how long, and how to exercise your rights.",
+    "sections": [
+      {
+        "id": "essentiel",
+        "title": "The essentials",
+        "blocks": [
+          {
+            "list": [
+              "We collect the minimum needed to run the service.",
+              "No advertising, no resale and no sharing of data for commercial purposes.",
+              "The gender you are looking for and your orientation are only processed with your explicit, separate consent. They are never exported.",
+              "Your messages are encrypted and your photos are only reachable through temporary links.",
+              "You can export or delete your data at any time from the settings."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "responsable",
+        "title": "Data controller",
+        "blocks": [
+          "The association [Association name], [registered address], Lyon. Personal data contact: [First Last], [data@domain]."
+        ]
+      },
+      {
+        "id": "liste-attente",
+        "title": "Waiting list",
+        "blocks": [
+          "Your school email address is used only once: to send you your referral link. It is not stored. We only keep a non-reversible fingerprint of the address (HMAC-SHA256 with a secret key), your school, your referral code, the code of the person who referred you if any, and the sign-up date.",
+          "Legal basis: pre-contractual steps taken at your request (Article 6.1.b GDPR). Retention: until the service opens, then [3 months] at most. You can ask for your sign-up to be deleted at any time."
+        ]
+      },
+      {
+        "id": "finalites",
+        "title": "Purposes and legal bases",
+        "blocks": [
+          {
+            "table": {
+              "caption": "Purposes, data and legal bases",
+              "head": ["Purpose", "Data", "Legal basis"],
+              "rows": [
+                [
+                  "Waiting list and school race",
+                  "Email fingerprint, school, referral code",
+                  "Pre-contractual steps (6.1.b)"
+                ],
+                [
+                  "Account and verification of school membership",
+                  "School email, date of birth",
+                  "Performance of the contract (6.1.b)"
+                ],
+                [
+                  "Profile and matching",
+                  "First name, photos, answers, interests, school, class",
+                  "Performance of the contract (6.1.b)"
+                ],
+                ["Gender preferences and orientation", "Genders sought", "Explicit consent (9.2.a)"],
+                ["Messaging", "Messages, media", "Performance of the contract (6.1.b)"],
+                [
+                  "Moderation and safety",
+                  "Reports, reported content, abuse signals",
+                  "Legitimate interest (6.1.f) and legal obligations"
+                ],
+                [
+                  "Retention of identification data",
+                  "See the retention periods below",
+                  "Legal obligation (6.1.c)"
+                ],
+                [
+                  "Audience measurement",
+                  "Anonymous statistics",
+                  "Consent exemption if the CNIL conditions are met, otherwise consent"
+                ],
+                ["AI icebreakers (optional)", "Pseudonymised excerpts of answers", "Consent (6.1.a)"],
+                ["Digest emails (optional)", "Email", "Consent (6.1.a)"]
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "sensibles",
+        "title": "Sensitive data",
+        "blocks": [
+          "The gender you are looking for reveals your orientation: it is sensitive data under Article 9 GDPR. It is only processed with your explicit consent, collected through a separate, unticked box that names the sensitive nature of the data. You can withdraw it at any time: Love mode is then turned off and Friends mode remains available. Proof of consent (text version, date) is kept.",
+          "No other sensitive data is collected: no religion, political opinions, health or origin, including in the Pact questionnaire. The mere fact of using the app is treated as information to protect: discreet by default, no public list, neutral notifications."
+        ]
+      },
+      {
+        "id": "durees",
+        "title": "Retention periods",
+        "blocks": [
+          {
+            "table": {
+              "caption": "Retention periods",
+              "head": ["Data", "Period"],
+              "rows": [
+                ["Waiting list", "Until the service opens, then [3 months] at most"],
+                [
+                  "Profile, photos, preferences",
+                  "Lifetime of the account, then permanently erased within 30 days"
+                ],
+                [
+                  "Conversations",
+                  "Lifetime of the match; erased 30 days after an unmatch or account deletion, unless reported"
+                ],
+                [
+                  "Reported content and moderation decisions",
+                  "1 year after the decision (longer if proceedings are ongoing)"
+                ],
+                [
+                  "Declared identity (email, first name, date of birth)",
+                  "5 years after the account is closed, in a separate restricted vault (decree no. 2021-1362, applicability to be confirmed)"
+                ],
+                ["Account and verification data", "1 year after the account is closed"],
+                ["Technical connection data (IP, timestamps)", "1 year"],
+                ["Audience statistics", "25 months at most"],
+                ["Application logs, without personal data", "90 days"]
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "sous-traitants",
+        "title": "Recipients and processors",
+        "blocks": [
+          "Your data is only accessible to the association members who need it, with limited and logged rights. It is never passed on to the schools, unless required by law. Our processors act on our instructions, under data processing agreements:",
+          {
+            "table": {
+              "caption": "Processors",
+              "head": ["Processor", "Role", "Location and safeguards"],
+              "rows": [
+                ["[Hetzner or Scaleway, to be confirmed]", "Server hosting", "European Union"],
+                [
+                  "Cloudflare",
+                  "Network, bot protection, media storage",
+                  "Storage in the EU; US company: Data Privacy Framework and standard contractual clauses"
+                ],
+                [
+                  "[Brevo or Scaleway, to be confirmed]",
+                  "Sending emails (sign-in codes, waiting list)",
+                  "European Union"
+                ],
+                ["PostHog (EU region)", "Product statistics, without sensitive data", "European Union"],
+                ["Sentry (EU region)", "Error tracking, personal data masked", "European Union"],
+                [
+                  "Anthropic",
+                  "Help moderating ambiguous cases, optional icebreakers",
+                  "United States: minimised and pseudonymised data, contractual safeguards to be checked before use"
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "securite",
+        "title": "Security",
+        "blocks": [
+          "Encryption in transit (TLS) and at rest, application-level encryption of message and report contents, photos served only through signed temporary links, photo metadata (including location) removed, technical logs without personal data, team access limited to what is strictly necessary and logged."
+        ]
+      },
+      {
+        "id": "droits",
+        "title": "Your rights",
+        "blocks": [
+          "You have the rights of access, rectification, erasure, portability, objection and restriction, and you can withdraw your consent at any time. Exporting your data and deleting your account are available directly in the settings; for anything else, write to [data@domain]. We answer within one month.",
+          "If you believe your rights are not respected, you can lodge a complaint with the CNIL (www.cnil.fr)."
+        ]
+      },
+      {
+        "id": "cookies",
+        "title": "Cookies and trackers",
+        "blocks": [
+          "Only strictly necessary cookies (session, security, preferences): they do not require consent. Audience measurement, if set up, meets the CNIL exemption conditions (anonymous statistics, for our own use only, no cross-site tracking); otherwise your consent will be asked. No advertising pixel, and fonts are served from our own servers."
+        ]
+      },
+      {
+        "id": "automatise",
+        "title": "Recommendations and automated decisions",
+        "blocks": [
+          "The profiles suggested to you are ranked automatically according to criteria published on the Ranking transparency page. Automated moderation tools are used to prioritise reports: they never decide a sanction on their own."
+        ]
+      }
+    ]
+  },
+  "transparency": {
+    "title": "Ranking transparency",
+    "description": "How Epilove chooses the profiles suggested to you, and what is never used.",
+    "sections": [
+      {
+        "id": "principe",
+        "title": "Why this page",
+        "blocks": [
+          "You have the right to understand why a profile is suggested to you. This page describes the main ranking parameters, voluntarily following Article 27 of the EU Digital Services Act. The rules are explicit, with no deep learning: the pool is small and every choice must remain explainable."
+        ]
+      },
+      {
+        "id": "eligibilite",
+        "title": "Who can be suggested to you",
+        "blocks": [
+          "A person is only suggested to you if all these conditions hold, both ways:",
+          {
+            "list": [
+              "you share at least one active mode (Love or Friends);",
+              "in Love mode, each of you belongs to the genders the other is looking for;",
+              "each person's age is within the range chosen by the other;",
+              "there is no block or hiding (school, class or person) between you;",
+              "both accounts are active, neither paused nor suspended, and the profile is complete;",
+              "the person has been active in the last 21 days."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "parametres",
+        "title": "The main parameters",
+        "blocks": [
+          {
+            "list": [
+              "Compatibility: computed from the questionnaire, taking into account your answers, the answers you accept from the other person and how important they are to you. It is mutual and only shown from 12 questions in common.",
+              "Affinities: interests and answers to profile questions, compared on our own servers, without sending anything to a third party.",
+              "Mutual interest: we look for pairs likely to appreciate each other, not only what you would like.",
+              "Recent activity: an active person is suggested more often.",
+              "Fair exposure: very popular profiles are shown less until they have replied, each profile aims at a reasonable daily exposure, and new profiles are slightly more visible for 72 hours.",
+              "Inter-school bonus: a slight advantage for encounters between two different schools, which you can turn off in your settings.",
+              "Diversity: we alternate schools and avoid showing very similar profiles in a row; about one card in four is someone who already liked you, if there is one."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "drop-pacte",
+        "title": "The Drop and the Pact",
+        "blocks": [
+          "The Drop suggests 5 profiles every evening at 9 p.m.; the same profile appears in no more than about ten Drops a day, so popular profiles are not everywhere.",
+          "The Pact gives at most one match per person and per mode, maximising the quality of all pairs together. A pair is only kept if its compatibility exceeds a threshold (0.60 at first): better no match than a bad match."
+        ]
+      },
+      {
+        "id": "jamais",
+        "title": "What is never used",
+        "blocks": [
+          {
+            "list": [
+              "Your physical appearance: no automated analysis of photos to rank profiles, no attractiveness score.",
+              "Your origin, religion, political opinions or health, which are never collected anyway.",
+              "Any sensitive data beyond the preferences you declared with your consent.",
+              "Money: no boost or paid option changes the ranking."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "reglages",
+        "title": "Your settings",
+        "blocks": [
+          "You can adjust your filters (age, mode, schools), turn off the inter-school bonus, choose a random order for the deck, hide from specific people or switch to incognito mode. Every significant change to the ranking is documented by the team and announced on this page."
+        ]
+      }
+    ]
+  }
+}

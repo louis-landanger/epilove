@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "description": "Rencontres et amitiés entre étudiantes et étudiants vérifiés de l’EPITA, l’ESME, Sup'Biotech, l’ISG et l’IPSA à Lyon. Rejoins la liste d’attente et fais gagner ton école."
+  },
+  "nav": {
+    "label": "Navigation principale",
+    "home": "Epilove, retour à l’accueil",
+    "how": "Le concept",
+    "race": "La course",
+    "pact": "Le Pacte",
+    "safety": "Sécurité",
+    "faq": "FAQ",
+    "join": "Rejoindre",
+    "skip": "Aller au contenu"
+  },
+  "manifesto": {
+    "eyebrow": "Manifeste",
+    "title": "Cinq écoles. Une ville. Zéro <em>hasard</em>.",
+    "body": "On se croise tous les jours entre deux cours sans jamais se parler. Epilove réunit les étudiantes et étudiants vérifiés de cinq écoles du campus dans un même cercle : pas de swipe infini, pas de faux profils, pas d’algorithme qui te vend. Juste de bonnes <em>réactions</em>, en amitié comme en amour.",
+    "signature": "La chimie, ça se provoque."
+  },
+  "how": {
+    "eyebrow": "Comment ça marche",
+    "title": "Trois étapes, zéro prise de tête.",
+    "progress": "Étape {current} sur {total}",
+    "steps": {
+      "verify": {
+        "title": "Vérifie ton email d’école",
+        "body": "Un code à six chiffres arrive sur ton adresse d’école. Une adresse, une personne : pas de faux profils, et un bannissement reste un bannissement.",
+        "card": {
+          "label": "Échantillon n° 01",
+          "email": "prenom.nom@ecole.fr",
+          "code": "Code envoyé",
+          "status": "Vérifié"
+        }
+      },
+      "profile": {
+        "title": "Crée ton profil",
+        "body": "Ton prénom, quelques photos, trois questions qui te ressemblent. Jamais ton nom de famille. Et tu peux te masquer de ton école, de ta promo ou de personnes précises.",
+        "card": {
+          "label": "Fiche élément",
+          "symbol": "Al",
+          "name": "Alex",
+          "detail": "Promo 2028 · Mode Amis et Love",
+          "prompt": "Mon plan parfait pour un jeudi soir",
+          "answer": "Un concert surprise, puis des pâtes à 1 h du matin."
+        }
+      },
+      "chemistry": {
+        "title": "Laisse la chimie opérer",
+        "body": "Chaque soir à 21 h, le Drop te propose une petite sélection soignée. Et une fois par semestre, le Pacte te révèle ton match, en même temps que tout le campus.",
+        "card": {
+          "label": "Réaction",
+          "status": "Liaison établie",
+          "score": "Compatibilité"
+        }
+      }
+    },
+    "illustration": "Illustration fictive"
+  },
+  "race": {
+    "eyebrow": "La course des écoles",
+    "title": "Quelle école a le plus d’<em>atomes crochus</em> ?",
+    "lead": "Le classement se fait en pourcentage de l’effectif de chaque école, pas en nombre d’inscrits : les plus petites écoles ont toutes leurs chances.",
+    "live": "En direct",
+    "tableCaption": "Classement de la course des écoles, en part de l’effectif de chaque école",
+    "rank": "Rang",
+    "school": "École",
+    "signups": "Inscrits",
+    "share": "Part de l’effectif",
+    "leader": "En tête",
+    "goalLabel": "Objectif collectif",
+    "goalText": "À {goal} inscrits, la soirée de lancement est débloquée pour tout le monde.",
+    "goalProgress": "{total} sur {goal}",
+    "goalReached": "Objectif atteint : rendez-vous à la soirée de lancement.",
+    "estimate": "Effectifs estimés, à confirmer auprès des écoles. Actualisé toutes les 20 secondes.",
+    "unavailable": "Le compteur revient dans un instant.",
+    "referral": "Chaque inscription reçoit un lien de parrainage : partage-le dans tes groupes de promo pour faire monter ton école."
+  },
+  "pact": {
+    "eyebrow": "Le Pacte",
+    "title": "45 questions. Un match. <em>Le même soir</em> pour tout le campus.",
+    "body": "Réponds au questionnaire du Pacte avant le 7 février. Le 11 février à 20 h, chaque personne découvre la personne la plus compatible avec elle, en même temps que tout le campus. Mieux vaut aucun match qu’un mauvais match.",
+    "countdownLabel": "Révélation dans",
+    "date": "Jeudi 11 février 2027, 20 h",
+    "days": "jours",
+    "hours": "heures",
+    "minutes": "minutes",
+    "seconds": "secondes",
+    "revealed": "C’est l’heure de la révélation.",
+    "sample": "Échantillon scellé"
+  },
+  "safety": {
+    "eyebrow": "Sécurité et discrétion",
+    "title": "Nos engagements",
+    "lead": "Sur un campus, tout le monde se connaît. Epilove est conçu pour que ta présence et tes échanges restent entre toi et les personnes que tu choisis.",
+    "items": {
+      "verified": {
+        "title": "Vérifié ou rien",
+        "body": "Inscription uniquement avec ton email d’école. Âge minimum : 18 ans. Une adresse, un compte."
+      },
+      "discreet": {
+        "title": "Discret par défaut",
+        "body": "Prénom uniquement, notifications neutres, et la possibilité de te masquer de ton école, de ta promo ou de personnes précises."
+      },
+      "moderation": {
+        "title": "Modération humaine",
+        "body": "Bloquer est immédiat et sans justification. Signaler prend deux gestes. Chaque signalement est examiné par une personne formée, et chaque décision est motivée."
+      },
+      "data": {
+        "title": "Tes données restent en Europe",
+        "body": "Hébergement dans l’Union européenne, messages chiffrés, aucune publicité, aucune revente de données."
+      }
+    },
+    "link": "Lire la politique de confidentialité"
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "Questions fréquentes",
+    "items": {
+      "who": {
+        "question": "Qui peut s’inscrire ?",
+        "answer": "Les étudiantes et étudiants majeurs de l’EPITA, de l’ESME, de Sup'Biotech, de l’ISG et de l’IPSA à Lyon, avec leur adresse email d’école."
+      },
+      "free": {
+        "question": "C’est payant ?",
+        "answer": "Non, et ça le restera : pas d’abonnement, pas de likes floutés, pas de boost payant. Le projet est financé par des partenariats locaux, jamais par tes données."
+      },
+      "friends": {
+        "question": "Je cherche surtout des amis, c’est pour moi ?",
+        "answer": "Oui. Le mode Amis fait partie de l’app : tu choisis Love, Amis ou les deux, et tu changes quand tu veux."
+      },
+      "pact": {
+        "question": "C’est quoi, le Pacte ?",
+        "answer": "Un grand matching par semestre. Tu réponds à environ 45 questions, et le 11 février à 20 h tu découvres la personne la plus compatible avec toi, en même temps que tout le campus."
+      },
+      "discretion": {
+        "question": "Ma promo va-t-elle me voir ?",
+        "answer": "Seulement si tu le veux. Tu peux te masquer de toute ton école, de ta promo ou de personnes précises, et les notifications restent neutres."
+      },
+      "waitlist": {
+        "question": "Que devient mon adresse sur la liste d’attente ?",
+        "answer": "Elle sert uniquement à t’envoyer ton lien de parrainage. Elle n’est pas conservée : seule une empreinte chiffrée (HMAC) est gardée pour éviter les doublons."
+      },
+      "when": {
+        "question": "Quand est-ce que ça ouvre ?",
+        "answer": "Les profils et le questionnaire du Pacte ouvrent en janvier, et la révélation a lieu le jeudi 11 février 2027 à 20 h. Inscris-toi sur la liste pour ne rien manquer."
+      },
+      "team": {
+        "question": "Qui est derrière Epilove ?",
+        "answer": "Des étudiantes et étudiants du campus, réunis en association. Le projet est indépendant : ni IONIS Education Group ni les écoles n’y sont associés."
+      },
+      "help": {
+        "question": "Et si quelqu’un me met mal à l’aise ?",
+        "answer": "Bloque la personne : c’est immédiat et elle n’en est pas informée. Signale-la en deux gestes : l’équipe de modération traite les cas graves en priorité et peut t’orienter vers la cellule d’écoute de ton école."
+      }
+    }
+  },
+  "footer": {
+    "marquee": {
+      "one": "Trouve tes atomes crochus",
+      "two": "Cinq écoles, une ville",
+      "three": "Liaison établie",
+      "four": "Zéro hasard"
+    },
+    "legal": "Informations légales",
+    "legalNotice": "Mentions légales",
+    "terms": "Conditions d’utilisation",
+    "privacy": "Confidentialité",
+    "transparency": "Transparence du classement",
+    "explore": "Explorer",
+    "codename": "« Epilove » est un nom de code.",
+    "made": "Fait à Lyon, la nuit, au labo.",
+    "backToTop": "Revenir en haut"
+  }
+}

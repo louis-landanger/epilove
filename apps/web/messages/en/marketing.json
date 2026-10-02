@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "description": "Dating and friendship between verified students of EPITA, ESME, Sup'Biotech, ISG and IPSA in Lyon. Join the waiting list and help your school win."
+  },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Epilove, back to the home page",
+    "how": "The concept",
+    "race": "The race",
+    "pact": "The Pact",
+    "safety": "Safety",
+    "faq": "FAQ",
+    "join": "Join",
+    "skip": "Skip to content"
+  },
+  "manifesto": {
+    "eyebrow": "Manifesto",
+    "title": "Five schools. One city. Zero <em>chance</em>.",
+    "body": "We pass each other every day between classes without ever talking. Epilove brings the verified students of five campus schools into one circle: no endless swiping, no fake profiles, no algorithm selling you. Just good <em>reactions</em>, in friendship as in love.",
+    "signature": "Chemistry is something you spark."
+  },
+  "how": {
+    "eyebrow": "How it works",
+    "title": "Three steps, zero hassle.",
+    "progress": "Step {current} of {total}",
+    "steps": {
+      "verify": {
+        "title": "Verify your school email",
+        "body": "A six-digit code lands in your school inbox. One address, one person: no fake profiles, and a ban stays a ban.",
+        "card": {
+          "label": "Sample no. 01",
+          "email": "first.last@school.fr",
+          "code": "Code sent",
+          "status": "Verified"
+        }
+      },
+      "profile": {
+        "title": "Create your profile",
+        "body": "Your first name, a few photos, three questions that feel like you. Never your last name. And you can hide from your school, your class or specific people.",
+        "card": {
+          "label": "Element card",
+          "symbol": "Al",
+          "name": "Alex",
+          "detail": "Class of 2028 · Friends and Love mode",
+          "prompt": "My perfect Thursday night",
+          "answer": "A surprise gig, then pasta at 1 a.m."
+        }
+      },
+      "chemistry": {
+        "title": "Let the chemistry happen",
+        "body": "Every evening at 9 p.m., the Drop offers you a small, carefully chosen selection. And once a semester, the Pact reveals your match, at the same time as the whole campus.",
+        "card": {
+          "label": "Reaction",
+          "status": "Bond established",
+          "score": "Compatibility"
+        }
+      }
+    },
+    "illustration": "Fictional illustration"
+  },
+  "race": {
+    "eyebrow": "The school race",
+    "title": "Which school has the best <em>chemistry</em>?",
+    "lead": "The ranking uses the share of each school's headcount, not the number of sign-ups: the smallest schools stand every chance.",
+    "live": "Live",
+    "tableCaption": "School race ranking, by share of each school's headcount",
+    "rank": "Rank",
+    "school": "School",
+    "signups": "Sign-ups",
+    "share": "Share of headcount",
+    "leader": "Leading",
+    "goalLabel": "Collective goal",
+    "goalText": "At {goal} sign-ups, the launch party is unlocked for everyone.",
+    "goalProgress": "{total} of {goal}",
+    "goalReached": "Goal reached: see you at the launch party.",
+    "estimate": "Estimated headcounts, to be confirmed with the schools. Refreshed every 20 seconds.",
+    "unavailable": "The counter will be back in a moment.",
+    "referral": "Every sign-up gets a referral link: share it in your class groups to push your school up."
+  },
+  "pact": {
+    "eyebrow": "The Pact",
+    "title": "45 questions. One match. <em>The same night</em> for the whole campus.",
+    "body": "Answer the Pact questionnaire before 7 February. On 11 February at 8 p.m., everyone discovers their most compatible person, at the same time as the whole campus. Better no match than a bad match.",
+    "countdownLabel": "Reveal in",
+    "date": "Thursday 11 February 2027, 8 p.m.",
+    "days": "days",
+    "hours": "hours",
+    "minutes": "minutes",
+    "seconds": "seconds",
+    "revealed": "It's reveal time.",
+    "sample": "Sealed sample"
+  },
+  "safety": {
+    "eyebrow": "Safety and discretion",
+    "title": "Our commitments",
+    "lead": "On a campus, everyone knows everyone. Epilove is designed so that your presence and your conversations stay between you and the people you choose.",
+    "items": {
+      "verified": {
+        "title": "Verified or nothing",
+        "body": "Sign-up only with your school email. Minimum age: 18. One address, one account."
+      },
+      "discreet": {
+        "title": "Discreet by default",
+        "body": "First name only, neutral notifications, and the option to hide from your school, your class or specific people."
+      },
+      "moderation": {
+        "title": "Human moderation",
+        "body": "Blocking is instant and needs no reason. Reporting takes two taps. Every report is reviewed by a trained person, and every decision is explained."
+      },
+      "data": {
+        "title": "Your data stays in Europe",
+        "body": "Hosted in the European Union, encrypted messages, no advertising, no data resale."
+      }
+    },
+    "link": "Read the privacy policy"
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "Frequently asked questions",
+    "items": {
+      "who": {
+        "question": "Who can sign up?",
+        "answer": "Students aged 18 and over at EPITA, ESME, Sup'Biotech, ISG and IPSA in Lyon, with their school email address."
+      },
+      "free": {
+        "question": "Does it cost anything?",
+        "answer": "No, and it never will: no subscription, no blurred likes, no paid boosts. The project is funded by local partnerships, never by your data."
+      },
+      "friends": {
+        "question": "I'm mostly looking for friends, is it for me?",
+        "answer": "Yes. Friends mode is built in: you choose Love, Friends or both, and you can switch whenever you like."
+      },
+      "pact": {
+        "question": "What is the Pact?",
+        "answer": "A big matching event every semester. You answer about 45 questions, and on 11 February at 8 p.m. you discover your most compatible person, at the same time as the whole campus."
+      },
+      "discretion": {
+        "question": "Will my class see me?",
+        "answer": "Only if you want. You can hide from your whole school, your class or specific people, and notifications stay neutral."
+      },
+      "waitlist": {
+        "question": "What happens to my address on the waiting list?",
+        "answer": "It is only used to send you your referral link. It is not stored: only an encrypted fingerprint (HMAC) is kept to avoid duplicates."
+      },
+      "when": {
+        "question": "When does it open?",
+        "answer": "Profiles and the Pact questionnaire open in January, and the reveal takes place on Thursday 11 February 2027 at 8 p.m. Join the list so you don't miss anything."
+      },
+      "team": {
+        "question": "Who is behind Epilove?",
+        "answer": "Students from the campus, organised as a non-profit association. The project is independent: neither IONIS Education Group nor the schools are involved in it."
+      },
+      "help": {
+        "question": "What if someone makes me uncomfortable?",
+        "answer": "Block them: it is instant and they are not told. Report them in two taps: the moderation team handles serious cases first and can point you to your school's support service."
+      }
+    }
+  },
+  "footer": {
+    "marquee": {
+      "one": "Find your perfect chemistry",
+      "two": "Five schools, one city",
+      "three": "Bond established",
+      "four": "Zero chance"
+    },
+    "legal": "Legal information",
+    "legalNotice": "Legal notice",
+    "terms": "Terms of use",
+    "privacy": "Privacy",
+    "transparency": "Ranking transparency",
+    "explore": "Explore",
+    "codename": "\"Epilove\" is a code name.",
+    "made": "Made in Lyon, at night, in the lab.",
+    "backToTop": "Back to top"
+  }
+}

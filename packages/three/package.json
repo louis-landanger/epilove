@@ -1,0 +1,25 @@
+{
+  "name": "@epilove/three",
+  "version": "0.0.0",
+  "private": true,
+  "description": "WebGPU/WebGL2 scenes of the marketing site (three.js, TSL): the ion field.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ion-field": "./src/ion-field/scene.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@epilove/tokens": "workspace:*",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@epilove/config": "workspace:*",
+    "@types/three": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
