@@ -1,8 +1,11 @@
 import type { ChatMessage, MessageAttachment } from "@epilove/contracts";
 import {
   canMessage,
+  checkDateProposal,
+  checkDateResponse,
   checkMessageChange,
   cleanMessage,
+  DATE_STATUSES,
   explainCompatibility,
   isPotentiallyOffensive,
   isReaction,
@@ -14,6 +17,7 @@ import {
 } from "@epilove/core";
 import { encryptText } from "@epilove/crypto";
 import type { Database } from "@epilove/db";
+import { listSpots, spotById } from "@epilove/db/repositories/campus-life";
 import { loadProfileContent } from "@epilove/db/repositories/discovery";
 import { matchForMember } from "@epilove/db/repositories/matches";
 import {
@@ -36,6 +40,7 @@ import {
   notifyRead,
   reactionsOf,
   readMarkers,
+  replaceMessageBody,
   type StoredMessage,
   saveChatSettings,
   setReaction,
@@ -81,9 +86,52 @@ const payloads = {
   gif: z.object({
     gif: z.object({ url: z.string(), width: z.number(), height: z.number(), title: z.string() }),
   }),
+  date: z.object({
+    date: z.object({
+      spotId: z.string().nullable(),
+      place: z.string().nullable(),
+      startsAt: z.string(),
+      note: z.string(),
+      status: z.enum(DATE_STATUSES),
+      respondedAt: z.string().nullable().default(null),
+    }),
+  }),
 };
 
-function attachmentOf(kind: string, body: string): MessageAttachment | null {
+type SpotRow = Awaited<ReturnType<typeof listSpots>>[number];
+
+function parseDate(body: string) {
+  try {
+    const parsed = payloads.date.safeParse(JSON.parse(body));
+    return parsed.success ? parsed.data.date : null;
+  } catch {
+    return null;
+  }
+}
+
+function attachmentOf(
+  kind: string,
+  body: string,
+  spots: ReadonlyMap<string, SpotRow>,
+): MessageAttachment | null {
+  if (kind === "date_proposal") {
+    const date = parseDate(body);
+    if (!date) {
+      return null;
+    }
+    const spot = date.spotId ? spots.get(date.spotId) : undefined;
+    return {
+      type: "date",
+      // Spot names in French for now: history requests carry no locale.
+      spot: spot
+        ? { id: spot.id, name: spot.nameFr, latitude: spot.latitude, longitude: spot.longitude }
+        : null,
+      place: date.place,
+      startsAt: date.startsAt,
+      note: date.note,
+      status: date.status,
+    };
+  }
   let json: unknown;
   try {
     json = JSON.parse(body);
@@ -117,7 +165,7 @@ async function deliverMessage(
   conversation: Conversation,
   input: {
     id: string;
-    kind: "text" | "sticker" | "gif";
+    kind: "text" | "sticker" | "gif" | "date_proposal";
     plaintext: string;
     replyTo: string | null;
     flags: readonly string[];
@@ -158,6 +206,43 @@ async function deliverMessage(
     throw new ORPCError("INTERNAL_SERVER_ERROR");
   }
   return message;
+}
+
+/** A date proposal of this conversation, with its decrypted payload (CHAT-10). */
+async function requireDateProposal(db: Database, matchId: string, messageId: string) {
+  const [message] = await messagesByIds(db, [messageId]);
+  if (!message || message.matchId !== matchId || message.kind !== "date_proposal" || message.deletedAt) {
+    throw new ORPCError("NOT_FOUND");
+  }
+  const date = parseDate(decryptBody(message.bodyEncrypted, message.keyId));
+  if (!date) {
+    throw new ORPCError("NOT_FOUND");
+  }
+  return {
+    message,
+    date,
+    proposal: { proposerId: message.senderId, status: date.status, startsAt: new Date(date.startsAt) },
+  };
+}
+
+async function updateDateStatus(
+  db: Database,
+  original: Awaited<ReturnType<typeof requireDateProposal>>,
+  status: (typeof DATE_STATUSES)[number],
+  now: Date,
+): Promise<StoredMessage> {
+  const updated = await replaceMessageBody(
+    db,
+    original.message.id,
+    encryptText(
+      messageKeyRing(),
+      JSON.stringify({ date: { ...original.date, status, respondedAt: now.toISOString() } }),
+    ),
+  );
+  if (!updated) {
+    throw new ORPCError("NOT_FOUND");
+  }
+  return updated;
 }
 
 /** A message of this conversation that the viewer may still edit or delete (CHAT-08). */
@@ -203,6 +288,9 @@ async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Pro
   );
   const body = (m: StoredMessage) => (m.deletedAt ? "" : decryptBody(m.bodyEncrypted, m.keyId));
   const text = (m: StoredMessage) => (m.kind === "text" ? body(m) : "");
+  const spots = rows.some((m) => m.kind === "date_proposal")
+    ? new Map((await listSpots(db)).map((spot) => [spot.id, spot]))
+    : new Map<string, SpotRow>();
   return rows.map((m) => {
     const reply = m.replyTo ? known.get(m.replyTo) : undefined;
     return {
@@ -221,7 +309,7 @@ async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Pro
       editedAt: m.editedAt?.toISOString() ?? null,
       deleted: m.deletedAt !== null,
       flagged: m.deletedAt === null && isPotentiallyOffensive(flagsOf(m.moderation)),
-      attachment: m.deletedAt || m.kind === "text" ? null : attachmentOf(m.kind, body(m)),
+      attachment: m.deletedAt || m.kind === "text" ? null : attachmentOf(m.kind, body(m), spots),
     };
   });
 }
@@ -379,6 +467,78 @@ export const messaging = {
       flags: [],
       now,
     });
+    return { message };
+  }),
+
+  proposeDate: os.messaging.proposeDate.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const conversation = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const startsAt = new Date(input.startsAt);
+    const place = input.place?.trim() || null;
+    const check = checkDateProposal({ startsAt, spotId: input.spotId, place }, now);
+    if (!check.ok) {
+      throw new ORPCError("BAD_REQUEST", { message: check.reason });
+    }
+    if (input.spotId && !(await spotById(db, input.spotId))?.active) {
+      throw new ORPCError("BAD_REQUEST", { message: "unknown_spot" });
+    }
+    const note = cleanMessage(input.note);
+    if (input.counterTo) {
+      // "Proposer autre chose": the answered proposal becomes "countered".
+      const original = await requireDateProposal(db, conversation.match.id, input.counterTo);
+      const response = checkDateResponse(original.proposal, conversation.viewer.member.id, now);
+      if (!response.ok) {
+        throw new ORPCError("CONFLICT", { message: response.reason });
+      }
+      await updateDateStatus(db, original, "countered", now);
+      await notifyMessageUpdated(
+        db,
+        [conversation.viewer.member.id, conversation.other.member.id],
+        conversation.match.id,
+        original.message.id,
+      );
+    }
+    const message = await deliverMessage(db, conversation, {
+      id: input.id,
+      kind: "date_proposal",
+      plaintext: JSON.stringify({
+        date: {
+          spotId: input.spotId,
+          place,
+          startsAt: startsAt.toISOString(),
+          note,
+          status: "proposed",
+          respondedAt: null,
+        },
+      }),
+      replyTo: input.counterTo,
+      flags: note ? screenMessage(note) : [],
+      now,
+    });
+    return { message };
+  }),
+
+  respondDate: os.messaging.respondDate.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const { match, viewer, other } = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const original = await requireDateProposal(db, match.id, input.messageId);
+    const response = checkDateResponse(original.proposal, viewer.member.id, now);
+    if (!response.ok) {
+      throw new ORPCError("CONFLICT", { message: response.reason });
+    }
+    const updated = await updateDateStatus(
+      db,
+      original,
+      input.response === "accept" ? "accepted" : "declined",
+      now,
+    );
+    await notifyMessageUpdated(db, [viewer.member.id, other.member.id], match.id, original.message.id);
+    const [message] = await toChatMessages(db, [updated]);
+    if (!message) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR");
+    }
     return { message };
   }),
 

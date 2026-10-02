@@ -15,6 +15,16 @@ export const messageAttachment = z.discriminatedUnion("type", [
     height: z.number().int(),
     title: z.string(),
   }),
+  z.object({
+    type: z.literal("date"),
+    spot: z
+      .object({ id: z.uuid(), name: z.string(), latitude: z.number(), longitude: z.number() })
+      .nullable(),
+    place: z.string().nullable(),
+    startsAt: z.iso.datetime(),
+    note: z.string(),
+    status: z.enum(["proposed", "accepted", "declined", "countered"]),
+  }),
 ]);
 export type MessageAttachment = z.infer<typeof messageAttachment>;
 
@@ -128,6 +138,27 @@ export const messagingContract = {
         replyTo: z.uuid().nullable().default(null),
       }),
     )
+    .output(z.object({ message: chatMessage })),
+  /**
+   * Proposes a date (CHAT-10): a Spot or a free place, a time, a word.
+   * `counterTo` answers another proposal with a new one ("autre chose").
+   */
+  proposeDate: oc
+    .input(
+      z.object({
+        id: z.string().regex(UUIDV7),
+        matchId: z.uuid(),
+        spotId: z.uuid().nullable(),
+        place: z.string().max(120).nullable(),
+        startsAt: z.iso.datetime(),
+        note: z.string().max(200).default(""),
+        counterTo: z.uuid().nullable().default(null),
+      }),
+    )
+    .output(z.object({ message: chatMessage })),
+  /** Accepts or declines the other member's proposal (CHAT-10). */
+  respondDate: oc
+    .input(z.object({ matchId: z.uuid(), messageId: z.uuid(), response: z.enum(["accept", "decline"]) }))
     .output(z.object({ message: chatMessage })),
   /** Edits one's own text message within 10 minutes (CHAT-08); shown as "modifié". */
   edit: oc

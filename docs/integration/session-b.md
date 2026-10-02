@@ -13,6 +13,7 @@
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
 | 1 | Notifications (NOT-01 à NOT-03) | ✅ fait et testé (API, worker, Playwright pour le service worker) ; push réel non testé en automatique (pas de service de push dans la session) |
+| 2 | Proposer un date (CHAT-10) | ✅ fait et testé (cœur, API, Playwright à deux navigateurs) |
 | 2 | Spots (IRL-02) | ✅ fait et testé (API) ; carte vérifiée à la main (sans fond de carte dans la session) |
 | 2 | Relances douces (CHAT-09) | ✅ fait et testé (cœur, worker) |
 | 2 | Stickers maison et GIF (CHAT-05) | ✅ fait et testé (API avec GIPHY simulé) ; GIPHY désactivé sans clé |
@@ -95,6 +96,12 @@
 - Playwright `apps/web/e2e/pacte.spec.ts` : deux participants regardent le compte à rebours, la diffusion démarre la séquence sur les deux écrans, chacun voit l'autre ; axe sans violation au compte à rebours et au résultat. `/campus` et `/campus/pacte` ajoutés au contrôle axe des écrans de B.
 - Mesures : séquence démarrée 830 ms après l'heure sur deux navigateurs (2 ms d'écart) ; dry run 3 000 membres en 2 min 30 s (détail dans le README du solveur).
 - Chorégraphie faite avec Motion (déjà présent) plutôt que GSAP (docs/02 le suggère) : pas de dépendance supplémentaire pour une séquence de quelques secondes.
+
+### Proposer un date (CHAT-10)
+
+- `packages/core/src/messaging/date-proposal.ts` : règles (un lieu, entre 1 heure et 60 jours à l'avance, mot de 200 caractères), réponse par l'autre membre seulement, une fois, avant le date ; fichier calendrier RFC 5545 (`dateIcs` : échappement, pliage à 75 octets, titre neutre sans prénom), testés.
+- Messages `date_proposal` (charge chiffrée : Spot ou lieu libre, heure, mot, statut). API `messaging.proposeDate` (avec `counterTo` pour « autre chose » : la proposition d'origine passe à « countered ») et `messaging.respondDate` (accepter, décliner). Le nom du Spot est résolu à la lecture (en français pour l'instant : l'historique ne porte pas de langue).
+- Interface : bouton calendrier dans la zone de saisie, feuille (Spot ou autre lieu, date et heure, mot, rappel de sécurité), carte dans la conversation (statut, Accepter / Autre chose / Décliner), « Ajouter au calendrier » (.ics généré dans le navigateur).
 
 ### Spots (IRL-02)
 

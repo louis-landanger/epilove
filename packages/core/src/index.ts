@@ -7,6 +7,7 @@ export * from "./discovery/rules";
 export * from "./discovery/second-chance";
 export * from "./matching/compatibility";
 export * from "./matching/explain";
+export * from "./messaging/date-proposal";
 export * from "./messaging/icebreakers";
 export * from "./messaging/ids";
 export * from "./messaging/nudge";

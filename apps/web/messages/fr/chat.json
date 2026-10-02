@@ -113,5 +113,39 @@
   "nudge": {
     "lead": "Ça fait quelques jours avec {name}. Envie de relancer ?",
     "action": "Des idées"
+  },
+  "date": {
+    "open": "Proposer un date",
+    "title": "Proposer un date",
+    "counterTitle": "Proposer autre chose",
+    "spot": "Où ?",
+    "otherPlace": "Un autre lieu…",
+    "place": "Lieu",
+    "placePlaceholder": "Un lieu public, facile à trouver",
+    "when": "Quand ?",
+    "note": "Un mot (facultatif)",
+    "notePlaceholder": "Un café après les cours ?",
+    "safety": "Pour un premier date, choisis un lieu public et préviens quelqu'un de confiance.",
+    "send": "Proposer",
+    "cancel": "Annuler",
+    "cardTitle": "Proposition de date",
+    "status": {
+      "proposed": "En attente",
+      "accepted": "Accepté",
+      "declined": "Décliné",
+      "countered": "Autre chose proposé"
+    },
+    "accept": "Accepter",
+    "counter": "Autre chose",
+    "decline": "Décliner",
+    "calendar": "Ajouter au calendrier",
+    "icsTitle": "Date (Epilove)",
+    "errors": {
+      "no_place": "Choisis un lieu.",
+      "too_soon": "Laisse au moins une heure avant le date.",
+      "too_far": "Pas plus de 60 jours à l'avance.",
+      "unknown_spot": "Ce lieu n'est plus disponible.",
+      "generic": "Ça n'est pas passé. On réessaie ?"
+    }
   }
 }

@@ -113,5 +113,39 @@
   "nudge": {
     "lead": "It's been a few days with {name}. Feel like restarting?",
     "action": "Some ideas"
+  },
+  "date": {
+    "open": "Propose a date",
+    "title": "Propose a date",
+    "counterTitle": "Propose something else",
+    "spot": "Where?",
+    "otherPlace": "Another place…",
+    "place": "Place",
+    "placePlaceholder": "A public place, easy to find",
+    "when": "When?",
+    "note": "A word (optional)",
+    "notePlaceholder": "Coffee after class?",
+    "safety": "For a first date, pick a public place and tell someone you trust.",
+    "send": "Propose",
+    "cancel": "Cancel",
+    "cardTitle": "Date proposal",
+    "status": {
+      "proposed": "Pending",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "countered": "Something else proposed"
+    },
+    "accept": "Accept",
+    "counter": "Something else",
+    "decline": "Decline",
+    "calendar": "Add to calendar",
+    "icsTitle": "Date (Epilove)",
+    "errors": {
+      "no_place": "Pick a place.",
+      "too_soon": "Leave at least an hour before the date.",
+      "too_far": "No more than 60 days ahead.",
+      "unknown_spot": "This place is no longer available.",
+      "generic": "That didn't go through. Try again?"
+    }
   }
 }

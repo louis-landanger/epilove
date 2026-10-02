@@ -196,6 +196,46 @@ test("edits and deletes a message, and asks before sending an insult", async ({
   await expect(messages.getByText("t'es vraiment un connard")).toHaveCount(0);
 });
 
+test("proposes a date at a Spot, accepted by the other member (CHAT-10)", async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Two-browser scenario runs once.");
+  const noa = await createTestMember(db, { firstName: "Noa", graduationYear: 2039 });
+  const sacha = await createTestMember(db, { firstName: "Sacha", graduationYear: 2039 });
+  const [userLow, userHigh] = noa < sacha ? [noa, sacha] : [sacha, noa];
+  const [created] = await db
+    .insert(schema.match)
+    .values({ userLow, userHigh, mode: "friends", source: "like" })
+    .returning({ id: schema.match.id });
+  const noaPage = await signIn(browser, noa, baseURL);
+  const sachaPage = await signIn(browser, sacha, baseURL);
+  await noaPage.goto(`/messages/${created?.id}`);
+  await sachaPage.goto(`/messages/${created?.id}`);
+
+  await noaPage.getByRole("button", { name: "Proposer un date" }).click();
+  const sheet = noaPage.getByRole("dialog", { name: "Proposer un date" });
+  await sheet.getByLabel("Où ?").selectOption({ label: "Place Valmy" });
+  const tomorrow = new Date(Date.now() + 86_400_000);
+  const local = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 11);
+  await sheet.getByLabel("Quand ?").fill(`${local}18:30`);
+  await sheet.getByLabel("Un mot (facultatif)").fill("Un café ?");
+  await sheet.getByRole("button", { name: "Proposer" }).click();
+  await expect(noaPage.getByText("Proposition de date")).toBeVisible();
+  await expect(noaPage.getByText("En attente")).toBeVisible();
+
+  await expect(sachaPage.getByText("Place Valmy")).toBeVisible({ timeout: 10_000 });
+  await sachaPage.getByRole("button", { name: "Accepter" }).click();
+  await expect(sachaPage.getByText("Accepté")).toBeVisible();
+  await expect(noaPage.getByText("Accepté")).toBeVisible({ timeout: 10_000 });
+
+  const download = sachaPage.waitForEvent("download");
+  await sachaPage.getByRole("button", { name: "Ajouter au calendrier" }).click();
+  expect((await download).suggestedFilename()).toBe("date-epilove.ics");
+});
+
 test("pages ask to sign in without a member", async ({ page }) => {
   await page.goto("/decouvrir");
   await expect(page.getByRole("heading", { name: "Connecte-toi pour continuer" })).toBeVisible();

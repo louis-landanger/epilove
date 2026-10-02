@@ -239,6 +239,93 @@ describe.skipIf(!url)("messaging", () => {
     }
   });
 
+  it("proposes a date at a Spot, then accepts it (CHAT-10)", async () => {
+    const { a, b, matchId } = await conversation();
+    const { spots } = await as(a).campusLife.spots({ locale: "fr" });
+    const spot = spots[0];
+    const startsAt = new Date(Date.now() + 2 * 86_400_000).toISOString();
+    const id = newId();
+    const proposed = await as(a).messaging.proposeDate({
+      id,
+      matchId,
+      spotId: spot?.id ?? null,
+      place: null,
+      startsAt,
+      note: "Un café après les cours ?",
+      counterTo: null,
+    });
+    expect(proposed.message.attachment).toMatchObject({
+      type: "date",
+      spot: { id: spot?.id, name: spot?.name },
+      startsAt,
+      note: "Un café après les cours ?",
+      status: "proposed",
+    });
+    await expect(
+      as(a).messaging.respondDate({ matchId, messageId: id, response: "accept" }),
+    ).rejects.toMatchObject({
+      message: "own_proposal",
+    });
+    const accepted = await as(b).messaging.respondDate({ matchId, messageId: id, response: "accept" });
+    expect(accepted.message.attachment).toMatchObject({ type: "date", status: "accepted" });
+    await expect(
+      as(b).messaging.respondDate({ matchId, messageId: id, response: "decline" }),
+    ).rejects.toMatchObject({
+      message: "already_answered",
+    });
+    const list = await as(b).matches.list({ locale: "fr" });
+    expect(list.matches.find((m) => m.matchId === matchId)?.lastMessage?.kind).toBe("date_proposal");
+  });
+
+  it("answers a proposal with another one, and refuses dates too soon or without a place", async () => {
+    const { a, b, matchId } = await conversation();
+    const first = newId();
+    const inThreeDays = new Date(Date.now() + 3 * 86_400_000).toISOString();
+    await as(a).messaging.proposeDate({
+      id: first,
+      matchId,
+      spotId: null,
+      place: "Devant la BU",
+      startsAt: inThreeDays,
+      note: "",
+      counterTo: null,
+    });
+    const counter = await as(b).messaging.proposeDate({
+      id: newId(),
+      matchId,
+      spotId: null,
+      place: "Place Valmy",
+      startsAt: new Date(Date.now() + 4 * 86_400_000).toISOString(),
+      note: "Plutôt jeudi ?",
+      counterTo: first,
+    });
+    expect(counter.message.replyTo?.id).toBe(first);
+    const history = await as(a).messaging.history({ matchId, limit: 10 });
+    expect(history.messages.find((m) => m.id === first)?.attachment).toMatchObject({ status: "countered" });
+    await expect(
+      as(a).messaging.proposeDate({
+        id: newId(),
+        matchId,
+        spotId: null,
+        place: "Ici",
+        startsAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+        note: "",
+        counterTo: null,
+      }),
+    ).rejects.toMatchObject({ message: "too_soon" });
+    await expect(
+      as(a).messaging.proposeDate({
+        id: newId(),
+        matchId,
+        spotId: null,
+        place: " ",
+        startsAt: inThreeDays,
+        note: "",
+        counterTo: null,
+      }),
+    ).rejects.toMatchObject({ message: "no_place" });
+  });
+
   it("relays typing to the other member only", async () => {
     const { a, b, matchId } = await conversation();
     await as(a).messaging.typing({ matchId });

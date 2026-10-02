@@ -414,3 +414,17 @@ export async function purgeDeletedBodies(db: Database, olderThan: Date): Promise
     .returning({ id: message.id });
   return rows.length;
 }
+
+/** Replaces the encrypted payload of a message (a date proposal's status, CHAT-10). */
+export async function replaceMessageBody(
+  db: Database,
+  id: string,
+  body: { readonly keyId: string; readonly data: Uint8Array },
+): Promise<StoredMessage | null> {
+  const [row] = await db
+    .update(message)
+    .set({ bodyEncrypted: body.data, keyId: body.keyId })
+    .where(and(eq(message.id, id), isNull(message.deletedAt)))
+    .returning(messageColumns);
+  return row ?? null;
+}

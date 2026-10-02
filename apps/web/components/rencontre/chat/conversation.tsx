@@ -14,6 +14,8 @@ import { useOnline } from "@/lib/rencontre/use-online";
 import { ReportSheet, SafetyMenu } from "../safety/safety-menu";
 import { Sheet } from "../ui/sheet";
 import { Avatar } from "./avatar";
+import { DateCard } from "./date-card";
+import { type DateDraft, DateSheet } from "./date-sheet";
 import { type PickedGif, StickerPicker } from "./sticker-picker";
 import { StickerArt } from "./stickers";
 
@@ -63,6 +65,8 @@ export function Conversation({ thread }: { thread: ThreadView }) {
   const [editing, setEditing] = useState<ChatMessage | null>(null);
   /** A message waiting for "send anyway" (SAF-09). */
   const [warning, setWarning] = useState<string | null>(null);
+  /** Date proposal sheet (CHAT-10), possibly answering another proposal. */
+  const [dateSheet, setDateSheet] = useState<{ counterTo: string | null } | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
   const lastTyping = useRef(0);
@@ -259,6 +263,32 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           ? t("errors.rate_limited")
           : t("errors.generic"),
       );
+    }
+  };
+
+  const proposeDate = async (draft: DateDraft) => {
+    const result = await api.messaging.proposeDate({
+      id: newMessageId(),
+      matchId: thread.matchId,
+      ...draft,
+      counterTo: dateSheet?.counterTo ?? null,
+    });
+    nearBottom.current = true;
+    setMessages((current) => mergeMessages(current, [result.message]));
+    setDateSheet(null);
+    void catchUp();
+  };
+
+  const respondDate = async (target: ChatMessage, response: "accept" | "decline") => {
+    try {
+      const result = await api.messaging.respondDate({
+        matchId: thread.matchId,
+        messageId: target.id,
+        response,
+      });
+      setMessages((current) => mergeMessages(current, [result.message]));
+    } catch {
+      say(t("errors.generic"));
     }
   };
 
@@ -496,6 +526,8 @@ export function Conversation({ thread }: { thread: ThreadView }) {
                       composer.current?.focus();
                     }}
                     onDelete={() => void removeForEveryone(item.message)}
+                    onRespondDate={(response) => void respondDate(item.message, response)}
+                    onCounterDate={() => setDateSheet({ counterTo: item.message.id })}
                   />
                 ) : (
                   <PendingBubble
@@ -537,6 +569,13 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           setReporting(null);
           say(t("reported"));
         }}
+      />
+
+      <DateSheet
+        open={dateSheet !== null}
+        counter={dateSheet?.counterTo != null}
+        onClose={() => setDateSheet(null)}
+        onSubmit={proposeDate}
       />
 
       <Sheet open={warning !== null} onClose={() => setWarning(null)} labelledBy="send-warning">
@@ -598,6 +637,7 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           replyName={replyTo?.senderId === me ? null : thread.other.firstName}
           onCancelReply={() => setReplyTo(null)}
           onSticker={(sticker) => void sendAttachment({ type: "sticker", sticker })}
+          onProposeDate={() => setDateSheet({ counterTo: null })}
           onGif={(gif) => void sendAttachment({ type: "gif", gif })}
           editing={editing !== null}
           onCancelEdit={() => {
@@ -667,6 +707,8 @@ function Bubble({
   changeable,
   onEdit,
   onDelete,
+  onRespondDate,
+  onCounterDate,
 }: {
   message: ChatMessage;
   mine: boolean;
@@ -680,6 +722,8 @@ function Bubble({
   changeable: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onRespondDate: (response: "accept" | "decline") => void;
+  onCounterDate: () => void;
 }) {
   const t = useTranslations("chat");
   const format = useFormatter();
@@ -749,6 +793,14 @@ function Bubble({
                 label={t(`stickers.names.${message.attachment.sticker}` as "stickers.names.bond")}
               />
             </div>
+          ) : message.attachment?.type === "date" ? (
+            <DateCard
+              messageId={message.id}
+              date={message.attachment}
+              mine={mine}
+              onRespond={onRespondDate}
+              onCounter={onCounterDate}
+            />
           ) : message.attachment?.type === "gif" ? (
             // biome-ignore lint/performance/noImgElement: GIPHY serves the GIF.
             <img
@@ -969,6 +1021,7 @@ function Composer({
   onCancelEdit,
   onSticker,
   onGif,
+  onProposeDate,
   icebreakers,
   showIcebreakers,
   onToggleIcebreakers,
@@ -986,6 +1039,7 @@ function Composer({
   onCancelEdit: () => void;
   onSticker: (sticker: StickerId) => void;
   onGif: (gif: PickedGif) => void;
+  onProposeDate: () => void;
   icebreakers: IcebreakerView[];
   showIcebreakers: boolean;
   onToggleIcebreakers: () => void;
@@ -1114,6 +1168,30 @@ function Composer({
             />
             <path d="M13 21v-5a3 3 0 0 1 3-3h5" strokeLinejoin="round" />
             <path d="M8.5 9.5h.01M14.5 9.5h.01M8.5 14c1.5 1.2 3.5 1.2 5 0" strokeLinecap="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={onProposeDate}
+          aria-label={t("date.open")}
+          disabled={editing}
+          className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-volt disabled:opacity-40"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            aria-hidden="true"
+          >
+            <rect x="3.5" y="5" width="17" height="15" rx="3" />
+            <path d="M3.5 10h17M8 3v4M16 3v4" strokeLinecap="round" />
+            <path
+              d="M12 13.2c-.9-1-2.6-.6-2.6.8 0 1.3 2.6 2.8 2.6 2.8s2.6-1.5 2.6-2.8c0-1.4-1.7-1.8-2.6-.8Z"
+              fill="currentColor"
+              stroke="none"
+            />
           </svg>
         </button>
         <label className="sr-only" htmlFor="composer">
