@@ -1,6 +1,7 @@
 import type { MemberCard, ProfileView } from "@epilove/contracts";
 import { getTranslations } from "next-intl/server";
 import { Fragment, ViewTransition } from "react";
+import { MemberBadges } from "./badges";
 import { CompatibilityPanel } from "./compatibility";
 import {
   ProfileActions,
@@ -100,6 +101,7 @@ export async function MemberProfile({ profile, me }: { profile: ProfileView; me:
               <span className="font-mono">{t("year", { year: card.graduationYear })}</span>
               {card.program && <span>· {card.program}</span>}
             </div>
+            <MemberBadges badges={card.badges} />
           </header>
 
           <CompatibilityPanel compatibility={card.compatibility} />

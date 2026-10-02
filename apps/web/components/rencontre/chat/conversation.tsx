@@ -16,6 +16,7 @@ import { Sheet } from "../ui/sheet";
 import { Avatar } from "./avatar";
 import { DateCard } from "./date-card";
 import { type DateDraft, DateSheet } from "./date-sheet";
+import { useDispoText } from "./dispo";
 import {
   ImageBubble,
   MAX_VOICE_MS,
@@ -60,6 +61,7 @@ const newMessageId = () => uuidv7(Date.now(), crypto.getRandomValues(new Uint8Ar
  */
 export function Conversation({ thread }: { thread: ThreadView }) {
   const t = useTranslations("chat");
+  const dispoText = useDispoText();
   const router = useRouter();
   const online = useOnline();
   const connection = useConnectionState();
@@ -564,6 +566,9 @@ export function Conversation({ thread }: { thread: ThreadView }) {
               {thread.other.firstName}
             </span>
             {thread.otherOnline && <span className="text-volt text-xs">{t("online")}</span>}
+            {thread.otherAvailable && (
+              <span className="truncate text-volt text-xs">{dispoText(thread.otherAvailable)}</span>
+            )}
           </span>
         </a>
         <div className="ml-auto">

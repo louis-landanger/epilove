@@ -249,5 +249,34 @@
       "about": "Epilove is a dating app for students on the campus. No account needed to see this page."
     },
     "linkLabel": "Link to send"
+  },
+  "dispo": {
+    "set": "I'm free…",
+    "title": "Free for…",
+    "lead": "Your bonds see you're free, until the time you choose. Nobody else.",
+    "what": "What?",
+    "where": "Where?",
+    "forHowLong": "For",
+    "duration": "{minutes, plural, =30 {30 minutes} =60 {1 hour} =120 {2 hours} =180 {3 hours} other {5 hours}}",
+    "activities": {
+      "coffee": "a coffee",
+      "lunch": "lunch",
+      "study": "studying together",
+      "walk": "a walk",
+      "sport": "some sport",
+      "drink": "a drink"
+    },
+    "areas": {
+      "campus": "on campus",
+      "city": "in town"
+    },
+    "status": "Free for {activity} {area} until {time}",
+    "chip": "Free",
+    "clear": "Not free any more",
+    "save": "Let's go",
+    "errors": {
+      "duration": "Between a quarter of an hour and twelve hours.",
+      "generic": "That didn't work. Try again in a moment."
+    }
   }
 }

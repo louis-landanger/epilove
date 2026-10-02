@@ -6,6 +6,7 @@ import { useFormatter, useNow, useTranslations } from "next-intl";
 import { orpc } from "@/lib/rencontre/api.client";
 import { useRealtime } from "@/lib/rencontre/realtime";
 import { Avatar } from "./avatar";
+import { DispoChip } from "./dispo";
 
 /** New bonds (no message yet) on top, then conversations by latest activity (docs/02, "Messages"). */
 export function ConversationList({
@@ -56,6 +57,7 @@ export function ConversationList({
                 >
                   <Avatar photoUrl={m.other.photoUrl} schoolSlug={m.other.school.slug} size="lg" />
                   <span className="w-full truncate text-sm">{m.other.firstName}</span>
+                  {m.other.available && <DispoChip available={m.other.available} />}
                 </a>
               </li>
             ))}
@@ -98,6 +100,7 @@ export function ConversationList({
                             {t("friendsMode")}
                           </span>
                         )}
+                        {m.other.available && <DispoChip available={m.other.available} />}
                         {m.lastMessage && (
                           <time
                             dateTime={m.lastMessage.at}

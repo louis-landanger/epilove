@@ -25,6 +25,7 @@
 | 2 | Événements (IRL-01) | ✅ fait et testé (cœur, API, Playwright à trois navigateurs, axe) ; pas d'image de couverture |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
+| 3 | Badges discrets (COM-04), statut « Dispo » (IRL-05) | ✅ fait et testé (cœur, API) ; affichage vérifié à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
 
 ## Ce qui est fait
@@ -145,6 +146,12 @@
 - Interface : bouton photo (aperçu, case « Éphémère : une seule ouverture »), bouton micro à la place d'« Envoyer » quand le champ est vide (enregistrement MediaRecorder 64 kbit/s, arrêt automatique à 2 minutes, écoute avant envoi), lecteur avec forme d'onde et vitesses 1×/1,5×/2×, photo floutée avec « Afficher quand même » et « Signaler » quand le classifieur la signale. Sur téléphone, les outils de la zone de saisie se replient derrière « + ».
 - **Non fait** : transcription des vocaux (CHAT-07, accessibilité) ; classifieur réel (SAF-11, aujourd'hui aucun signalement : toutes les photos s'affichent nettes).
 
+### Badges (COM-04) et statut « Dispo » (IRL-05)
+
+- `packages/core/src/community/badges.ts` : « Fondateur·rice » (inscription avant l'ouverture publique du 11 février 2027 à 20 h, `PUBLIC_LAUNCH_AT`), « Photo vérifiée » et « Ambassadeur·rice » (attribués). Aucun badge lié à la popularité. Table `member_badge` pour les badges attribués ; affichés discrètement sur les cartes et les profils (`memberCard.badges`).
+- `packages/core/src/community/availability.ts` : activité et lieu choisis dans une liste (pas de texte libre, donc rien à modérer), de 15 minutes à 12 heures. Table `availability`, API `matches.availability` et `matches.setAvailability` ; le statut d'un match apparaît dans la liste des conversations (`matchSummary.other.available`) et en tête de conversation (`threadView.otherAvailable`), jamais à quelqu'un d'autre, et plus du tout si la personne est en pause. Réglage en haut de l'onglet Messages (« Je suis dispo… »).
+- Données de développement : Hugo est ambassadeur et dispo pour un café ; Inès et Hugo ont une photo vérifiée.
+
 ### Heures calmes (NOT-04) et résumé hebdomadaire (NOT-05)
 
 - `packages/notifications/src/quiet-hours.ts` : par défaut aucune notification push de 23 h à 8 h (heure de Lyon) ; réglable (activé, début, fin, « laisser passer les messages ») dans `(app)/reglages/notifications`. Une notification retenue n'est pas envoyée plus tard : elle attend dans le centre de notifications. La vérification après un date (IRL-03) passe toujours ; les relances (CHAT-09) jamais.
@@ -242,6 +249,8 @@
 
 ## Migrations
 
+- `0018_*` : table `availability`.
+- `0017_*` : table `member_badge`.
 - `0016_*` : tables `quiet_hours` et `email_digest`.
 - `0015_*` : tables `weekly_question` et `weekly_answer`.
 - `0014_*` : table `date_share`.
@@ -284,6 +293,7 @@
 - CSP (A, `proxy.ts`) : autoriser l'hôte d'imgproxy dans `img-src` (photos de conversation, déjà le cas des photos de profil), l'hôte S3 public dans `media-src` (URL présignées des vocaux) et `blob:` dans `img-src` et `media-src` (aperçus locaux avant envoi).
 - Suppression de compte (A) : effacer aussi les médias de conversation (préfixe `chat/<matchId>/` des matchs du membre), par exemple en les mettant dans `media_deletion`.
 - Modération (SAF-11, A) : brancher le vrai classifieur via `setImageClassifier` ; les photos signalées portent le drapeau `explicit_image` dans `message.moderation`.
+- Badges (COM-04) : quand un modérateur valide le selfie à geste (ONB-08, A), insérer `photo_verified` dans `member_badge` ; l'équipe attribue `ambassador` (back-office, A).
 - `proxy.ts` (A) : la route `/partage/*` doit rester **publique** (personne de confiance sans compte) ; c'est la seule page de B hors connexion.
 - Rôle `organizer` (IRL-01) : l'espace organisateurs du back-office (ADM-08) attribue ce rôle aux comptes des BDE ; l'app lit `app_user.role`.
 - Le menu de sécurité d'une conversation et le signalement d'un message appellent `safety.block` / `safety.report` (contexte `message`, `contextRef` = id du message) : à vérifier avec l'implémentation de A (copie chiffrée des messages précédents comme preuve).

@@ -3,6 +3,7 @@
 import type { MemberCard as MemberCardData } from "@epilove/contracts";
 import { useTranslations } from "next-intl";
 import { useRef, useState, ViewTransition } from "react";
+import { MemberBadges } from "./badges";
 import { SchoolBadge, schoolColor, schoolFoil } from "./school";
 import { useFoil } from "./use-foil";
 
@@ -139,6 +140,7 @@ export function MemberCard({
             </>
           )}
         </h2>
+        <MemberBadges badges={card.badges} />
         {prompt && (
           <figure className="relative rounded-2xl border border-paper/10 bg-paper/[0.06] p-3 pr-12 backdrop-blur-sm">
             <figcaption className="text-paper/60 text-xs">{prompt.question}</figcaption>

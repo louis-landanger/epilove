@@ -101,5 +101,11 @@
     "expires": "Encore {duration}",
     "empty": "Chaque soir à 21 h, cinq profils choisis pour toi, pendant 24 heures.",
     "done": "Tu as fait le tour de ton Drop. Le prochain arrive à 21 h."
+  },
+  "badges": {
+    "label": "Badges",
+    "founder": "Fondateur·rice",
+    "photo_verified": "Photo vérifiée",
+    "ambassador": "Ambassadeur·rice"
   }
 }

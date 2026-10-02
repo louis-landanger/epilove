@@ -249,5 +249,34 @@
       "about": "Epilove est une app de rencontre réservée aux étudiants du campus. Pas besoin de compte pour voir cette page."
     },
     "linkLabel": "Lien à envoyer"
+  },
+  "dispo": {
+    "set": "Je suis dispo…",
+    "title": "Dispo pour…",
+    "lead": "Tes liaisons voient que tu es dispo, jusqu'à l'heure choisie. Personne d'autre.",
+    "what": "Quoi ?",
+    "where": "Où ?",
+    "forHowLong": "Pendant",
+    "duration": "{minutes, plural, =30 {30 minutes} =60 {1 heure} =120 {2 heures} =180 {3 heures} other {5 heures}}",
+    "activities": {
+      "coffee": "un café",
+      "lunch": "déjeuner",
+      "study": "réviser ensemble",
+      "walk": "une balade",
+      "sport": "du sport",
+      "drink": "un verre"
+    },
+    "areas": {
+      "campus": "au campus",
+      "city": "en ville"
+    },
+    "status": "Dispo pour {activity} {area} jusqu'à {time}",
+    "chip": "Dispo",
+    "clear": "Plus dispo",
+    "save": "C'est parti",
+    "errors": {
+      "duration": "Entre un quart d'heure et douze heures.",
+      "generic": "Ça n'a pas marché. Réessaie dans un instant."
+    }
   }
 }

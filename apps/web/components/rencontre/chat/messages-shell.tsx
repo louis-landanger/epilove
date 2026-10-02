@@ -5,6 +5,7 @@ import { useSelectedLayoutSegment } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { ConversationList } from "./conversation-list";
+import { DispoControl } from "./dispo";
 
 /**
  * Messages tab: list and conversation side by side on desktop (split view),
@@ -21,7 +22,8 @@ export function MessagesShell({ initial, children }: { initial: MatchSummary[]; 
           inConversation ? "hidden" : "block"
         }`}
       >
-        <h1 className="mb-6 font-display font-semibold text-3xl tracking-tight">{t("title")}</h1>
+        <h1 className="mb-4 font-display font-semibold text-3xl tracking-tight">{t("title")}</h1>
+        <DispoControl />
         <ConversationList initial={initial} activeMatchId={segment} />
       </aside>
       <div className={`min-w-0 flex-1 ${inConversation ? "flex" : "hidden lg:flex"}`}>{children}</div>
