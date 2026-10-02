@@ -1,6 +1,7 @@
 import { ToastProvider } from "@epilove/ui";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { EasterEggs } from "@/components/acces/fun/easter-eggs";
 import { AppNav } from "@/components/acces/shell/app-nav";
 import { requireAppMember } from "@/lib/server/session";
 
@@ -21,6 +22,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         {t("skipToContent")}
       </a>
       <AppNav />
+      <EasterEggs />
       <div id="contenu" className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0 lg:pl-60">
         {children}
       </div>

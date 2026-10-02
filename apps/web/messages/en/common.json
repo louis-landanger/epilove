@@ -1,4 +1,46 @@
 {
   "notAffiliated": "Independent student project, not affiliated with IONIS Education Group or the schools listed.",
-  "campus": "IONIS campus · Lyon"
+  "campus": "IONIS campus · Lyon",
+  "notFound": {
+    "metaTitle": "Bond not found",
+    "code": "Error 404",
+    "title": "This page broke the bond.",
+    "lead": "It doesn't exist, or not any more. Meanwhile, catch negative ions with your positive one. Avoid the positive ones: they repel.",
+    "home": "Back to home",
+    "play": "Play",
+    "again": "Play again",
+    "score": "Score: {score}",
+    "best": "Best: {best}",
+    "time": "{seconds} s",
+    "over": "Game over: {score} bonds.",
+    "controls": "Move your ion with the mouse, your finger or the arrow keys.",
+    "canvas": "Game: catch negative ions, avoid positive ones."
+  },
+  "konami": "Chemistry mode on ⚗️",
+  "console": "Reading the console? We might have something in common. Try /terminal.",
+  "terminal": {
+    "metaTitle": "Terminal",
+    "label": "Command",
+    "welcome": "epilove shell 0.1 — type help for the list of commands.",
+    "help": "Commands: help, whoami, ls, cat <file>, ./pacte.sh, date, echo <text>, coffee, sudo <…>, clear, exit",
+    "whoami": "a curious person from the IONIS Lyon campus (who reads hidden terminals)",
+    "ls": "charte.txt  ecoles/  pacte.sh  secret.txt",
+    "lsSchools": "epita/  esme/  supbiotech/  isg/  ipsa/",
+    "charter": [
+      "1. Respect others.",
+      "2. Consent comes first.",
+      "3. Be yourself.",
+      "4. What happens here stays here.",
+      "5. No selling.",
+      "6. If something's wrong, report it."
+    ],
+    "secret": "The real secret is answering your messages.",
+    "pact": "The Pact opens in {days} days. Patience, chemistry takes its time.",
+    "pactOpen": "The Pact is open. What are you still doing here?",
+    "sudo": "Permission denied. Consent can't be forced.",
+    "coffee": "Error 418: I'm a teapot.",
+    "notFile": "cat: {file}: no such file",
+    "unknown": "command not found: {command}. Type help.",
+    "bye": "See you. Back to the surface…"
+  }
 }

@@ -43,3 +43,16 @@
   }
 }
 /* biome-ignore-end lint/complexity/noImportantStyles: end of the reduced motion block. */
+
+/* COM-05: the Konami code turns the page into a lava lamp for a few seconds. */
+@keyframes chemistry {
+  to {
+    filter: hue-rotate(360deg) saturate(1.4);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.chemistry body {
+    animation: chemistry 3s linear infinite;
+  }
+}
