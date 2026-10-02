@@ -12,6 +12,7 @@ import {
   LogOut,
   ScanFace,
   ScrollText,
+  Stamp,
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -24,6 +25,7 @@ const LINKS = [
   { href: "/signalements", label: "Signalements", icon: Flag, adminOnly: false },
   { href: "/recours", label: "Recours", icon: Gavel, adminOnly: false },
   { href: "/tableaux-de-bord", label: "Tableaux de bord", icon: BarChart3, adminOnly: false },
+  { href: "/filigrane", label: "Filigrane", icon: Stamp, adminOnly: false },
   { href: "/journal", label: "Journal d'audit", icon: ScrollText, adminOnly: false },
   { href: "/contenus", label: "Contenus", icon: BookOpen, adminOnly: true },
 ] as const;

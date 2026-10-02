@@ -1,7 +1,7 @@
 "use client";
 
 import { PHOTO_REJECTION_REASONS } from "@epilove/contracts";
-import { Button, cn, EmptyState, useToast } from "@epilove/ui";
+import { Button, cn, EmptyState, useToast, ViewerWatermark } from "@epilove/ui";
 import { Check, ImageOff, X } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -103,6 +103,7 @@ export function PhotoQueue({ initial, total }: { initial: QueuedPhoto[]; total: 
             alt={`Emplacement ${current.position + 1} de ${current.member.pseudonym}`}
             className="size-full object-cover"
           />
+          <ViewerWatermark />
         </div>
         <figcaption className="flex items-center justify-between text-paper/60 text-sm">
           <Link

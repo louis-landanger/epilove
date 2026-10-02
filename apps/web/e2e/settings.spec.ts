@@ -36,7 +36,7 @@ test.describe("settings and safety", () => {
     await expect(page.getByRole("switch", { name: "Me masquer de ma promo" })).toBeChecked();
     await expect(page.getByRole("switch", { name: "Mettre mon profil en pause" })).toBeChecked();
     await expect(page.getByText("mo…@epita.fr")).toBeVisible();
-    await expect(page.getByText("Cet appareil")).toBeVisible();
+    await expect(page.getByText("Cet appareil", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Télécharger mes données" }).click();
     const download = page.getByRole("link", { name: "Télécharger", exact: true });

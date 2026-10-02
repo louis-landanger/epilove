@@ -1,6 +1,6 @@
 import type { AdminMemberCard } from "@epilove/contracts";
 import { SCHOOLS, type SchoolSlug } from "@epilove/core";
-import { Badge, SchoolChip } from "@epilove/ui";
+import { Badge, SchoolChip, ViewerWatermark } from "@epilove/ui";
 import { RULE, SANCTION } from "@/lib/labels";
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "Europe/Paris" });
@@ -47,6 +47,7 @@ export function MemberCard({ card }: { card: AdminMemberCard }) {
                 // biome-ignore lint/performance/noImgElement: signed, short-lived imgproxy URL
                 <img src={photo.url} alt="" className="size-full object-cover" />
               ) : null}
+              <ViewerWatermark />
               <span className="absolute bottom-1 left-1 rounded-full bg-ink/80 px-1.5 text-[10px]">
                 {photo.status}
               </span>

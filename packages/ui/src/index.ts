@@ -1,5 +1,6 @@
 export * from "./app/avatar";
 export * from "./app/school-chip";
+export * from "./app/watermark";
 export * from "./cn";
 export * from "./primitives/action-menu";
 export * from "./primitives/button";

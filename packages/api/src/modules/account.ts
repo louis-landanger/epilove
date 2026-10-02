@@ -20,6 +20,7 @@ import { findDecision, hasAppeal, insertAppeal, listDecisionsFor } from "@epilov
 import { countRecentExports, insertExport, listExports } from "@epilove/db/repositories/exports";
 import { writeAudit } from "@epilove/db/repositories/safety";
 import { ORPCError } from "@orpc/server";
+import { watermarkCode } from "../lib/watermark";
 import { os, requireViewer } from "../procedures";
 
 async function summary(db: Database, userId: string) {
@@ -75,6 +76,10 @@ export const account = {
     }
     return summary(db, userId);
   }),
+
+  watermark: os.account.watermark.use(requireViewer).handler(({ context }) => ({
+    code: watermarkCode(context.services.emailHmacSecret(), context.viewer.userId),
+  })),
 
   setLocale: os.account.setLocale.use(requireViewer).handler(async ({ context, input }) => {
     const db = context.database();

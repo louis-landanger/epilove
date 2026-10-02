@@ -102,4 +102,26 @@ test.describe("back-office", () => {
     expect(user?.verifiedAt).not.toBeNull();
     expect(await selfie.storage.head(selfie.key)).toBeNull();
   });
+
+  test("photos carry the staff member's watermark, which leads back to them (SAF-12)", async ({ page }) => {
+    const moderator = await createMember("moderator");
+    const member = await createMember();
+    await createPendingPhoto(member.id);
+
+    await signInStaff(page, moderator.email);
+    const nav = page.getByRole("navigation", { name: "Navigation du back-office" });
+    const pseudonym = (await nav.getByText(/M-[A-Z2-9]{6}/).textContent())?.match(/M-[A-Z2-9]{6}/)?.[0] ?? "";
+    await page.getByRole("link", { name: "Photos", exact: true }).click();
+    const watermark = page.locator("svg[data-watermark]").first();
+    await expect(watermark).toBeAttached();
+    const code = (await watermark.getAttribute("data-watermark")) ?? "";
+    expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}$/);
+
+    await page.getByRole("link", { name: "Filigrane" }).click();
+    await page.getByLabel("Code lu sur la capture").fill(code.toLowerCase());
+    await page.getByLabel("Justification").fill("Capture partagée dans un groupe de promo.");
+    await page.getByRole("button", { name: "Rechercher" }).click();
+    await expect(page.getByRole("status")).toContainText(pseudonym);
+    expect((await new AxeBuilder({ page }).withTags(WCAG).analyze()).violations).toEqual([]);
+  });
 });

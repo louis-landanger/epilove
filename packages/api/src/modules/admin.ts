@@ -66,6 +66,7 @@ import type { ApiServices } from "../context";
 import { refreshCompleteness } from "../lib/completeness";
 import { pseudonymOf } from "../lib/pseudonym";
 import { campusToday } from "../lib/time";
+import { findWatermarkOwner, normalizeWatermark, watermarkCode } from "../lib/watermark";
 import { os, requireRole } from "../procedures";
 
 const staff = requireRole("moderator", "admin");
@@ -145,7 +146,25 @@ export const admin = {
   me: os.admin.me.use(staff).handler(({ context }) => ({
     role: context.viewer.role as "moderator" | "admin",
     pseudonym: pseudonymOf(context.services.emailHmacSecret(), context.viewer.userId),
+    watermark: watermarkCode(context.services.emailHmacSecret(), context.viewer.userId),
   })),
+
+  findWatermark: os.admin.findWatermark.use(staff).handler(async ({ context, input, errors }) => {
+    const code = normalizeWatermark(input.code);
+    if (!code) {
+      throw errors.INVALID_VALUE();
+    }
+    const db = context.database();
+    const owner = await findWatermarkOwner(db, context.services.emailHmacSecret(), code);
+    await writeAudit(db, {
+      actorId: context.viewer.userId,
+      action: "watermark.lookup",
+      targetType: "user",
+      targetId: owner,
+      metadata: { found: owner !== null, justification: input.justification.trim() },
+    });
+    return { member: pseudonym(context.services, owner) };
+  }),
 
   overview: os.admin.overview.use(staff).handler(({ context }) => moderationOverview(context.database())),
 

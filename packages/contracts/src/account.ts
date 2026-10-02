@@ -21,6 +21,8 @@ export const accountContract = {
     .input(z.object({ until: z.iso.datetime().nullable().default(null) }).default({ until: null }))
     .output(accountSummary),
   resume: oc.errors({ NOT_ALLOWED: { status: 409 } }).output(accountSummary),
+  /** Code tiled over the photos this member looks at (SAF-12). */
+  watermark: oc.output(z.object({ code: z.string() })),
   /** Language of the interface and of the emails, kept across devices (PLT-04). */
   setLocale: oc.input(z.object({ locale: z.enum(LOCALES) })).output(accountSummary),
   /** Decisions taken about the member, with their statement of reasons (DSA art. 17). */

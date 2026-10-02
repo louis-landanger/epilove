@@ -188,7 +188,19 @@ export type AdminDashboard = z.infer<typeof adminDashboard>;
  * catalogue editing is reserved to admins. Every action is audited.
  */
 export const adminContract = {
-  me: oc.output(z.object({ role: z.enum(["moderator", "admin"]), pseudonym: z.string() })),
+  me: oc.output(
+    z.object({
+      role: z.enum(["moderator", "admin"]),
+      pseudonym: z.string(),
+      /** Staff see member photos with their own watermark too (SAF-12). */
+      watermark: z.string(),
+    }),
+  ),
+  /** Whose screen a leaked capture comes from, by the code tiled over it (SAF-12). Logged. */
+  findWatermark: oc
+    .errors({ INVALID_VALUE: { status: 422 } })
+    .input(z.object({ code: z.string().min(4).max(20), justification: z.string().min(10).max(500) }))
+    .output(z.object({ member: memberPseudonym.nullable() })),
   overview: oc.output(
     z.object({
       pendingPhotos: z.int(),

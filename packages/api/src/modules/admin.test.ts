@@ -99,6 +99,29 @@ describe.skipIf(!url)("back-office", () => {
     expect(JSON.stringify(after)).not.toContain(await emailOf(target));
   });
 
+  it("traces a leaked capture back to the viewer by its watermark (SAF-12)", async () => {
+    const viewer = await insertActiveMember(api.db);
+    const { code } = await api.clientFor(viewer).account.watermark();
+    expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}$/);
+
+    const moderatorId = await insertActiveMember(api.db);
+    const moderator = api.clientFor(moderatorId, "moderator");
+    expect((await moderator.admin.me()).watermark).not.toBe(code);
+    const found = await moderator.admin.findWatermark({
+      code: code.toLowerCase().replace("-", " "),
+      justification: "Capture partagée sur un groupe de promo.",
+    });
+    expect(found.member?.userId).toBe(viewer);
+    await expect(
+      moderator.admin.findWatermark({ code: "nope", justification: "Capture partagée sur un groupe." }),
+    ).rejects.toMatchObject({ code: "INVALID_VALUE" });
+    const [entry] = await api.db
+      .select({ targetId: schema.auditLog.targetId })
+      .from(schema.auditLog)
+      .where(eq(schema.auditLog.actorId, moderatorId));
+    expect(entry?.targetId).toBe(viewer);
+  });
+
   it("approves and rejects photos, telling the member why", async () => {
     const owner = await insertActiveMember(api.db);
     const first = await readyPhoto(owner);

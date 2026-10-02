@@ -1,3 +1,4 @@
+import { WatermarkProvider } from "@epilove/ui";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { StaffNav } from "@/components/staff-nav";
@@ -19,11 +20,14 @@ export default async function StaffLayout({ children }: { children: ReactNode })
   }
   const me = await (await serverApi()).admin.me();
   return (
-    <div className="min-h-dvh lg:pl-60">
-      <StaffNav role={me.role} pseudonym={me.pseudonym} />
-      <main id="contenu" className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 lg:px-10">
-        {children}
-      </main>
-    </div>
+    // Member photos shown to staff carry the staff member's own code (SAF-12).
+    <WatermarkProvider code={me.watermark}>
+      <div className="min-h-dvh lg:pl-60">
+        <StaffNav role={me.role} pseudonym={me.pseudonym} />
+        <main id="contenu" className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 lg:px-10">
+          {children}
+        </main>
+      </div>
+    </WatermarkProvider>
   );
 }

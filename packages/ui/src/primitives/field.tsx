@@ -127,7 +127,7 @@ export function TextAreaField({
             aria-hidden="true"
             className={cn(
               "pointer-events-none absolute right-3 bottom-2 font-mono text-xs",
-              currentLength >= maxLength ? "text-danger" : "text-paper/45",
+              currentLength >= maxLength ? "text-danger" : "text-paper/70",
             )}
           >
             {currentLength}/{maxLength}

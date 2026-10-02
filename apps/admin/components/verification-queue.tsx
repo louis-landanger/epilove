@@ -1,7 +1,7 @@
 "use client";
 
 import { VERIFICATION_REJECTIONS, type VerificationGesture, type VerificationRejection } from "@epilove/core";
-import { Button, EmptyState, useToast } from "@epilove/ui";
+import { Button, EmptyState, useToast, ViewerWatermark } from "@epilove/ui";
 import { Check, ScanFace, X } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -117,25 +117,27 @@ export function VerificationQueue({ initial, total }: { initial: QueuedVerificat
       </div>
       <div className="grid gap-4 sm:grid-cols-[minmax(0,18rem)_1fr]">
         <figure className="flex flex-col gap-2">
-          <div className="aspect-[4/5] overflow-hidden rounded-3xl bg-paper/5 ring-2 ring-volt/60">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-paper/5 ring-2 ring-volt/60">
             {/* biome-ignore lint/performance/noImgElement: signed, short-lived imgproxy URL */}
             <img
               src={current.selfieUrl}
               alt={`Selfie de vérification de ${current.member.pseudonym}`}
               className="size-full object-cover"
             />
+            <ViewerWatermark />
           </div>
           <figcaption className="text-paper/60 text-sm">Selfie (supprimé après décision)</figcaption>
         </figure>
         <ul aria-label="Photos du profil" className="grid grid-cols-2 gap-3 md:grid-cols-3">
           {current.photos.map((photo, position) => (
-            <li key={photo.id} className="aspect-[4/5] overflow-hidden rounded-2xl bg-paper/5">
+            <li key={photo.id} className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-paper/5">
               {/* biome-ignore lint/performance/noImgElement: signed, short-lived imgproxy URL */}
               <img
                 src={photo.url}
                 alt={`Emplacement ${position + 1} du profil`}
                 className="size-full object-cover"
               />
+              <ViewerWatermark />
             </li>
           ))}
         </ul>
