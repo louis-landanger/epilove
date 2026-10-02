@@ -1,4 +1,4 @@
-import { AVAILABILITY_RULES, availabilityShown, canViewProfile, checkAvailability } from "@epilove/core";
+import { availabilityShown, canViewProfile, checkAvailability } from "@epilove/core";
 import { availabilityOf, setAvailability } from "@epilove/db/repositories/campus-community";
 import { loadProfileContent } from "@epilove/db/repositories/discovery";
 import { activeMatchesOf, matchForMember, unmatch } from "@epilove/db/repositories/matches";
