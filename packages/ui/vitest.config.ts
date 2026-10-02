@@ -6,5 +6,7 @@ export default defineConfig({
   test: {
     environment: "happy-dom",
     setupFiles: ["./vitest.setup.ts"],
+    // visual/ holds the Playwright visual tests (`pnpm test:visual`).
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });

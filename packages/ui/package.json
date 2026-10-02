@@ -9,7 +9,10 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "storybook": "storybook dev --port 6006 --no-open",
+    "build-storybook": "storybook build --output-dir storybook-static --quiet",
+    "test:visual": "pnpm build-storybook && playwright test"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
@@ -21,7 +24,15 @@
     "tailwind-variants": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@epilove/config": "workspace:*",
+    "@fontsource-variable/bricolage-grotesque": "catalog:",
+    "@fontsource-variable/geist": "catalog:",
+    "@fontsource-variable/geist-mono": "catalog:",
+    "@playwright/test": "catalog:",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/react-vite": "catalog:",
+    "@tailwindcss/vite": "catalog:",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",
     "@types/node": "catalog:",
@@ -31,7 +42,9 @@
     "happy-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "storybook": "catalog:",
     "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {

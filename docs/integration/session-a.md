@@ -43,11 +43,11 @@
 | Lighthouse CI | — | `pnpm lighthouse` (`apps/web/lighthouserc.cjs`, workflow `.github/workflows/lighthouse.yml`) : 4 pages (`/`, `/en`, `/legal/confidentialite`, `/connexion`), 3 passages, émulation mobile ; budgets bloquants : accessibilité 100, bonnes pratiques ≥ 95, CLS ≤ 0,05 partout ; performance, LCP, TBT et poids (script, polices, total) par page. Corrections faites pour les tenir : champ d'ions désactivé sur rendu logiciel et arrêté si l'appareil ne suit pas, moniteur d'images en temps réel, polices allégées (Bricolage 131 → 41 Ko hors vitrine ; instances titre et serif chargées sur la vitrine seulement) | `apps/web/lighthouserc.cjs`, `packages/three/src/ion-field/quality.test.ts` |
 | Design sonore de la vitrine | — | Interrupteur « Son d'ambiance » dans l'en-tête de la page d'accueil, désactivé par défaut, mémorisé dans le navigateur ; tout est synthétisé en Web Audio (aucun fichier) : nappe d'ambiance lente, tic au survol des liens et boutons (souris), cloche pentatonique au toucher du champ d'ions, souffle à l'entrée des sections ; silencieux en arrière-plan, limiteur en sortie. En-tête compacté sous 420 px (symbole seul) et sous 360 px (sans l'interrupteur) | `components/acces/marketing/sound/notes.test.ts`, e2e `sound.spec.ts` |
 | Connexion Microsoft (exploration) | ONB-10 | Fournisseur `microsoft` de Better Auth sur `organizations`, portées OIDC seules, sans photo ; refus hors des tenants listés (`MICROSOFT_ALLOWED_TENANTS`) ou sans adresse d'école ; éteint sans configuration ; bouton derrière `NEXT_PUBLIC_MICROSOFT_ENABLED` ; une connexion vaut preuve d'adresse (ONB-09). Prérequis d'activation dans l'ADR 0013 (vérification d'éditeur, consentement des DSI) | `packages/auth/src/microsoft.test.ts`, `auth.test.ts` |
+| Storybook et tests visuels | — | Storybook 10 (`pnpm --filter @epilove/ui storybook`, port 6006) avec Tailwind 4, les jetons et des polices auto-hébergées (Fontsource) pour un rendu identique partout ; une story par famille de composants (actions, champs, affichage, filigrane) ; `pnpm --filter @epilove/ui test:visual` construit Storybook et compare une capture par story (références dans `packages/ui/visual/__screenshots__`) avec un contrôle axe ; workflow `.github/workflows/ui.yml` | `packages/ui/visual/stories.spec.ts` |
 
 ## Pas encore fait
 
 - Vitrine : performance Lighthouse mobile ~70 (cible 90) : LCP ~4–5 s, limité par les polices d'affichage (~250 Ko) et l'hydratation (TBT ~400 ms) ; connexion et pages légales ~85–90 (LCP ~3,5 s). Pistes : sous-ensemble de la police du titre, moins de JavaScript initial (196 Ko gzip, budget 180 Ko), relever les budgets de `lighthouserc.cjs` à mesure. WebGPU non vérifié sur un vrai GPU (en CI, rendu logiciel : le poster reste) ; effectifs par école estimés (à confirmer) ; pas de préchargeur.
-- Palier 3 : Storybook.
 
 ## Fichiers partagés modifiés
 
@@ -70,6 +70,7 @@
 | `apps/web/i18n/messages.ts` | Ajout : namespace `onboarding` |
 | `apps/web/app/layout.tsx` (polices) | Bricolage sans axes supplémentaires, Geist Mono non préchargée, Instrument Serif déplacée sur la page d'accueil |
 | `package.json` (racine) | Script `lighthouse` |
+| `.github/workflows/ui.yml` (nouveau) | Build Storybook et tests visuels sur les PR qui touchent l'UI ou les jetons |
 | `.github/workflows/lighthouse.yml` (nouveau) | Budgets Lighthouse sur les PR qui touchent le web, l'UI, la 3D ou les jetons |
 | `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media` ; `serverExternalPackages` : SDK S3 |
 | `apps/web/proxy.ts` | CSP `connect-src` : origine du stockage objet (envoi direct des photos) |
@@ -81,6 +82,7 @@
 | `apps/web/app/layout.tsx` | `<html lang>` selon la langue, métadonnées traduites, `metadataBase` (`SITE_URL`) ; toutes les pages sont désormais rendues à la demande |
 | `apps/web/app/layout.tsx` (polices) | Bricolage sans axes supplémentaires, Geist Mono non préchargée, Instrument Serif déplacée sur la page d'accueil |
 | `package.json` (racine) | Script `lighthouse` |
+| `.github/workflows/ui.yml` (nouveau) | Build Storybook et tests visuels sur les PR qui touchent l'UI ou les jetons |
 | `.github/workflows/lighthouse.yml` (nouveau) | Budgets Lighthouse sur les PR qui touchent le web, l'UI, la 3D ou les jetons |
 | `apps/web/next.config.ts` | `Permissions-Policy` : `camera=(self)` (selfie de vérification) et `microphone=(self)` (prompts vocaux), au lieu de `()` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | Ajout : `verification` |
@@ -99,7 +101,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 
 ## Dépendances ajoutées
 
-`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp` (binaires précompilés, aucun script d'installation), `thumbhash`, `fflate` (zip de l'export, worker) ; `motion` et `thumbhash` dans `apps/web` ; `three` et `@types/three` (`packages/three`, vitrine) ; `@lhci/cli` (développement, `apps/web`, aucun script d'installation).
+`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp` (binaires précompilés, aucun script d'installation), `thumbhash`, `fflate` (zip de l'export, worker) ; `motion` et `thumbhash` dans `apps/web` ; `three` et `@types/three` (`packages/three`, vitrine) ; `@lhci/cli` (développement, `apps/web`) ; dans `packages/ui` (développement) : `storybook`, `@storybook/react-vite`, `@storybook/addon-a11y`, `vite`, `@tailwindcss/vite`, `@fontsource-variable/geist`, `@fontsource-variable/geist-mono`, `@fontsource-variable/bricolage-grotesque`, `@playwright/test`, `@axe-core/playwright`. Aucune ne demande de script d'installation.
 
 ## Migrations
 
@@ -136,7 +138,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 
 ## Mises à jour souhaitées (CLAUDE.md, README, docs)
 
-- `CLAUDE.md`, tableau des commandes : ajouter `pnpm db:promote <email> <rôle>` et le back-office (http://localhost:3001) ; préciser que `pnpm db:migrate` crée aussi le schéma de Graphile Worker ; ajouter `pnpm --filter @epilove/worker dev` pour traiter les photos en local.
+- `CLAUDE.md`, tableau des commandes : ajouter `pnpm lighthouse` (budgets Lighthouse sur le build), `pnpm --filter @epilove/ui storybook` et `pnpm --filter @epilove/ui test:visual` (régénérer les références avec `--update-snapshots` après un changement voulu) ; ajouter `pnpm db:promote <email> <rôle>` et le back-office (http://localhost:3001) ; préciser que `pnpm db:migrate` crée aussi le schéma de Graphile Worker ; ajouter `pnpm --filter @epilove/worker dev` pour traiter les photos en local.
 - `docs/04-architecture.md`, section 4.4 : l'envoi utilise un **formulaire POST présigné** (politique S3 : taille 1 o à 10 Mo, `Content-Type` et clé imposés) plutôt qu'une URL PUT ; voir l'ADR 0010.
 - `docs/07-confiance-securite.md` : sessions stockées dans Valkey, révocation via `revokeAllSessions` ; en production, régler `AUTH_IP_HEADERS` et `API_IP_HEADERS` (par exemple `cf-connecting-ip`) et `AUTH_TRUSTED_PROXIES`, sinon les quotas par IP retombent sur un compteur partagé.
 

@@ -1,0 +1,45 @@
+name: Design system
+
+on:
+  pull_request:
+    paths:
+      - "packages/ui/**"
+      - "packages/tokens/**"
+      - "pnpm-lock.yaml"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+  STORYBOOK_DISABLE_TELEMETRY: "1"
+  LEFTHOOK: "0"
+
+jobs:
+  visual:
+    name: Storybook build and visual tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @epilove/ui exec playwright install --with-deps chromium
+
+      - name: Visual tests (one screenshot and an axe check per story)
+        run: pnpm --filter @epilove/ui test:visual
+
+      - name: Upload the differences
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-diffs
+          path: packages/ui/test-results
+          retention-days: 7

@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@import "@epilove/tokens/theme.css";
+/* Self-hosted fonts: identical rendering on every machine, for the visual tests. */
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/bricolage-grotesque";
+
+@source "../src";
+
+@theme inline {
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-ink font-sans text-paper antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-4 outline-volt;
+  }
+}
