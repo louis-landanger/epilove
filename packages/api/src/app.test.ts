@@ -74,3 +74,24 @@ describe("viewer resolution", () => {
     expect(() => devHeaderResolver({ NODE_ENV: "development" })).toThrow();
   });
 });
+
+describe("rate limiting", () => {
+  it("caps anonymous requests per address", async () => {
+    const limited = createApp({
+      version: "test",
+      database: () => {
+        throw new Error("unused");
+      },
+      resolveViewer: anonymous,
+    });
+    const call = (ip: string) =>
+      limited.request("/api/rpc/system/health", { method: "POST", headers: { "x-forwarded-for": ip } });
+    for (let index = 0; index < 120; index += 1) {
+      expect((await call("10.9.9.9")).status).toBe(200);
+    }
+    const blocked = await call("10.9.9.9");
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBeTruthy();
+    expect((await call("10.9.9.8")).status).toBe(200);
+  });
+});

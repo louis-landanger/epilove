@@ -9,10 +9,18 @@ import { createRouterClient } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Hono } from "hono";
 import type { ApiContext, ApiServices, Viewer, ViewerResolver } from "./context";
+import { clientIp } from "./lib/client-ip";
 import { createItunesCatalog, type MusicCatalog } from "./lib/music";
 import { router } from "./router";
 
 export const API_BASE_PATH = "/api";
+
+/** Requests per minute across all procedures (docs/07, part B). Overridable for load and end-to-end tests. */
+export const RPC_LIMITS = {
+  member: Number(process.env.API_RATE_LIMIT_MEMBER) || 600,
+  anonymous: Number(process.env.API_RATE_LIMIT_ANONYMOUS) || 120,
+  windowSeconds: 60,
+} as const;
 export const RPC_PREFIX = `${API_BASE_PATH}/rpc`;
 
 export interface AppDependencies {
@@ -77,11 +85,30 @@ export function createApp(dependencies: AppDependencies) {
 
   app.get("/health", (c) => c.json({ status: "ok", version: dependencies.version }));
 
+  const ipHeaders = (process.env.API_IP_HEADERS ?? "x-forwarded-for")
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean);
+
   app.use("/rpc/*", async (c, next) => {
+    const viewer = await dependencies.resolveViewer(c.req.raw);
+    // Generic ceiling on every procedure, on top of the per-action quotas:
+    // per member when signed in, per address otherwise.
+    const ip = clientIp(c.req.raw.headers, ipHeaders);
+    const key = viewer ? `member:${viewer.userId}` : `ip:${ip ?? "unknown"}`;
+    const limit = viewer ? RPC_LIMITS.member : RPC_LIMITS.anonymous;
+    const { allowed, resetInSeconds } = await services.limiter.consume(
+      `rpc:${key}`,
+      limit,
+      RPC_LIMITS.windowSeconds,
+    );
+    if (!allowed) {
+      return c.json({ error: "rate_limited" }, 429, { "Retry-After": String(resetInSeconds) });
+    }
     const context: ApiContext = {
       version: dependencies.version,
       database: dependencies.database,
-      viewer: await dependencies.resolveViewer(c.req.raw),
+      viewer,
       services,
     };
     const { matched, response } = await rpc.handle(c.req.raw, { prefix: RPC_PREFIX, context });

@@ -33,7 +33,8 @@ export default defineConfig({
       url: `${baseURL}/api/health`,
       reuseExistingServer: !process.env.CI,
       // The auth server checks request origins against APP_URL.
-      env: { APP_URL: baseURL, PASSKEY_RP_ID: "127.0.0.1" },
+      // Every test comes from 127.0.0.1: the per-address API ceiling would add up across tests.
+      env: { APP_URL: baseURL, PASSKEY_RP_ID: "127.0.0.1", API_RATE_LIMIT_ANONYMOUS: "100000" },
       timeout: 120_000,
     },
     {
