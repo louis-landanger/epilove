@@ -11,6 +11,9 @@ minimumReleaseAge: 1440
 # Dependencies allowed to run install scripts. Anything else fails the install
 # (strictDepBuilds) until it has been reviewed and added here.
 allowBuilds:
+  # Reviewed and refused: prebuilt binaries are used instead (pulled in by next-intl's extractor).
+  '@parcel/watcher': false
+  '@swc/core': false
   esbuild: true
   lefthook: true
 
@@ -32,6 +35,7 @@ catalog:
   graphile-worker: 0.18.0
   hono: 4.13.12
   next: 16.3.8
+  next-intl: 4.14.8
   postgres: 3.4.9
   react: 19.3.0
   react-dom: 19.3.0

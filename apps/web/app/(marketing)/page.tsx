@@ -1,26 +1,26 @@
 import { SCHOOLS } from "@epilove/core";
 import { schoolColors } from "@epilove/tokens";
+import { getTranslations } from "next-intl/server";
 
 /**
  * Temporary home page until the real landing (docs/02-design.md, section 5)
  * ships with the waitlist in week 45.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  const t = await getTranslations("home");
+  const common = await getTranslations("common");
   return (
     <main className="relative isolate flex min-h-dvh flex-col justify-between overflow-hidden px-4 py-8 sm:px-10 sm:py-12">
       <Orbit />
 
-      <p className="font-mono text-paper/70 text-xs uppercase tracking-[0.2em]">Campus IONIS · Lyon</p>
+      <p className="font-mono text-paper/70 text-xs uppercase tracking-[0.2em]">{common("campus")}</p>
 
       <section className="max-w-5xl">
         <h1 className="font-display font-semibold text-[clamp(3.5rem,11vw,10rem)] leading-[0.9] tracking-tight">
-          Trouve tes <em className="font-normal font-serif text-plasma italic">atomes crochus</em>.
+          {t("titleStart")} <em className="font-normal font-serif text-plasma italic">{t("titleAccent")}</em>.
         </h1>
-        <p className="mt-8 max-w-xl text-lg text-paper/80 sm:text-xl">
-          L'app de rencontre et d'amitié réservée aux étudiantes et étudiants vérifiés du campus. Ouverture
-          prochaine.
-        </p>
-        <ul aria-label="Écoles concernées" className="mt-8 flex flex-wrap gap-2">
+        <p className="mt-8 max-w-xl text-lg text-paper/80 sm:text-xl">{t("lead")}</p>
+        <ul aria-label={t("schools")} className="mt-8 flex flex-wrap gap-2">
           {SCHOOLS.map((school) => (
             <li
               key={school.slug}
@@ -37,9 +37,7 @@ export default function HomePage() {
         </ul>
       </section>
 
-      <footer className="text-paper/60 text-xs">
-        Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées.
-      </footer>
+      <footer className="text-paper/60 text-xs">{common("notAffiliated")}</footer>
     </main>
   );
 }

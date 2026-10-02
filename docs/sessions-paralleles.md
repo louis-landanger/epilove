@@ -4,13 +4,14 @@
 
 ## Branches
 
-| Session | Branche | Thème |
-|---|---|---|
-| **A — Accès** | `claude/stream-a-acces` | Vitrine, inscription, profil, réglages, confiance, back-office, design system |
-| **B — Rencontre** | `claude/stream-b-rencontre` | Questionnaire, découverte, matchs, messagerie, notifications, Pacte |
-| Intégration | `claude/eloquent-noether-dza0e1` | Base commune et fusion finale |
+Chaque session est une session **Claude Code cloud** lancée sur la branche de base `main`, depuis un compte différent, avec le prompt correspondant :
 
-Les deux sessions partent du même commit de la branche d'intégration (socle commun : schéma de base P0, contexte d'authentification de l'API, paquets `crypto` et `media`, contrat `safety`).
+| Session | Prompt | Thème |
+|---|---|---|
+| **A — Accès** | [`docs/prompts/session-a-acces.md`](prompts/session-a-acces.md) | Vitrine, inscription, profil, réglages, confiance, back-office, design system |
+| **B — Rencontre** | [`docs/prompts/session-b-rencontre.md`](prompts/session-b-rencontre.md) | Questionnaire, découverte, matchs, messagerie, notifications, Pacte, vie de campus |
+
+Chaque session pousse sur la branche de développement que la plateforme lui assigne et en indique le nom dans ses notes de passation. Les deux partent du même socle commun : schéma de base P0, contexte d'authentification de l'API, paquets `crypto` et `media`, contrat `safety`, i18n.
 
 ## Périmètre
 
@@ -25,6 +26,7 @@ Les deux sessions partent du même commit de la branche d'intégration (socle co
 | Réglages et sécurité | SAF-01 à SAF-06, SAF-14, SAF-15 | Bloquer, signaler, masquer école / promo / personnes, pause, notifications discrètes, suppression de compte, page d'aide ; **implémentation du contrat `safety`** |
 | Back-office | ADM-01 à ADM-03, ADM-05, ADM-06 | Nouvelle app `apps/admin` : files photos et signalements, actions motivées, journal d'audit, catalogues prompts et intérêts |
 | Design system | — | `packages/ui` (primitives et composants de l'app), coquille de l'app `(app)/layout.tsx` avec la navigation à 5 onglets, `proxy.ts` (garde de session, CSP avec nonce) |
+| Paliers 2 et 3 | ONB-08 à ONB-11, PRO-06 à PRO-11, SAF-07, SAF-08, SAF-12 à SAF-14, ADM-04, ADM-09, PLT-01, PLT-04, COM-05 | Voir le prompt de la session A |
 
 ### Session B — Rencontre
 
@@ -36,7 +38,8 @@ Les deux sessions partent du même commit de la branche d'intégration (socle co
 | Matchs et messagerie | CHAT-01 à CHAT-03, CHAT-13 | Création des matchs, écran « Liaison établie », messagerie temps réel (Centrifugo, outbox, récupération), corps chiffrés, lectures, réactions, brise-glace ; bloquer et signaler via le contrat `safety` |
 | Notifications | NOT-01 à NOT-03 | Web Push (service worker), centre de notifications, préférences de notification |
 | Pacte | PAC-02, PAC-03 | Saisons, solveur Python (`apps/pact-solver`), page de révélation (compte à rebours, présence, diffusion) |
-| Données de développement | — | `pnpm db:seed:dev` : quelques centaines de membres fictifs crédibles (profils, préférences, photos de synthèse, réponses au questionnaire) |
+| Données de développement | — | `pnpm db:seed:dev` : quelques centaines de membres fictifs crédibles (profils, préférences, photos de synthèse, réponses au questionnaire) et page `/dev` de choix du membre courant |
+| Paliers 2 et 3 | DEC-07 à DEC-10, CHAT-04 à CHAT-11, SAF-09 à SAF-11, IRL-01 à IRL-05, PAC-04, COM-01 à COM-04, NOT-04 à NOT-06 | Voir le prompt de la session B |
 
 ## Propriété des fichiers
 
@@ -50,6 +53,10 @@ Une session **ne modifie pas** les fichiers possédés par l'autre. Les fichiers
 | `apps/web/app/api/auth/**`, `apps/web/proxy.ts`, `apps/web/lib/server/api-app.ts` | ✅ | |
 | `apps/web/components/acces/**` | ✅ | |
 | `apps/web/components/rencontre/**`, service worker et configuration PWA | | ✅ |
+| `apps/web/app/not-found.tsx`, `apps/web/app/terminal/**` | ✅ | |
+| `apps/web/app/dev/**` (développement uniquement) | | ✅ |
+| Namespaces i18n `apps/web/messages/*/{common,nav,home,marketing,waitlist,auth,onboarding,profile,settings,safety,help,legal}.json` | ✅ | |
+| Namespaces i18n `apps/web/messages/*/{discovery,likes,matches,chat,questionnaire,pact,campus,notifications,events,spots}.json` | | ✅ |
 | `apps/admin/**` | ✅ | |
 | `apps/pact-solver/**` | | ✅ |
 | `apps/worker/src/tasks/media/**`, `tasks/accounts/**` | ✅ | |
@@ -60,12 +67,14 @@ Une session **ne modifie pas** les fichiers possédés par l'autre. Les fichiers
 | `packages/crypto/**` | lecture | lecture |
 | `packages/core/src/{accounts,profiles,safety}/**` | ✅ | |
 | `packages/core/src/{policies,matching,discovery,messaging,pact,questionnaire}/**` | | ✅ |
-| `packages/db/src/schema/{users,profiles,safety}.ts`, nouveau `auth.ts` | ✅ | lecture |
-| `packages/db/src/schema/{questionnaire,discovery,messaging,notifications,pact,outbox}.ts` | | ✅ |
+| `packages/db/src/schema/{users,profiles,safety}.ts` et nouveaux fichiers de A (`auth.ts`…) | ✅ | lecture |
+| `packages/db/src/schema/{questionnaire,discovery,messaging,notifications,pact,outbox}.ts` et nouveaux fichiers de B (`events.ts`, `spots.ts`, `community.ts`…) | | ✅ |
+| `packages/db/src/repositories/{accounts,profiles,safety,waitlist,admin}*.ts` | ✅ | lecture |
+| `packages/db/src/repositories/{members,discovery,matches,messaging,questionnaire,pact,notifications,campus}*.ts` | | ✅ |
 | `packages/db/src/seeds/{catalog-*}.ts` (prompts, intérêts) | ✅ | |
-| `packages/db/src/seeds/questions.ts`, `packages/db/src/dev-seed/**` | | ✅ |
+| `packages/db/src/seeds/questions.ts`, `packages/db/src/seeds/spots.ts`, `packages/db/src/dev-seed/**` | | ✅ |
 | `packages/contracts/src/{waitlist,onboarding,profile,media,preferences,safety,account,admin}.ts` | ✅ | |
-| `packages/contracts/src/{questionnaire,discovery,matches,messaging,notifications,pact,realtime}.ts` | | ✅ |
+| `packages/contracts/src/{questionnaire,discovery,matches,messaging,notifications,pact,realtime,campus-life,dev}.ts` | | ✅ |
 | `packages/api/src/modules/*` : même découpage que les contrats | | |
 
 Le design system (`packages/ui`) appartient à A. En attendant la fusion, B construit ses composants dans `apps/web/components/rencontre/` avec Tailwind et les jetons de `@epilove/tokens` ; l'harmonisation se fera à l'intégration.
@@ -74,7 +83,7 @@ Le design system (`packages/ui`) appartient à A. En attendant la fusion, B cons
 
 | Fichier | Règle |
 |---|---|
-| Agrégateurs : `packages/contracts/src/index.ts`, `packages/api/src/router.ts`, `packages/core/src/index.ts`, `packages/db/src/schema/index.ts`, `packages/db/src/seeds/index.ts`, `apps/worker/src/tasks/index.ts` | Ajout seulement : une ligne par module, ordre alphabétique, ne jamais réordonner ni supprimer les lignes existantes |
+| Agrégateurs : `apps/web/i18n/messages.ts`, `packages/contracts/src/index.ts`, `packages/api/src/router.ts`, `packages/core/src/index.ts`, `packages/db/src/schema/index.ts`, `packages/db/src/seeds/index.ts`, `apps/worker/src/tasks/index.ts` | Ajout seulement : une ligne par module, ordre alphabétique, ne jamais réordonner ni supprimer les lignes existantes |
 | `pnpm-workspace.yaml` (catalogue), `package.json` | Ajout seulement. `pnpm-lock.yaml` sera régénéré à la fusion |
 | `.env.example` | Ajouter ses variables dans une section commentée `# Session A` ou `# Session B` à la fin du fichier |
 | Migrations `packages/db/drizzle/**` | Générer et committer normalement (`pnpm db:generate`). **Toutes les migrations postérieures à `0002_p0_schema` sont jetables** : l'intégration les supprime et en régénère une seule à partir du schéma fusionné |
