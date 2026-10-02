@@ -1,5 +1,6 @@
 import type { TaskList } from "graphile-worker";
 import { dropTickTask } from "./drop/tick";
+import { messagePurge } from "./messaging/purge";
 import { outboxPurge } from "./outbox/purge";
 import { pactReveal, pactRevealDue } from "./pact/reveal";
 
@@ -14,6 +15,7 @@ export const taskList: TaskList = {
     helpers.logger.info("heartbeat");
   },
   drop_tick: dropTickTask,
+  message_purge: messagePurge,
   outbox_purge: outboxPurge,
   pact_reveal: pactReveal,
   pact_reveal_due: pactRevealDue,
@@ -25,4 +27,5 @@ export const crontab = [
   "17 4 * * * outbox_purge",
   "* * * * * pact_reveal_due",
   "* * * * * drop_tick",
+  "23 4 * * * message_purge",
 ].join("\n");

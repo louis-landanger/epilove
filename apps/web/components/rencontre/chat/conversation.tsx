@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChatMessage, IcebreakerView, ThreadView } from "@epilove/contracts";
-import { MESSAGING_RULES, uuidv7 } from "@epilove/core";
+import { MESSAGING_RULES, needsSendWarning, screenMessage, uuidv7 } from "@epilove/core";
 import { ORPCError } from "@orpc/client";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import { useConnectionState, useRealtime } from "@/lib/rencontre/realtime";
 import { dequeueMessage, queuedMessages, queueMessage } from "@/lib/rencontre/send-queue";
 import { useOnline } from "@/lib/rencontre/use-online";
 import { ReportSheet, SafetyMenu } from "../safety/safety-menu";
+import { Sheet } from "../ui/sheet";
 import { Avatar } from "./avatar";
 
 type PendingStatus = "sending" | "queued" | "failed";
@@ -57,6 +58,9 @@ export function Conversation({ thread }: { thread: ThreadView }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [showIcebreakers, setShowIcebreakers] = useState(thread.messages.length === 0);
   const [reporting, setReporting] = useState<string | null>(null);
+  const [editing, setEditing] = useState<ChatMessage | null>(null);
+  /** A message waiting for "send anyway" (SAF-09). */
+  const [warning, setWarning] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
   const lastTyping = useRef(0);
@@ -202,9 +206,48 @@ export function Conversation({ thread }: { thread: ThreadView }) {
     }
   }, [online, connection]);
 
-  const send = async (text: string) => {
+  const saveEdit = async (target: ChatMessage, text: string) => {
+    try {
+      const result = await api.messaging.edit({ matchId: thread.matchId, messageId: target.id, text });
+      setMessages((current) => mergeMessages(current, [result.message]));
+      setEditing(null);
+      setDraft("");
+    } catch (error) {
+      say(
+        error instanceof ORPCError && error.message === "too_late"
+          ? t("errors.too_late")
+          : t("errors.generic"),
+      );
+      setEditing(null);
+      setDraft("");
+    }
+  };
+
+  const removeForEveryone = async (target: ChatMessage) => {
+    try {
+      const result = await api.messaging.remove({ matchId: thread.matchId, messageId: target.id });
+      setMessages((current) => mergeMessages(current, [result.message]));
+    } catch (error) {
+      say(
+        error instanceof ORPCError && error.message === "too_late"
+          ? t("errors.too_late")
+          : t("errors.generic"),
+      );
+    }
+  };
+
+  const send = async (text: string, confirmed = false) => {
     const clean = text.trim();
     if (!clean || closed) {
+      return;
+    }
+    // "Tu es sûr·e de vouloir envoyer ça ?" (SAF-09): asked once, never blocking.
+    if (!confirmed && needsSendWarning(screenMessage(clean))) {
+      setWarning(clean);
+      return;
+    }
+    if (editing) {
+      await saveEdit(editing, clean);
       return;
     }
     const message: PendingMessage = {
@@ -414,6 +457,19 @@ export function Conversation({ thread }: { thread: ThreadView }) {
                     }}
                     onReact={(emoji) => react(item.message, emoji)}
                     onReport={() => setReporting(item.message.id)}
+                    changeable={
+                      item.message.senderId === me &&
+                      !item.message.deleted &&
+                      Date.now() - Date.parse(item.message.createdAt) <
+                        MESSAGING_RULES.deleteWindowMinutes * 60_000
+                    }
+                    onEdit={() => {
+                      setReplyTo(null);
+                      setEditing(item.message);
+                      setDraft(item.message.text);
+                      composer.current?.focus();
+                    }}
+                    onDelete={() => void removeForEveryone(item.message)}
                   />
                 ) : (
                   <PendingBubble
@@ -457,6 +513,37 @@ export function Conversation({ thread }: { thread: ThreadView }) {
         }}
       />
 
+      <Sheet open={warning !== null} onClose={() => setWarning(null)} labelledBy="send-warning">
+        <h2 id="send-warning" className="font-display font-semibold text-xl">
+          {t("warning.title")}
+        </h2>
+        <p className="text-paper/75">{t("warning.lead")}</p>
+        <div className="flex flex-wrap gap-3">
+          {/* The native dialog focuses this first button: rephrasing is the default. */}
+          <button
+            type="button"
+            onClick={() => {
+              setWarning(null);
+              composer.current?.focus();
+            }}
+            className="rounded-full bg-paper px-5 py-3 font-semibold text-ink"
+          >
+            {t("warning.edit")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const text = warning ?? "";
+              setWarning(null);
+              void send(text, true);
+            }}
+            className="rounded-full border border-paper/25 px-5 py-3 font-semibold"
+          >
+            {t("warning.sendAnyway")}
+          </button>
+        </div>
+      </Sheet>
+
       {closed ? (
         <p className="border-paper/10 border-t px-4 py-5 text-center text-paper/70">{t("composer.closed")}</p>
       ) : (
@@ -468,6 +555,11 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           replyTo={replyTo}
           replyName={replyTo?.senderId === me ? null : thread.other.firstName}
           onCancelReply={() => setReplyTo(null)}
+          editing={editing !== null}
+          onCancelEdit={() => {
+            setEditing(null);
+            setDraft("");
+          }}
           icebreakers={thread.icebreakers}
           showIcebreakers={showIcebreakers}
           onToggleIcebreakers={() => setShowIcebreakers((v) => !v)}
@@ -528,6 +620,9 @@ function Bubble({
   onReply,
   onReact,
   onReport,
+  changeable,
+  onEdit,
+  onDelete,
 }: {
   message: ChatMessage;
   mine: boolean;
@@ -537,6 +632,10 @@ function Bubble({
   onReply: () => void;
   onReact: (emoji: string) => void;
   onReport: () => void;
+  /** Own message still within the edit and delete window (CHAT-08). */
+  changeable: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   const t = useTranslations("chat");
   const format = useFormatter();
@@ -664,6 +763,30 @@ function Bubble({
                 >
                   {t("actions.reply")}
                 </button>
+                {changeable && message.kind === "text" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onEdit();
+                      setMenu(false);
+                    }}
+                    className="rounded-xl px-3 py-2 text-left text-sm hover:bg-paper/10"
+                  >
+                    {t("actions.edit")}
+                  </button>
+                )}
+                {changeable && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onDelete();
+                      setMenu(false);
+                    }}
+                    className="rounded-xl px-3 py-2 text-left text-sm hover:bg-paper/10"
+                  >
+                    {t("actions.delete")}
+                  </button>
+                )}
                 {!mine && (
                   <button
                     type="button"
@@ -700,9 +823,21 @@ function Bubble({
           ))}
         </div>
       )}
+      {message.editedAt && !message.deleted && (
+        <span className="px-2 text-paper/60 text-xs">{t("status.edited")}</span>
+      )}
       <span className="mt-0.5 hidden px-2 font-mono text-[10px] text-paper/60 group-focus-within:block group-hover:block">
         {format.dateTime(new Date(message.createdAt), { hour: "2-digit", minute: "2-digit" })}
       </span>
+      {!mine && message.flagged && (
+        <button
+          type="button"
+          onClick={onReport}
+          className="mt-1 ml-2 rounded-full border border-plasma/40 px-3 py-1 text-paper/80 text-xs hover:border-plasma"
+        >
+          {t("flagged")}
+        </button>
+      )}
       {seen && <span className="px-2 text-paper/60 text-xs">{t("status.seen")}</span>}
     </motion.li>
   );
@@ -766,6 +901,8 @@ function Composer({
   replyTo,
   replyName,
   onCancelReply,
+  editing,
+  onCancelEdit,
   icebreakers,
   showIcebreakers,
   onToggleIcebreakers,
@@ -779,6 +916,8 @@ function Composer({
   replyTo: ChatMessage | null;
   replyName: string | null;
   onCancelReply: () => void;
+  editing: boolean;
+  onCancelEdit: () => void;
   icebreakers: IcebreakerView[];
   showIcebreakers: boolean;
   onToggleIcebreakers: () => void;
@@ -812,6 +951,18 @@ function Composer({
               );
             })}
           </ul>
+        </div>
+      )}
+      {editing && (
+        <div className="mb-2 flex items-center gap-2 rounded-2xl bg-volt/10 px-3 py-2 text-sm">
+          <span className="min-w-0 flex-1">{t("composer.editing")}</span>
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="text-paper/70 underline-offset-4 hover:underline"
+          >
+            {t("composer.cancelEdit")}
+          </button>
         </div>
       )}
       {replyTo && (
@@ -886,7 +1037,7 @@ function Composer({
         <button
           type="submit"
           disabled={!draft.trim()}
-          aria-label={t("composer.send")}
+          aria-label={editing ? t("composer.save") : t("composer.send")}
           className="grid size-11 shrink-0 place-items-center rounded-full bg-plasma text-ink disabled:opacity-40"
         >
           <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">

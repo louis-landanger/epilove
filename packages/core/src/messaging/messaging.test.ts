@@ -1,7 +1,13 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { CAMPUS_ICEBREAKERS, pickIcebreakers } from "./icebreakers";
-import { cleanMessage, screenMessage } from "./rules";
+import {
+  checkMessageChange,
+  cleanMessage,
+  isPotentiallyOffensive,
+  needsSendWarning,
+  screenMessage,
+} from "./rules";
 
 describe("screenMessage", () => {
   it("flags links, contact handles, insults, shouting and repetitions", () => {
@@ -57,5 +63,34 @@ describe("pickIcebreakers", () => {
         }
       }),
     );
+  });
+});
+
+describe("message changes (CHAT-08) and warnings (SAF-09, SAF-10)", () => {
+  const sentAt = new Date("2026-10-02T12:00:00Z");
+  const at = (minutes: number) => new Date(sentAt.getTime() + minutes * 60_000);
+  const message = { senderId: "me", createdAt: sentAt, deleted: false, kind: "text" };
+
+  it("lets the sender edit or delete within ten minutes only", () => {
+    expect(checkMessageChange(message, "me", at(9), "edit")).toEqual({ ok: true });
+    expect(checkMessageChange(message, "me", at(9), "delete")).toEqual({ ok: true });
+    expect(checkMessageChange(message, "me", at(11), "delete")).toEqual({ ok: false, reason: "too_late" });
+    expect(checkMessageChange(message, "other", at(1), "edit")).toEqual({ ok: false, reason: "not_sender" });
+    expect(checkMessageChange({ ...message, deleted: true }, "me", at(1), "edit")).toEqual({
+      ok: false,
+      reason: "deleted",
+    });
+    expect(checkMessageChange({ ...message, kind: "sticker" }, "me", at(1), "edit")).toEqual({
+      ok: false,
+      reason: "not_editable",
+    });
+    expect(checkMessageChange({ ...message, kind: "sticker" }, "me", at(1), "delete")).toEqual({ ok: true });
+  });
+
+  it("warns before sending an insult and offers a report on offensive messages", () => {
+    expect(needsSendWarning(screenMessage("t'es vraiment un connard"))).toBe(true);
+    expect(needsSendWarning(screenMessage("on se voit samedi ?"))).toBe(false);
+    expect(isPotentiallyOffensive(["shouting"])).toBe(true);
+    expect(isPotentiallyOffensive(["link"])).toBe(false);
   });
 });

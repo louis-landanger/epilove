@@ -9,8 +9,14 @@ export const MESSAGING_RULES = {
   maxLength: 2000,
   /** Anti-spam: messages per minute and per member (docs/01, quotas). */
   perMinute: 20,
-  /** A message can be deleted for everyone during this window (CHAT-08). */
+  /**
+   * A message can be edited or deleted for everyone during this window
+   * (CHAT-08). Edits share it: an old message cannot be rewritten once the
+   * other member has read or reported it.
+   */
   deleteWindowMinutes: 10,
+  /** A message deleted for everyone stays encrypted, unreadable by both members, for moderation (reports). */
+  deletedRetentionDays: 30,
   reactions: ["❤️", "😂", "😮", "😢", "👍", "🔥"] as const,
 } as const;
 
@@ -86,3 +92,41 @@ export function screenMessage(text: string): ModerationFlag[] {
   }
   return flags;
 }
+
+export type MessageChangeCheck =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly reason: "not_sender" | "too_late" | "deleted" | "not_editable" };
+
+/** Whether `viewerId` may edit or delete `message` now (CHAT-08). Only text can be edited. */
+export function checkMessageChange(
+  message: {
+    readonly senderId: string | null;
+    readonly createdAt: Date;
+    readonly deleted: boolean;
+    readonly kind: string;
+  },
+  viewerId: string,
+  now: Date,
+  change: "edit" | "delete",
+): MessageChangeCheck {
+  if (message.senderId !== viewerId) {
+    return { ok: false, reason: "not_sender" };
+  }
+  if (message.deleted) {
+    return { ok: false, reason: "deleted" };
+  }
+  if (change === "edit" && message.kind !== "text") {
+    return { ok: false, reason: "not_editable" };
+  }
+  if (now.getTime() - message.createdAt.getTime() > MESSAGING_RULES.deleteWindowMinutes * 60_000) {
+    return { ok: false, reason: "too_late" };
+  }
+  return { ok: true };
+}
+
+/** "Tu es sûr·e de vouloir envoyer ça ?" (SAF-09): asked before sending, never blocking. */
+export const needsSendWarning = (flags: readonly ModerationFlag[]) => flags.includes("insult");
+
+/** "Ce message te dérange ?" (SAF-10): offered to the recipient, with a one-tap report. */
+export const isPotentiallyOffensive = (flags: readonly string[]) =>
+  flags.includes("insult") || flags.includes("shouting");

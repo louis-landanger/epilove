@@ -19,7 +19,10 @@
     "replyingTo": "Réponse à {name}",
     "cancelReply": "Annuler la réponse",
     "closed": "Cette conversation est fermée.",
-    "replyingToSelf": "Réponse à ton message"
+    "replyingToSelf": "Réponse à ton message",
+    "editing": "Modification du message",
+    "cancelEdit": "Annuler",
+    "save": "Enregistrer la modification"
   },
   "icebreakers": {
     "title": "Besoin d'un brise-glace ?",
@@ -50,7 +53,9 @@
     "react": "Réagir",
     "report": "Signaler ce message",
     "reactionLabel": "Réagir avec {emoji}",
-    "menu": "Actions sur le message"
+    "menu": "Actions sur le message",
+    "edit": "Modifier",
+    "delete": "Supprimer pour tout le monde"
   },
   "typing": "{name} écrit…",
   "loadOlder": "Messages précédents",
@@ -59,12 +64,20 @@
   "errors": {
     "rate_limited": "Doucement ! Attends quelques secondes avant d'envoyer la suite.",
     "notFound": "Cette conversation n'est plus disponible.",
-    "generic": "Ça n'est pas passé. On réessaie ?"
+    "generic": "Ça n'est pas passé. On réessaie ?",
+    "too_late": "Trop tard : un message se modifie ou se supprime dans les 10 minutes."
   },
   "flags": {
     "contact_handle": "Petit rappel : prends le temps de faire connaissance ici avant d'échanger d'autres contacts."
   },
   "offline": "Connexion perdue. Tes messages partiront dès le retour du réseau.",
   "reconnecting": "Reconnexion…",
-  "reported": "Merci, ton signalement a bien été reçu."
+  "reported": "Merci, ton signalement a bien été reçu.",
+  "warning": {
+    "title": "Tu es sûr·e de vouloir envoyer ça ?",
+    "lead": "Ce message pourrait blesser. Tu peux le reformuler, ou l'envoyer quand même.",
+    "edit": "Le reformuler",
+    "sendAnyway": "Envoyer quand même"
+  },
+  "flagged": "Ce message te dérange ? Signaler"
 }

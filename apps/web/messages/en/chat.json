@@ -19,7 +19,10 @@
     "replyingTo": "Replying to {name}",
     "cancelReply": "Cancel reply",
     "closed": "This conversation is closed.",
-    "replyingToSelf": "Replying to your message"
+    "replyingToSelf": "Replying to your message",
+    "editing": "Editing your message",
+    "cancelEdit": "Cancel",
+    "save": "Save the change"
   },
   "icebreakers": {
     "title": "Need an icebreaker?",
@@ -50,7 +53,9 @@
     "react": "React",
     "report": "Report this message",
     "reactionLabel": "React with {emoji}",
-    "menu": "Message actions"
+    "menu": "Message actions",
+    "edit": "Edit",
+    "delete": "Delete for everyone"
   },
   "typing": "{name} is typing…",
   "loadOlder": "Earlier messages",
@@ -59,12 +64,20 @@
   "errors": {
     "rate_limited": "Easy! Wait a few seconds before sending more.",
     "notFound": "This conversation is no longer available.",
-    "generic": "That didn't go through. Try again?"
+    "generic": "That didn't go through. Try again?",
+    "too_late": "Too late: a message can be edited or deleted within 10 minutes."
   },
   "flags": {
     "contact_handle": "A quick reminder: take the time to get to know each other here before sharing other contacts."
   },
   "offline": "Connection lost. Your messages will be sent once you're back online.",
   "reconnecting": "Reconnecting…",
-  "reported": "Thank you, your report was received."
+  "reported": "Thank you, your report was received.",
+  "warning": {
+    "title": "Are you sure you want to send this?",
+    "lead": "This message could hurt. You can rephrase it, or send it anyway.",
+    "edit": "Rephrase it",
+    "sendAnyway": "Send anyway"
+  },
+  "flagged": "Does this message bother you? Report"
 }

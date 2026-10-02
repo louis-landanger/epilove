@@ -129,6 +129,54 @@ describe.skipIf(!url)("messaging", () => {
     expect((await as(a).messaging.thread({ matchId, locale: "fr" })).otherLastReadId).toBeNull();
   });
 
+  it("edits and deletes one's own messages within ten minutes (CHAT-08)", async () => {
+    const { a, b, matchId } = await conversation();
+    const id = newId();
+    await as(a).messaging.send({ id, matchId, text: "Rdv à 18 h", replyTo: null });
+    await as(b).messaging.react({ matchId, messageId: id, emoji: "👍" });
+
+    const edited = await as(a).messaging.edit({ matchId, messageId: id, text: "Rdv à 19 h" });
+    expect(edited.message).toMatchObject({ text: "Rdv à 19 h", editedAt: expect.any(String) });
+    await expect(as(b).messaging.edit({ matchId, messageId: id, text: "non" })).rejects.toMatchObject({
+      message: "not_sender",
+    });
+
+    const removed = await as(a).messaging.remove({ matchId, messageId: id });
+    expect(removed.message).toMatchObject({ deleted: true, text: "", reactions: [] });
+    const history = await as(b).messaging.history({ matchId, limit: 10 });
+    expect(history.messages.find((m) => m.id === id)).toMatchObject({ deleted: true, text: "" });
+    // Kept encrypted for moderation, unreadable by both members.
+    const [row] = await db.select().from(schema.message).where(eq(schema.message.id, id));
+    expect(row?.bodyEncrypted).not.toBeNull();
+
+    const old = newId();
+    await as(a).messaging.send({ id: old, matchId, text: "Ancien message", replyTo: null });
+    await db
+      .update(schema.message)
+      .set({ createdAt: sql`now() - interval '11 minutes'` })
+      .where(eq(schema.message.id, old));
+    await expect(as(a).messaging.remove({ matchId, messageId: old })).rejects.toMatchObject({
+      message: "too_late",
+    });
+    await expect(as(a).messaging.edit({ matchId, messageId: old, text: "Réécrit" })).rejects.toMatchObject({
+      message: "too_late",
+    });
+  });
+
+  it("flags potentially offensive messages for the recipient (SAF-10)", async () => {
+    const { a, b, matchId } = await conversation();
+    const id = newId();
+    const sent = await as(a).messaging.send({ id, matchId, text: "t'es vraiment un connard", replyTo: null });
+    expect(sent.flags).toContain("insult");
+    const history = await as(b).messaging.history({ matchId, limit: 10 });
+    expect(history.messages.find((m) => m.id === id)?.flagged).toBe(true);
+    const calm = newId();
+    await as(a).messaging.send({ id: calm, matchId, text: "Pardon, je me suis emporté", replyTo: null });
+    expect(
+      (await as(b).messaging.history({ matchId, limit: 10 })).messages.find((m) => m.id === calm)?.flagged,
+    ).toBe(false);
+  });
+
   it("relays typing to the other member only", async () => {
     const { a, b, matchId } = await conversation();
     await as(a).messaging.typing({ matchId });

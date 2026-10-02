@@ -16,6 +16,8 @@ export const chatMessage = z.object({
   createdAt: z.iso.datetime(),
   editedAt: z.iso.datetime().nullable(),
   deleted: z.boolean(),
+  /** Detected as potentially offensive (SAF-10): the recipient is offered a one-tap report. */
+  flagged: z.boolean(),
 });
 export type ChatMessage = z.infer<typeof chatMessage>;
 
@@ -75,6 +77,14 @@ export const messagingContract = {
       }),
     )
     .output(z.object({ message: chatMessage, flags: z.array(z.string()) })),
+  /** Edits one's own text message within 10 minutes (CHAT-08); shown as "modifié". */
+  edit: oc
+    .input(z.object({ matchId: z.uuid(), messageId: z.uuid(), text: z.string().min(1).max(2000) }))
+    .output(z.object({ message: chatMessage, flags: z.array(z.string()) })),
+  /** Deletes one's own message for everyone within 10 minutes (CHAT-08). */
+  remove: oc
+    .input(z.object({ matchId: z.uuid(), messageId: z.uuid() }))
+    .output(z.object({ message: chatMessage })),
   /** Moves the read marker forward. */
   read: oc
     .input(z.object({ matchId: z.uuid(), messageId: z.uuid() }))

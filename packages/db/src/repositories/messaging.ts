@@ -16,6 +16,7 @@ export interface StoredMessage {
   readonly createdAt: Date;
   readonly editedAt: Date | null;
   readonly deletedAt: Date | null;
+  readonly moderation: unknown;
 }
 
 const messageColumns = {
@@ -29,6 +30,7 @@ const messageColumns = {
   createdAt: message.createdAt,
   editedAt: message.editedAt,
   deletedAt: message.deletedAt,
+  moderation: message.moderation,
 };
 
 /** The latest message of each match. */
@@ -325,4 +327,85 @@ export async function notifyRead(
   lastReadMessageId: string,
 ) {
   await enqueue(db, [{ userId: recipientId, event: { type: "message.read", matchId, lastReadMessageId } }]);
+}
+
+/**
+ * Replaces the body of a text message (CHAT-08), only if it is still the
+ * sender's, not deleted and within the window (checked again in SQL, so two
+ * concurrent requests cannot race past it).
+ */
+export async function editMessageBody(
+  db: Database,
+  input: {
+    id: string;
+    senderId: string;
+    body: { readonly keyId: string; readonly data: Uint8Array };
+    moderation: { readonly flags: readonly string[] } | null;
+    now: Date;
+    windowMinutes: number;
+  },
+): Promise<StoredMessage | null> {
+  const [row] = await db
+    .update(message)
+    .set({
+      bodyEncrypted: input.body.data,
+      keyId: input.body.keyId,
+      moderation: input.moderation,
+      editedAt: input.now,
+    })
+    .where(
+      and(
+        eq(message.id, input.id),
+        eq(message.senderId, input.senderId),
+        eq(message.kind, "text"),
+        isNull(message.deletedAt),
+        gt(message.createdAt, new Date(input.now.getTime() - input.windowMinutes * 60_000)),
+      ),
+    )
+    .returning(messageColumns);
+  return row ?? null;
+}
+
+/**
+ * Deletes a message for everyone (CHAT-08). The body stays encrypted and
+ * unreadable by both members for the moderation retention (a report can
+ * still use it), then `purgeDeletedBodies` erases it. Reactions go at once.
+ */
+export async function deleteMessageForEveryone(
+  db: Database,
+  input: { id: string; senderId: string; now: Date; windowMinutes: number },
+): Promise<StoredMessage | null> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(message)
+      .set({ deletedAt: input.now })
+      .where(
+        and(
+          eq(message.id, input.id),
+          eq(message.senderId, input.senderId),
+          isNull(message.deletedAt),
+          gt(message.createdAt, new Date(input.now.getTime() - input.windowMinutes * 60_000)),
+        ),
+      )
+      .returning(messageColumns);
+    if (row) {
+      await tx.delete(reaction).where(eq(reaction.messageId, input.id));
+    }
+    return row ?? null;
+  });
+}
+
+/** Erases the bodies and media of messages deleted before `olderThan` (retention). */
+export async function purgeDeletedBodies(db: Database, olderThan: Date): Promise<number> {
+  const rows = await db
+    .update(message)
+    .set({ bodyEncrypted: null, keyId: null, mediaKey: null, moderation: null })
+    .where(
+      and(
+        lt(message.deletedAt, olderThan),
+        sql`(${message.bodyEncrypted} is not null or ${message.mediaKey} is not null)`,
+      ),
+    )
+    .returning({ id: message.id });
+  return rows.length;
 }

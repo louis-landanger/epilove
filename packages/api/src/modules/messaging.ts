@@ -1,8 +1,10 @@
 import type { ChatMessage } from "@epilove/contracts";
 import {
   canMessage,
+  checkMessageChange,
   cleanMessage,
   explainCompatibility,
+  isPotentiallyOffensive,
   isReaction,
   MESSAGING_RULES,
   pickIcebreakers,
@@ -21,6 +23,8 @@ import {
 } from "@epilove/db/repositories/members";
 import {
   chatSettingsOf,
+  deleteMessageForEveryone,
+  editMessageBody,
   insertMessage,
   markRead,
   messagesByIds,
@@ -67,6 +71,41 @@ async function requireConversation(db: Database, viewerId: string, matchId: stri
   return { match: found, viewer, other };
 }
 
+const flagsOf = (moderation: unknown): string[] => {
+  const flags = (moderation as { flags?: unknown } | null)?.flags;
+  return Array.isArray(flags) ? flags.filter((f): f is string => typeof f === "string") : [];
+};
+
+/** A message of this conversation that the viewer may still edit or delete (CHAT-08). */
+async function requireOwnChange(
+  db: Database,
+  matchId: string,
+  messageId: string,
+  viewerId: string,
+  now: Date,
+  change: "edit" | "delete",
+) {
+  const [target] = await messagesByIds(db, [messageId]);
+  if (!target || target.matchId !== matchId) {
+    throw new ORPCError("NOT_FOUND");
+  }
+  const check = checkMessageChange(
+    {
+      senderId: target.senderId,
+      createdAt: target.createdAt,
+      deleted: target.deletedAt !== null,
+      kind: target.kind,
+    },
+    viewerId,
+    now,
+    change,
+  );
+  if (!check.ok) {
+    throw new ORPCError(check.reason === "not_sender" ? "FORBIDDEN" : "CONFLICT", { message: check.reason });
+  }
+  return target;
+}
+
 async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Promise<ChatMessage[]> {
   const replyIds = [...new Set(rows.flatMap((m) => (m.replyTo ? [m.replyTo] : [])))];
   const known = new Map(rows.map((m) => [m.id, m]));
@@ -96,6 +135,7 @@ async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Pro
       createdAt: m.createdAt.toISOString(),
       editedAt: m.editedAt?.toISOString() ?? null,
       deleted: m.deletedAt !== null,
+      flagged: m.deletedAt === null && isPotentiallyOffensive(flagsOf(m.moderation)),
     };
   });
 }
@@ -222,6 +262,57 @@ export const messaging = {
       throw new ORPCError("INTERNAL_SERVER_ERROR");
     }
     return { message, flags };
+  }),
+
+  edit: os.messaging.edit.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const { match, viewer, other } = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const target = await requireOwnChange(db, match.id, input.messageId, viewer.member.id, now, "edit");
+    const text = cleanMessage(input.text);
+    if (text.length === 0 || text.length > MESSAGING_RULES.maxLength) {
+      throw new ORPCError("BAD_REQUEST", { message: "empty_message" });
+    }
+    const flags = screenMessage(text);
+    const updated = await editMessageBody(db, {
+      id: target.id,
+      senderId: viewer.member.id,
+      body: encryptText(messageKeyRing(), text),
+      moderation: flags.length > 0 ? { flags } : null,
+      now,
+      windowMinutes: MESSAGING_RULES.deleteWindowMinutes,
+    });
+    if (!updated) {
+      throw new ORPCError("CONFLICT", { message: "too_late" });
+    }
+    await notifyMessageUpdated(db, [viewer.member.id, other.member.id], match.id, updated.id);
+    const [message] = await toChatMessages(db, [updated]);
+    if (!message) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR");
+    }
+    return { message, flags };
+  }),
+
+  remove: os.messaging.remove.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const { match, viewer, other } = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const target = await requireOwnChange(db, match.id, input.messageId, viewer.member.id, now, "delete");
+    const deleted = await deleteMessageForEveryone(db, {
+      id: target.id,
+      senderId: viewer.member.id,
+      now,
+      windowMinutes: MESSAGING_RULES.deleteWindowMinutes,
+    });
+    if (!deleted) {
+      throw new ORPCError("CONFLICT", { message: "too_late" });
+    }
+    await notifyMessageUpdated(db, [viewer.member.id, other.member.id], match.id, deleted.id);
+    const [message] = await toChatMessages(db, [deleted]);
+    if (!message) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR");
+    }
+    return { message };
   }),
 
   read: os.messaging.read.use(requireViewer).handler(async ({ context, input }) => {

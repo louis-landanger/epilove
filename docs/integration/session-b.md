@@ -13,6 +13,7 @@
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
 | 1 | Notifications (NOT-01 à NOT-03) | ✅ fait et testé (API, worker, Playwright pour le service worker) ; push réel non testé en automatique (pas de service de push dans la session) |
+| 2 | Modifier / supprimer (CHAT-08), avertissement avant envoi (SAF-09), « Ce message te dérange ? » (SAF-10) | ✅ fait et testé (cœur, API, Playwright) |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
@@ -92,6 +93,13 @@
 - Mesures : séquence démarrée 830 ms après l'heure sur deux navigateurs (2 ms d'écart) ; dry run 3 000 membres en 2 min 30 s (détail dans le README du solveur).
 - Chorégraphie faite avec Motion (déjà présent) plutôt que GSAP (docs/02 le suggère) : pas de dépendance supplémentaire pour une séquence de quelques secondes.
 
+### Modifier, supprimer, avertir (CHAT-08, SAF-09, SAF-10)
+
+- Règles dans `packages/core/src/messaging/rules.ts` : modification (texte seulement) et suppression pour tout le monde par l'expéditeur, dans les 10 minutes (même fenêtre pour les deux : on ne réécrit pas un vieux message après un signalement) ; `needsSendWarning` (insulte) et `isPotentiallyOffensive` (insulte, cris).
+- API `messaging.edit` (re-chiffrement, re-modération, mention « modifié ») et `messaging.remove` (garde de fenêtre refaite en SQL, réactions supprimées) ; `chatMessage.flagged` pour le destinataire.
+- Un message supprimé disparaît pour les deux membres mais son corps chiffré est conservé 30 jours pour la modération (sinon un harceleur effacerait avant le signalement), puis effacé par la tâche quotidienne `message_purge` (`apps/worker/src/tasks/messaging/`). **À valider avec A** (signalements) et dans le registre RGPD.
+- Interface : actions « Modifier » et « Supprimer pour tout le monde » dans le menu du message, bandeau de modification dans la zone de saisie, feuille « Tu es sûr·e de vouloir envoyer ça ? » (reformuler par défaut, ou envoyer quand même), lien « Ce message te dérange ? Signaler » sous un message signalé par le palier 1.
+
 ### Crush secret (DEC-08) et seconde chance (DEC-09)
 
 - `packages/core/src/discovery/crush.ts` : règles (3 crushs actifs, 90 jours, 10 ajouts par 30 jours retraits compris, contre le sondage), indice affiché au membre (« a•••@epita.fr »), mode du match (`crushMatchMode` : mêmes règles que la découverte dans les deux sens, incognito levé comme pour un like réciproque, Love si possible sinon Amis).
@@ -130,7 +138,7 @@
 | `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
-| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick` (ajouts) |
+| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge` (ajouts) |
 | `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `drop:run` |
 | `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
 | `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base) et second `webServer` pour le worker |

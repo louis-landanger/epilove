@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { createDatabase } from "@epilove/db";
+import { createDatabase, schema } from "@epilove/db";
 import {
   cleanupTestMembers,
   createTestMember,
@@ -150,6 +150,49 @@ test("a mutual secret crush becomes a match", async ({ browser, baseURL }, testI
   const liaison = julesPage.getByRole("dialog");
   await expect(liaison.getByRole("heading")).toContainText("établie");
   await expect(liaison.getByRole("link", { name: "Écrire à Iris" })).toBeVisible();
+});
+
+test("edits and deletes a message, and asks before sending an insult", async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Runs once.");
+  const kim = await createTestMember(db, { firstName: "Kim", graduationYear: 2039 });
+  const lou = await createTestMember(db, { firstName: "Lou", graduationYear: 2039 });
+  const [userLow, userHigh] = kim < lou ? [kim, lou] : [lou, kim];
+  const [created] = await db
+    .insert(schema.match)
+    .values({ userLow, userHigh, mode: "friends", source: "like" })
+    .returning({ id: schema.match.id });
+  const page = await signIn(browser, kim, baseURL);
+  await page.goto(`/messages/${created?.id}`);
+  const messages = page.getByRole("list", { name: "Messages" });
+  const composer = page.getByRole("textbox", { name: "Écrire à Lou" });
+
+  await composer.fill("On se voit à 18 h ?");
+  await composer.press("Enter");
+  await expect(messages.getByText("On se voit à 18 h ?")).toBeVisible();
+
+  await messages.getByRole("button", { name: "Actions sur le message" }).first().click();
+  await page.getByRole("button", { name: "Modifier" }).click();
+  await expect(composer).toHaveValue("On se voit à 18 h ?");
+  await composer.fill("On se voit à 19 h ?");
+  await composer.press("Enter");
+  await expect(messages.getByText("On se voit à 19 h ?")).toBeVisible();
+  await expect(messages.getByText("modifié")).toBeVisible();
+
+  await messages.getByRole("button", { name: "Actions sur le message" }).first().click();
+  await page.getByRole("button", { name: "Supprimer pour tout le monde" }).click();
+  await expect(messages.getByText("Message supprimé")).toBeVisible();
+
+  await composer.fill("t'es vraiment un connard");
+  await composer.press("Enter");
+  const warning = page.getByRole("dialog", { name: "Tu es sûr·e de vouloir envoyer ça ?" });
+  await expect(warning).toBeVisible();
+  await warning.getByRole("button", { name: "Le reformuler" }).click();
+  await expect(warning).toBeHidden();
+  await expect(composer).toHaveValue("t'es vraiment un connard");
+  await expect(messages.getByText("t'es vraiment un connard")).toHaveCount(0);
 });
 
 test("pages ask to sign in without a member", async ({ page }) => {
