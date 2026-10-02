@@ -42,19 +42,21 @@ describe.skipIf(!url)("push delivery", () => {
     await saveSubscription(db, member, { endpoint, p256dh: "k", auth: "a", userAgent: null });
     await saveSubscription(db, member, { endpoint: expired, p256dh: "k", auth: "a", userAgent: null });
     await saveNotificationPreferences(db, member, new Map([["likes", { push: false, email: false }]]));
+    // Two hours old: a development worker running next to the tests (one hour window) leaves them alone.
+    const createdAt = new Date(Date.now() - 2 * 3_600_000);
     await db.insert(schema.notification).values([
       {
         userId: member,
         type: "message_received",
         payload: { matchId: "01920000-0000-7000-8000-000000000001" },
+        createdAt,
       },
-      { userId: member, type: "like_received", payload: {} },
+      { userId: member, type: "like_received", payload: {}, createdAt },
     ]);
 
     const { sender, sent } = recordingSender(new Set([expired]));
     const deliver = createPushDelivery({ db, sender, publisher: createMemoryPublisher().publisher });
-    // Other tests may leave pending notifications: only ours are checked.
-    while ((await processPendingPushes(db, deliver)) > 0) {}
+    while ((await processPendingPushes(db, deliver, { userId: member, maxAgeMinutes: 24 * 60 })) > 0) {}
 
     const mine = sent.filter((s) => s.target.endpoint === endpoint);
     expect(mine.map((s) => s.content.body)).toEqual(["Nouveau message"]);

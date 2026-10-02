@@ -170,7 +170,7 @@ export interface PendingPush {
 export async function processPendingPushes(
   db: Database,
   deliver: (pending: readonly PendingPush[]) => Promise<void>,
-  options: { maxAgeMinutes?: number; limit?: number } = {},
+  options: { maxAgeMinutes?: number; limit?: number; userId?: string } = {},
 ): Promise<number> {
   const since = new Date(Date.now() - (options.maxAgeMinutes ?? 60) * 60_000);
   return db.transaction(async (tx) => {
@@ -182,7 +182,14 @@ export async function processPendingPushes(
         payload: notification.payload,
       })
       .from(notification)
-      .where(and(isNull(notification.pushedAt), gte(notification.createdAt, since)))
+      .where(
+        and(
+          isNull(notification.pushedAt),
+          gte(notification.createdAt, since),
+          // Scoped runs (one member) are used by tests running next to a development worker.
+          options.userId ? eq(notification.userId, options.userId) : undefined,
+        ),
+      )
       .orderBy(notification.createdAt)
       .limit(options.limit ?? 100)
       .for("update", { skipLocked: true });
