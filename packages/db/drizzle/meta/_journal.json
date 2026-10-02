@@ -29,6 +29,13 @@
       "when": 1790949834531,
       "tag": "0003_brainy_zodiak",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790951105114,
+      "tag": "0004_narrow_lockjaw",
+      "breakpoints": true
     }
   ]
 }

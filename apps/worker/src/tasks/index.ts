@@ -1,4 +1,5 @@
 import type { TaskList } from "graphile-worker";
+import { outboxPurge } from "./outbox/purge";
 
 /**
  * Every job the worker knows how to run. Jobs are added from the API inside
@@ -10,7 +11,8 @@ export const taskList: TaskList = {
   heartbeat: async (_payload, helpers) => {
     helpers.logger.info("heartbeat");
   },
+  outbox_purge: outboxPurge,
 };
 
 /** Graphile Worker crontab format: minute hour day month weekday task. */
-export const crontab = ["*/15 * * * * heartbeat"].join("\n");
+export const crontab = ["*/15 * * * * heartbeat", "17 4 * * * outbox_purge"].join("\n");

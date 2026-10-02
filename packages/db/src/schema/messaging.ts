@@ -1,5 +1,15 @@
-import { check, index, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { bytea, createdAt, oneOf } from "./columns";
+import {
+  boolean,
+  check,
+  index,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { bytea, createdAt, oneOf, timestamps } from "./columns";
 import { match } from "./discovery";
 import { appUser } from "./users";
 
@@ -29,7 +39,11 @@ export const message = pgTable(
     editedAt: timestamp({ withTimezone: true }),
     deletedAt: timestamp({ withTimezone: true }),
   },
-  (t) => [check("message_kind_check", oneOf(t.kind, MESSAGE_KINDS)), index().on(t.matchId, t.id.desc())],
+  (t) => [
+    check("message_kind_check", oneOf(t.kind, MESSAGE_KINDS)),
+    index().on(t.matchId, t.id.desc()),
+    index().on(t.senderId, t.createdAt),
+  ],
 );
 
 export const messageRead = pgTable(
@@ -61,3 +75,16 @@ export const reaction = pgTable(
   },
   (t) => [primaryKey({ columns: [t.messageId, t.userId] })],
 );
+
+/**
+ * Conversation settings (CHAT-02): read receipts and online status can be
+ * turned off. Reciprocal: a member who hides them does not see others' either.
+ */
+export const chatPreference = pgTable("chat_preference", {
+  userId: uuid()
+    .primaryKey()
+    .references(() => appUser.id, { onDelete: "cascade" }),
+  readReceipts: boolean().notNull().default(true),
+  onlineStatus: boolean().notNull().default(true),
+  ...timestamps,
+});

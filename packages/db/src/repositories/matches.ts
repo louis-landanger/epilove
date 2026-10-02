@@ -1,6 +1,7 @@
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import type { Database } from "../client";
-import { match, message, messageRead, notification, outbox } from "../schema";
+import { match, message, messageRead, notification } from "../schema";
+import { enqueue } from "./outbox";
 
 /** Matches of a member (CHAT-01, CHAT-13). Callers check `canMessage` / `canViewProfile` per match. */
 
@@ -84,9 +85,9 @@ export async function unmatch(db: Database, matchId: string, userId: string): Pr
       return false;
     }
     // Both members' screens close the conversation; the other member is not told who ended it.
-    await tx.insert(outbox).values([
-      { topic: "match.closed", payload: { userId: updated.userLow, matchId } },
-      { topic: "match.closed", payload: { userId: updated.userHigh, matchId } },
+    await enqueue(tx, [
+      { userId: updated.userLow, event: { type: "match.closed", matchId } },
+      { userId: updated.userHigh, event: { type: "match.closed", matchId } },
     ]);
     await tx
       .delete(notification)

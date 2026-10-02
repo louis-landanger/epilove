@@ -365,6 +365,12 @@ importers:
 
   apps/worker:
     dependencies:
+      '@epilove/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@epilove/realtime':
+        specifier: workspace:*
+        version: link:../../packages/realtime
       graphile-worker:
         specifier: 'catalog:'
         version: 0.18.0(supports-color@7.2.0)(typescript@7.0.2)
@@ -381,6 +387,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.0
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.3(@types/pg@8.23.1)(pg@8.23.1)(postgres@3.4.9)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -405,6 +414,9 @@ importers:
       '@epilove/media':
         specifier: workspace:*
         version: link:../media
+      '@epilove/realtime':
+        specifier: workspace:*
+        version: link:../realtime
       '@orpc/client':
         specifier: 'catalog:'
         version: 1.15.4
@@ -502,6 +514,9 @@ importers:
       '@epilove/crypto':
         specifier: workspace:*
         version: link:../crypto
+      '@epilove/realtime':
+        specifier: workspace:*
+        version: link:../realtime
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.3(@types/pg@8.23.1)(pg@8.23.1)(postgres@3.4.9)
@@ -532,6 +547,25 @@ importers:
         version: 5.0.3(@types/node@24.19.0)(vite@8.3.2(@types/node@24.19.0))
 
   packages/media:
+    devDependencies:
+      '@epilove/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.0
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@types/node@24.19.0)(vite@8.3.2(@types/node@24.19.0))
+
+  packages/realtime:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@epilove/config':
         specifier: workspace:*

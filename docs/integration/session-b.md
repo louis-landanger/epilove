@@ -11,7 +11,7 @@
 | 1 | Questionnaire (PAC-01, DEC-05) | ✅ fait et testé (API) ; interface vérifiée à la main |
 | 1 | Découverte (DEC-01 à DEC-06, DEC-11) | ✅ fait et testé (API, dont concurrence) ; interface vérifiée à la main |
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
-| 1 | Messagerie temps réel | ⏳ |
+| 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ⏳ API, relais et paquet `realtime` faits et testés ; interface en cours |
 | 1 | Notifications | ⏳ |
 | 1 | Pacte | ⏳ |
 
@@ -76,14 +76,19 @@
 | `apps/web/i18n/messages.ts` | namespaces `campus`, `discovery`, `likes`, `matches`, `questionnaire` (ajouts) |
 | `packages/core/src/index.ts` | `discovery/ranking`, `discovery/rules`, `matching/explain`, `messaging/ids`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
 | `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
+| `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
+| `.env.example` | section `# Session B` |
+| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, tâche `outbox_purge` (ajouts) |
 | `infra/scripts/cloud-docker.sh` | repli sur l'image Docker Hub `darthsim/imgproxy` (même version) quand le proxy de la session cloud bloque les téléchargements de ghcr.io |
 
 ## Variables d'environnement
 
-Aucune nouvelle pour l'instant (le seed utilise `S3_*`, `ENCRYPTION_*`, `EMAIL_HMAC_SECRET`, déjà présentes).
+- `CENTRIFUGO_WS_URL` (facultative, section « Session B » de `.env.example`) : URL WebSocket de Centrifugo vue par les navigateurs ; déduite de `CENTRIFUGO_URL` si absente.
+- Le worker lit désormais `CENTRIFUGO_URL` et `CENTRIFUGO_HTTP_API_KEY` (facultatives : sans elles, le relais de l'outbox ne démarre pas).
 
 ## Migrations
 
+- `0004_*` : table `chat_preference`, index `message (sender_id, created_at)` (quota anti-spam).
 - `0003_*` : tables `impression`, `discovery_filter`, `discovery_undo` (jetable, à régénérer à la fusion).
 
 ## Mises à jour souhaitées dans CLAUDE.md / README / docs
@@ -100,6 +105,10 @@ Aucune nouvelle pour l'instant (le seed utilise `S3_*`, `ENCRYPTION_*`, `EMAIL_H
 - Les pages `/dev` et les clients API lisent le cookie de développement ; une fois Better Auth branché par A, `serverApi()` transmet déjà les cookies de la requête : rien à changer côté B.
 - Remplacer les prompts et intérêts `dev-` par le catalogue de A (le seed de développement les réutilisera s'ils existent, ou on adaptera `content.ts`).
 - Harmoniser la règle « profil complet » avec la complétude de A (PRO-05).
+
+## ADR
+
+- `docs/adr/0020-evenements-temps-reel-sans-donnees.md` : les événements Centrifugo ne transportent que des identifiants ; le contenu passe par l'API.
 
 ## Questions ouvertes
 

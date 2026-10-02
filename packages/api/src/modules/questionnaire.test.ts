@@ -1,5 +1,5 @@
 import { createDatabase, schema } from "@epilove/db";
-import { createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi } from "../rencontre/testing";
 
@@ -24,7 +24,10 @@ describe.skipIf(!url)("questionnaire", () => {
     blocked = await createTestMember(db, { firstName: "Carl", gender: "man", schoolSlug: "esme" });
     await db.insert(schema.block).values({ blockerId: blocked, blockedId: alice });
   });
-  afterAll(close);
+  afterAll(async () => {
+    await cleanupTestMembers(db);
+    await close();
+  });
 
   it("lists the questions in the requested language", async () => {
     const fr = await as(alice).questionnaire.get({ locale: "fr" });

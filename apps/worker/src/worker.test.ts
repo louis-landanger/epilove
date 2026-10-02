@@ -5,7 +5,7 @@ import { crontab, taskList } from "./tasks";
 
 describe("environment", () => {
   it("applies defaults and validates the database URL", () => {
-    expect(parseEnv({ DATABASE_URL: "postgres://u:p@localhost:5432/db" })).toEqual({
+    expect(parseEnv({ DATABASE_URL: "postgres://u:p@localhost:5432/db" })).toMatchObject({
       DATABASE_URL: "postgres://u:p@localhost:5432/db",
       WORKER_CONCURRENCY: 4,
     });

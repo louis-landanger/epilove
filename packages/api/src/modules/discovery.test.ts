@@ -1,5 +1,5 @@
 import { createDatabase, schema } from "@epilove/db";
-import { createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { and, eq, or } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi } from "../rencontre/testing";
@@ -27,7 +27,10 @@ describe.skipIf(!url)("discovery", () => {
   beforeAll(async () => {
     await prepareTestDatabase(db);
   });
-  afterAll(close);
+  afterAll(async () => {
+    await cleanupTestMembers(db);
+    await close();
+  });
 
   it("shows eligible members and never the blocked, hidden or the viewer", async () => {
     const viewer = await member({ gender: "woman", interestedIn: ["man"] });

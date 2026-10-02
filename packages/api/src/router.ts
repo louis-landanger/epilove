@@ -2,7 +2,9 @@ import { campus } from "./modules/campus";
 import { dev } from "./modules/dev";
 import { discovery } from "./modules/discovery";
 import { matches } from "./modules/matches";
+import { messaging } from "./modules/messaging";
 import { questionnaire } from "./modules/questionnaire";
+import { realtime } from "./modules/realtime";
 import { safety } from "./modules/safety";
 import { system } from "./modules/system";
 import { os } from "./procedures";
@@ -16,7 +18,9 @@ export const router = os.router({
   dev,
   discovery,
   matches,
+  messaging,
   questionnaire,
+  realtime,
   safety,
   system,
 });

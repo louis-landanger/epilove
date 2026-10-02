@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Gender, Mode } from "@epilove/core";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import { runMigrations } from "../migrations";
 import { appUser, photo, preferences, profile, school } from "../schema";
@@ -28,6 +28,7 @@ export interface TestMemberOptions {
 }
 
 let prepared: Promise<void> | undefined;
+const created = new Set<string>();
 
 /** Applies migrations and reference seeds once per test process. */
 export function prepareTestDatabase(db: Database): Promise<void> {
@@ -40,6 +41,7 @@ export function prepareTestDatabase(db: Database): Promise<void> {
 
 export async function createTestMember(db: Database, options: TestMemberOptions = {}): Promise<string> {
   const id = randomUUID();
+  created.add(id);
   const [target] = await db
     .select({ id: school.id })
     .from(school)
@@ -86,4 +88,16 @@ export async function createTestMember(db: Database, options: TestMemberOptions 
     );
   }
   return id;
+}
+
+/**
+ * Deletes the members created by this test process (and, by cascade, their
+ * likes, matches, messages…), so that repeated runs do not pile up data.
+ */
+export async function cleanupTestMembers(db: Database) {
+  const ids = [...created];
+  created.clear();
+  if (ids.length > 0) {
+    await db.delete(appUser).where(inArray(appUser.id, ids));
+  }
 }

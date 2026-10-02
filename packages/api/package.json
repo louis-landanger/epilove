@@ -17,6 +17,7 @@
     "@epilove/crypto": "workspace:*",
     "@epilove/db": "workspace:*",
     "@epilove/media": "workspace:*",
+    "@epilove/realtime": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/server": "catalog:",
     "hono": "catalog:",

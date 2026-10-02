@@ -10,13 +10,13 @@ import {
   likeAction,
   match,
   notification,
-  outbox,
   photo,
   profileInterest,
   prompt,
   promptAnswer,
   school,
 } from "../schema";
+import { enqueue } from "./outbox";
 
 /** Storage side of discovery (DEC-01 to DEC-06, DEC-11). Callers apply the access policies. */
 
@@ -376,10 +376,9 @@ export async function decide(db: Database, input: DecideInput, now = new Date())
         ),
       );
     if (!reciprocal) {
-      await tx.insert(outbox).values({
-        topic: "like.received",
-        payload: { userId: input.targetId, kind: input.kind },
-      });
+      await enqueue(tx, [
+        { userId: input.targetId, event: { type: "like.received", superlike: input.kind === "superlike" } },
+      ]);
       await tx.insert(notification).values({
         userId: input.targetId,
         type: input.kind === "superlike" ? "superlike_received" : "like_received",
@@ -405,9 +404,9 @@ export async function decide(db: Database, input: DecideInput, now = new Date())
       throw new Error("Match could not be created.");
     }
     if (created) {
-      await tx.insert(outbox).values([
-        { topic: "match.created", payload: { userId: input.actorId, matchId, otherId: input.targetId } },
-        { topic: "match.created", payload: { userId: input.targetId, matchId, otherId: input.actorId } },
+      await enqueue(tx, [
+        { userId: input.actorId, event: { type: "match.created", matchId } },
+        { userId: input.targetId, event: { type: "match.created", matchId } },
       ]);
       await tx.insert(notification).values([
         { userId: input.actorId, type: "match_created", payload: { matchId } },
