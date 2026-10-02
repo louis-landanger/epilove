@@ -28,16 +28,24 @@ export interface TestRelations {
   readonly blocks?: ReadonlyArray<readonly [string, string]>;
   readonly likes?: ReadonlyArray<readonly [string, string]>;
   readonly matches?: ReadonlyArray<readonly [string, string]>;
+  readonly ended?: ReadonlyArray<readonly [string, string]>;
 }
 
-export function testRelations({ blocks = [], likes = [], matches = [] }: TestRelations = {}): Relations {
+export function testRelations({
+  blocks = [],
+  likes = [],
+  matches = [],
+  ended = [],
+}: TestRelations = {}): Relations {
   const key = (a: string, b: string) => `${a}>${b}`;
   const blockSet = new Set(blocks.map(([a, b]) => key(a, b)));
   const likeSet = new Set(likes.map(([a, b]) => key(a, b)));
   const matchSet = new Set(matches.flatMap(([a, b]) => [key(a, b), key(b, a)]));
+  const endedSet = new Set(ended.flatMap(([a, b]) => [key(a, b), key(b, a)]));
   return {
     hasBlocked: (a, b) => blockSet.has(key(a, b)),
     hasLiked: (a, b) => likeSet.has(key(a, b)),
     hasActiveMatch: (a, b) => matchSet.has(key(a, b)),
+    hasEndedMatch: (a, b) => endedSet.has(key(a, b)),
   };
 }

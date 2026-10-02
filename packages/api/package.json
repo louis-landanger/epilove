@@ -14,7 +14,9 @@
   "dependencies": {
     "@epilove/contracts": "workspace:*",
     "@epilove/core": "workspace:*",
+    "@epilove/crypto": "workspace:*",
     "@epilove/db": "workspace:*",
+    "@epilove/media": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/server": "catalog:",
     "hono": "catalog:",
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@epilove/config": "workspace:*",
     "@types/node": "catalog:",
+    "drizzle-orm": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

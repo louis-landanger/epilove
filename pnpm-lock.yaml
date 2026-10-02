@@ -396,9 +396,15 @@ importers:
       '@epilove/core':
         specifier: workspace:*
         version: link:../core
+      '@epilove/crypto':
+        specifier: workspace:*
+        version: link:../crypto
       '@epilove/db':
         specifier: workspace:*
         version: link:../db
+      '@epilove/media':
+        specifier: workspace:*
+        version: link:../media
       '@orpc/client':
         specifier: 'catalog:'
         version: 1.15.4
@@ -418,6 +424,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.0
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.3(@types/pg@8.23.1)(pg@8.23.1)(postgres@3.4.9)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2

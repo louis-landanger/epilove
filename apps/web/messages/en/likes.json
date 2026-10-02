@@ -1,0 +1,13 @@
+{
+  "title": "Likes",
+  "lead": "People who liked you, no blur, no subscription.",
+  "liked": "Liked your photo",
+  "likedPrompt": "Liked your answer",
+  "superlike": "Crush",
+  "likeBack": "Like back",
+  "pass": "Pass",
+  "open": "Open profile",
+  "empty": "No likes yet.",
+  "emptyLead": "The best reactions take time. A complete profile helps a lot.",
+  "count": "{count, plural, one {# person liked you} other {# people liked you}}"
+}

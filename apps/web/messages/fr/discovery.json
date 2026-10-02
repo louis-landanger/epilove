@@ -1,0 +1,95 @@
+{
+  "title": "Découvrir",
+  "quota": "{count, plural, =0 {Plus de like aujourd'hui} one {# like restant} other {# likes restants}}",
+  "quotaHelp": "Les likes sont limités pour garder leur valeur. Le compteur repart à minuit.",
+  "filters": "Filtres",
+  "filtersActive": "Filtres actifs",
+  "actions": {
+    "pass": "Passer",
+    "like": "Liker",
+    "superlike": "Coup de cœur",
+    "undo": "Revenir sur le dernier « passer »",
+    "open": "Voir le profil de {name}",
+    "likeThis": "Liker cet élément"
+  },
+  "stamps": {
+    "like": "Liker",
+    "pass": "Passer",
+    "superlike": "Coup de cœur"
+  },
+  "card": {
+    "age": "{age} ans",
+    "compatibility": "{percent} % compatibles",
+    "compatibilityUnknown": "Compatibilité à découvrir",
+    "modeFriends": "Amis",
+    "modeLove": "Love",
+    "photo": "Photo {current} sur {total}",
+    "previousPhoto": "Photo précédente",
+    "nextPhoto": "Photo suivante",
+    "noPhoto": "Pas encore de photo"
+  },
+  "keyboard": "Clavier : ← passer, → liker, ↑ coup de cœur, Entrée pour ouvrir le profil.",
+  "likeSheet": {
+    "title": "Liker {name}",
+    "superTitle": "Coup de cœur pour {name}",
+    "photo": "Sa photo",
+    "prompt": "Sa réponse",
+    "commentLabel": "Un mot pour engager la conversation",
+    "commentOptional": "Facultatif, 150 caractères maximum.",
+    "commentRequired": "Obligatoire pour un coup de cœur, 150 caractères maximum.",
+    "placeholder": "Ta réponse m'a fait rire…",
+    "superToggle": "En faire un coup de cœur (1 par jour)",
+    "send": "Envoyer le like",
+    "sendSuper": "Envoyer le coup de cœur",
+    "cancel": "Annuler",
+    "remaining": "{count} / 150"
+  },
+  "errors": {
+    "quota_exceeded": "Plus de like pour aujourd'hui. Reviens demain, ils seront d'autant plus précieux.",
+    "superlike_quota_exceeded": "Tu as déjà offert ton coup de cœur du jour.",
+    "comment_required": "Un coup de cœur s'accompagne toujours d'un mot.",
+    "cannot_like": "Ton compte ne peut pas envoyer de likes pour le moment.",
+    "no_shared_mode": "Vous ne cherchez pas la même chose : impossible de liker ce profil.",
+    "undo_quota_exceeded": "Un seul retour en arrière par jour.",
+    "nothing_to_undo": "Rien à annuler pour le moment.",
+    "generic": "Ça n'est pas passé. On réessaie ?"
+  },
+  "empty": {
+    "exhausted": "Tu as fait le tour pour aujourd'hui.",
+    "exhaustedLead": "Prochain Drop à 21 h. En attendant, jette un œil à tes likes.",
+    "widen": "Élargir mes filtres",
+    "seeLikes": "Voir mes likes",
+    "paused": "Ton profil est en pause.",
+    "pausedLead": "Personne ne te voit en ce moment, et tu ne vois personne. Tes conversations restent accessibles.",
+    "profile_incomplete": "Ton profil n'est pas encore visible.",
+    "profile_incompleteLead": "Il faut au moins une photo validée pour découvrir les autres.",
+    "restricted": "Ton compte est restreint.",
+    "restrictedLead": "Tu peux continuer tes conversations, mais pas envoyer de likes pour le moment."
+  },
+  "loading": "Calcul des affinités…",
+  "offline": "Connexion perdue. On reprend dès le retour du réseau.",
+  "undone": "{name} est de retour.",
+  "filtersDrawer": {
+    "title": "Filtres",
+    "mode": "Je cherche",
+    "modeAll": "Tout",
+    "modeLove": "Love",
+    "modeFriends": "Amis",
+    "schools": "Écoles",
+    "schoolsAll": "Toutes les écoles",
+    "years": "Promos",
+    "intentions": "Intentions",
+    "intention": {
+      "relationship": "Une relation",
+      "see_what_happens": "Voir ce qui se passe",
+      "friendship": "De l'amitié"
+    },
+    "age": "Âge",
+    "ageMin": "De",
+    "ageMax": "à",
+    "ageHint": "Dans les limites de tes préférences de profil.",
+    "reset": "Tout réinitialiser",
+    "apply": "Appliquer",
+    "close": "Fermer"
+  }
+}

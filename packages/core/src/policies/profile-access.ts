@@ -45,6 +45,9 @@ function hardRules(viewer: Member, target: Member, context: PolicyContext): Prof
   if (relations.hasBlocked(viewer.id, target.id) || relations.hasBlocked(target.id, viewer.id)) {
     return "blocked";
   }
+  if (relations.hasEndedMatch(viewer.id, target.id)) {
+    return "unmatched";
+  }
   if (viewer.hiddenEmailHmacs.has(target.emailHmac) || target.hiddenEmailHmacs.has(viewer.emailHmac)) {
     return "hidden_contact";
   }

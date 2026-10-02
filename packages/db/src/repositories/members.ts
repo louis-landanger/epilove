@@ -7,7 +7,7 @@ import {
   type Mode,
   type Relations,
 } from "@epilove/core";
-import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import {
   appUser,
@@ -18,6 +18,7 @@ import {
   photo,
   preferences,
   profile,
+  profileInterest,
   school,
 } from "../schema";
 
@@ -40,6 +41,8 @@ export interface MemberRow {
   readonly languages: readonly string[];
   readonly intentions: readonly string[];
   readonly approvedPhotos: number;
+  /** Profile completeness score (PRO-05), 0 to 100. */
+  readonly completeness: number;
   readonly crossSchoolBoost: boolean;
   readonly schoolFilter: readonly string[];
   readonly createdAt: Date;
@@ -61,6 +64,7 @@ const memberColumns = {
   graduationYear: profile.graduationYear,
   languages: profile.languages,
   intentions: profile.intentions,
+  completeness: profile.completeness,
   modes: preferences.modes,
   interestedIn: preferences.interestedIn,
   ageMin: preferences.ageMin,
@@ -107,6 +111,7 @@ function toMemberRow(r: MemberSelection): MemberRow {
     languages: r.languages,
     intentions: r.intentions,
     approvedPhotos: r.approvedPhotos,
+    completeness: r.completeness,
     crossSchoolBoost: r.crossSchoolBoost,
     schoolFilter: r.schoolFilter,
     createdAt: r.createdAt,
@@ -152,7 +157,7 @@ export async function loadDiscoverableMembers(db: Database, excludeId: string): 
 }
 
 /**
- * Relations between `viewerId` and `others` (blocks, likes, active matches),
+ * Relations between `viewerId` and `others` (blocks, likes, active and ended matches),
  * loaded in three queries. Relations between two of the `others` are unknown
  * and answered `false`: only pass pairs involving the viewer to the policies.
  */
@@ -163,7 +168,12 @@ export async function loadRelations(
 ): Promise<Relations> {
   const ids = [...new Set(others)].filter((id) => id !== viewerId);
   if (ids.length === 0) {
-    return { hasBlocked: () => false, hasLiked: () => false, hasActiveMatch: () => false };
+    return {
+      hasBlocked: () => false,
+      hasLiked: () => false,
+      hasActiveMatch: () => false,
+      hasEndedMatch: () => false,
+    };
   }
   const [blocks, likes, matches] = await Promise.all([
     db
@@ -188,11 +198,10 @@ export async function loadRelations(
         ),
       ),
     db
-      .select({ userLow: match.userLow, userHigh: match.userHigh })
+      .select({ userLow: match.userLow, userHigh: match.userHigh, status: match.status })
       .from(match)
       .where(
         and(
-          eq(match.status, "active"),
           or(
             and(eq(match.userLow, viewerId), inArray(match.userHigh, ids)),
             and(eq(match.userHigh, viewerId), inArray(match.userLow, ids)),
@@ -203,12 +212,36 @@ export async function loadRelations(
   const key = (a: string, b: string) => `${a}>${b}`;
   const blockSet = new Set(blocks.map((b) => key(b.blockerId, b.blockedId)));
   const likeSet = new Set(likes.map((l) => key(l.actorId, l.targetId)));
-  const matchSet = new Set(matches.flatMap((m) => [key(m.userLow, m.userHigh), key(m.userHigh, m.userLow)]));
+  const pairs = (status: string) =>
+    new Set(
+      matches
+        .filter((m) => m.status === status)
+        .flatMap((m) => [key(m.userLow, m.userHigh), key(m.userHigh, m.userLow)]),
+    );
+  const matchSet = pairs("active");
+  const endedSet = pairs("unmatched");
   return {
     hasBlocked: (a, b) => blockSet.has(key(a, b)),
     hasLiked: (a, b) => likeSet.has(key(a, b)),
     hasActiveMatch: (a, b) => matchSet.has(key(a, b)),
+    hasEndedMatch: (a, b) => endedSet.has(key(a, b)),
   };
+}
+
+/** Interest ids of several members (cheap: used to rank the whole deck). */
+export async function interestIdsOf(db: Database, ids: readonly string[]): Promise<Map<string, Set<string>>> {
+  const result = new Map<string, Set<string>>(ids.map((id) => [id, new Set()]));
+  if (ids.length === 0) {
+    return result;
+  }
+  const rows = await db
+    .select({ userId: profileInterest.userId, interestId: profileInterest.interestId })
+    .from(profileInterest)
+    .where(inArray(profileInterest.userId, [...ids]));
+  for (const row of rows) {
+    result.get(row.userId)?.add(row.interestId);
+  }
+  return result;
 }
 
 /** Marks the member as active today (feeds the 21-day activity window). At most one write per hour. */
@@ -219,7 +252,7 @@ export async function touchLastActive(db: Database, userId: string, now: Date = 
     .where(
       and(
         eq(appUser.id, userId),
-        sql`(${appUser.lastActiveAt} is null or ${appUser.lastActiveAt} < ${new Date(now.getTime() - 3_600_000)})`,
+        or(isNull(appUser.lastActiveAt), lt(appUser.lastActiveAt, new Date(now.getTime() - 3_600_000))),
       ),
     );
 }

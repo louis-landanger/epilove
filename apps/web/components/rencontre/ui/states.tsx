@@ -22,6 +22,9 @@ function StateCard({ title, lead, children }: { title: string; lead: string; chi
 
 export async function GateScreen({ gate }: { gate: Gate }) {
   const t = await getTranslations("campus.states");
+  if (gate === "notfound") {
+    return <NotFoundScreen />;
+  }
   if (gate === "profile") {
     return (
       <StateCard title={t("profileTitle")} lead={t("profileLead")}>
@@ -45,6 +48,18 @@ export async function GateScreen({ gate }: { gate: Gate }) {
         className="rounded-full bg-paper px-5 py-2.5 font-semibold text-ink"
       >
         {isDevEnvironment() ? t("devSignIn") : t("signInAction")}
+      </a>
+    </StateCard>
+  );
+}
+
+export async function NotFoundScreen() {
+  const t = await getTranslations("matches.profile");
+  const states = await getTranslations("campus.states");
+  return (
+    <StateCard title={t("notFound")} lead={t("notFoundLead")}>
+      <a href="/decouvrir" className="rounded-full bg-paper px-5 py-2.5 font-semibold text-ink">
+        {states("back")}
       </a>
     </StateCard>
   );

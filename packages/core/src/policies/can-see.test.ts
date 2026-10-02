@@ -34,6 +34,7 @@ function relations(blocks: Array<[string, string]> = [], likes: Array<[string, s
     hasBlocked: (a, b) => blockSet.has(key(a, b)),
     hasLiked: (a, b) => likeSet.has(key(a, b)),
     hasActiveMatch: () => false,
+    hasEndedMatch: () => false,
   };
 }
 

@@ -1,0 +1,13 @@
+{
+  "title": "Likes",
+  "lead": "Les personnes qui t'ont liké, sans flou ni abonnement.",
+  "liked": "A aimé ta photo",
+  "likedPrompt": "A aimé ta réponse",
+  "superlike": "Coup de cœur",
+  "likeBack": "Liker en retour",
+  "pass": "Passer",
+  "open": "Voir le profil",
+  "empty": "Pas encore de like.",
+  "emptyLead": "Les meilleures réactions prennent du temps. Un profil complet aide beaucoup.",
+  "count": "{count, plural, one {# personne t'a liké} other {# personnes t'ont liké}}"
+}

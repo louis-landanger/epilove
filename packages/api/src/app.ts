@@ -1,3 +1,4 @@
+import { ORPCError, onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Hono } from "hono";
 import type { ApiContext, ViewerResolver } from "./context";
@@ -17,7 +18,19 @@ export interface AppDependencies {
  * and runnable on its own if it ever needs to become a separate service.
  */
 export function createApp(dependencies: AppDependencies) {
-  const rpc = new RPCHandler(router);
+  const rpc = new RPCHandler(router, {
+    interceptors: [
+      onError((error) => {
+        // Unexpected failures only, and only their class: messages can embed SQL parameters
+        // or user data (docs/07-confiance-securite.md).
+        if (!(error instanceof ORPCError) || error.code === "INTERNAL_SERVER_ERROR") {
+          const cause =
+            error instanceof Error && error.cause instanceof Error ? ` (cause: ${error.cause.name})` : "";
+          console.error(`[api] procedure failed: ${error instanceof Error ? error.name : "unknown"}${cause}`);
+        }
+      }),
+    ],
+  });
   const app = new Hono().basePath(API_BASE_PATH);
 
   app.get("/health", (c) => c.json({ status: "ok", version: dependencies.version }));

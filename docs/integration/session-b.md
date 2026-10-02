@@ -9,8 +9,8 @@
 | 1 | Données de développement (`pnpm db:seed:dev`, page `/dev`) | ✅ fait et testé |
 | 1 | Lecture des membres et politiques (`canViewProfile`, `canMessage`) | ✅ fait et testé |
 | 1 | Questionnaire (PAC-01, DEC-05) | ✅ fait et testé (API) ; interface vérifiée à la main |
-| 1 | Découverte | ⏳ |
-| 1 | Matchs | ⏳ |
+| 1 | Découverte (DEC-01 à DEC-06, DEC-11) | ✅ fait et testé (API, dont concurrence) ; interface vérifiée à la main |
+| 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel | ⏳ |
 | 1 | Notifications | ⏳ |
 | 1 | Pacte | ⏳ |
@@ -40,6 +40,24 @@
 - Procédures `questionnaire.get`, `questionnaire.answer` (upsert idempotent, options validées), `questionnaire.compatibility` (exige `canViewProfile`, sinon NOT_FOUND). Tests d'intégration sur PostgreSQL.
 - Interface `(app)/campus/questionnaire` : introduction (pondération expliquée, confidentialité), une question par écran (réponse, réponses acceptées, importance en 5 niveaux avec explication), sauvegarde à chaque question, progression par section animée, clavier (1–4, Entrée), focus déplacé sur la question pour les lecteurs d'écran, écran de fin.
 
+### Découverte (DEC-01 à DEC-06, DEC-11)
+
+- `packages/core/src/discovery/rules.ts` : quotas de docs/01 (20 likes, 10 pour un compte de moins de 48 h, 1 coup de cœur avec commentaire obligatoire, 1 retour arrière par jour, commentaire ≤ 150 caractères), journée de campus en `Europe/Paris` (changements d'heure testés).
+- `packages/core/src/discovery/ranking.ts` : score réciproque `R = √(p(A→B)·p(B→A))` (logistique à poids manuels : compatibilité, intérêts, complétude, activité, écart de promo ; probabilité 0,95 quand l'autre a déjà liké), bonus nouveaux / actifs / inter-écoles (réglage `crossSchoolBoost`), facteur d'exposition (plafond d'attention à 10 likes en attente, budget de 40 impressions par jour), diversification MMR pondérée par la récence, une carte sur quatre pour une personne qui t'a liké. Testé par propriétés.
+- Le deck est recalculé à chaque appel (pas de cache Valkey) : chargement des membres découvrables, `canSee` + `isDeckCandidate` (passes masquées 45 jours, likes définitivement, critères éliminatoires), filtres, classement, puis cartes. Suffisant pour quelques milliers de membres ; cache à ajouter si la latence l'exige (noté pour un ADR).
+- Like / coup de cœur / passer (`discovery.decide`) : transaction avec verrous consultatifs (paire puis quota du membre, toujours dans cet ordre), quota recompté dans la transaction, contenu liké vérifié (photo approuvée ou réponse de la cible), match créé si réciproque (paire ordonnée unique), événements outbox `like.received` / `match.created` et notifications in-app dans la même transaction. Idempotent. Test : 8 paires qui se likent simultanément créent exactement 8 matchs.
+- Un compte restreint, en pause ou en onboarding ne peut pas liker ; une paire qui a « unmatché » reste séparée.
+- Retour arrière (`discovery.undo`), likes reçus (`discovery.likesReceived`, filtrés par `canViewProfile`), profil complet (`discovery.profile`), ma carte (`discovery.me`), filtres (`discovery.filters` / `saveFilters`).
+- Nouvelles tables (`packages/db/src/schema/discovery.ts`) : `impression` (exposition par jour), `discovery_filter` (filtres du deck, à sens unique ; la colonne `preferences.school_filter` de A n'est pas utilisée), `discovery_undo`.
+- Interface : `(app)/decouvrir` (deck physique : inclinaison selon la vitesse, lancer, tampons, reflet holographique par école au pointeur et au gyroscope, préchargement des 3 cartes suivantes, clavier ← → ↑ Entrée et h / l, vibration, file de cartes rechargée automatiquement, états vide / chargement / hors ligne), tiroir de filtres, feuille de like ciblé (photo ou prompt, commentaire), `(app)/likes`, `(app)/membres/[id]` (photos et prompts alternés, compatibilité expliquée, intérêts communs, transition d'élément partagé depuis la carte via `<ViewTransition>`).
+
+### Matchs (CHAT-01, CHAT-13)
+
+- Écran « Liaison établie » : cartes qui se rapprochent, arc électrique animé, flash aux couleurs des deux écoles, annonce `aria-live`, focus sur « Écrire ».
+- `matches.list` (matchs visibles uniquement : un blocage ou un contact masqué retire le match de la liste), `matches.unmatch` (idempotent, réservé aux participants, événement `match.closed`).
+- `Relations.hasEndedMatch` : un unmatch ferme tout, comme un blocage (`canSee`, `canViewProfile`, `canMessage`), testé par propriétés.
+- Menu de sécurité (profil, et bientôt conversation) : annuler le match, bloquer, signaler (motifs de `REPORT_REASONS`, précisions, « bloquer aussi » coché par défaut), en deux gestes. Message sobre tant que A renvoie NOT_IMPLEMENTED.
+
 ### Divers
 
 - `packages/core/src/messaging/ids.ts` : génération et lecture d'UUIDv7 (messages envoyés par le client).
@@ -53,9 +71,10 @@
 | `pnpm-workspace.yaml` | catalogue : `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendance `@epilove/crypto`, devDependency `aws4fetch`, script `db:seed:dev`, exports `./repositories/*`, `./dev-seed` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
-| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `questionnaire` (ajouts) |
-| `apps/web/i18n/messages.ts` | namespaces `campus`, `questionnaire` (ajouts) |
-| `packages/core/src/index.ts` | `matching/explain`, `messaging/ids`, `policies/profile-access` (ajouts) |
+| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `discovery`, `matches`, `questionnaire` (ajouts) |
+| `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
+| `apps/web/i18n/messages.ts` | namespaces `campus`, `discovery`, `likes`, `matches`, `questionnaire` (ajouts) |
+| `packages/core/src/index.ts` | `discovery/ranking`, `discovery/rules`, `matching/explain`, `messaging/ids`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
 | `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
 | `infra/scripts/cloud-docker.sh` | repli sur l'image Docker Hub `darthsim/imgproxy` (même version) quand le proxy de la session cloud bloque les téléchargements de ghcr.io |
 
@@ -65,7 +84,7 @@ Aucune nouvelle pour l'instant (le seed utilise `S3_*`, `ENCRYPTION_*`, `EMAIL_H
 
 ## Migrations
 
-Aucune pour l'instant.
+- `0003_*` : tables `impression`, `discovery_filter`, `discovery_undo` (jetable, à régénérer à la fusion).
 
 ## Mises à jour souhaitées dans CLAUDE.md / README / docs
 

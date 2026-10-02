@@ -1,7 +1,19 @@
 import { MODES } from "@epilove/core";
 import { sql } from "drizzle-orm";
-import { check, date, index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
-import { createdAt, id, oneOf } from "./columns";
+import {
+  check,
+  date,
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  smallint,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { createdAt, id, oneOf, subsetOf } from "./columns";
 import { appUser } from "./users";
 
 export const LIKE_KINDS = ["like", "superlike", "pass"] as const;
@@ -81,4 +93,80 @@ export const drop = pgTable(
     createdAt: createdAt(),
   },
   (t) => [unique().on(t.userId, t.day)],
+);
+
+export const IMPRESSION_SURFACES = ["deck", "drop", "profile"] as const;
+
+/**
+ * How often a profile was shown, per viewer, surface and campus day. Feeds the
+ * exposure fairness of the ranking (docs/06-matching.md, section 6).
+ */
+export const impression = pgTable(
+  "impression",
+  {
+    viewerId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    targetId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    surface: text({ enum: IMPRESSION_SURFACES }).notNull(),
+    day: date({ mode: "string" }).notNull(),
+    count: integer().notNull().default(1),
+  },
+  (t) => [
+    primaryKey({ columns: [t.viewerId, t.targetId, t.surface, t.day] }),
+    check("impression_surface_check", oneOf(t.surface, IMPRESSION_SURFACES)),
+    index().on(t.targetId, t.day),
+  ],
+);
+
+export const DECK_MODES = ["all", ...MODES] as const;
+
+/**
+ * Deck filters (DEC-06). They only narrow what the viewer sees, in one
+ * direction; the two-way rules (age preferences, orientation, hiding) live in
+ * `preferences` and are applied by `canSee`.
+ */
+export const discoveryFilter = pgTable(
+  "discovery_filter",
+  {
+    userId: uuid()
+      .primaryKey()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    mode: text({ enum: DECK_MODES }).notNull().default("all"),
+    schoolSlugs: text().array().notNull().default(sql`'{}'`),
+    graduationYears: smallint().array().notNull().default(sql`'{}'`),
+    intentions: text().array().notNull().default(sql`'{}'`),
+    ageMin: smallint(),
+    ageMax: smallint(),
+    updatedAt: timestamp({ withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    check("discovery_filter_mode_check", oneOf(t.mode, DECK_MODES)),
+    check(
+      "discovery_filter_intentions_check",
+      subsetOf(t.intentions, ["relationship", "see_what_happens", "friendship"]),
+    ),
+    check(
+      "discovery_filter_age_check",
+      sql`(${t.ageMin} is null or ${t.ageMin} >= 18) and (${t.ageMax} is null or ${t.ageMin} is null or ${t.ageMax} >= ${t.ageMin})`,
+    ),
+  ],
+);
+
+/** Daily "undo the last pass" (DEC-11): one row per member and campus day. */
+export const discoveryUndo = pgTable(
+  "discovery_undo",
+  {
+    userId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    day: date({ mode: "string" }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day] })],
 );

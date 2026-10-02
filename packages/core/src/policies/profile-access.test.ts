@@ -1,5 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
+import { canSee } from "./can-see";
 import { canMessage, canViewProfile } from "./profile-access";
 import { TEST_TODAY, testMember, testRelations } from "./testing";
 import type { AccountStatus, Gender, Mode, PolicyContext, Relations } from "./types";
@@ -135,17 +136,27 @@ describe("profile access — invariants", () => {
     blocks: mostly([], pairs),
     likes: pairs,
     matched: fc.boolean(),
+    ended: mostly(false, fc.boolean()),
   });
 
-  it("never opens anything across a block, a hidden contact or an unavailable account", () => {
+  it("never opens anything across a block, an unmatch, a hidden contact or an unavailable account", () => {
     fc.assert(
-      fc.property(scenario, ({ a, b, blocks, likes, matched }) => {
-        const c = ctx(testRelations({ blocks, likes, matches: matched ? [["A", "B"]] : [] }));
-        const blocked = blocks.length > 0;
+      fc.property(scenario, ({ a, b, blocks, likes, matched, ended }) => {
+        const c = ctx(
+          testRelations({
+            blocks,
+            likes,
+            matches: matched && !ended ? [["A", "B"]] : [],
+            ended: ended ? [["A", "B"]] : [],
+          }),
+        );
+        const blocked = blocks.length > 0 || ended;
         const hidden = a.hiddenEmailHmacs.has(b.emailHmac) || b.hiddenEmailHmacs.has(a.emailHmac);
         const gone = (m: typeof a) => ["banned", "suspended", "deleting", "onboarding"].includes(m.status);
         if (blocked || hidden || gone(a) || gone(b)) {
           expect(canViewProfile(a, b, c).visible).toBe(false);
+          expect(canViewProfile(b, a, c).visible).toBe(false);
+          expect(canSee(a, b, c).visible).toBe(false);
           expect(canMessage(a, b, c).allowed).toBe(false);
           expect(canMessage(b, a, c).allowed).toBe(false);
         }
