@@ -40,12 +40,20 @@ export function daysBetween(from: IsoDate, to: IsoDate): number {
   return Math.round((toUtcMidnight(to) - toUtcMidnight(from)) / MS_PER_DAY);
 }
 
+/** One formatter per time zone: building one costs far more than formatting (hot path of the policies). */
+const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+
 /** The calendar date of `instant` in `timeZone` (for example `Europe/Paris`). */
 export function calendarDateIn(timeZone: string, instant: Date): IsoDate {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(instant);
+  let formatter = dateFormatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    dateFormatters.set(timeZone, formatter);
+  }
+  return formatter.format(instant);
 }
