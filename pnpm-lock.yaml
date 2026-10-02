@@ -298,6 +298,9 @@ importers:
       '@epilove/tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
+      '@orpc/client':
+        specifier: 'catalog:'
+        version: 1.15.4
       '@orpc/tanstack-query':
         specifier: 'catalog:'
         version: 1.15.4(@orpc/client@1.15.4)(@tanstack/query-core@5.104.0)

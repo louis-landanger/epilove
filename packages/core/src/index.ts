@@ -1,5 +1,6 @@
 export * from "./campus/schools";
 export * from "./matching/compatibility";
+export * from "./matching/explain";
 export * from "./messaging/ids";
 export * from "./people/age";
 export * from "./policies/can-see";

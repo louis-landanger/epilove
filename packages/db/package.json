@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./migrations": "./src/migrations.ts",
     "./repositories/*": "./src/repositories/*.ts",
-    "./dev-seed": "./src/dev-seed/seed.ts"
+    "./dev-seed": "./src/dev-seed/seed.ts",
+    "./testing": "./src/testing/fixtures.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",

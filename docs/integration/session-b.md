@@ -8,7 +8,7 @@
 |---|---|---|
 | 1 | Données de développement (`pnpm db:seed:dev`, page `/dev`) | ✅ fait et testé |
 | 1 | Lecture des membres et politiques (`canViewProfile`, `canMessage`) | ✅ fait et testé |
-| 1 | Questionnaire | ⏳ banque de 45 questions en seed ; interface à faire |
+| 1 | Questionnaire (PAC-01, DEC-05) | ✅ fait et testé (API) ; interface vérifiée à la main |
 | 1 | Découverte | ⏳ |
 | 1 | Matchs | ⏳ |
 | 1 | Messagerie temps réel | ⏳ |
@@ -33,6 +33,13 @@
 - `packages/db/src/repositories/members.ts` : `loadMembers`, `loadMember`, `loadDiscoverableMembers` (pré-filtre SQL grossier, `canSee` fait le vrai travail), `loadRelations` (blocages, likes, matchs entre le viewer et une liste), `touchLastActive`. Exposé par le sous-chemin `@epilove/db/repositories/members` (pas d'export depuis `src/index.ts`, pour éviter les conflits).
 - Règle « profil complet » retenue en attendant A : onboarding terminé (`status ≠ onboarding`) et au moins une photo approuvée.
 
+### Questionnaire (PAC-01, DEC-05)
+
+- Banque de 45 questions fr/en (`packages/db/src/seeds/questions.ts`, sections `values`, `lifestyle`, `campus`, `nerd`, `plans`), ajoutée à `pnpm db:seed` (upsert par slug). Aucune question sur la religion, la politique, la santé ou l'origine ; le tabac a été volontairement écarté (donnée de santé potentielle), l'alcool n'est abordé que par le style de soirée.
+- `packages/core/src/matching/explain.ts` : les deux accords les plus pondérés et un désaccord sans enjeu (les questions « nerd » en priorité ; jamais une question importante pour l'un des deux), testé par propriétés.
+- Procédures `questionnaire.get`, `questionnaire.answer` (upsert idempotent, options validées), `questionnaire.compatibility` (exige `canViewProfile`, sinon NOT_FOUND). Tests d'intégration sur PostgreSQL.
+- Interface `(app)/campus/questionnaire` : introduction (pondération expliquée, confidentialité), une question par écran (réponse, réponses acceptées, importance en 5 niveaux avec explication), sauvegarde à chaque question, progression par section animée, clavier (1–4, Entrée), focus déplacé sur la question pour les lecteurs d'écran, écran de fin.
+
 ### Divers
 
 - `packages/core/src/messaging/ids.ts` : génération et lecture d'UUIDv7 (messages envoyés par le client).
@@ -44,10 +51,11 @@
 |---|---|
 | `package.json` (racine) | script `db:seed:dev` |
 | `pnpm-workspace.yaml` | catalogue : `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
-| `packages/db/package.json` | dépendance `@epilove/crypto`, devDependency `aws4fetch`, script `db:seed:dev`, exports `./repositories/*` et `./dev-seed` |
+| `packages/db/package.json` | dépendance `@epilove/crypto`, devDependency `aws4fetch`, script `db:seed:dev`, exports `./repositories/*`, `./dev-seed` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
-| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | module `dev` (ajout d'une ligne) |
-| `packages/core/src/index.ts` | `messaging/ids`, `policies/profile-access` (ajout) |
+| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `questionnaire` (ajouts) |
+| `apps/web/i18n/messages.ts` | namespaces `campus`, `questionnaire` (ajouts) |
+| `packages/core/src/index.ts` | `matching/explain`, `messaging/ids`, `policies/profile-access` (ajouts) |
 | `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
 | `infra/scripts/cloud-docker.sh` | repli sur l'image Docker Hub `darthsim/imgproxy` (même version) quand le proxy de la session cloud bloque les téléchargements de ghcr.io |
 
@@ -63,7 +71,12 @@ Aucune pour l'instant.
 
 - `CLAUDE.md`, section Commandes : ajouter `pnpm db:seed:dev` (membres fictifs, photos de synthèse, page `/dev`).
 
+- `apps/web/AGENTS.md` et `apps/web/CLAUDE.md` sont générés par `next dev` (Next.js 16.3) et recommandent de les committer : ils renvoient vers la documentation embarquée dans `node_modules/next/dist/docs/`.
+
 ## Points d'intégration
+
+- Les pages de B affichent un écran « connecte-toi » (`GateScreen`) sur UNAUTHORIZED, avec un lien vers `/dev` en développement et `/connexion` sinon : **à aligner sur la route de connexion de A**. Sur `FORBIDDEN profile_required`, lien vers `/onboarding`.
+- Les pages de B enveloppent leurs segments dans `RencontreProviders` (TanStack Query + `MotionConfig reducedMotion="user"`) via leurs propres `layout.tsx` ; à l'intégration, on peut remonter ce provider dans `(app)/layout.tsx`.
 
 - Les pages `/dev` et les clients API lisent le cookie de développement ; une fois Better Auth branché par A, `serverApi()` transmet déjà les cookies de la requête : rien à changer côté B.
 - Remplacer les prompts et intérêts `dev-` par le catalogue de A (le seed de développement les réutilisera s'ils existent, ou on adaptera `content.ts`).

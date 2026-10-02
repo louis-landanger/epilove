@@ -1,5 +1,6 @@
 import { campusContract } from "./campus";
 import { devContract } from "./dev";
+import { questionnaireContract } from "./questionnaire";
 import { safetyContract } from "./safety";
 import { systemContract } from "./system";
 
@@ -7,6 +8,7 @@ import { systemContract } from "./system";
 export const contract = {
   campus: campusContract,
   dev: devContract,
+  questionnaire: questionnaireContract,
   safety: safetyContract,
   system: systemContract,
 };
@@ -15,5 +17,6 @@ export type Contract = typeof contract;
 
 export * from "./campus";
 export * from "./dev";
+export * from "./questionnaire";
 export * from "./safety";
 export * from "./system";

@@ -20,6 +20,7 @@
     "@epilove/db": "workspace:*",
     "@epilove/media": "workspace:*",
     "@epilove/tokens": "workspace:*",
+    "@orpc/client": "catalog:",
     "@orpc/tanstack-query": "catalog:",
     "@tanstack/react-query": "catalog:",
     "centrifuge": "catalog:",

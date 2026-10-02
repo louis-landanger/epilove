@@ -1,0 +1,18 @@
+{
+  "title": "Campus",
+  "states": {
+    "signInTitle": "Connecte-toi pour continuer",
+    "signInLead": "Cette partie de l'app est réservée aux membres vérifiés du campus.",
+    "signInAction": "Se connecter",
+    "devSignIn": "Choisir un membre fictif",
+    "profileTitle": "Termine ton profil d'abord",
+    "profileLead": "Encore quelques étapes et tu pourras découvrir les autres membres.",
+    "profileAction": "Continuer mon profil",
+    "errorTitle": "Quelque chose a planté de notre côté",
+    "errorLead": "Ce n'est pas toi, c'est nous. On relance ?",
+    "retry": "Réessayer",
+    "offline": "Connexion perdue. Tes actions partiront dès le retour du réseau.",
+    "loading": "Chargement…",
+    "back": "Retour"
+  }
+}

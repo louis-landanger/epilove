@@ -1,0 +1,18 @@
+{
+  "title": "Campus",
+  "states": {
+    "signInTitle": "Sign in to continue",
+    "signInLead": "This part of the app is for verified campus members only.",
+    "signInAction": "Sign in",
+    "devSignIn": "Pick a fictional member",
+    "profileTitle": "Finish your profile first",
+    "profileLead": "A few more steps and you can discover other members.",
+    "profileAction": "Continue my profile",
+    "errorTitle": "Something broke on our side",
+    "errorLead": "It's not you, it's us. Shall we retry?",
+    "retry": "Retry",
+    "offline": "Connection lost. Your actions will go through once you're back online.",
+    "loading": "Loading…",
+    "back": "Back"
+  }
+}

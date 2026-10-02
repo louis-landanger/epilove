@@ -1,0 +1,58 @@
+{
+  "title": "Questionnaire de compatibilité",
+  "back": "Retour au campus",
+  "intro": {
+    "eyebrow": "Le Pacte · compatibilité",
+    "title": "Quarante-cinq questions pour trouver tes atomes crochus",
+    "lead": "Valeurs, mode de vie, campus, humour et projets. Environ dix minutes, sauvegarde automatique : tu peux t'arrêter et reprendre quand tu veux.",
+    "howTitle": "Comment ça marche",
+    "how1": "Ta réponse : ce qui te ressemble.",
+    "how2": "Ce que tu acceptes chez l'autre : une ou plusieurs réponses.",
+    "how3": "L'importance : plus elle est forte, plus la question pèse dans le calcul.",
+    "privacy": "Tes réponses ne sont jamais montrées telles quelles. Seuls les points communs apparaissent, et seulement aux personnes qui peuvent voir ton profil.",
+    "start": "Commencer",
+    "resume": "Reprendre ({answered}/{total})"
+  },
+  "progress": "Question {current} sur {total}",
+  "sections": {
+    "values": "Valeurs",
+    "lifestyle": "Mode de vie",
+    "campus": "Campus",
+    "nerd": "Humour et nerd",
+    "plans": "Projets"
+  },
+  "yourAnswer": "Ta réponse",
+  "acceptable": "Ce que tu acceptes chez l'autre",
+  "acceptableHint": "Coche toutes les réponses qui te conviennent.",
+  "acceptAll": "Tout me va",
+  "importance": "Importance",
+  "importanceLevels": {
+    "irrelevant": "Peu importe",
+    "little": "Un peu",
+    "somewhat": "Assez",
+    "very": "Beaucoup",
+    "mandatory": "Indispensable"
+  },
+  "importanceHelp": {
+    "irrelevant": "Cette question ne compte pas dans ton calcul.",
+    "little": "Elle compte, mais à peine.",
+    "somewhat": "Elle compte dix fois plus qu'« un peu ».",
+    "very": "Elle compte cinquante fois plus qu'« un peu ».",
+    "mandatory": "Critère éliminatoire : les personnes qui ne correspondent pas ne te seront pas proposées. À garder pour l'essentiel."
+  },
+  "previous": "Précédent",
+  "next": "Suivant",
+  "finish": "Terminer",
+  "skip": "Passer",
+  "saving": "Enregistrement…",
+  "saved": "Enregistré",
+  "saveError": "Pas pu enregistrer. On réessaie ?",
+  "retry": "Réessayer",
+  "keyboardHint": "Astuce : touches 1 à 4 pour répondre, Entrée pour continuer.",
+  "done": {
+    "title": "C'est dans la boîte",
+    "lead": "Tes réponses sont enregistrées. Les pourcentages de compatibilité s'affichent désormais sur les profils, avec ce que vous avez en commun.",
+    "discover": "Découvrir des profils",
+    "review": "Revoir mes réponses"
+  }
+}
