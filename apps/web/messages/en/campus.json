@@ -53,6 +53,11 @@
       "title": "Cross-school index",
       "lead": "Which schools are meeting the most this week?",
       "action": "See the index"
+    },
+    "wrapped": {
+      "title": "Your Wrapped",
+      "lead": "Your year on the app, in a few figures just for you.",
+      "action": "See"
     }
   },
   "weekly": {
@@ -81,5 +86,25 @@
     "count": "{count} bonds",
     "empty": "No pair of schools to show this week yet.",
     "threshold": "A pair of schools only shows from 10 bonds, and no total is given: a small number can't be worked out."
+  },
+  "wrapped": {
+    "title": "Your Wrapped",
+    "lead": "Your {label} year on Epilove. Just for you: nobody else sees it.",
+    "back": "Campus",
+    "matches": "{count, plural, =0 {No bond yet: the year has only just begun.} one {bond this year} other {bonds this year}}",
+    "messages": "{count, plural, =0 {No message sent yet.} one {message sent} other {messages sent}}",
+    "conversations": "{count, plural, =0 {} one {in # conversation} other {in # conversations}}",
+    "likes": "{count, plural, =0 {No like given yet.} one {like given} other {likes given}}",
+    "reaction": "Your favourite reaction",
+    "peak": "Your peak hour",
+    "hour": "{hour}:00",
+    "events": "{count, plural, =0 {No event yet.} one {campus event} other {campus events}}",
+    "pacts": "{count, plural, =0 {No Pact yet.} one {Pact played} other {Pacts played}}",
+    "download": "Download as an image",
+    "privacy": "The image only holds your figures: no first name, no photo, no message. Up to you whether you share it.",
+    "imageTitle": "My year on Epilove",
+    "imageFooter": "Just my figures.",
+    "reactionWord": "Favourite reaction: {word}",
+    "peakWord": "Peak hour: {hour}:00"
   }
 }

@@ -27,6 +27,7 @@
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
 | 3 | Mini-jeux (CHAT-11) | ✅ fait et testé (cœur, API dont réponses simultanées, Playwright à deux navigateurs, axe) |
 | 3 | Flash (IRL-04) | ✅ fait et testé (cœur, API, Playwright à deux navigateurs, axe) |
+| 3 | Wrapped (COM-03) | ✅ fait et testé (API, Playwright avec l'image exportée, axe) |
 | 3 | Mode à l'aveugle (DEC-10) | ✅ fait et testé (cœur, API avec horloge simulée) ; bandeau du jeudi soir non testé en automatique (le serveur décide de la soirée) |
 | 3 | Badges discrets (COM-04), statut « Dispo » (IRL-05) | ✅ fait et testé (cœur, API) ; affichage vérifié à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
@@ -163,6 +164,13 @@
 - Le code est un HMAC de l'événement, de la personne et de la fenêtre de 30 secondes (`packages/api/src/rencontre/flash.ts`, clé dérivée de `EMAIL_HMAC_SECRET`) : rien n'est stocké, un code scanné est comparé aux codes des participants. Table `flash_scan` ; deux scans réciproques font une liaison `source = flash`, si les politiques l'autorisent (`crushMatchMode`) ; sinon la réponse est la même qu'un scan à sens unique (rien ne trahit un blocage). 20 scans par minute au plus.
 - API `events.flashCode`, `events.flashScan`. Interface `(app)/campus/evenements/[id]/flash` (QR code dessiné en SVG avec `uqr`, code en clair, barre de temps, saisie du code de l'autre) et `.../flash/[code]`, la page qu'ouvre l'appareil photo en scannant un QR code. Bouton « Flash » sur l'événement en cours.
 
+### Wrapped (COM-03)
+
+- `packages/core/src/community/wrapped.ts` : l'année universitaire commence le 1er septembre (heure de Lyon) ; `REACTION_WORDS` écrit les réactions en toutes lettres pour l'image.
+- `wrappedFigures` (`packages/db/src/repositories/campus-community.ts`) : uniquement des comptes sur les actions du membre lui-même (liaisons, messages envoyés et conversations, likes donnés, événements où il a répondu « j'y vais » déjà commencés, Pactes joués, réaction la plus utilisée, heure de pointe). Aucun prénom, aucune photo, aucun message, rien sur les autres personnes.
+- API `community.wrapped`. Interface `(app)/campus/wrapped` : une carte par chiffre, animée à l'apparition ; les cartes sans donnée (réaction, heure de pointe) ne s'affichent pas. Carte dans l'onglet Campus.
+- Image 1080 × 1920 au format story : `(app)/campus/wrapped/image` (`next/og`), pour le membre connecté seulement (401 sinon), `Cache-Control: private, no-store`. Pas d'émoji dans l'image : le moteur de rendu les téléchargerait chez un tiers. Le partage reste un choix du membre (téléchargement, pas de lien public).
+
 ### Mode à l'aveugle (DEC-10)
 
 - `packages/core/src/discovery/blind.ts` : la soirée à l'aveugle a lieu le jeudi de 19 h à minuit (heure de Lyon) ; une liaison à l'aveugle se dévoile quand les deux ont envoyé 10 messages.
@@ -244,7 +252,7 @@
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `community`, `dateSafety`, `dev`, `discovery`, `events`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
 | `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `events`, `likes`, `matches`, `notifications`, `pact`, `questionnaire`, `spots` (ajouts) |
-| `packages/core/src/index.ts` | `community/community`, `discovery/crush`, `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/second-chance`, `discovery/rules`, `events/events`, `matching/explain`, `messaging/date-safety`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
+| `packages/core/src/index.ts` | `community/*`, `discovery/*`, `events/*`, `matching/explain`, `messaging/*`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
 | `packages/db/src/seeds/index.ts` | seeds `questions`, `spots`, `weekly-questions` (ajouts) |
 | `packages/db/src/schema/index.ts` | `community`, `date-safety`, `events`, `spots` (ajouts) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |

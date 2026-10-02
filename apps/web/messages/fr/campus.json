@@ -53,6 +53,11 @@
       "title": "Indice inter-écoles",
       "lead": "Quelles écoles se rencontrent le plus cette semaine ?",
       "action": "Voir l'indice"
+    },
+    "wrapped": {
+      "title": "Ton Wrapped",
+      "lead": "Ton année sur l'app, en quelques chiffres rien qu'à toi.",
+      "action": "Voir"
     }
   },
   "weekly": {
@@ -81,5 +86,25 @@
     "count": "{count} liaisons",
     "empty": "Pas encore de paire d'écoles à afficher cette semaine.",
     "threshold": "Une paire d'écoles n'apparaît qu'à partir de 10 liaisons, et aucun total n'est donné : impossible d'en déduire un petit nombre."
+  },
+  "wrapped": {
+    "title": "Ton Wrapped",
+    "lead": "Ton année {label} sur Epilove. Rien que pour toi : personne d'autre ne le voit.",
+    "back": "Campus",
+    "matches": "{count, plural, =0 {Pas encore de liaison : l'année ne fait que commencer.} one {liaison cette année} other {liaisons cette année}}",
+    "messages": "{count, plural, =0 {Pas encore de message envoyé.} one {message envoyé} other {messages envoyés}}",
+    "conversations": "{count, plural, =0 {} one {dans # conversation} other {dans # conversations}}",
+    "likes": "{count, plural, =0 {Pas encore de like donné.} one {like donné} other {likes donnés}}",
+    "reaction": "Ta réaction préférée",
+    "peak": "Ton heure de pointe",
+    "hour": "{hour} h",
+    "events": "{count, plural, =0 {Pas encore d'événement.} one {événement du campus} other {événements du campus}}",
+    "pacts": "{count, plural, =0 {Pas encore de Pacte.} one {Pacte joué} other {Pactes joués}}",
+    "download": "Télécharger en image",
+    "privacy": "L'image ne contient que tes chiffres : ni prénom, ni photo, ni message. À toi de voir si tu la partages.",
+    "imageTitle": "Mon année sur Epilove",
+    "imageFooter": "Rien que mes chiffres.",
+    "reactionWord": "Réaction préférée : {word}",
+    "peakWord": "Heure de pointe : {hour} h"
   }
 }
