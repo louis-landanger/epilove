@@ -1,4 +1,5 @@
 import { campus } from "./modules/campus";
+import { dev } from "./modules/dev";
 import { safety } from "./modules/safety";
 import { system } from "./modules/system";
 import { os } from "./procedures";
@@ -9,6 +10,7 @@ import { os } from "./procedures";
  */
 export const router = os.router({
   campus,
+  dev,
   safety,
   system,
 });

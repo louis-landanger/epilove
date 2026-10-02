@@ -18,6 +18,13 @@ for image in $(docker compose -f "$COMPOSE_FILE" config --images); do
     continue
   fi
   case "$image" in
+    # ghcr.io blob downloads can be blocked by the sandbox proxy: imgproxy is also on Docker Hub.
+    ghcr.io/imgproxy/imgproxy:*)
+      docker pull -q "$image" || {
+        docker pull -q "mirror.gcr.io/darthsim/imgproxy:${image##*:}" &&
+          docker tag "mirror.gcr.io/darthsim/imgproxy:${image##*:}" "$image"
+      }
+      ;;
     ghcr.io/*) docker pull -q "$image" ;;
     *) docker pull -q "mirror.gcr.io/$image" && docker tag "mirror.gcr.io/$image" "$image" ;;
   esac

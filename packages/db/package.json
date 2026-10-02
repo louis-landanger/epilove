@@ -6,23 +6,28 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./migrations": "./src/migrations.ts"
+    "./migrations": "./src/migrations.ts",
+    "./repositories/*": "./src/repositories/*.ts",
+    "./dev-seed": "./src/dev-seed/seed.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=../../.env src/migrate.ts",
     "db:seed": "tsx --env-file-if-exists=../../.env src/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:seed:dev": "tsx --env-file-if-exists=../../.env src/dev-seed/index.ts"
   },
   "dependencies": {
     "@epilove/core": "workspace:*",
+    "@epilove/crypto": "workspace:*",
     "drizzle-orm": "catalog:",
     "postgres": "catalog:"
   },
   "devDependencies": {
     "@epilove/config": "workspace:*",
     "@types/node": "catalog:",
+    "aws4fetch": "catalog:",
     "drizzle-kit": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",

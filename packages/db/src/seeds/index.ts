@@ -1,4 +1,5 @@
 import type { Database } from "../client";
+import { seedQuestions } from "./questions";
 import { seedReferenceData } from "./reference";
 
 /**
@@ -6,7 +7,7 @@ import { seedReferenceData } from "./reference";
  * reference data first, then catalogues (prompts, interests, questions).
  * Development-only fake members live in a separate script (`db:seed:dev`).
  */
-const seeds: ReadonlyArray<(db: Database) => Promise<void>> = [seedReferenceData];
+const seeds: ReadonlyArray<(db: Database) => Promise<void>> = [seedReferenceData, seedQuestions];
 
 export async function runSeeds(db: Database) {
   for (const seed of seeds) {
@@ -14,4 +15,5 @@ export async function runSeeds(db: Database) {
   }
 }
 
-export { seedReferenceData };
+export { QUESTION_SECTIONS, QUESTIONS, type QuestionDefinition, type QuestionSection } from "./questions";
+export { seedQuestions, seedReferenceData };

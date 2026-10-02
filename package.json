@@ -21,7 +21,8 @@
     "services:reset": "docker compose -f infra/compose/compose.yaml down --volumes",
     "db:generate": "pnpm --filter @epilove/db db:generate",
     "db:migrate": "pnpm --filter @epilove/db db:migrate",
-    "db:seed": "pnpm --filter @epilove/db db:seed"
+    "db:seed": "pnpm --filter @epilove/db db:seed",
+    "db:seed:dev": "pnpm --filter @epilove/db db:seed:dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

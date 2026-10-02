@@ -15,6 +15,8 @@ allowBuilds:
   '@parcel/watcher': false
   '@swc/core': false
   esbuild: true
+  # Reviewed and refused: its postinstall only prints a version notice (pulled in by centrifuge).
+  protobufjs: false
   lefthook: true
 
 # Shared dependency versions, referenced as "catalog:" in package.json files.
@@ -23,17 +25,22 @@ catalog:
   '@orpc/client': 1.15.4
   '@orpc/contract': 1.15.4
   '@orpc/server': 1.15.4
+  '@orpc/tanstack-query': 1.15.4
   '@playwright/test': 1.63.0
   '@tailwindcss/postcss': 4.3.3
+  '@tanstack/react-query': 5.104.0
   '@types/node': 24.19.0
   '@types/react': 19.3.0
   '@types/react-dom': 19.3.0
+  aws4fetch: 1.0.20
   babel-plugin-react-compiler: 1.0.0
+  centrifuge: 5.7.4
   drizzle-kit: 0.31.11
   drizzle-orm: 0.45.3
   fast-check: 4.10.2
   graphile-worker: 0.18.0
   hono: 4.13.12
+  motion: 13.5.0
   next: 16.3.8
   next-intl: 4.14.8
   postgres: 3.4.9
