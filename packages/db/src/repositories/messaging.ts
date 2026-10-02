@@ -1,6 +1,14 @@
-import { and, asc, count, desc, eq, gt, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import type { Database } from "../client";
-import { chatPreference, match, message, messageRead, notification, reaction } from "../schema";
+import {
+  chatPreference,
+  match,
+  mediaDeletion,
+  message,
+  messageRead,
+  notification,
+  reaction,
+} from "../schema";
 import { enqueue } from "./outbox";
 
 /** Message storage (CHAT-02). Bodies stay encrypted here; decryption happens in the API layer. */
@@ -17,6 +25,7 @@ export interface StoredMessage {
   readonly editedAt: Date | null;
   readonly deletedAt: Date | null;
   readonly moderation: unknown;
+  readonly mediaKey: string | null;
 }
 
 const messageColumns = {
@@ -31,6 +40,7 @@ const messageColumns = {
   editedAt: message.editedAt,
   deletedAt: message.deletedAt,
   moderation: message.moderation,
+  mediaKey: message.mediaKey,
 };
 
 /** The latest message of each match. */
@@ -400,19 +410,83 @@ export async function deleteMessageForEveryone(
   });
 }
 
-/** Erases the bodies and media of messages deleted before `olderThan` (retention). */
+/**
+ * Erases the bodies of messages deleted before `olderThan` (retention); their
+ * media go to the deletion queue.
+ */
 export async function purgeDeletedBodies(db: Database, olderThan: Date): Promise<number> {
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .select({ id: message.id, mediaKey: message.mediaKey })
+      .from(message)
+      .where(
+        and(
+          lt(message.deletedAt, olderThan),
+          sql`(${message.bodyEncrypted} is not null or ${message.mediaKey} is not null)`,
+        ),
+      )
+      .limit(1000)
+      .for("update");
+    if (rows.length === 0) {
+      return 0;
+    }
+    await scheduleMediaDeletion(
+      tx,
+      rows.flatMap((r) => (r.mediaKey ? [r.mediaKey] : [])),
+      new Date(),
+    );
+    await tx
+      .update(message)
+      .set({ bodyEncrypted: null, keyId: null, mediaKey: null, moderation: null })
+      .where(
+        inArray(
+          message.id,
+          rows.map((r) => r.id),
+        ),
+      );
+    return rows.length;
+  });
+}
+
+/** Queues stored media for deletion after `deleteAfter`. Idempotent. */
+export async function scheduleMediaDeletion(
+  db: Pick<Database, "insert">,
+  keys: readonly string[],
+  deleteAfter: Date,
+) {
+  if (keys.length === 0) {
+    return;
+  }
+  await db
+    .insert(mediaDeletion)
+    .values(keys.map((storageKey) => ({ storageKey, deleteAfter })))
+    .onConflictDoNothing();
+}
+
+/** Media whose deletion is due, oldest first. */
+export async function dueMediaDeletions(db: Database, now: Date, limit = 200) {
+  return db
+    .select({ storageKey: mediaDeletion.storageKey })
+    .from(mediaDeletion)
+    .where(lt(mediaDeletion.deleteAfter, now))
+    .orderBy(mediaDeletion.deleteAfter)
+    .limit(limit);
+}
+
+export async function forgetMediaDeletion(db: Database, keys: readonly string[]) {
+  if (keys.length > 0) {
+    await db.delete(mediaDeletion).where(inArray(mediaDeletion.storageKey, [...keys]));
+  }
+}
+
+/** Clears a message's media key (the object itself goes through the deletion queue). */
+export async function detachMedia(db: Database, id: string): Promise<boolean> {
   const rows = await db
     .update(message)
-    .set({ bodyEncrypted: null, keyId: null, mediaKey: null, moderation: null })
-    .where(
-      and(
-        lt(message.deletedAt, olderThan),
-        sql`(${message.bodyEncrypted} is not null or ${message.mediaKey} is not null)`,
-      ),
-    )
+    .set({ mediaKey: null })
+    .where(and(eq(message.id, id), isNotNull(message.mediaKey)))
     .returning({ id: message.id });
-  return rows.length;
+  return rows.length > 0;
 }
 
 /** Replaces the encrypted payload of a message (a date proposal's status, CHAT-10). */

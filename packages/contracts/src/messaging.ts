@@ -16,6 +16,24 @@ export const messageAttachment = z.discriminatedUnion("type", [
     title: z.string(),
   }),
   z.object({
+    type: z.literal("image"),
+    /** Signed and expiring; null for a view-once photo (opened through `viewMedia`). */
+    url: z.string().nullable(),
+    width: z.number().int(),
+    height: z.number().int(),
+    viewOnce: z.boolean(),
+    viewed: z.boolean(),
+    /** Flagged by the image classifier (SAF-11): blurred until the recipient chooses to see it. */
+    explicit: z.boolean(),
+  }),
+  z.object({
+    type: z.literal("voice"),
+    url: z.string().nullable(),
+    durationMs: z.number().int(),
+    /** Up to 64 bars between 0 and 1. */
+    waveform: z.array(z.number()),
+  }),
+  z.object({
     type: z.literal("date"),
     spot: z
       .object({ id: z.uuid(), name: z.string(), latitude: z.number(), longitude: z.number() })
@@ -160,6 +178,40 @@ export const messagingContract = {
   respondDate: oc
     .input(z.object({ matchId: z.uuid(), messageId: z.uuid(), response: z.enum(["accept", "decline"]) }))
     .output(z.object({ message: chatMessage })),
+  /**
+   * Sends a photo (CHAT-06): JPEG, PNG or WebP up to 8 MB, metadata removed
+   * before storage, optionally view-once.
+   */
+  sendImage: oc
+    .input(
+      z.object({
+        id: z.string().regex(UUIDV7),
+        matchId: z.uuid(),
+        file: z.file().max(8_000_000),
+        width: z.number().int().min(1).max(10_000),
+        height: z.number().int().min(1).max(10_000),
+        viewOnce: z.boolean().default(false),
+        replyTo: z.uuid().nullable().default(null),
+      }),
+    )
+    .output(z.object({ message: chatMessage })),
+  /** Sends a voice message (CHAT-07): up to 2 minutes, with its waveform. */
+  sendVoice: oc
+    .input(
+      z.object({
+        id: z.string().regex(UUIDV7),
+        matchId: z.uuid(),
+        file: z.file().max(2_500_000),
+        durationMs: z.number().int().min(300).max(120_000),
+        waveform: z.array(z.number().min(0).max(1)).max(64),
+        replyTo: z.uuid().nullable().default(null),
+      }),
+    )
+    .output(z.object({ message: chatMessage })),
+  /** Opens a view-once photo, once, for the recipient: a URL valid for one minute. */
+  viewMedia: oc
+    .input(z.object({ matchId: z.uuid(), messageId: z.uuid() }))
+    .output(z.object({ url: z.string(), expiresAt: z.iso.datetime() })),
   /** Edits one's own text message within 10 minutes (CHAT-08); shown as "modifié". */
   edit: oc
     .input(z.object({ matchId: z.uuid(), messageId: z.uuid(), text: z.string().min(1).max(2000) }))

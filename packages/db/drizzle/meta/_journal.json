@@ -85,6 +85,13 @@
       "when": 1790957147729,
       "tag": "0011_reflective_prism",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790958006427,
+      "tag": "0012_illegal_spiral",
+      "breakpoints": true
     }
   ]
 }

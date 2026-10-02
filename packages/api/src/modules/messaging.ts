@@ -30,6 +30,7 @@ import {
 import {
   chatSettingsOf,
   deleteMessageForEveryone,
+  detachMedia,
   editMessageBody,
   insertMessage,
   markRead,
@@ -43,6 +44,7 @@ import {
   replaceMessageBody,
   type StoredMessage,
   saveChatSettings,
+  scheduleMediaDeletion,
   setReaction,
 } from "@epilove/db/repositories/messaging";
 import { answerSheets, listActiveQuestions } from "@epilove/db/repositories/questionnaire";
@@ -52,7 +54,14 @@ import { z } from "zod";
 import { os, requireViewer } from "../procedures";
 import { optionLabel, questionText } from "../rencontre/compatibility";
 import { gifById, giphyEnabled, searchGifs } from "../rencontre/giphy";
-import { signedPhotoUrl } from "../rencontre/media";
+import { chatMediaStore, signedChatImageUrl, signedPhotoUrl } from "../rencontre/media";
+import {
+  EXPLICIT_THRESHOLD,
+  imageClassifier,
+  sniffAudio,
+  sniffImage,
+  stripImageMetadata,
+} from "../rencontre/media-files";
 import { decryptBody, messageKeyRing } from "../rencontre/messages";
 import { realtimePublisher } from "../rencontre/realtime";
 
@@ -86,6 +95,19 @@ const payloads = {
   gif: z.object({
     gif: z.object({ url: z.string(), width: z.number(), height: z.number(), title: z.string() }),
   }),
+  image: z.object({
+    image: z.object({
+      width: z.number(),
+      height: z.number(),
+      viewOnce: z.boolean(),
+      explicit: z.boolean(),
+      viewedAt: z.string().nullable().default(null),
+      contentType: z.string(),
+    }),
+  }),
+  voice: z.object({
+    voice: z.object({ durationMs: z.number(), waveform: z.array(z.number()), contentType: z.string() }),
+  }),
   date: z.object({
     date: z.object({
       spotId: z.string().nullable(),
@@ -109,11 +131,48 @@ function parseDate(body: string) {
   }
 }
 
+function parseJson(body: string): unknown {
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
+}
+
 function attachmentOf(
   kind: string,
   body: string,
   spots: ReadonlyMap<string, SpotRow>,
+  mediaKey: string | null,
 ): MessageAttachment | null {
+  if (kind === "image") {
+    const parsed = payloads.image.safeParse(parseJson(body));
+    if (!parsed.success) {
+      return null;
+    }
+    const image = parsed.data.image;
+    return {
+      type: "image",
+      url: image.viewOnce || !mediaKey ? null : signedChatImageUrl(mediaKey),
+      width: Math.round(image.width),
+      height: Math.round(image.height),
+      viewOnce: image.viewOnce,
+      viewed: image.viewedAt !== null,
+      explicit: image.explicit,
+    };
+  }
+  if (kind === "voice") {
+    const parsed = payloads.voice.safeParse(parseJson(body));
+    return parsed.success
+      ? {
+          type: "voice",
+          // Signed by the caller (an asynchronous call), only when the object exists.
+          url: null,
+          durationMs: Math.round(parsed.data.voice.durationMs),
+          waveform: parsed.data.voice.waveform.slice(0, 64),
+        }
+      : null;
+  }
   if (kind === "date_proposal") {
     const date = parseDate(body);
     if (!date) {
@@ -156,6 +215,28 @@ const flagsOf = (moderation: unknown): string[] => {
 
 type Conversation = Awaited<ReturnType<typeof requireConversation>>;
 
+/** Anti-spam quota and recent client id, checked before anything is stored (media uploads included). */
+async function assertCanSend(db: Database, senderId: string, id: string, now: Date) {
+  if (
+    (await messagesSentSince(db, senderId, new Date(now.getTime() - 60_000))) >= MESSAGING_RULES.perMinute
+  ) {
+    throw new ORPCError("TOO_MANY_REQUESTS", { message: "rate_limited" });
+  }
+  const idTime = Number.parseInt(id.replaceAll("-", "").slice(0, 12), 16);
+  if (Math.abs(idTime - now.getTime()) > 5 * 60_000) {
+    throw new ORPCError("BAD_REQUEST", { message: "invalid_id" });
+  }
+}
+
+const EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "audio/webm": "webm",
+  "audio/ogg": "ogg",
+  "audio/mp4": "m4a",
+};
+
 /**
  * Stores a message of any kind: anti-spam quota, recent client id (it
  * orders the conversation), encryption, idempotent insert, realtime events.
@@ -165,8 +246,9 @@ async function deliverMessage(
   conversation: Conversation,
   input: {
     id: string;
-    kind: "text" | "sticker" | "gif" | "date_proposal";
+    kind: "text" | "sticker" | "gif" | "date_proposal" | "image" | "voice";
     plaintext: string;
+    mediaKey?: string;
     replyTo: string | null;
     flags: readonly string[];
     now: Date;
@@ -174,16 +256,7 @@ async function deliverMessage(
 ): Promise<ChatMessage> {
   const { match, viewer, other } = conversation;
   const { now } = input;
-  if (
-    (await messagesSentSince(db, viewer.member.id, new Date(now.getTime() - 60_000))) >=
-    MESSAGING_RULES.perMinute
-  ) {
-    throw new ORPCError("TOO_MANY_REQUESTS", { message: "rate_limited" });
-  }
-  const idTime = Number.parseInt(input.id.replaceAll("-", "").slice(0, 12), 16);
-  if (Math.abs(idTime - now.getTime()) > 5 * 60_000) {
-    throw new ORPCError("BAD_REQUEST", { message: "invalid_id" });
-  }
+  await assertCanSend(db, viewer.member.id, input.id, now);
   const result = await insertMessage(db, {
     id: input.id,
     matchId: match.id,
@@ -193,6 +266,7 @@ async function deliverMessage(
     body: encryptText(messageKeyRing(), input.plaintext),
     replyTo: input.replyTo,
     moderation: input.flags.length > 0 ? { flags: [...input.flags] } : null,
+    mediaKey: input.mediaKey ?? null,
     now,
   });
   if (!result.ok) {
@@ -202,6 +276,34 @@ async function deliverMessage(
   }
   await touchLastActive(db, viewer.member.id, now);
   const [message] = await toChatMessages(db, [result.message]);
+  if (!message) {
+    throw new ORPCError("INTERNAL_SERVER_ERROR");
+  }
+  return message;
+}
+
+/**
+ * A retried upload (same client id): the stored message stands and its media
+ * is never replaced, so a second file cannot slip past the first's checks.
+ */
+async function alreadySent(
+  db: Database,
+  conversation: Conversation,
+  id: string,
+  kind: "image" | "voice",
+): Promise<ChatMessage | null> {
+  const [existing] = await messagesByIds(db, [id]);
+  if (!existing) {
+    return null;
+  }
+  if (
+    existing.matchId !== conversation.match.id ||
+    existing.senderId !== conversation.viewer.member.id ||
+    existing.kind !== kind
+  ) {
+    throw new ORPCError("CONFLICT", { message: "id_conflict" });
+  }
+  const [message] = await toChatMessages(db, [existing]);
   if (!message) {
     throw new ORPCError("INTERNAL_SERVER_ERROR");
   }
@@ -291,7 +393,17 @@ async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Pro
   const spots = rows.some((m) => m.kind === "date_proposal")
     ? new Map((await listSpots(db)).map((spot) => [spot.id, spot]))
     : new Map<string, SpotRow>();
-  return rows.map((m) => {
+  const attachments = await Promise.all(
+    rows.map(async (m) => {
+      const attachment =
+        m.deletedAt || m.kind === "text" ? null : attachmentOf(m.kind, body(m), spots, m.mediaKey);
+      if (attachment?.type === "voice" && m.mediaKey) {
+        return { ...attachment, url: await chatMediaStore().signedUrl(m.mediaKey, 3600) };
+      }
+      return attachment;
+    }),
+  );
+  return rows.map((m, index) => {
     const reply = m.replyTo ? known.get(m.replyTo) : undefined;
     return {
       id: m.id,
@@ -309,7 +421,7 @@ async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Pro
       editedAt: m.editedAt?.toISOString() ?? null,
       deleted: m.deletedAt !== null,
       flagged: m.deletedAt === null && isPotentiallyOffensive(flagsOf(m.moderation)),
-      attachment: m.deletedAt || m.kind === "text" ? null : attachmentOf(m.kind, body(m), spots),
+      attachment: attachments[index] ?? null,
     };
   });
 }
@@ -468,6 +580,119 @@ export const messaging = {
       now,
     });
     return { message };
+  }),
+
+  sendImage: os.messaging.sendImage.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const conversation = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const retried = await alreadySent(db, conversation, input.id, "image");
+    if (retried) {
+      return { message: retried };
+    }
+    await assertCanSend(db, conversation.viewer.member.id, input.id, now);
+    const bytes = new Uint8Array(await input.file.arrayBuffer());
+    const type = sniffImage(bytes);
+    if (!type) {
+      throw new ORPCError("BAD_REQUEST", { message: "unsupported_media" });
+    }
+    let clean: Uint8Array;
+    try {
+      clean = stripImageMetadata(bytes, type);
+    } catch {
+      throw new ORPCError("BAD_REQUEST", { message: "unsupported_media" });
+    }
+    const explicit = (await imageClassifier().classify(clean, type)).explicit >= EXPLICIT_THRESHOLD;
+    const mediaKey = `chat/${conversation.match.id}/${input.id}.${EXTENSIONS[type]}`;
+    await chatMediaStore().put(mediaKey, clean, type);
+    const message = await deliverMessage(db, conversation, {
+      id: input.id,
+      kind: "image",
+      plaintext: JSON.stringify({
+        image: {
+          width: input.width,
+          height: input.height,
+          viewOnce: input.viewOnce,
+          explicit,
+          viewedAt: null,
+          contentType: type,
+        },
+      }),
+      replyTo: input.replyTo,
+      flags: explicit ? ["explicit_image"] : [],
+      mediaKey,
+      now,
+    });
+    return { message };
+  }),
+
+  sendVoice: os.messaging.sendVoice.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const conversation = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const retried = await alreadySent(db, conversation, input.id, "voice");
+    if (retried) {
+      return { message: retried };
+    }
+    await assertCanSend(db, conversation.viewer.member.id, input.id, now);
+    const bytes = new Uint8Array(await input.file.arrayBuffer());
+    const type = sniffAudio(bytes);
+    if (!type) {
+      throw new ORPCError("BAD_REQUEST", { message: "unsupported_media" });
+    }
+    const mediaKey = `chat/${conversation.match.id}/${input.id}.${EXTENSIONS[type]}`;
+    await chatMediaStore().put(mediaKey, bytes, type);
+    const message = await deliverMessage(db, conversation, {
+      id: input.id,
+      kind: "voice",
+      plaintext: JSON.stringify({
+        voice: { durationMs: input.durationMs, waveform: input.waveform, contentType: type },
+      }),
+      replyTo: input.replyTo,
+      flags: [],
+      mediaKey,
+      now,
+    });
+    return { message };
+  }),
+
+  viewMedia: os.messaging.viewMedia.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const { match, viewer, other } = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const [target] = await messagesByIds(db, [input.messageId]);
+    if (!target || target.matchId !== match.id || target.kind !== "image" || target.deletedAt) {
+      throw new ORPCError("NOT_FOUND");
+    }
+    const parsed = payloads.image.safeParse(parseJson(decryptBody(target.bodyEncrypted, target.keyId)));
+    if (!parsed.success || !parsed.data.image.viewOnce) {
+      throw new ORPCError("NOT_FOUND");
+    }
+    if (target.senderId === viewer.member.id) {
+      throw new ORPCError("FORBIDDEN", { message: "own_media" });
+    }
+    const mediaKey = target.mediaKey;
+    if (parsed.data.image.viewedAt || !mediaKey) {
+      throw new ORPCError("CONFLICT", { message: "already_viewed" });
+    }
+    // The photo leaves storage a couple of minutes after its only viewing; scheduled before the
+    // claim so that an interruption cannot leave it stored for good.
+    await scheduleMediaDeletion(db, [mediaKey], new Date(now.getTime() + 2 * 60_000));
+    // Detaching is the atomic claim: of two simultaneous openings, only one gets the link.
+    if (!(await detachMedia(db, target.id))) {
+      throw new ORPCError("CONFLICT", { message: "already_viewed" });
+    }
+    const url = signedChatImageUrl(mediaKey, 60);
+    await replaceMessageBody(
+      db,
+      target.id,
+      encryptText(
+        messageKeyRing(),
+        JSON.stringify({ image: { ...parsed.data.image, viewedAt: now.toISOString() } }),
+      ),
+    );
+    await notifyMessageUpdated(db, [viewer.member.id, other.member.id], match.id, target.id);
+    return { url, expiresAt: new Date(now.getTime() + 60_000).toISOString() };
   }),
 
   proposeDate: os.messaging.proposeDate.use(requireViewer).handler(async ({ context, input }) => {

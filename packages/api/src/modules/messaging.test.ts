@@ -1,10 +1,13 @@
 import { uuidv7 } from "@epilove/core";
 import { createDatabase, schema } from "@epilove/db";
+import { createMemoryObjectStore } from "@epilove/db/storage";
 import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { createMemoryPublisher } from "@epilove/realtime";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { setGiphyFetch } from "../rencontre/giphy";
+import { setChatMediaStore } from "../rencontre/media";
+import { setImageClassifier } from "../rencontre/media-files";
 import { setRealtimePublisher } from "../rencontre/realtime";
 import { createTestApi } from "../rencontre/testing";
 
@@ -324,6 +327,184 @@ describe.skipIf(!url)("messaging", () => {
         counterTo: null,
       }),
     ).rejects.toMatchObject({ message: "no_place" });
+  });
+
+  it("sends a photo without its metadata, and a view-once photo opened once (CHAT-06)", async () => {
+    const { a, b, matchId } = await conversation();
+    const { store, objects } = createMemoryObjectStore();
+    setChatMediaStore(store);
+    try {
+      const exif = [...new TextEncoder().encode("Exif\0\0GPS 45.76N")];
+      const jpeg = new Uint8Array([
+        0xff,
+        0xd8,
+        0xff,
+        0xe1,
+        0,
+        exif.length + 2,
+        ...exif,
+        0xff,
+        0xda,
+        0,
+        4,
+        1,
+        2,
+        9,
+        9,
+        0xff,
+        0xd9,
+      ]);
+      const id = newId();
+      const sent = await as(a).messaging.sendImage({
+        id,
+        matchId,
+        file: new File([jpeg], "photo.jpg", { type: "image/jpeg" }),
+        width: 800,
+        height: 600,
+        viewOnce: false,
+        replyTo: null,
+      });
+      expect(sent.message.attachment).toMatchObject({
+        type: "image",
+        width: 800,
+        viewOnce: false,
+        explicit: false,
+      });
+      expect(sent.message.attachment?.type === "image" && sent.message.attachment.url).toBeTruthy();
+      const stored = objects.get(`chat/${matchId}/${id}.jpg`);
+      expect(new TextDecoder().decode(stored?.body)).not.toContain("GPS");
+
+      // A retry with the same id returns the stored message and never replaces its photo
+      // (otherwise a second upload would skip the classifier's verdict).
+      const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+      const retried = await as(a).messaging.sendImage({
+        id,
+        matchId,
+        file: new File([png], "other.png", { type: "image/png" }),
+        width: 10,
+        height: 10,
+        viewOnce: true,
+        replyTo: null,
+      });
+      expect(retried.message.attachment).toMatchObject({ width: 800, viewOnce: false });
+      expect(objects.has(`chat/${matchId}/${id}.png`)).toBe(false);
+      expect(objects.get(`chat/${matchId}/${id}.jpg`)?.body).toEqual(stored?.body);
+
+      await expect(
+        as(a).messaging.sendImage({
+          id: newId(),
+          matchId,
+          file: new File(["<svg onload=alert(1)>"], "x.jpg", { type: "image/jpeg" }),
+          width: 1,
+          height: 1,
+          viewOnce: false,
+          replyTo: null,
+        }),
+      ).rejects.toMatchObject({ message: "unsupported_media" });
+
+      const once = newId();
+      const viewOnce = await as(a).messaging.sendImage({
+        id: once,
+        matchId,
+        file: new File([jpeg], "photo.jpg", { type: "image/jpeg" }),
+        width: 800,
+        height: 600,
+        viewOnce: true,
+        replyTo: null,
+      });
+      expect(viewOnce.message.attachment).toMatchObject({
+        type: "image",
+        url: null,
+        viewOnce: true,
+        viewed: false,
+      });
+      await expect(as(a).messaging.viewMedia({ matchId, messageId: once })).rejects.toMatchObject({
+        message: "own_media",
+      });
+      const opened = await as(b).messaging.viewMedia({ matchId, messageId: once });
+      expect(opened.url).toBeTruthy();
+      await expect(as(b).messaging.viewMedia({ matchId, messageId: once })).rejects.toMatchObject({
+        message: "already_viewed",
+      });
+      const history = await as(b).messaging.history({ matchId, limit: 10 });
+      expect(history.messages.find((m) => m.id === once)?.attachment).toMatchObject({
+        viewed: true,
+        url: null,
+      });
+      const queued = await db
+        .select()
+        .from(schema.mediaDeletion)
+        .where(eq(schema.mediaDeletion.storageKey, `chat/${matchId}/${once}.jpg`));
+      expect(queued).toHaveLength(1);
+    } finally {
+      setChatMediaStore(undefined);
+    }
+  });
+
+  it("marks a photo the classifier flags, for a blurred display and moderation (CHAT-06)", async () => {
+    const { a, b, matchId } = await conversation();
+    setChatMediaStore(createMemoryObjectStore().store);
+    setImageClassifier({ classify: async () => ({ explicit: 0.93 }) });
+    try {
+      const id = newId();
+      const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+      await as(a).messaging.sendImage({
+        id,
+        matchId,
+        file: new File([png], "photo.png", { type: "image/png" }),
+        width: 400,
+        height: 400,
+        viewOnce: false,
+        replyTo: null,
+      });
+      const history = await as(b).messaging.history({ matchId, limit: 10 });
+      expect(history.messages.find((m) => m.id === id)?.attachment).toMatchObject({ explicit: true });
+      const [stored] = await db
+        .select({ moderation: schema.message.moderation })
+        .from(schema.message)
+        .where(eq(schema.message.id, id));
+      expect(stored?.moderation).toEqual({ flags: ["explicit_image"] });
+    } finally {
+      setImageClassifier(undefined);
+      setChatMediaStore(undefined);
+    }
+  });
+
+  it("sends a voice message with its waveform (CHAT-07)", async () => {
+    const { a, b, matchId } = await conversation();
+    const { store } = createMemoryObjectStore();
+    setChatMediaStore(store);
+    try {
+      const webm = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4]);
+      const id = newId();
+      await as(a).messaging.sendVoice({
+        id,
+        matchId,
+        file: new File([webm], "voice.webm", { type: "audio/webm" }),
+        durationMs: 4200,
+        waveform: [0.1, 0.5, 0.9, 0.4],
+        replyTo: null,
+      });
+      const history = await as(b).messaging.history({ matchId, limit: 10 });
+      expect(history.messages.find((m) => m.id === id)?.attachment).toMatchObject({
+        type: "voice",
+        durationMs: 4200,
+        waveform: [0.1, 0.5, 0.9, 0.4],
+        url: expect.stringContaining(`chat/${matchId}/${id}.webm`),
+      });
+      await expect(
+        as(a).messaging.sendVoice({
+          id: newId(),
+          matchId,
+          file: new File(["not audio"], "voice.webm", { type: "audio/webm" }),
+          durationMs: 1000,
+          waveform: [],
+          replyTo: null,
+        }),
+      ).rejects.toMatchObject({ message: "unsupported_media" });
+    } finally {
+      setChatMediaStore(undefined);
+    }
   });
 
   it("relays typing to the other member only", async () => {

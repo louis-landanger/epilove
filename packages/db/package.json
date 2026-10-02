@@ -9,7 +9,8 @@
     "./migrations": "./src/migrations.ts",
     "./repositories/*": "./src/repositories/*.ts",
     "./dev-seed": "./src/dev-seed/seed.ts",
-    "./testing": "./src/testing/fixtures.ts"
+    "./testing": "./src/testing/fixtures.ts",
+    "./storage": "./src/storage/object-store.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
@@ -23,13 +24,13 @@
     "@epilove/core": "workspace:*",
     "@epilove/crypto": "workspace:*",
     "@epilove/realtime": "workspace:*",
+    "aws4fetch": "catalog:",
     "drizzle-orm": "catalog:",
     "postgres": "catalog:"
   },
   "devDependencies": {
     "@epilove/config": "workspace:*",
     "@types/node": "catalog:",
-    "aws4fetch": "catalog:",
     "drizzle-kit": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",

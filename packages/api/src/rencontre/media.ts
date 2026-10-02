@@ -1,3 +1,4 @@
+import { createMemoryObjectStore, type ObjectStore, objectStoreFromEnv } from "@epilove/db/storage";
 import { type ImgproxyConfig, imgproxyConfigFromEnv, photoUrl } from "@epilove/media";
 
 /**
@@ -34,4 +35,28 @@ export function signedPhotoUrl(storageKey: string, size: PhotoSize = "card"): st
   // Rounded expiry so that the same photo keeps the same URL for a while (CDN and browser caches).
   const now = new Date(Math.floor(Date.now() / 900_000) * 900_000);
   return photoUrl(settings, storageKey, { ...SIZES[size], ttlSeconds: 3600 + 900, now });
+}
+
+/**
+ * A photo sent in a conversation (CHAT-06), resized but never cropped,
+ * metadata stripped again by imgproxy. Short-lived for view-once photos.
+ */
+export function signedChatImageUrl(storageKey: string, ttlSeconds = 3600): string {
+  const settings = imgproxy();
+  if (!settings) {
+    return PHOTO_PLACEHOLDER;
+  }
+  return photoUrl(settings, storageKey, { width: 1080, ttlSeconds });
+}
+
+/** Object storage of conversation media; in memory when S3 is not configured (unit tests). */
+let store: ObjectStore | undefined;
+
+export function chatMediaStore(): ObjectStore {
+  store ??= objectStoreFromEnv() ?? createMemoryObjectStore().store;
+  return store;
+}
+
+export function setChatMediaStore(next: ObjectStore | undefined) {
+  store = next;
 }

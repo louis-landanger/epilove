@@ -88,3 +88,13 @@ export const chatPreference = pgTable("chat_preference", {
   onlineStatus: boolean().notNull().default(true),
   ...timestamps,
 });
+
+/**
+ * Stored media waiting for deletion (CHAT-06, CHAT-07): a view-once photo a
+ * few minutes after it was opened, the media of a message deleted for
+ * everyone after the moderation retention. The worker empties it.
+ */
+export const mediaDeletion = pgTable("media_deletion", {
+  storageKey: text().primaryKey(),
+  deleteAfter: timestamp({ withTimezone: true }).notNull(),
+});

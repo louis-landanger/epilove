@@ -561,6 +561,9 @@ importers:
       '@epilove/realtime':
         specifier: workspace:*
         version: link:../realtime
+      aws4fetch:
+        specifier: 'catalog:'
+        version: 1.0.20
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.3(@types/pg@8.23.1)(pg@8.23.1)(postgres@3.4.9)
@@ -574,9 +577,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.0
-      aws4fetch:
-        specifier: 'catalog:'
-        version: 1.0.20
       drizzle-kit:
         specifier: 'catalog:'
         version: 0.31.11
