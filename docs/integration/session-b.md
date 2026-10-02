@@ -13,6 +13,7 @@
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
 | 1 | Notifications (NOT-01 à NOT-03) | ✅ fait et testé (API, worker, Playwright pour le service worker) ; push réel non testé en automatique (pas de service de push dans la session) |
+| 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
 
 ## Ce qui est fait
@@ -90,6 +91,15 @@
 - Mesures : séquence démarrée 830 ms après l'heure sur deux navigateurs (2 ms d'écart) ; dry run 3 000 membres en 2 min 30 s (détail dans le README du solveur).
 - Chorégraphie faite avec Motion (déjà présent) plutôt que GSAP (docs/02 le suggère) : pas de dépendance supplémentaire pour une séquence de quelques secondes.
 
+### Drop du soir (DEC-07)
+
+- `packages/core/src/discovery/drop.ts` : règles (5 profils, 10 apparitions au plus par profil et par jour, calcul à 20 h 30, publication à 21 h, 24 heures), heures du campus avec changement d'heure (`campusInstant`), jour du Drop visible (`dropDayAt`), affectation gloutonne sous contrainte de capacité (`assignDrops`, docs/06 section 8, version 1), testée par propriétés (taille, plafond, paires proposées seulement, maximalité).
+- `packages/core/src/discovery/filter.ts` : filtres du deck (DEC-06) déplacés de l'API vers le cœur pour servir aussi au Drop (`matchesDeckFilter`).
+- Table `drop_run` (un calcul par jour : réservé, calculé, publié ; statistiques agrégées) et index sur `drop.day`. Dépôt `packages/db/src/repositories/discovery-drop.ts`.
+- Worker `apps/worker/src/tasks/drop/` : tâche `drop_tick` chaque minute (le crontab n'a pas de fuseau : l'heure du campus est vérifiée dans la tâche), calcul (politiques d'accès, historique, critères éliminatoires, filtres du membre, score réciproque, 40 meilleurs candidats par membre, affectation), publication à 21 h (notification `drop_ready`, événement `drop.ready`), idempotent et rattrapable. `pnpm drop:run [--day] [--no-publish]` en développement : 371 Drops en 0,8 s sur les 400 membres fictifs.
+- API `discovery.drop` (profils non encore décidés et toujours visibles, revérifiés à la lecture ; heure du prochain Drop ; impressions `drop`). Les profils du Drop en cours sont exclus du deck.
+- Interface : en-tête « Le Drop » dans Découvrir (compte à rebours, puis les cinq profils en bande horizontale vers leur profil ; mise à jour en direct sur `drop.ready`).
+
 ### Divers
 
 - `packages/core/src/messaging/ids.ts` : génération et lecture d'UUIDv7 (messages envoyés par le client).
@@ -99,19 +109,19 @@
 
 | Fichier | Modification |
 |---|---|
-| `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo` |
+| `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo`, `drop:run` |
 | `pnpm-workspace.yaml` | catalogue : `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendance `@epilove/crypto`, devDependency `aws4fetch`, script `db:seed:dev`, exports `./repositories/*`, `./dev-seed` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `discovery`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
 | `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `likes`, `matches`, `notifications`, `pact`, `questionnaire` (ajouts) |
-| `packages/core/src/index.ts` | `discovery/ranking`, `discovery/rules`, `matching/explain`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
+| `packages/core/src/index.ts` | `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/rules`, `matching/explain`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
 | `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
-| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due` (ajouts) |
-| `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo` |
+| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick` (ajouts) |
+| `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `drop:run` |
 | `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
 | `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base) et second `webServer` pour le worker |
 | `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media`, `@epilove/realtime` ; `serverExternalPackages` : `esbuild`, `esbuild-wasm` (Serwist) |
@@ -128,6 +138,7 @@
 
 ## Migrations
 
+- `0007_*` : table `drop_run`, index `drop (day)`.
 - `0006_*` : `pact_season.report`, `computed_at`, `revealed_at` ; `pact_result.match_id` (+ index `(season_id, user_high)`).
 
 - `0005_*` : colonne `notification.pushed_at` (+ index partiel), table `notification_preference`.

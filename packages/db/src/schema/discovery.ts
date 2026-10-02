@@ -5,6 +5,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   smallint,
@@ -92,8 +93,21 @@ export const drop = pgTable(
     openedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [unique().on(t.userId, t.day)],
+  (t) => [unique().on(t.userId, t.day), index().on(t.day)],
 );
+
+/**
+ * One row per Drop day: claimed when the computation starts (20:30), marked
+ * computed, then published (21:00). Keeps the scheduler idempotent.
+ */
+export const dropRun = pgTable("drop_run", {
+  day: date({ mode: "string" }).primaryKey(),
+  startedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  computedAt: timestamp({ withTimezone: true }),
+  publishedAt: timestamp({ withTimezone: true }),
+  /** Aggregates only (members, Drops, appearances). */
+  stats: jsonb(),
+});
 
 export const IMPRESSION_SURFACES = ["deck", "drop", "profile"] as const;
 

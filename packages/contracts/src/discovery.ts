@@ -137,4 +137,18 @@ export const discoveryContract = {
     }),
   ),
   saveFilters: oc.input(deckFilter).output(deckFilter),
+  /**
+   * The evening Drop (DEC-07): the profiles of the current Drop not decided
+   * yet, and when the next one arrives (on the server's clock).
+   */
+  drop: oc.input(z.object({ locale: contentLocale })).output(
+    z.object({
+      cards: z.array(memberCard),
+      /** Profiles in the current Drop, decided ones included. */
+      total: z.number().int(),
+      expiresAt: z.iso.datetime().nullable(),
+      nextAt: z.iso.datetime(),
+      serverNow: z.iso.datetime(),
+    }),
+  ),
 };

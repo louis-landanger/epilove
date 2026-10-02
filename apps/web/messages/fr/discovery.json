@@ -91,5 +91,13 @@
     "reset": "Tout réinitialiser",
     "apply": "Appliquer",
     "close": "Fermer"
+  },
+  "drop": {
+    "title": "Le Drop",
+    "duration": "{hours} h {minutes} min",
+    "next": "Prochain Drop dans {duration}",
+    "expires": "Encore {duration}",
+    "empty": "Chaque soir à 21 h, cinq profils choisis pour toi, pendant 24 heures.",
+    "done": "Tu as fait le tour de ton Drop. Le prochain arrive à 21 h."
   }
 }

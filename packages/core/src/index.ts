@@ -1,4 +1,6 @@
 export * from "./campus/schools";
+export * from "./discovery/drop";
+export * from "./discovery/filter";
 export * from "./discovery/ranking";
 export * from "./discovery/rules";
 export * from "./matching/compatibility";

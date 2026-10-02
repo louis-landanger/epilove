@@ -1,4 +1,4 @@
-import type { IsoDate, Mode, QuotaUsage } from "@epilove/core";
+import type { DeckFilter, IsoDate, Mode, QuotaUsage } from "@epilove/core";
 import { and, asc, desc, eq, gte, inArray, isNull, ne, notExists, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { Database } from "../client";
@@ -121,14 +121,7 @@ export async function recordImpressions(
     });
 }
 
-export interface DeckFilter {
-  readonly mode: "all" | Mode;
-  readonly schoolSlugs: readonly string[];
-  readonly graduationYears: readonly number[];
-  readonly intentions: readonly string[];
-  readonly ageMin: number | null;
-  readonly ageMax: number | null;
-}
+export type { DeckFilter };
 
 export const DEFAULT_DECK_FILTER: DeckFilter = {
   mode: "all",

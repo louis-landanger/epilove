@@ -1,6 +1,5 @@
 import type { QuotaView } from "@epilove/contracts";
 import {
-  ageOn,
   canSee,
   canViewProfile,
   checkDecision,
@@ -8,10 +7,14 @@ import {
   DISCOVERY_RULES,
   dailyLikeQuota,
   daysBetween,
+  dropDayAt,
+  dropWindow,
   isDeckCandidate,
   jaccard,
   LYON_CAMPUS,
   type Mode,
+  matchesDeckFilter,
+  nextDropAt,
   quotaStatus,
   type RankingCandidate,
   rankDeck,
@@ -22,7 +25,6 @@ import {
 import type { Database } from "@epilove/db";
 import {
   activeMatchBetween,
-  type DeckFilter,
   decide,
   decisionAbout,
   getDeckFilter,
@@ -37,6 +39,7 @@ import {
   swipeHistory,
   undoLastPass,
 } from "@epilove/db/repositories/discovery";
+import { markDropOpened, publishedDropOf } from "@epilove/db/repositories/discovery-drop";
 import {
   campusDate,
   interestIdsOf,
@@ -70,23 +73,6 @@ function matchModeFor(modes: readonly Mode[]): Mode | null {
   return modes.includes("love") ? "love" : modes.includes("friends") ? "friends" : null;
 }
 
-function passesFilter(filter: DeckFilter, row: MemberRow, modes: readonly Mode[], today: string): boolean {
-  if (filter.mode !== "all" && !modes.includes(filter.mode)) {
-    return false;
-  }
-  if (filter.schoolSlugs.length > 0 && !filter.schoolSlugs.includes(row.member.schoolSlug)) {
-    return false;
-  }
-  if (filter.graduationYears.length > 0 && !filter.graduationYears.includes(row.member.graduationYear)) {
-    return false;
-  }
-  if (filter.intentions.length > 0 && !row.intentions.some((i) => filter.intentions.includes(i))) {
-    return false;
-  }
-  const age = ageOn(row.member.birthDate, today);
-  return (filter.ageMin === null || age >= filter.ageMin) && (filter.ageMax === null || age <= filter.ageMax);
-}
-
 const completenessOf = (row: MemberRow) => Math.max(0, Math.min(1, row.completeness / 100));
 
 export const discovery = {
@@ -118,7 +104,9 @@ export const discovery = {
     ]);
     const viewerSheet = sheets.get(viewer.member.id) ?? new Map();
     const viewerInterests = interests.get(viewer.member.id) ?? new Set<string>();
-    const excluded = new Set(input.exclude);
+    // The profiles of the current Drop stay in the Drop (docs/06, section 8).
+    const currentDrop = await publishedDropOf(db, viewer.member.id, dropDayAt(now, LYON_CAMPUS.timeZone));
+    const excluded = new Set([...input.exclude, ...(currentDrop?.candidates ?? [])]);
     const passCooldown = DISCOVERY_RULES.passCooldownDays * DAY_MS;
 
     const deckContext = {
@@ -141,7 +129,7 @@ export const discovery = {
       if (!decision.visible || !isDeckCandidate(viewer.member, row.member, deckContext)) {
         continue;
       }
-      if (!passesFilter(filter, row, decision.modes, today)) {
+      if (!matchesDeckFilter(filter, row, decision.modes, today)) {
         continue;
       }
       eligible.push({
@@ -433,5 +421,52 @@ export const discovery = {
     const filter = { ...input, ageMax };
     await saveDeckFilter(db, context.viewer.userId, filter);
     return filter;
+  }),
+
+  drop: os.discovery.drop.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const today = campusDate(now);
+    const timeZone = LYON_CAMPUS.timeZone;
+    const viewer = await requireMemberRow(db, context.viewer.userId);
+    const day = dropDayAt(now, timeZone);
+    const base = { nextAt: nextDropAt(now, timeZone).toISOString(), serverNow: now.toISOString() };
+    const current =
+      viewer.member.status === "active" ? await publishedDropOf(db, viewer.member.id, day) : null;
+    if (!current) {
+      return { cards: [], total: 0, expiresAt: null, ...base };
+    }
+    const ids = current.candidates;
+    const [rows, relations, history] = await Promise.all([
+      loadMembers(db, ids),
+      loadRelations(db, viewer.member.id, ids),
+      swipeHistory(db, viewer.member.id),
+    ]);
+    // Checked again at read time: a block or a pause since 20:30 removes the profile.
+    const visible = ids.flatMap((id) => {
+      const row = rows.get(id);
+      if (!row || history.has(id)) {
+        return [];
+      }
+      const decision = canSee(viewer.member, row.member, { today, relations });
+      return decision.visible ? [{ row, modes: [...decision.modes] }] : [];
+    });
+    const cards = await buildCards(db, viewer, visible, input.locale, today);
+    if (!current.openedAt) {
+      await markDropOpened(db, viewer.member.id, day, now);
+    }
+    await recordImpressions(
+      db,
+      viewer.member.id,
+      visible.map((v) => v.row.member.id),
+      "drop",
+      today,
+    );
+    return {
+      cards,
+      total: ids.length,
+      expiresAt: dropWindow(day, timeZone).expiresAt.toISOString(),
+      ...base,
+    };
   }),
 };

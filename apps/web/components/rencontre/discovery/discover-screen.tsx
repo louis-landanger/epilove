@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
 import { Deck, type DeckInitial } from "./deck";
+import { DropHeader } from "./drop-header";
 import { FiltersDrawer, isFilterActive } from "./filters-drawer";
 
 /** "Découvrir" tab: header (quota, filters) and the deck. */
@@ -55,6 +56,8 @@ export function DiscoverScreen({
           {active ? t("filtersActive") : t("filters")}
         </button>
       </header>
+
+      <DropHeader />
 
       <Deck
         key={deck.version}

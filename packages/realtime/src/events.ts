@@ -20,6 +20,7 @@ export const realtimeEvent = z.discriminatedUnion("type", [
   z.object({ type: z.literal("message.read"), matchId: uuid, lastReadMessageId: uuid }),
   z.object({ type: z.literal("typing"), matchId: uuid }),
   z.object({ type: z.literal("notification.created") }),
+  z.object({ type: z.literal("drop.ready") }),
   z.object({ type: z.literal("pact.reveal"), seasonId: uuid }),
 ]);
 

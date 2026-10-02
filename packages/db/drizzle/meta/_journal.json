@@ -50,6 +50,13 @@
       "when": 1790953368509,
       "tag": "0006_big_otto_octavius",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790955052691,
+      "tag": "0007_overjoyed_banshee",
+      "breakpoints": true
     }
   ]
 }

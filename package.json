@@ -24,7 +24,8 @@
     "db:seed": "pnpm --filter @epilove/db db:seed",
     "db:seed:dev": "pnpm --filter @epilove/db db:seed:dev",
     "pact:compute": "pnpm --filter @epilove/worker pact:compute",
-    "pact:demo": "pnpm --filter @epilove/worker pact:demo"
+    "pact:demo": "pnpm --filter @epilove/worker pact:demo",
+    "drop:run": "pnpm --filter @epilove/worker drop:run"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

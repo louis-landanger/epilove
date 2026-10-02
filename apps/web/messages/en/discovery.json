@@ -91,5 +91,13 @@
     "reset": "Reset all",
     "apply": "Apply",
     "close": "Close"
+  },
+  "drop": {
+    "title": "The Drop",
+    "duration": "{hours} h {minutes} min",
+    "next": "Next Drop in {duration}",
+    "expires": "{duration} left",
+    "empty": "Every evening at 9 pm, five profiles picked for you, for 24 hours.",
+    "done": "You've seen your whole Drop. The next one arrives at 9 pm."
   }
 }

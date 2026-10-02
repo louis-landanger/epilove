@@ -9,6 +9,7 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "drop:run": "tsx --env-file-if-exists=../../.env src/tasks/drop/cli.ts",
     "pact:compute": "tsx --env-file-if-exists=../../.env src/tasks/pact/cli.ts compute",
     "pact:demo": "tsx --env-file-if-exists=../../.env src/tasks/pact/cli.ts demo"
   },
