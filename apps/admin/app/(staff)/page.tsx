@@ -7,6 +7,12 @@ export default async function OverviewPage() {
   const cards = [
     { href: "/photos", label: "Photos à vérifier", value: overview.pendingPhotos, tone: "border-paper/15" },
     {
+      href: "/verifications",
+      label: "Vérifications photo",
+      value: overview.pendingVerifications,
+      tone: "border-paper/15",
+    },
+    {
       href: "/signalements",
       label: "Signalements P1 (< 6 h)",
       value: overview.openReports.p1,

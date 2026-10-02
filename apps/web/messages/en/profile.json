@@ -93,5 +93,81 @@
     "download": "Download",
     "share": "Share"
   },
-  "campusVerified": "Campus verified"
+  "campusVerified": "Campus verified",
+  "photoVerified": "Verified photo",
+  "verification": {
+    "metaTitle": "Verify my photo",
+    "entry": "Verify my photo",
+    "entryHelp": "A selfie with a gesture, compared with your photos by the moderation team.",
+    "back": "Back to profile",
+    "title": "Prove it's really you",
+    "lead": "A selfie reproducing a random gesture. A member of the moderation team compares it with your photos, then deletes it. No automatic face recognition.",
+    "privacy": {
+      "title": "What happens to your selfie",
+      "items": [
+        "It is never shown on your profile.",
+        "Only the moderation team sees it, for the time of the check.",
+        "It is deleted as soon as a decision is made."
+      ]
+    },
+    "start": "Draw my gesture",
+    "gestureTitle": "Your gesture",
+    "gestures": {
+      "peace": "Make a V with two fingers",
+      "thumbs_up": "Give a thumbs up",
+      "hand_on_head": "Put your hand on top of your head",
+      "three_fingers": "Show three fingers",
+      "point_up": "Point a finger up",
+      "ok_sign": "Make the OK sign",
+      "open_palm": "Show your open palm to the camera",
+      "hand_on_chin": "Rest your hand under your chin"
+    },
+    "deadline": "Take it before {time}, with your face clearly visible.",
+    "camera": {
+      "open": "Open the camera",
+      "live": "Camera preview",
+      "capture": "Take the photo",
+      "retake": "Retake",
+      "send": "Send for verification",
+      "preview": "Your selfie, before sending",
+      "denied": "The camera is not available. Allow it in your browser, or use the camera app.",
+      "fallback": "Take the photo with the camera app"
+    },
+    "sending": "Sending…",
+    "status": {
+      "processing": {
+        "title": "Sent",
+        "body": "We are preparing your selfie for the moderation team."
+      },
+      "pending": {
+        "title": "Sent",
+        "body": "A member of the moderation team checks it, usually within 24 hours. You will get an email."
+      },
+      "approved": {
+        "title": "Verified photo",
+        "body": "The badge shows on your profile. Your selfie has been deleted."
+      },
+      "rejected": {
+        "title": "Not approved this time",
+        "body": "{reason}. Your selfie has been deleted: try again with a new gesture."
+      },
+      "failed": {
+        "title": "Unreadable photo",
+        "body": "We could not read your photo. Draw a new gesture and try again."
+      }
+    },
+    "reasons": {
+      "gesture_mismatch": "The gesture did not match the one requested",
+      "face_mismatch": "We could not confirm that your photos show you",
+      "unclear": "The selfie was too blurry or too dark, or your face was hidden",
+      "not_live": "The photo did not seem to be taken on the spot"
+    },
+    "blockers": {
+      "no_photo": "First add at least one photo of yourself: your selfie will be compared with it.",
+      "quota": "Three attempts per day at most. Come back tomorrow."
+    },
+    "expired": "Time is up: draw a new gesture.",
+    "error": "That didn't work. Try again in a moment.",
+    "retry": "Draw a new gesture"
+  }
 }

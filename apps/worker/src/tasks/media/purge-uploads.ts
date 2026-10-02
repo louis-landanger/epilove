@@ -1,4 +1,9 @@
 import { deletePhoto, listAbandonedUploads } from "@epilove/db/repositories/profiles";
+import {
+  deleteVerification,
+  listAbandonedVerifications,
+} from "@epilove/db/repositories/profiles-verification";
+import { quarantineKey } from "@epilove/media";
 import type { Task } from "graphile-worker";
 import type { MediaDependencies } from "./process-photo";
 
@@ -14,8 +19,19 @@ export function purgeUploadsTask({ database, storage }: MediaDependencies): Task
       await store.remove(upload.storageKey);
       await deletePhoto(db, upload.id);
     }
-    if (abandoned.length > 0) {
-      helpers.logger.info(`purged ${abandoned.length} abandoned uploads`);
+    // Verification attempts never completed: the selfie (if any) never reached a moderator.
+    const attempts = await listAbandonedVerifications(db, new Date(Date.now() - ABANDONED_AFTER_MS));
+    for (const attempt of attempts) {
+      if (attempt.storageKey) {
+        await store.remove(attempt.storageKey);
+      }
+      await store.remove(quarantineKey(attempt.userId, attempt.id));
+      await deleteVerification(db, attempt.id);
+    }
+    if (abandoned.length + attempts.length > 0) {
+      helpers.logger.info(
+        `purged ${abandoned.length} abandoned uploads and ${attempts.length} verification attempts`,
+      );
     }
   };
 }

@@ -39,6 +39,8 @@ export const appUser = pgTable(
     reverifyDueAt: timestamp({ withTimezone: true }),
     /** Set when Forge ID (ONB-11) confirmed a student on the Lyon campus: "Campus vérifié" badge. */
     campusVerifiedAt: timestamp({ withTimezone: true }),
+    /** Set when a moderator matched a gesture selfie with the profile photos (ONB-08): "Photo vérifiée" badge. */
+    photoVerifiedAt: timestamp({ withTimezone: true }),
     /** Last sign-in with a code sent to the school address: proof the mailbox is still theirs (ONB-09). */
     emailProvenAt: timestamp({ withTimezone: true }),
     reverifyRemindedAt: timestamp({ withTimezone: true }),

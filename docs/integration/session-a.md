@@ -36,6 +36,7 @@
 | Anglais | PLT-04 | Langue résolue dans `proxy.ts` (préfixe `/en` des pages publiques, cookie `NEXT_LOCALE`, `Accept-Language`), `<html lang>` et métadonnées traduites, alternatives `hreflang`, sélecteur FR / EN (vitrine, connexion et onboarding, réglages) qui marche sans JavaScript, langue enregistrée sur le compte (`app_user.locale`) et reprise à chaque connexion, emails dans les deux langues (ADR 0012) | `packages/core/src/accounts/locale.test.ts`, `packages/email`, `packages/auth`, API, e2e `locale.spec.ts` |
 | Tableaux de bord | ADM-09 | `/tableaux-de-bord` du back-office (7, 30 ou 90 jours) : couverture du campus, activation, rétention à 30 jours, actifs sur 7 jours, inscriptions par jour, écoles ; indicateurs de rencontre (North Star, taux de match, match → conversation, brassage) ; délais de traitement des signalements par priorité (médiane, 90ᵉ centile, part dans la cible de docs/07), files photos et recours, décisions ; santé technique (file de tâches, photos bloquées, exports, taille de la base). Agrégats uniquement. Dernière activité des membres (`app_user.last_active_at`) enregistrée au plus toutes les 15 minutes | `packages/api/src/modules/admin.test.ts`, `safety.test.ts`, `apps/admin/e2e` |
 | Guide d'installation | PLT-01 | `/aide/installer` : onglets iPhone, Android et Ordinateur (détection automatique), illustration animée synchronisée avec les étapes (pause, choix d'une étape, mouvement réduit respecté), bouton « Installer » quand le navigateur expose `beforeinstallprompt`, rappel que les notifications iOS exigent l'app installée ; bandeau discret sur téléphone dans l'app (masquable, mémorisé dans le navigateur), liens depuis l'aide et les réglages | `components/acces/install/platform.test.ts`, e2e `install.spec.ts` |
+| Vérification photo par geste | ONB-08 | `/profil/verification` : geste tiré au hasard (8 gestes, jamais deux fois le même), valable 15 minutes, selfie pris avec la caméra (aperçu en direct) ou l'appareil photo du téléphone, envoi présigné, ré-encodage par le worker (`media/process-selfie`, EXIF supprimé), file `/verifications` du back-office (selfie à côté des photos du profil, A / R au clavier, 4 motifs), badge « Photo vérifiée » (`app_user.photo_verified_at`), email de résultat. Comparaison à l'œil uniquement, sans reconnaissance faciale ; le selfie est supprimé dès la décision ; 3 essais par jour | `packages/core/src/profiles/verification.test.ts`, `packages/api/src/modules/verification.test.ts`, `apps/worker/src/tasks/media/process-selfie.test.ts`, e2e `verification.spec.ts` (fausse caméra Chromium) et `apps/admin/e2e` |
 
 ## Pas encore fait
 
@@ -69,6 +70,8 @@
 | `apps/web/playwright.config.ts` | `API_RATE_LIMIT_ANONYMOUS=100000` pour le serveur de test (la suite e2e partage une seule IP) ; `locale: "fr-FR"` par défaut (le navigateur envoie `Accept-Language`, qui choisit la langue) |
 | `apps/web/i18n/request.ts` | La langue vient de l'en-tête `x-epilove-locale` posé par `proxy.ts` (ADR 0012) |
 | `apps/web/app/layout.tsx` | `<html lang>` selon la langue, métadonnées traduites, `metadataBase` (`SITE_URL`) ; toutes les pages sont désormais rendues à la demande |
+| `apps/web/next.config.ts` | `Permissions-Policy` : `camera=(self)` (selfie de vérification) et `microphone=(self)` (prompts vocaux), au lieu de `()` |
+| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | Ajout : `verification` |
 | `apps/web/i18n/paths.ts` (nouveau) | `publicHref(locale, chemin)` et `publicAlternates` pour les liens vers les pages publiques |
 
 ## Variables d'environnement (section `# Session A`)
@@ -85,7 +88,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 
 ## Migrations
 
-`0003_a_auth_and_identity_vault` à `0010_a_locale` (jetables, à régénérer à la fusion) : tables Better Auth, `identity_vault`, `onboarding_draft`, `signup_block`, `data_export`, colonne `photo.stage`, `profile.hidden_at`, `hidden_contact` (identifiant, indice), colonnes `app_user.deletion_requested_at`, `paused_until`, `email_proven_at`, `reverify_reminded_at`, `paused_for_reverification`, `campus_verified_at`, `locale`.
+`0003_a_auth_and_identity_vault` à `0011_a_photo_verification` (jetables, à régénérer à la fusion) : tables Better Auth, `identity_vault`, `onboarding_draft`, `signup_block`, `data_export`, colonne `photo.stage`, `profile.hidden_at`, `hidden_contact` (identifiant, indice), colonnes `app_user.deletion_requested_at`, `paused_until`, `email_proven_at`, `reverify_reminded_at`, `paused_for_reverification`, `campus_verified_at`, `locale`, `photo_verified_at`, table `photo_verification`.
 
 ## Pour la session B (coutures)
 
@@ -102,6 +105,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 - **Quotas** : `withinQuota(services, nom, userId, limite, fenêtre)` (`packages/api/src/lib/quota.ts`).
 - **Jobs** : `enqueueJob(tx, "tache", payload, { jobKey })` dans la transaction métier.
 - **Badge « Campus vérifié »** : `app_user.campus_verified_at` non nul (connexion Forge ID) ; à afficher sur les cartes de découverte si souhaité.
+- **Badge « Photo vérifiée »** : `app_user.photo_verified_at` non nul (ONB-08) ; à afficher sur les cartes et profils des autres. Un filtre « profils vérifiés seulement » est envisageable côté découverte.
 - **Re-vérification** : un compte en pause pour re-vérification (`paused_for_reverification`) a le statut `paused` : il suit les mêmes règles de découvrabilité.
 - **Activité** : `app_user.last_active_at` est mis à jour (au plus toutes les 15 minutes) par chaque appel de l'API depuis l'application membre (`trackActivity` dans `apps/web/lib/server/api-app.ts`). B peut s'en servir pour le classement ; l'afficher aux autres membres demanderait un réglage de confidentialité.
 - **Tableaux de bord** : `packages/db/src/repositories/admin-metrics.ts` (`meetingMetrics`) lit les tables P0 `like_action`, `match` et `message` pour les indicateurs de rencontre : à vérifier si B change ces tables. La participation au Pacte reste à ajouter à la fusion.

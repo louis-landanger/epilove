@@ -43,6 +43,8 @@ export const ownProfile = z.object({
   schoolSlug: z.string(),
   /** Forge ID confirmed the Lyon campus (ONB-11). */
   campusVerified: z.boolean(),
+  /** Gesture selfie approved by a moderator (ONB-08). */
+  photoVerified: z.boolean(),
   languages: z.array(z.enum(LANGUAGES)),
   intentions: z.array(z.enum(INTENTIONS)),
   modes: z.array(z.enum(MODES)),

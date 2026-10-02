@@ -78,6 +78,13 @@
       "when": 1790956455427,
       "tag": "0010_a_locale",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790959096160,
+      "tag": "0011_a_photo_verification",
+      "breakpoints": true
     }
   ]
 }

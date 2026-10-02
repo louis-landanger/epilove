@@ -12,6 +12,7 @@ export * from "./policies/types";
 export * from "./profiles/completeness";
 export * from "./profiles/photos";
 export * from "./profiles/rules";
+export * from "./profiles/verification";
 export * from "./safety/moderation";
 export * from "./safety/reports";
 export * from "./safety/sanctions";

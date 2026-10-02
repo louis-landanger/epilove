@@ -65,6 +65,22 @@ export async function createPendingPhoto(userId: string) {
   return id;
 }
 
+/** A gesture selfie waiting for review (ONB-08), really stored. Returns its storage key. */
+export async function createPendingVerification(userId: string) {
+  const id = uuidv7();
+  const key = `verifications/${userId}/${id}.webp`;
+  const bytes = await sharp({ create: { width: 600, height: 750, channels: 3, background: "#22aa88" } })
+    .webp()
+    .toBuffer();
+  const storage = createStorage(storageConfigFromEnv());
+  await storage.ensureBucket([]);
+  await storage.write(key, new Uint8Array(bytes), "image/webp");
+  await db.db
+    .insert(schema.photoVerification)
+    .values({ id, userId, gesture: "thumbs_up", status: "pending", storageKey: key });
+  return { id, key, storage };
+}
+
 export async function createReport(reporterId: string, reportedId: string) {
   const details = encryptText(keyRingFromEnv(), "Insultes répétées dans nos messages.");
   const [row] = await db.db

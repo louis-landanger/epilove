@@ -2,7 +2,14 @@ import AxeBuilder from "@axe-core/playwright";
 import { schema } from "@epilove/db";
 import { expect, test } from "@playwright/test";
 import { eq } from "drizzle-orm";
-import { createMember, createPendingPhoto, createReport, db, signInStaff } from "./support";
+import {
+  createMember,
+  createPendingPhoto,
+  createPendingVerification,
+  createReport,
+  db,
+  signInStaff,
+} from "./support";
 
 const WCAG = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
 
@@ -63,5 +70,36 @@ test.describe("back-office", () => {
     await expect(page).toHaveURL(/periode=7/);
     await expect(page.getByRole("link", { name: "7 jours" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByText(moderator.email)).toHaveCount(0);
+  });
+
+  test("a moderator compares a gesture selfie and grants the badge (ONB-08)", async ({ page }) => {
+    const moderator = await createMember("moderator");
+    const member = await createMember();
+    await createPendingPhoto(member.id);
+    const selfie = await createPendingVerification(member.id);
+
+    await signInStaff(page, moderator.email);
+    await expect(page.getByRole("heading", { name: "Vue d'ensemble" })).toBeVisible();
+    await page.getByRole("link", { name: "Vérifications", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Vérifications photo" })).toBeVisible();
+    // The queue is shared with other runs: decide until this member's selfie is done.
+    for (let round = 0; round < 50; round += 1) {
+      const [row] = await db.db
+        .select({ status: schema.photoVerification.status })
+        .from(schema.photoVerification)
+        .where(eq(schema.photoVerification.id, selfie.id));
+      if (row?.status !== "pending") break;
+      await expect(page.getByText("Geste demandé")).toBeVisible();
+      expect((await new AxeBuilder({ page }).withTags(WCAG).analyze()).violations).toEqual([]);
+      await page.keyboard.press("a");
+      await expect(page.getByText("Photo vérifiée").last()).toBeVisible();
+    }
+
+    const [user] = await db.db
+      .select({ verifiedAt: schema.appUser.photoVerifiedAt })
+      .from(schema.appUser)
+      .where(eq(schema.appUser.id, member.id));
+    expect(user?.verifiedAt).not.toBeNull();
+    expect(await selfie.storage.head(selfie.key)).toBeNull();
   });
 });

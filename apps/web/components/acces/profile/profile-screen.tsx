@@ -16,7 +16,7 @@ import {
   PRONOUNS_MAX_LENGTH,
 } from "@epilove/core";
 import { Button, ChoiceGroup, Tabs, TextField, useToast } from "@epilove/ui";
-import { LifeBuoy, Lock, Settings } from "lucide-react";
+import { LifeBuoy, Lock, ScanFace, Settings } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
@@ -29,6 +29,7 @@ import { InterestsPicker } from "./interests-picker";
 import { ProfilePreview, type ProfilePreviewData } from "./profile-preview";
 import { invalidSlots, PromptAnswersEditor, type PromptSlot, promptSlots } from "./prompt-answers-editor";
 import { ShareCard } from "./share-card";
+import { VERIFICATION_PATH } from "./verification/paths";
 
 export interface ProfileScreenProps {
   readonly initialProfile: OwnProfile;
@@ -73,6 +74,7 @@ export function ProfileScreen({ initialProfile, initialPhotos, catalog }: Profil
       age: profile.age,
       schoolSlug: profile.schoolSlug,
       campusVerified: profile.campusVerified,
+      photoVerified: profile.photoVerified,
       graduationYear: profile.graduationYear,
       program: profile.program,
       pronouns: profile.pronouns,
@@ -102,6 +104,18 @@ export function ProfileScreen({ initialProfile, initialPhotos, catalog }: Profil
         </nav>
       </header>
       <CompletenessGauge completeness={profile.completeness} />
+      {profile.photoVerified ? null : (
+        <Link
+          href={VERIFICATION_PATH as Route}
+          className="flex items-center gap-4 rounded-[2rem] border border-paper/10 bg-paper/[0.03] p-5 transition-colors hover:bg-paper/5 focus-visible:outline-2 focus-visible:outline-volt"
+        >
+          <ScanFace className="size-6 shrink-0 text-volt" aria-hidden="true" />
+          <span className="flex flex-col gap-0.5">
+            <span className="font-semibold">{t("verification.entry")}</span>
+            <span className="text-paper/70 text-sm">{t("verification.entryHelp")}</span>
+          </span>
+        </Link>
+      )}
       <ShareCard profile={profile} catalog={catalog} />
       <Tabs
         label={t("tabs.label")}

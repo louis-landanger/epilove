@@ -47,12 +47,18 @@ import {
   memberMetrics,
   moderationMetrics,
 } from "@epilove/db/repositories/admin-metrics";
+import {
+  decideVerification,
+  listComparablePhotos,
+  listPendingVerifications,
+} from "@epilove/db/repositories/profiles-verification";
 import { writeAudit } from "@epilove/db/repositories/safety";
 import {
   appealOutcomeEmail,
   moderationDecisionEmail,
   photoRejectedEmail,
   reportHandledEmail,
+  verificationOutcomeEmail,
 } from "@epilove/email";
 import { photoUrl } from "@epilove/media";
 import { ORPCError } from "@orpc/server";
@@ -186,6 +192,72 @@ export const admin = {
       meeting,
       health: { version: context.version, ...health },
     };
+  }),
+
+  verificationQueue: os.admin.verificationQueue.use(staff).handler(async ({ context }) => {
+    const db = context.database();
+    const { rows, total } = await listPendingVerifications(db, 20);
+    const imgproxy = context.services.imgproxy();
+    const now = context.services.now();
+    const url = (key: string) => photoUrl(imgproxy, key, { ...PHOTO_REVIEW_SIZE, now });
+    const verifications = await Promise.all(
+      rows.map(async (row) => ({
+        id: row.id,
+        member: pseudonym(context.services, row.userId) ?? { userId: row.userId, pseudonym: "" },
+        gesture: row.gesture,
+        selfieUrl: url(row.storageKey ?? ""),
+        photos: (await listComparablePhotos(db, row.userId)).map((item) => ({
+          id: item.id,
+          url: url(item.storageKey),
+        })),
+        submittedAt: row.updatedAt.toISOString(),
+      })),
+    );
+    return { total, verifications };
+  }),
+
+  reviewVerification: os.admin.reviewVerification.use(staff).handler(async ({ context, input, errors }) => {
+    const db = context.database();
+    const moderatorId = context.viewer.userId;
+    const at = context.services.now();
+    const approved = input.decision === "approve";
+    const decided = await db.transaction(async (tx) => {
+      const result = await decideVerification(tx, input.id, {
+        status: approved ? "approved" : "rejected",
+        rejection: input.decision === "reject" ? input.reason : null,
+        reviewedBy: moderatorId,
+        at,
+      });
+      if (result) {
+        await writeAudit(tx, {
+          actorId: moderatorId,
+          action: approved ? "verification.approved" : "verification.rejected",
+          targetType: "photo_verification",
+          targetId: input.id,
+          metadata: input.decision === "reject" ? { reason: input.reason } : undefined,
+        });
+      }
+      return result;
+    });
+    if (!decided) {
+      throw errors.NOT_FOUND();
+    }
+    // The selfie is only kept for the review (data minimisation).
+    if (decided.storageKey) {
+      await context.services
+        .storage()
+        .remove(decided.storageKey)
+        .catch(() => console.error("[admin] verification selfie could not be deleted"));
+    }
+    await refreshCompleteness(db, decided.userId);
+    const identity = await identityOf(db, decided.userId);
+    await notify(context.services, identity, (locale) =>
+      verificationOutcomeEmail(
+        input.decision === "reject" ? { approved: false, reason: input.reason } : { approved: true },
+        locale,
+      ),
+    );
+    return { ok: true as const };
   }),
 
   photoQueue: os.admin.photoQueue.use(staff).handler(async ({ context, input }) => {

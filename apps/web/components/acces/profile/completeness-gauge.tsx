@@ -2,18 +2,19 @@
 
 import type { OwnProfile } from "@epilove/contracts";
 import { CircleCheck, Sparkle } from "lucide-react";
+import type { Route } from "next";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { VERIFICATION_PATH } from "./verification/paths";
 
 const RADIUS = 34;
-/** Tips whose feature is not available yet (ONB-08, PRO-07): not shown. */
-const UPCOMING = new Set(["verify_photo", "add_anthem"]);
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /** Completeness ring and the tips that would raise it most (PRO-05). */
 export function CompletenessGauge({ completeness }: { completeness: OwnProfile["completeness"] }) {
   const t = useTranslations("profile");
   const { score } = completeness;
-  const tips = completeness.tips.filter((tip) => !UPCOMING.has(tip));
+  const { tips } = completeness;
   return (
     <section
       aria-labelledby="completeness-title"
@@ -72,7 +73,16 @@ export function CompletenessGauge({ completeness }: { completeness: OwnProfile["
             {tips.slice(0, 3).map((tip) => (
               <li key={tip} className="flex items-start gap-2 text-paper/75 text-sm">
                 <Sparkle className="mt-0.5 size-3.5 shrink-0 text-volt" aria-hidden="true" />
-                {t(`tips.${tip}`)}
+                {tip === "verify_photo" ? (
+                  <Link
+                    href={VERIFICATION_PATH as Route}
+                    className="underline decoration-paper/30 underline-offset-2 hover:text-paper hover:decoration-paper"
+                  >
+                    {t(`tips.${tip}`)}
+                  </Link>
+                ) : (
+                  t(`tips.${tip}`)
+                )}
               </li>
             ))}
           </ul>

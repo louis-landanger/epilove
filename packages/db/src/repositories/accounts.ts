@@ -5,10 +5,12 @@ import {
   appUser,
   type ConsentKind,
   consent,
+  dataExport,
   identityVault,
   type OnboardingDraftData,
   onboardingDraft,
   photo,
+  photoVerification,
   preferences,
   profile,
   school,
@@ -21,6 +23,7 @@ export async function findAccount(db: Db, userId: string) {
   const [row] = await db
     .select({
       campusVerifiedAt: appUser.campusVerifiedAt,
+      photoVerifiedAt: appUser.photoVerifiedAt,
       reverifyDueAt: appUser.reverifyDueAt,
       pausedForReverification: appUser.pausedForReverification,
       pausedUntil: appUser.pausedUntil,
@@ -294,9 +297,17 @@ export async function listAccountsToPurge(db: Db, requestedBefore: Date) {
     .limit(200);
 }
 
+/** Every stored object of a member: photos, verification selfies, data exports. */
 export async function listStorageKeys(db: Db, userId: string) {
-  const rows = await db.select({ key: photo.storageKey }).from(photo).where(eq(photo.userId, userId));
-  return rows.map((row) => row.key);
+  const [photos, selfies, exports] = await Promise.all([
+    db.select({ key: photo.storageKey }).from(photo).where(eq(photo.userId, userId)),
+    db
+      .select({ key: photoVerification.storageKey })
+      .from(photoVerification)
+      .where(eq(photoVerification.userId, userId)),
+    db.select({ key: dataExport.storageKey }).from(dataExport).where(eq(dataExport.userId, userId)),
+  ]);
+  return [...photos, ...selfies, ...exports].flatMap((row) => (row.key ? [row.key] : []));
 }
 
 /** Final erasure: every row referencing the account cascades or is set to null (reports). */

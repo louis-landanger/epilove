@@ -7,6 +7,7 @@ import { preferencesContract } from "./preferences";
 import { profileContract } from "./profile";
 import { safetyContract } from "./safety";
 import { systemContract } from "./system";
+import { verificationContract } from "./verification";
 import { waitlistContract } from "./waitlist";
 
 /** One entry per module, alphabetical. Each module lives in src/<module>.ts. */
@@ -20,6 +21,7 @@ export const contract = {
   profile: profileContract,
   safety: safetyContract,
   system: systemContract,
+  verification: verificationContract,
   waitlist: waitlistContract,
 };
 
@@ -34,4 +36,5 @@ export * from "./preferences";
 export * from "./profile";
 export * from "./safety";
 export * from "./system";
+export * from "./verification";
 export * from "./waitlist";

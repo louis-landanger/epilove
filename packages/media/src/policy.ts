@@ -37,3 +37,10 @@ export function photoKey(userId: string, photoId: string): string {
   assertId(photoId);
   return `photos/${userId}/${photoId}.webp`;
 }
+
+/** The re-encoded verification selfie (ONB-08): private, deleted once reviewed. */
+export function selfieKey(userId: string, verificationId: string): string {
+  assertId(userId);
+  assertId(verificationId);
+  return `verifications/${userId}/${verificationId}.webp`;
+}

@@ -221,6 +221,84 @@ const COPY = {
   },
 } as const;
 
+const VERIFICATION_REASONS: Record<EmailLocale, Record<string, string>> = {
+  fr: {
+    gesture_mismatch: "le geste ne correspond pas à celui demandé",
+    face_mismatch: "on ne peut pas confirmer que c'est bien toi sur tes photos",
+    unclear: "le selfie est trop flou, trop sombre ou ton visage est caché",
+    not_live: "la photo ne semble pas avoir été prise sur le moment",
+  },
+  en: {
+    gesture_mismatch: "the gesture does not match the one requested",
+    face_mismatch: "we cannot confirm that your photos show you",
+    unclear: "the selfie is too blurry or too dark, or your face is hidden",
+    not_live: "the photo does not seem to have been taken on the spot",
+  },
+};
+
+const VERIFICATION_COPY = {
+  fr: {
+    approved: {
+      subject: "Ton badge « Photo vérifiée » est là",
+      title: "Photo vérifiée",
+      lines: [
+        "L'équipe de modération a comparé ton selfie à tes photos : c'est bien toi.",
+        "Le badge « Photo vérifiée » s'affiche maintenant sur ton profil. Ton selfie a été supprimé.",
+      ],
+    },
+    rejected: {
+      subject: "Ta vérification photo n'a pas abouti",
+      title: "Vérification non validée",
+      lines: (reason: string) => [
+        `L'équipe de modération n'a pas pu valider ton selfie : ${reason}.`,
+        "Ton selfie a été supprimé. Tu peux réessayer depuis ton profil, avec un nouveau geste.",
+      ],
+    },
+  },
+  en: {
+    approved: {
+      subject: "Your “Verified photo” badge is here",
+      title: "Verified photo",
+      lines: [
+        "The moderation team compared your selfie with your photos: it is you.",
+        "The “Verified photo” badge now shows on your profile. Your selfie has been deleted.",
+      ],
+    },
+    rejected: {
+      subject: "Your photo verification did not go through",
+      title: "Verification not approved",
+      lines: (reason: string) => [
+        `The moderation team could not approve your selfie: ${reason}.`,
+        "Your selfie has been deleted. You can try again from your profile, with a new gesture.",
+      ],
+    },
+  },
+} as const;
+
+/** Outcome of a photo verification by gesture (ONB-08). */
+export function verificationOutcomeEmail(
+  outcome: { approved: true } | { approved: false; reason: string },
+  locale: EmailLocale = "fr",
+): RenderedEmail {
+  const copy = outcome.approved ? VERIFICATION_COPY[locale].approved : VERIFICATION_COPY[locale].rejected;
+  const lines = outcome.approved
+    ? VERIFICATION_COPY[locale].approved.lines
+    : VERIFICATION_COPY[locale].rejected.lines(
+        VERIFICATION_REASONS[locale][outcome.reason] ?? outcome.reason,
+      );
+  const footer = footerFor(locale);
+  return {
+    subject: copy.subject,
+    text: [...lines, "", footer].join("\n"),
+    html: layout({
+      locale,
+      preheader: lines[0] ?? copy.title,
+      footer,
+      body: `${heading(copy.title)}\n${paragraphs(lines)}`,
+    }),
+  };
+}
+
 /**
  * Statement of reasons sent with every sanction (DSA art. 17): the facts,
  * the rule, the measure, its duration and how to contest it.

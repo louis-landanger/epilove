@@ -3,7 +3,7 @@
 import type { OwnPhoto, SongInfo } from "@epilove/contracts";
 import { SCHOOLS, type SchoolSlug } from "@epilove/core";
 import { Badge, SchoolChip } from "@epilove/ui";
-import { BadgeCheck, ImageOff } from "lucide-react";
+import { BadgeCheck, ImageOff, ScanFace } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Fragment, type ReactNode } from "react";
 import { AnthemCard } from "./anthem";
@@ -13,6 +13,7 @@ export interface ProfilePreviewData {
   readonly age: number;
   readonly schoolSlug: string;
   readonly campusVerified: boolean;
+  readonly photoVerified: boolean;
   readonly graduationYear: number;
   readonly program: string | null;
   readonly pronouns: string | null;
@@ -68,6 +69,12 @@ export function ProfilePreview({ data }: { data: ProfilePreviewData }) {
           <div className="flex flex-wrap items-center gap-2">
             {school ? <SchoolChip school={school.slug as SchoolSlug} name={school.name} /> : null}
             <Badge>{t("classOf", { year: data.graduationYear })}</Badge>
+            {data.photoVerified ? (
+              <Badge tone="volt">
+                <ScanFace className="size-3.5" aria-hidden="true" />
+                {t("photoVerified")}
+              </Badge>
+            ) : null}
             {data.campusVerified ? (
               <Badge tone="volt">
                 <BadgeCheck className="size-3.5" aria-hidden="true" />

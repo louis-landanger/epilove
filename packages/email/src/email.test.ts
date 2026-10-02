@@ -113,3 +113,13 @@ describe("English emails (PLT-04)", () => {
     ).toBe("You're on the waiting list");
   });
 });
+
+describe("photo verification emails (ONB-08)", () => {
+  it("announces the badge or explains the refusal", async () => {
+    const { verificationOutcomeEmail } = await import("./templates/moderation");
+    expect(verificationOutcomeEmail({ approved: true }).subject).toContain("Photo vérifiée");
+    const refused = verificationOutcomeEmail({ approved: false, reason: "gesture_mismatch" }, "en");
+    expect(refused.text).toContain("the gesture does not match");
+    expect(refused.text).toContain("selfie has been deleted");
+  });
+});

@@ -5,6 +5,8 @@ import {
   REPORT_PRIORITIES,
   REPORT_REASONS,
   SANCTIONS,
+  VERIFICATION_GESTURES,
+  VERIFICATION_REJECTIONS,
 } from "@epilove/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
@@ -190,6 +192,7 @@ export const adminContract = {
   overview: oc.output(
     z.object({
       pendingPhotos: z.int(),
+      pendingVerifications: z.int(),
       openReports: z.object({ p1: z.int(), p2: z.int(), p3: z.int() }),
       heldProfiles: z.int(),
     }),
@@ -202,6 +205,32 @@ export const adminContract = {
         .default({ days: 30 }),
     )
     .output(adminDashboard),
+  /** Gesture selfies waiting for review, oldest first, with the photos to compare with (ONB-08). */
+  verificationQueue: oc.output(
+    z.object({
+      total: z.int(),
+      verifications: z.array(
+        z.object({
+          id: z.uuid(),
+          member: memberPseudonym,
+          gesture: z.enum(VERIFICATION_GESTURES),
+          selfieUrl: z.string(),
+          photos: z.array(z.object({ id: z.uuid(), url: z.string() })),
+          submittedAt: z.iso.datetime(),
+        }),
+      ),
+    }),
+  ),
+  /** Approves (badge) or rejects a selfie; it is deleted either way. */
+  reviewVerification: oc
+    .errors({ NOT_FOUND: { status: 404 } })
+    .input(
+      z.discriminatedUnion("decision", [
+        z.object({ id: z.uuid(), decision: z.literal("approve") }),
+        z.object({ id: z.uuid(), decision: z.literal("reject"), reason: z.enum(VERIFICATION_REJECTIONS) }),
+      ]),
+    )
+    .output(z.object({ ok: z.literal(true) })),
   photoQueue: oc.input(page).output(z.object({ photos: z.array(queuedPhoto), total: z.int() })),
   moderatePhoto: oc
     .errors({ NOT_FOUND: { status: 404 } })

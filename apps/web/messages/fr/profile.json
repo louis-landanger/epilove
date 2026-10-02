@@ -93,5 +93,81 @@
     "download": "Télécharger",
     "share": "Partager"
   },
-  "campusVerified": "Campus vérifié"
+  "campusVerified": "Campus vérifié",
+  "photoVerified": "Photo vérifiée",
+  "verification": {
+    "metaTitle": "Vérifier ma photo",
+    "entry": "Vérifier ma photo",
+    "entryHelp": "Un selfie avec un geste, comparé à tes photos par l'équipe de modération.",
+    "back": "Retour au profil",
+    "title": "Prouve que c'est bien toi",
+    "lead": "Un selfie en reproduisant un geste tiré au hasard. Une personne de l'équipe de modération le compare à tes photos, puis le supprime. Pas de reconnaissance faciale automatique.",
+    "privacy": {
+      "title": "Ce qu'on fait de ton selfie",
+      "items": [
+        "Il n'est jamais affiché sur ton profil.",
+        "Seule l'équipe de modération le voit, le temps de la vérification.",
+        "Il est supprimé dès que la décision est prise."
+      ]
+    },
+    "start": "Tirer mon geste",
+    "gestureTitle": "Ton geste",
+    "gestures": {
+      "peace": "Fais un V avec deux doigts",
+      "thumbs_up": "Lève le pouce",
+      "hand_on_head": "Pose ta main sur le haut de ta tête",
+      "three_fingers": "Montre trois doigts",
+      "point_up": "Pointe un doigt vers le haut",
+      "ok_sign": "Fais le signe OK",
+      "open_palm": "Montre ta paume ouverte, face à l'objectif",
+      "hand_on_chin": "Pose ta main sous ton menton"
+    },
+    "deadline": "À photographier avant {time}, visage bien visible.",
+    "camera": {
+      "open": "Ouvrir la caméra",
+      "live": "Aperçu de la caméra",
+      "capture": "Prendre la photo",
+      "retake": "Reprendre",
+      "send": "Envoyer pour vérification",
+      "preview": "Ton selfie, avant envoi",
+      "denied": "La caméra n'est pas accessible. Autorise-la dans ton navigateur, ou utilise l'appareil photo.",
+      "fallback": "Prendre la photo avec l'appareil photo"
+    },
+    "sending": "Envoi…",
+    "status": {
+      "processing": {
+        "title": "C'est envoyé",
+        "body": "On prépare ton selfie pour l'équipe de modération."
+      },
+      "pending": {
+        "title": "C'est envoyé",
+        "body": "Une personne de l'équipe de modération le vérifie, en général sous 24 heures. Tu recevras un email."
+      },
+      "approved": {
+        "title": "Photo vérifiée",
+        "body": "Le badge s'affiche sur ton profil. Ton selfie a été supprimé."
+      },
+      "rejected": {
+        "title": "Pas validée cette fois",
+        "body": "{reason}. Ton selfie a été supprimé : retente avec un nouveau geste."
+      },
+      "failed": {
+        "title": "Photo illisible",
+        "body": "On n'a pas pu lire ta photo. Tire un nouveau geste et réessaie."
+      }
+    },
+    "reasons": {
+      "gesture_mismatch": "Le geste ne correspond pas à celui demandé",
+      "face_mismatch": "On n'a pas pu confirmer que c'est bien toi sur tes photos",
+      "unclear": "Le selfie était trop flou, trop sombre, ou ton visage était caché",
+      "not_live": "La photo ne semblait pas prise sur le moment"
+    },
+    "blockers": {
+      "no_photo": "Ajoute d'abord au moins une photo de toi : c'est à elle que ton selfie sera comparé.",
+      "quota": "Trois essais par jour au maximum. Reviens demain."
+    },
+    "expired": "Le délai est passé : tire un nouveau geste.",
+    "error": "Ça n'a pas marché. Réessaie dans un instant.",
+    "retry": "Tirer un nouveau geste"
+  }
 }

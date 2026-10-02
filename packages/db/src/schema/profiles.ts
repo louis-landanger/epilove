@@ -1,4 +1,14 @@
-import { GENDERS, INTENTIONS, LANGUAGES, MAX_PHOTOS, MODES, PROMPT_ANSWER_MAX_LENGTH } from "@epilove/core";
+import {
+  GENDERS,
+  INTENTIONS,
+  LANGUAGES,
+  MAX_PHOTOS,
+  MODES,
+  PROMPT_ANSWER_MAX_LENGTH,
+  VERIFICATION_GESTURES,
+  VERIFICATION_REJECTIONS,
+  VERIFICATION_STATUSES,
+} from "@epilove/core";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -179,4 +189,33 @@ export const profileInterest = pgTable(
       .references(() => interest.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.userId, t.interestId] })],
+);
+
+/**
+ * Photo verification attempts (ONB-08). The selfie (`storage_key`) is
+ * deleted as soon as a moderator has reviewed it; only the outcome remains.
+ */
+export const photoVerification = pgTable(
+  "photo_verification",
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    gesture: text({ enum: VERIFICATION_GESTURES }).notNull(),
+    status: text({ enum: VERIFICATION_STATUSES }).notNull().default("uploading"),
+    storageKey: text(),
+    rejection: text({ enum: VERIFICATION_REJECTIONS }),
+    reviewedBy: uuid().references(() => appUser.id, { onDelete: "set null" }),
+    reviewedAt: timestamp({ withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    check("photo_verification_gesture_check", oneOf(t.gesture, VERIFICATION_GESTURES)),
+    check("photo_verification_status_check", oneOf(t.status, VERIFICATION_STATUSES)),
+    // NULL passes a CHECK: only set values are constrained.
+    check("photo_verification_rejection_check", oneOf(t.rejection, VERIFICATION_REJECTIONS)),
+    index().on(t.userId, t.createdAt),
+    index("photo_verification_pending_idx").on(t.createdAt).where(sql`${t.status} = 'pending'`),
+  ],
 );

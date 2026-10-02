@@ -7,6 +7,7 @@ import { preferences } from "./modules/preferences";
 import { profile } from "./modules/profile";
 import { safety } from "./modules/safety";
 import { system } from "./modules/system";
+import { verification } from "./modules/verification";
 import { waitlist } from "./modules/waitlist";
 import { os } from "./procedures";
 
@@ -24,6 +25,7 @@ export const router = os.router({
   profile,
   safety,
   system,
+  verification,
   waitlist,
 });
 

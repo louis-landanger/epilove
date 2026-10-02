@@ -2,7 +2,17 @@
 
 import { authClient } from "@epilove/auth/client";
 import { cn } from "@epilove/ui";
-import { BarChart3, BookOpen, Flag, Gavel, Images, LayoutDashboard, LogOut, ScrollText } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  Flag,
+  Gavel,
+  Images,
+  LayoutDashboard,
+  LogOut,
+  ScanFace,
+  ScrollText,
+} from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,6 +20,7 @@ import { usePathname, useRouter } from "next/navigation";
 const LINKS = [
   { href: "/", label: "Vue d'ensemble", icon: LayoutDashboard, adminOnly: false },
   { href: "/photos", label: "Photos", icon: Images, adminOnly: false },
+  { href: "/verifications", label: "Vérifications", icon: ScanFace, adminOnly: false },
   { href: "/signalements", label: "Signalements", icon: Flag, adminOnly: false },
   { href: "/recours", label: "Recours", icon: Gavel, adminOnly: false },
   { href: "/tableaux-de-bord", label: "Tableaux de bord", icon: BarChart3, adminOnly: false },

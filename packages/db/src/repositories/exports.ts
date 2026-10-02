@@ -9,6 +9,7 @@ import {
   interest,
   moderationAction,
   photo,
+  photoVerification,
   preferences,
   profile,
   profileInterest,
@@ -99,6 +100,8 @@ export async function collectPersonalData(db: Db, userId: string) {
         locale: appUser.locale,
         createdAt: appUser.createdAt,
         verifiedAt: appUser.verifiedAt,
+        campusVerifiedAt: appUser.campusVerifiedAt,
+        photoVerifiedAt: appUser.photoVerifiedAt,
       })
       .from(appUser)
       .innerJoin(school, eq(school.id, appUser.schoolId))
@@ -197,5 +200,16 @@ export async function collectPersonalData(db: Db, userId: string) {
     hiddenContacts: hidden,
     reportsFiled: reports,
     decisions,
+    // Selfies are deleted once reviewed: only the attempts remain.
+    photoVerifications: await db
+      .select({
+        gesture: photoVerification.gesture,
+        status: photoVerification.status,
+        rejection: photoVerification.rejection,
+        createdAt: photoVerification.createdAt,
+        reviewedAt: photoVerification.reviewedAt,
+      })
+      .from(photoVerification)
+      .where(eq(photoVerification.userId, userId)),
   };
 }

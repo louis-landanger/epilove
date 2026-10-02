@@ -8,6 +8,7 @@ import {
   listPromptAnswers,
   updateProfile,
 } from "@epilove/db/repositories/profiles";
+import { photoVerifiedAt } from "@epilove/db/repositories/profiles-verification";
 
 type Db = Pick<Database, "select" | "insert" | "update" | "delete">;
 
@@ -20,11 +21,12 @@ export async function refreshCompleteness(db: Db, userId: string): Promise<Compl
   if (!profile) {
     return null;
   }
-  const [photos, photosWithAltText, answers, interests] = await Promise.all([
+  const [photos, photosWithAltText, answers, interests, verifiedAt] = await Promise.all([
     countUsablePhotos(db, userId),
     countPhotosWithAltText(db, userId),
     listPromptAnswers(db, userId),
     listInterestIds(db, userId),
+    photoVerifiedAt(db, userId),
   ]);
   const completeness = profileCompleteness({
     photos,
@@ -34,7 +36,7 @@ export async function refreshCompleteness(db: Db, userId: string): Promise<Compl
     hasProgram: Boolean(profile.program),
     languages: profile.languages.length,
     hasAnthem: profile.anthem !== null,
-    photoVerified: false,
+    photoVerified: verifiedAt !== null,
   });
   if (completeness.score !== profile.completeness) {
     await updateProfile(db, userId, { completeness: completeness.score });

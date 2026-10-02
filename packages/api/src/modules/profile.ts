@@ -53,6 +53,7 @@ async function loadOwnProfile(db: Database, userId: string, now: Date): Promise<
     graduationYears: graduationYearRange(today),
     schoolSlug: profile.schoolSlug,
     campusVerified: Boolean(account?.campusVerifiedAt),
+    photoVerified: Boolean(account?.photoVerifiedAt),
     languages: profile.languages as Language[],
     intentions: profile.intentions as Intention[],
     modes: (prefs?.modes ?? []) as Mode[],

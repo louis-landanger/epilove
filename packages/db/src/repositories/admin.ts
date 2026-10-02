@@ -8,6 +8,7 @@ import {
   interest,
   moderationAction,
   photo,
+  photoVerification,
   profile,
   prompt,
   promptAnswer,
@@ -20,7 +21,7 @@ type Db = Pick<Database, "select" | "insert" | "update" | "delete">;
 // --- Overview -----------------------------------------------------------------------
 
 export async function moderationOverview(db: Db) {
-  const [[photos], reports, [held]] = await Promise.all([
+  const [[photos], reports, [held], [verifications]] = await Promise.all([
     db
       .select({ value: count() })
       .from(photo)
@@ -31,10 +32,12 @@ export async function moderationOverview(db: Db) {
       .where(inArray(report.status, ["open", "in_review"]))
       .groupBy(report.priority),
     db.select({ value: count() }).from(profile).where(isNotNull(profile.hiddenAt)),
+    db.select({ value: count() }).from(photoVerification).where(eq(photoVerification.status, "pending")),
   ]);
   const byPriority = Object.fromEntries(reports.map((row) => [row.priority, row.value]));
   return {
     pendingPhotos: photos?.value ?? 0,
+    pendingVerifications: verifications?.value ?? 0,
     openReports: { p1: byPriority.p1 ?? 0, p2: byPriority.p2 ?? 0, p3: byPriority.p3 ?? 0 },
     heldProfiles: held?.value ?? 0,
   };
