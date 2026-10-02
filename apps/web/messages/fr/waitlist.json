@@ -11,7 +11,7 @@
   "errors": {
     "required": "Entre ton adresse email d’école.",
     "invalid_format": "Cette adresse ne ressemble pas à une adresse email. Vérifie qu’il ne manque rien.",
-    "domain_not_allowed": "Cette adresse n’appartient pas à une école participante. Utilise ton email en @epita.fr, @esme.fr, @supbiotech.fr, @isg.fr ou @ipsa.fr.",
+    "domain_not_allowed": "Cette adresse n’appartient pas à une école participante.",
     "rate_limited": "Trop de tentatives en peu de temps. Réessaie dans quelques minutes.",
     "server_error": "Quelque chose a planté de notre côté. On relance ?"
   },

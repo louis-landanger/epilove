@@ -127,30 +127,42 @@ function setUpPointerEffects(root: HTMLElement, cleanups: Array<() => void>) {
     });
   }
 
-  // Kinetic headline: letters near the pointer condense and gain weight.
-  // Each letter keeps its resting width, so nothing around it moves (no layout shift).
-  const kinetic = gsap.utils.toArray<HTMLElement>("[data-headline] .headline-kinetic");
-  if (kinetic.length > 0) {
-    const split = SplitText.create(kinetic, { type: "chars", aria: "none", charsClass: "kinetic-char" });
-    const chars = split.chars as HTMLElement[];
-    for (const char of chars) {
-      char.style.width = `${char.getBoundingClientRect().width}px`;
-    }
+  // Kinetic headline: words near the pointer gain weight (variable axes) and
+  // drift towards it like charged particles. Whole words keep their kerning;
+  // each keeps its resting layout width and only moves with `translate`, so
+  // nothing around them reflows (no layout shift).
+  const words = gsap.utils.toArray<HTMLElement>("[data-headline] .headline-word");
+  if (words.length > 0) {
+    const variable = words.filter((word) => word.classList.contains("headline-kinetic"));
+    const lockWidths = () => {
+      for (const word of variable) {
+        word.style.width = "";
+        word.style.width = `${word.offsetWidth}px`;
+      }
+    };
+    lockWidths();
+    window.addEventListener("resize", lockWidths);
     const onPointer = (event: PointerEvent) => {
-      for (const char of chars) {
-        const rect = char.getBoundingClientRect();
-        const distance = Math.hypot(
-          event.clientX - (rect.left + rect.width / 2),
-          event.clientY - (rect.top + rect.height / 2),
-        );
-        const pull = Math.max(0, 1 - distance / 260);
-        char.style.setProperty("--pull", pull.toFixed(3));
+      for (const word of words) {
+        const rect = word.getBoundingClientRect();
+        const dx = event.clientX - (rect.left + rect.width / 2);
+        const dy = event.clientY - (rect.top + rect.height / 2);
+        const pull = Math.max(0, 1 - Math.hypot(dx, dy) / 520);
+        word.style.setProperty("--pull", pull.toFixed(3));
+        word.style.setProperty("--dx", `${(dx * pull * 0.045).toFixed(1)}px`);
+        word.style.setProperty("--dy", `${(dy * pull * 0.06).toFixed(1)}px`);
       }
     };
     window.addEventListener("pointermove", onPointer, { passive: true });
     cleanups.push(() => {
       window.removeEventListener("pointermove", onPointer);
-      split.revert();
+      window.removeEventListener("resize", lockWidths);
+      for (const word of words) {
+        word.style.removeProperty("width");
+        word.style.removeProperty("--pull");
+        word.style.removeProperty("--dx");
+        word.style.removeProperty("--dy");
+      }
     });
   }
 }
@@ -251,7 +263,8 @@ export function startChoreography(root: HTMLElement): () => void {
     // The giant footer logotype rises letter by letter.
     const giant = document.querySelector<HTMLElement>("[data-footer-giant]");
     if (giant) {
-      const split = SplitText.create(giant, { type: "chars", aria: "none", mask: "chars" });
+      // No per-letter masks: they would clip the tightly tracked glyphs; the footer hides the rise.
+      const split = SplitText.create(giant, { type: "chars", aria: "none" });
       splits.push(split);
       gsap.from(split.chars, {
         yPercent: 100,

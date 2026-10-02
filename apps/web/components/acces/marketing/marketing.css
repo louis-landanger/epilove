@@ -124,13 +124,22 @@
 
 .headline-word {
   display: inline-block;
+  translate: var(--dx, 0) var(--dy, 0);
   animation: focus-pull 1.5s var(--ease-out) both;
+  transition: translate 0.7s var(--ease-out);
 }
 
+/* Heavier near the pointer, a touch narrower so the advance width barely changes. */
 .headline-kinetic {
   font-variation-settings:
-    "wdth" 100,
+    "wdth" calc(100 - var(--pull, 0) * 6),
     "opsz" 96;
+  font-weight: calc(600 + var(--pull, 0) * 200);
+  text-align: center;
+  transition:
+    font-variation-settings 0.5s var(--ease-out),
+    font-weight 0.5s var(--ease-out),
+    translate 0.7s var(--ease-out);
 }
 
 /* Text is painted from the first frame (no hidden LCP): it only comes into focus. */
@@ -143,19 +152,6 @@
     filter: blur(0);
     transform: none;
   }
-}
-
-.kinetic-char {
-  --pull: 0;
-  display: inline-block;
-  text-align: center;
-  font-variation-settings:
-    "wdth" calc(100 - var(--pull) * 28),
-    "opsz" 96;
-  font-weight: calc(600 + var(--pull) * 200);
-  transition:
-    font-variation-settings 0.45s var(--ease-out),
-    font-weight 0.45s var(--ease-out);
 }
 
 .hero-fade {
@@ -176,7 +172,7 @@
   transition: opacity 1.2s var(--ease-out) 0.8s;
 }
 
-.marketing:has(canvas[data-live="true"]) .field-hint {
+.marketing:has([data-ion-field][data-live="true"]) .field-hint {
   opacity: 1;
 }
 
@@ -837,7 +833,7 @@
   font-size: 38vw;
   font-weight: 700;
   line-height: 0.8;
-  letter-spacing: -0.065em;
+  letter-spacing: -0.045em;
   text-align: center;
   font-variation-settings: "wdth" 85;
 }
