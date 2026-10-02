@@ -28,41 +28,6 @@ export function generateReferralCode(
   return code;
 }
 
-/**
- * Fixed-window counter kept in memory, per server process.
- * TODO(ONB-01): move to Valkey so limits hold across processes and restarts.
- */
-export function createFixedWindowLimiter(options: {
-  readonly limit: number;
-  readonly windowMs: number;
-  readonly now?: () => number;
-  readonly maxKeys?: number;
-}) {
-  const now = options.now ?? Date.now;
-  const maxKeys = options.maxKeys ?? 10_000;
-  const windows = new Map<string, { start: number; count: number }>();
-  return {
-    /** Counts one attempt for `key`; false when the limit of the current window is exceeded. */
-    take(key: string): boolean {
-      const time = now();
-      const current = windows.get(key);
-      if (!current || time - current.start >= options.windowMs) {
-        if (windows.size >= maxKeys) {
-          for (const [candidate, window] of windows) {
-            if (time - window.start >= options.windowMs) {
-              windows.delete(candidate);
-            }
-          }
-        }
-        windows.set(key, { start: time, count: 1 });
-        return true;
-      }
-      current.count += 1;
-      return current.count <= options.limit;
-    },
-  };
-}
-
 export interface WaitlistDependencies {
   readonly hmacSecret: () => string;
   /** Public origin of the site, used in the referral link (`<siteUrl>/?r=<code>`). */
@@ -82,9 +47,7 @@ function schoolName(slug: string): string {
 export function createWaitlistProcedures(dependencies: WaitlistDependencies) {
   const now = dependencies.now ?? Date.now;
   // Per-IP limits live in the web layer, which sees the client address; these
-  // bound the work per address and per process whatever the entry point.
-  const perAddress = createFixedWindowLimiter({ limit: 5, windowMs: 60 * 60_000, now });
-  const overall = createFixedWindowLimiter({ limit: 600, windowMs: 60_000, now });
+  // bound the work per email address and overall, shared by every instance (Valkey).
   let statsCache: { value: WaitlistStats; expiresAt: number } | null = null;
 
   return {
@@ -93,11 +56,12 @@ export function createWaitlistProcedures(dependencies: WaitlistDependencies) {
       if (!parsed.ok) {
         return { ok: false as const, reason: parsed.reason };
       }
-      if (!overall.take("all")) {
+      const { limiter } = context.services;
+      if (!(await limiter.consume("waitlist:all", 600, 60)).allowed) {
         throw new ORPCError("TOO_MANY_REQUESTS");
       }
       const hmac = emailHmac(dependencies.hmacSecret(), parsed.canonicalEmail);
-      if (!perAddress.take(hmac)) {
+      if (!(await limiter.consume(`waitlist:email:${hmac}`, 5, 3600)).allowed) {
         throw new ORPCError("TOO_MANY_REQUESTS");
       }
 

@@ -1,37 +1,20 @@
 import "server-only";
+import { rateLimiter } from "@/lib/server/api-app";
 
 /**
- * Per-IP token bucket kept in memory, per server process.
- * TODO(ONB-01): move to Valkey (shared between instances, survives restarts).
- *
- * Generous on purpose: a whole lecture hall behind the campus NAT may sign up
- * from the same address within minutes after a QR code is shown.
+ * Per-address ceiling of the waiting list form, shared by every instance
+ * (Valkey). Generous on purpose: a whole lecture hall behind the campus NAT
+ * may sign up from the same address within minutes after a QR code is shown.
  */
-const CAPACITY = 60;
-const REFILL_PER_MS = CAPACITY / (10 * 60_000);
-const MAX_KEYS = 20_000;
+const PER_ADDRESS = { limit: 60, windowSeconds: 600 } as const;
 
-const buckets = new Map<string, { tokens: number; updatedAt: number }>();
-
-export function takeToken(key: string, now: number = Date.now()): boolean {
-  const bucket = buckets.get(key) ?? { tokens: CAPACITY, updatedAt: now };
-  bucket.tokens = Math.min(CAPACITY, bucket.tokens + (now - bucket.updatedAt) * REFILL_PER_MS);
-  bucket.updatedAt = now;
-  if (buckets.size >= MAX_KEYS && !buckets.has(key)) {
-    // Full buckets carry no information: forget them first.
-    for (const [candidate, value] of buckets) {
-      if (value.tokens + (now - value.updatedAt) * REFILL_PER_MS >= CAPACITY) {
-        buckets.delete(candidate);
-      }
-    }
-  }
-  if (bucket.tokens < 1) {
-    buckets.set(key, bucket);
-    return false;
-  }
-  bucket.tokens -= 1;
-  buckets.set(key, bucket);
-  return true;
+export async function takeToken(address: string): Promise<boolean> {
+  const { allowed } = await rateLimiter.consume(
+    `waitlist:ip:${address}`,
+    PER_ADDRESS.limit,
+    PER_ADDRESS.windowSeconds,
+  );
+  return allowed;
 }
 
 /**

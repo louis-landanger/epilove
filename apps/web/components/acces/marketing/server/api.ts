@@ -1,16 +1,9 @@
 import "server-only";
 import type { WaitlistStats } from "@epilove/contracts";
-import { createApiClient } from "@epilove/contracts/client";
-import { apiApp } from "@/lib/server/api-app";
+import { anonymousApi } from "@/lib/server/api-app";
 
-/**
- * Typed client calling the API in-process: same validation, limits and code
- * path as a browser request to /api/rpc, without a network round trip.
- */
-export const serverApi = createApiClient({
-  url: "http://internal/api/rpc",
-  fetch: (request) => Promise.resolve(apiApp.fetch(request)),
-});
+/** In-process API for the public pages: same validation and procedures as /api/rpc. */
+export const serverApi = anonymousApi;
 
 /** Waiting list statistics for the first render, or null if the database is unreachable (build, outage). */
 export async function initialWaitlistStats(): Promise<WaitlistStats | null> {

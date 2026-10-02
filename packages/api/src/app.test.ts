@@ -1,6 +1,7 @@
 import { createApiClient } from "@epilove/contracts/client";
+import { createMemoryRateLimiter } from "@epilove/rate-limit";
 import { describe, expect, it } from "vitest";
-import { createApp } from "./app";
+import { createApp, createServerClient } from "./app";
 import { anonymous, devHeaderResolver } from "./context";
 
 const app = createApp({
@@ -93,5 +94,20 @@ describe("rate limiting", () => {
     expect(blocked.status).toBe(429);
     expect(blocked.headers.get("retry-after")).toBeTruthy();
     expect((await call("10.9.9.8")).status).toBe(200);
+  });
+
+  it("does not apply the per-address ceiling to in-process calls of public pages", async () => {
+    const services = { limiter: createMemoryRateLimiter() };
+    const dependencies = {
+      version: "test",
+      database: () => {
+        throw new Error("unused");
+      },
+      services,
+    };
+    const server = createServerClient(dependencies, null);
+    for (let index = 0; index < 150; index += 1) {
+      await expect(server.system.health()).resolves.toMatchObject({ status: "ok" });
+    }
   });
 });

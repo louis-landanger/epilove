@@ -8,7 +8,7 @@ import { call } from "@orpc/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp, defaultServices } from "../app";
 import { type ApiContext, anonymous } from "../context";
-import { createFixedWindowLimiter, createWaitlistProcedures, generateReferralCode } from "./waitlist";
+import { createWaitlistProcedures, generateReferralCode } from "./waitlist";
 
 describe("generateReferralCode", () => {
   it("draws 10 lowercase Crockford base32 symbols", () => {
@@ -27,27 +27,6 @@ describe("generateReferralCode", () => {
   it("does not repeat itself", () => {
     const codes = new Set(Array.from({ length: 5000 }, () => generateReferralCode()));
     expect(codes.size).toBe(5000);
-  });
-});
-
-describe("createFixedWindowLimiter", () => {
-  it("allows `limit` attempts per window and key", () => {
-    let time = 0;
-    const limiter = createFixedWindowLimiter({ limit: 2, windowMs: 1000, now: () => time });
-    expect([limiter.take("a"), limiter.take("a"), limiter.take("a")]).toEqual([true, true, false]);
-    expect(limiter.take("b")).toBe(true);
-    time = 1000;
-    expect(limiter.take("a")).toBe(true);
-  });
-
-  it("forgets expired windows when it holds too many keys", () => {
-    let time = 0;
-    const limiter = createFixedWindowLimiter({ limit: 1, windowMs: 10, now: () => time, maxKeys: 2 });
-    limiter.take("a");
-    limiter.take("b");
-    time = 20;
-    expect(limiter.take("c")).toBe(true);
-    expect(limiter.take("a")).toBe(true);
   });
 });
 

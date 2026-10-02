@@ -41,8 +41,8 @@
 
 ## Pas encore fait
 
-- Vitrine : JavaScript initial de `/` à 196 Ko gzip (budget 180 Ko, dont 185 Ko pour React, Next et next-intl) ; WebGPU non vérifié sur un vrai GPU ; limites de la liste d'attente en mémoire (à passer sur Valkey) ; effectifs par école estimés (à confirmer) ; pas de design sonore ni de préchargeur.
-- Paliers 2 et 3.
+- Vitrine : JavaScript initial de `/` à 196 Ko gzip (budget 180 Ko, dont 185 Ko pour React, Next et next-intl) ; WebGPU non vérifié sur un vrai GPU ; effectifs par école estimés (à confirmer) ; pas de design sonore ni de préchargeur.
+- Palier 3 : filigrane dynamique (SAF-12), verrouillage de l'application (SAF-13), Storybook, design sonore de la vitrine, connexion Microsoft (ONB-10), Lighthouse CI.
 
 ## Fichiers partagés modifiés
 

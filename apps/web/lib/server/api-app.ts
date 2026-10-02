@@ -38,13 +38,18 @@ function viewerResolver(): ViewerResolver {
 
 const defaults = defaultServices();
 
+/** Shared by every request of this process; Valkey keeps limits across instances and restarts. */
+export const rateLimiter = process.env.VALKEY_URL
+  ? createValkeyRateLimiter(valkeyFromEnv())
+  : defaults.limiter;
+
 const dependencies: Omit<AppDependencies, "resolveViewer"> = {
   version: process.env.APP_VERSION ?? "dev",
   database: getDatabase,
   trackActivity: true,
   services: {
     ...defaults,
-    limiter: process.env.VALKEY_URL ? createValkeyRateLimiter(valkeyFromEnv()) : defaults.limiter,
+    limiter: rateLimiter,
     revokeSessions: (userId) => revokeAllSessions(getAuth(), userId),
   },
 };
@@ -56,3 +61,10 @@ export async function serverApi() {
   const member = await getCurrentMember();
   return createServerClient(dependencies, member ? { userId: member.userId, role: member.role } : null);
 }
+
+/**
+ * The API for public pages (landing, waiting list), called in-process without
+ * a viewer. It skips the HTTP layer and its per-address ceiling: callers that
+ * act for a visitor apply their own per-address limit (see the waiting list).
+ */
+export const anonymousApi = createServerClient(dependencies, null);

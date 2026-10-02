@@ -22,7 +22,7 @@ export async function joinWaitlistAction(
     return { status: "error", error: "required", email };
   }
 
-  if (!takeToken(clientAddress(await headers()))) {
+  if (!(await takeToken(clientAddress(await headers())))) {
     return { status: "error", error: "rate_limited", email };
   }
 
