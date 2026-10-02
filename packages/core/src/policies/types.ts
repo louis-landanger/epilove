@@ -1,17 +1,21 @@
 import type { IsoDate } from "../time/calendar";
 
-export type Mode = "love" | "friends";
+export const MODES = ["love", "friends"] as const;
+export type Mode = (typeof MODES)[number];
 
-export type Gender = "woman" | "man" | "nonbinary";
+export const GENDERS = ["woman", "man", "nonbinary"] as const;
+export type Gender = (typeof GENDERS)[number];
 
-export type AccountStatus =
-  | "onboarding"
-  | "active"
-  | "paused"
-  | "restricted"
-  | "suspended"
-  | "banned"
-  | "deleting";
+export const ACCOUNT_STATUSES = [
+  "onboarding",
+  "active",
+  "paused",
+  "restricted",
+  "suspended",
+  "banned",
+  "deleting",
+] as const;
+export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
 /** Everything the access policies need to know about one member. */
 export interface Member {

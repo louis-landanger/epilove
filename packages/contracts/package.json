@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@epilove/core": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",
     "zod": "catalog:"

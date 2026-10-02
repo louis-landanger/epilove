@@ -1,4 +1,4 @@
 export * from "./client";
-export * from "./migrations";
 export * as schema from "./schema";
-export * from "./seed-data";
+export { ROLES, type Role } from "./schema/users";
+export * from "./seeds";

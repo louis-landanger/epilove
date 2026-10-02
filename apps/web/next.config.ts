@@ -21,7 +21,14 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   typedRoutes: true,
   poweredByHeader: false,
-  transpilePackages: ["@epilove/api", "@epilove/contracts", "@epilove/core", "@epilove/tokens"],
+  transpilePackages: [
+    "@epilove/api",
+    "@epilove/contracts",
+    "@epilove/core",
+    "@epilove/db",
+    "@epilove/tokens",
+  ],
+  serverExternalPackages: ["postgres"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

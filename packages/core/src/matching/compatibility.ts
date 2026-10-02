@@ -16,6 +16,14 @@ export const IMPORTANCE_WEIGHTS = {
 
 export type Importance = keyof typeof IMPORTANCE_WEIGHTS;
 
+export const IMPORTANCES = [
+  "irrelevant",
+  "little",
+  "somewhat",
+  "very",
+  "mandatory",
+] as const satisfies readonly Importance[];
+
 export interface QuestionAnswer {
   readonly answer: string;
   readonly acceptable: ReadonlySet<string>;

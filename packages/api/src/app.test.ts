@@ -1,8 +1,15 @@
 import { createApiClient } from "@epilove/contracts/client";
 import { describe, expect, it } from "vitest";
 import { createApp } from "./app";
+import { anonymous, devHeaderResolver } from "./context";
 
-const app = createApp({ version: "test" });
+const app = createApp({
+  version: "test",
+  database: () => {
+    throw new Error("These tests do not use the database.");
+  },
+  resolveViewer: anonymous,
+});
 const client = createApiClient({
   url: "http://localhost/api/rpc",
   fetch: (request) => Promise.resolve(app.fetch(request)),
@@ -40,5 +47,27 @@ describe("api", () => {
     const response = await app.request("/api/nope");
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: "not_found" });
+  });
+});
+
+describe("viewer resolution", () => {
+  const resolve = devHeaderResolver({ APP_ENV: "test" });
+
+  it("reads the development header only when it holds a UUID", async () => {
+    const id = "01920000-0000-7000-8000-000000000001";
+    await expect(resolve(new Request("http://x", { headers: { "x-dev-user-id": id } }))).resolves.toEqual({
+      userId: id,
+      role: "user",
+    });
+    await expect(
+      resolve(new Request("http://x", { headers: { "x-dev-user-id": "admin" } })),
+    ).resolves.toBeNull();
+    await expect(resolve(new Request("http://x"))).resolves.toBeNull();
+  });
+
+  it("refuses to run outside development and test, including when APP_ENV is unset", () => {
+    expect(() => devHeaderResolver({ APP_ENV: "production" })).toThrow();
+    expect(() => devHeaderResolver({ APP_ENV: "staging" })).toThrow();
+    expect(() => devHeaderResolver({ NODE_ENV: "development" })).toThrow();
   });
 });

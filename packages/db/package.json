@@ -5,7 +5,8 @@
   "description": "PostgreSQL schema, migrations and seeds (Drizzle ORM).",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./migrations": "./src/migrations.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",

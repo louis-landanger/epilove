@@ -4,7 +4,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createDatabase } from "./client";
 import { runMigrations } from "./migrations";
 import { campus, school } from "./schema";
-import { seedReferenceData } from "./seed-data";
+import { seedReferenceData } from "./seeds/reference";
 
 const url = process.env.DATABASE_URL;
 

@@ -6,7 +6,7 @@ Contexte pour les assistants de code travaillant sur ce dépôt.
 
 Epilove (nom de code) : application de rencontre et d'amitié réservée aux étudiants vérifiés du campus IONIS de Lyon (EPITA, ESME, Sup'Biotech, ISG, IPSA). Le plan complet est dans `docs/` : **lire le document concerné avant d'implémenter une fonctionnalité**. Les fonctionnalités ont des identifiants stables (`DEC-02`, `SAF-04`…) définis dans `docs/01-fonctionnalites.md` ; les citer dans les issues, branches et PR.
 
-Statut : phase 0, socle technique en place (sprint 0). La stack et l'organisation du monorepo sont décrites dans `docs/03-stack.md`, `docs/04-architecture.md` et `docs/adr/0001-socle-technique-sprint-0.md`.
+Statut : phase 0, socle technique en place (sprint 0). **Développement en cours sur deux sessions parallèles : lire `docs/sessions-paralleles.md` (périmètre et propriété des fichiers) avant toute modification.** La stack et l'organisation du monorepo sont décrites dans `docs/03-stack.md`, `docs/04-architecture.md` et `docs/adr/0001-socle-technique-sprint-0.md`.
 
 ## Commandes
 
@@ -16,6 +16,7 @@ Prérequis : Node 24 (`.node-version`), Corepack activé (`corepack enable`), Do
 |---|---|
 | `pnpm install` | Installe les dépendances (et les hooks git lefthook) |
 | `cp .env.example .env` | Variables locales (valeurs de développement uniquement) |
+| `bash infra/scripts/cloud-docker.sh` | Session cloud uniquement : démarre Docker et récupère les images via un miroir (Docker Hub limite les téléchargements anonymes) |
 | `pnpm services:up` / `services:down` / `services:reset` | Services locaux Docker : PostgreSQL 18 + pgvector, Valkey, Centrifugo, SeaweedFS, imgproxy, Mailpit (http://localhost:8025) |
 | `pnpm db:migrate` / `pnpm db:seed` | Migrations et données de référence (campus, écoles) |
 | `pnpm db:generate` | Génère une migration après modification du schéma Drizzle (à committer) |

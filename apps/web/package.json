@@ -14,10 +14,12 @@
   "dependencies": {
     "@epilove/api": "workspace:*",
     "@epilove/core": "workspace:*",
+    "@epilove/db": "workspace:*",
     "@epilove/tokens": "workspace:*",
     "next": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "server-only": "catalog:"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",

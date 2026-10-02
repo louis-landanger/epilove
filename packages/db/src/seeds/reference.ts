@@ -1,6 +1,6 @@
 import { LYON_CAMPUS, SCHOOLS } from "@epilove/core";
-import type { Database } from "./client";
-import { campus, school } from "./schema";
+import type { Database } from "../client";
+import { campus, school } from "../schema";
 
 /** Idempotent reference data: the Lyon campus and its schools (from @epilove/core). */
 export async function seedReferenceData(db: Database) {

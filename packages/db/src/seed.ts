@@ -1,10 +1,10 @@
 import { createDatabase, databaseUrlFromEnv } from "./client";
-import { seedReferenceData } from "./seed-data";
+import { runSeeds } from "./seeds";
 
 const { db, close } = createDatabase(databaseUrlFromEnv(), { maxConnections: 1 });
 try {
-  await seedReferenceData(db);
-  console.log("Reference data seeded (Lyon campus and schools).");
+  await runSeeds(db);
+  console.log("Seeds applied.");
 } finally {
   await close();
 }
