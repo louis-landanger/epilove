@@ -34,10 +34,10 @@
 | Easter eggs | COM-05 | 404 jouable (attrape les ions), code Konami, terminal caché `/terminal` | e2e `fun.spec.ts` |
 | Limitation de débit générique | — | Plafond par membre (600 appels par minute) ou par IP (120 par minute) sur toutes les procédures `/rpc/*`, en plus des quotas métier ; réponse 429 avec `Retry-After` | `packages/api/src/app.test.ts`, `lib/client-ip.test.ts` |
 | Anglais | PLT-04 | Langue résolue dans `proxy.ts` (préfixe `/en` des pages publiques, cookie `NEXT_LOCALE`, `Accept-Language`), `<html lang>` et métadonnées traduites, alternatives `hreflang`, sélecteur FR / EN (vitrine, connexion et onboarding, réglages) qui marche sans JavaScript, langue enregistrée sur le compte (`app_user.locale`) et reprise à chaque connexion, emails dans les deux langues (ADR 0012) | `packages/core/src/accounts/locale.test.ts`, `packages/email`, `packages/auth`, API, e2e `locale.spec.ts` |
+| Tableaux de bord | ADM-09 | `/tableaux-de-bord` du back-office (7, 30 ou 90 jours) : couverture du campus, activation, rétention à 30 jours, actifs sur 7 jours, inscriptions par jour, écoles ; indicateurs de rencontre (North Star, taux de match, match → conversation, brassage) ; délais de traitement des signalements par priorité (médiane, 90ᵉ centile, part dans la cible de docs/07), files photos et recours, décisions ; santé technique (file de tâches, photos bloquées, exports, taille de la base). Agrégats uniquement. Dernière activité des membres (`app_user.last_active_at`) enregistrée au plus toutes les 15 minutes | `packages/api/src/modules/admin.test.ts`, `safety.test.ts`, `apps/admin/e2e` |
 
 ## Pas encore fait
 
-- Tableaux de bord (ADM-09).
 - Vitrine : JavaScript initial de `/` à 196 Ko gzip (budget 180 Ko, dont 185 Ko pour React, Next et next-intl) ; WebGPU non vérifié sur un vrai GPU ; limites de la liste d'attente en mémoire (à passer sur Valkey) ; effectifs par école estimés (à confirmer) ; pas de design sonore ni de préchargeur.
 - Paliers 2 et 3.
 
@@ -102,6 +102,8 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 - **Jobs** : `enqueueJob(tx, "tache", payload, { jobKey })` dans la transaction métier.
 - **Badge « Campus vérifié »** : `app_user.campus_verified_at` non nul (connexion Forge ID) ; à afficher sur les cartes de découverte si souhaité.
 - **Re-vérification** : un compte en pause pour re-vérification (`paused_for_reverification`) a le statut `paused` : il suit les mêmes règles de découvrabilité.
+- **Activité** : `app_user.last_active_at` est mis à jour (au plus toutes les 15 minutes) par chaque appel de l'API depuis l'application membre (`trackActivity` dans `apps/web/lib/server/api-app.ts`). B peut s'en servir pour le classement ; l'afficher aux autres membres demanderait un réglage de confidentialité.
+- **Tableaux de bord** : `packages/db/src/repositories/admin-metrics.ts` (`meetingMetrics`) lit les tables P0 `like_action`, `match` et `message` pour les indicateurs de rencontre : à vérifier si B change ces tables. La participation au Pacte reste à ajouter à la fusion.
 - **Langue** : les pages de B reçoivent la langue sans rien faire (`useLocale`, `getTranslations`) ; chaque namespace de B doit exister en `fr` et en `en` (test `messages.test.ts`). Les emails et notifications de B s'écrivent dans `app_user.locale`. Les liens vers les pages publiques passent par `publicHref`.
 - **Débit** : toutes les procédures passent déjà par le plafond générique ; les quotas métier de B (likes, messages) restent à poser avec `withinQuota`.
 

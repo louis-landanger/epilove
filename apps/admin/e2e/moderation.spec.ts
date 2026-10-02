@@ -48,4 +48,20 @@ test.describe("back-office", () => {
     await expect(page.getByText("decision.warning").first()).toBeVisible();
     await expect(page.getByText("report.viewed").first()).toBeVisible();
   });
+
+  test("the dashboards show aggregates and delays (ADM-09)", async ({ page }) => {
+    const moderator = await createMember("moderator");
+    await signInStaff(page, moderator.email);
+    await page.getByRole("link", { name: "Tableaux de bord" }).click();
+    await expect(page.getByRole("heading", { name: "Tableaux de bord", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Modération" })).toBeVisible();
+    await expect(page.getByRole("rowheader", { name: /P1/ })).toBeVisible();
+    await expect(page.getByText("Couverture du campus")).toBeVisible();
+    expect((await new AxeBuilder({ page }).withTags(WCAG).analyze()).violations).toEqual([]);
+
+    await page.getByRole("link", { name: "7 jours" }).click();
+    await expect(page).toHaveURL(/periode=7/);
+    await expect(page.getByRole("link", { name: "7 jours" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByText(moderator.email)).toHaveCount(0);
+  });
 });

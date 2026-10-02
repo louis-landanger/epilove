@@ -44,6 +44,61 @@ describe.skipIf(!url)("back-office", () => {
     expect(me.pseudonym).toMatch(/^M-[A-Z2-9]{6}$/);
   });
 
+  it("computes aggregated dashboards, with no personal data (ADM-09)", async () => {
+    const member = api.clientFor(await insertActiveMember(api.db));
+    await expect(member.admin.dashboard()).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    const moderator = api.clientFor(await insertActiveMember(api.db), "moderator");
+    const before = await moderator.admin.dashboard({ days: 30 });
+    const reporter = await insertActiveMember(api.db);
+    const target = await insertActiveMember(api.db);
+    const hour = 3_600_000;
+    // The test API's clock (createTestApi).
+    const now = new Date("2026-10-02T10:00:00Z").getTime();
+    await api.db.insert(schema.report).values([
+      {
+        reporterId: reporter,
+        reportedId: target,
+        context: "profile",
+        reason: "harassment",
+        priority: "p2",
+        status: "resolved",
+        createdAt: new Date(now - 30 * hour),
+        resolvedAt: new Date(now - 2 * hour),
+      },
+      {
+        reporterId: reporter,
+        reportedId: target,
+        context: "profile",
+        reason: "threat",
+        priority: "p1",
+        status: "open",
+        createdAt: new Date(now - 3 * hour),
+      },
+    ]);
+    const after = await moderator.admin.dashboard({ days: 30 });
+    const p1 = (dashboard: typeof after) => dashboard.moderation.reports.find((row) => row.priority === "p1");
+    const p2 = (dashboard: typeof after) => dashboard.moderation.reports.find((row) => row.priority === "p2");
+    // Other test files share the database: compare with lower bounds only.
+    expect(p2(after)?.handled).toBeGreaterThanOrEqual((p2(before)?.handled ?? 0) + 1);
+    expect(p2(after)?.withinTarget).toBeLessThan(p2(after)?.handled ?? 0);
+    expect(p2(after)?.p90Hours).toBeGreaterThan(0);
+    expect(p2(after)?.targetHours).toBe(24);
+    expect(p1(after)?.open).toBeGreaterThanOrEqual((p1(before)?.open ?? 0) + 1);
+    expect(p1(after)?.oldestOpenHours).toBeGreaterThanOrEqual(2.9);
+    expect(after.members.activeLast7Days).toBeGreaterThanOrEqual(before.members.activeLast7Days);
+    expect(after.members.schools.map((row) => row.slug).sort()).toEqual([
+      "epita",
+      "esme",
+      "ipsa",
+      "isg",
+      "supbiotech",
+    ]);
+    expect(after.health.jobs.failed).toBeGreaterThanOrEqual(0);
+    expect(after.health.databaseBytes).toBeGreaterThan(0);
+    expect(JSON.stringify(after)).not.toContain(await emailOf(target));
+  });
+
   it("approves and rejects photos, telling the member why", async () => {
     const owner = await insertActiveMember(api.db);
     const first = await readyPhoto(owner);

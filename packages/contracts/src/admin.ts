@@ -114,8 +114,75 @@ const slug = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
   .max(60);
 
+const hoursOrNull = z.number().nullable();
+
+/** Aggregated indicators only (ADM-09): no field identifies a member. */
+export const adminDashboard = z.object({
+  generatedAt: z.iso.datetime(),
+  periodDays: z.int(),
+  members: z.object({
+    byStatus: z.partialRecord(z.enum(ACCOUNT_STATUSES), z.int()),
+    signupsByDay: z.array(z.object({ day: z.iso.date(), count: z.int() })),
+    activation: z.object({ members: z.int(), complete: z.int() }),
+    activeLast7Days: z.int(),
+    retention: z.object({ cohort: z.int(), retained: z.int() }),
+    schools: z.array(
+      z.object({ slug: z.string(), members: z.int(), waitlist: z.int(), headcount: z.int().nullable() }),
+    ),
+  }),
+  moderation: z.object({
+    reports: z.array(
+      z.object({
+        priority: z.enum(REPORT_PRIORITIES),
+        targetHours: z.int(),
+        open: z.int(),
+        oldestOpenHours: hoursOrNull,
+        handled: z.int(),
+        within24h: z.int(),
+        withinTarget: z.int(),
+        medianHours: hoursOrNull,
+        p90Hours: hoursOrNull,
+      }),
+    ),
+    photos: z.object({
+      pending: z.int(),
+      oldestPendingHours: hoursOrNull,
+      reviewed: z.int(),
+      rejected: z.int(),
+      medianReviewHours: hoursOrNull,
+    }),
+    appeals: z.object({
+      pending: z.int(),
+      oldestPendingHours: hoursOrNull,
+      decided: z.int(),
+      overturned: z.int(),
+    }),
+    sanctions: z.partialRecord(z.enum(SANCTIONS), z.int()),
+  }),
+  meeting: z.object({
+    likes: z.int(),
+    matches: z.int(),
+    matchesWithConversation: z.int(),
+    crossSchoolMatches: z.int(),
+    reciprocalConversationsThisWeek: z.int(),
+  }),
+  health: z.object({
+    version: z.string(),
+    jobs: z.object({
+      pending: z.int(),
+      running: z.int(),
+      failed: z.int(),
+      oldestWaitingMinutes: hoursOrNull,
+    }),
+    photos: z.object({ processing: z.int(), stuck: z.int(), failedToday: z.int() }),
+    exports: z.object({ pending: z.int(), failed: z.int() }),
+    databaseBytes: z.int(),
+  }),
+});
+export type AdminDashboard = z.infer<typeof adminDashboard>;
+
 /**
- * Back-office (ADM-01 to ADM-03, ADM-05, ADM-06). Moderators and admins;
+ * Back-office (ADM-01 to ADM-03, ADM-05, ADM-06, ADM-09). Moderators and admins;
  * catalogue editing is reserved to admins. Every action is audited.
  */
 export const adminContract = {
@@ -127,6 +194,14 @@ export const adminContract = {
       heldProfiles: z.int(),
     }),
   ),
+  /** Product, moderation and technical indicators over a period (ADM-09). */
+  dashboard: oc
+    .input(
+      z
+        .object({ days: z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30) })
+        .default({ days: 30 }),
+    )
+    .output(adminDashboard),
   photoQueue: oc.input(page).output(z.object({ photos: z.array(queuedPhoto), total: z.int() })),
   moderatePhoto: oc
     .errors({ NOT_FOUND: { status: 404 } })

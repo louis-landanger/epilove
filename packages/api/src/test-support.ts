@@ -39,6 +39,7 @@ export function createTestApi(url: string, now = new Date("2026-10-02T10:00:00Z"
   const app = createApp({
     version: "test",
     database: () => db,
+    trackActivity: true,
     resolveViewer: async (request) => {
       const userId = request.headers.get("x-test-user");
       const role = request.headers.get("x-test-role");

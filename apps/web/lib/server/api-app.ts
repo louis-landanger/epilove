@@ -41,6 +41,7 @@ const defaults = defaultServices();
 const dependencies: Omit<AppDependencies, "resolveViewer"> = {
   version: process.env.APP_VERSION ?? "dev",
   database: getDatabase,
+  trackActivity: true,
   services: {
     ...defaults,
     limiter: process.env.VALKEY_URL ? createValkeyRateLimiter(valkeyFromEnv()) : defaults.limiter,

@@ -9,6 +9,7 @@ import { createRouterClient } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Hono } from "hono";
 import type { ApiContext, ApiServices, Viewer, ViewerResolver } from "./context";
+import { recordActivity } from "./lib/activity";
 import { clientIp } from "./lib/client-ip";
 import { createItunesCatalog, type MusicCatalog } from "./lib/music";
 import { router } from "./router";
@@ -29,6 +30,8 @@ export interface AppDependencies {
   readonly resolveViewer: ViewerResolver;
   /** Missing services fall back to environment-based defaults (see `defaultServices`). */
   readonly services?: Partial<ApiServices>;
+  /** Records members' last activity (the member app, not the back-office). */
+  readonly trackActivity?: boolean;
 }
 
 /** Services built from environment variables, created on first use. */
@@ -111,6 +114,9 @@ export function createApp(dependencies: AppDependencies) {
       viewer,
       services,
     };
+    if (dependencies.trackActivity) {
+      void recordActivity(context);
+    }
     const { matched, response } = await rpc.handle(c.req.raw, { prefix: RPC_PREFIX, context });
     if (matched) {
       return c.newResponse(response.body, response);
@@ -176,5 +182,8 @@ export function createServerClient(
     viewer,
     services: { ...defaultServices(), ...dependencies.services },
   };
+  if (dependencies.trackActivity) {
+    void recordActivity(context);
+  }
   return createRouterClient(router, { context });
 }

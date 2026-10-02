@@ -1,7 +1,7 @@
 import { decryptText } from "@epilove/crypto";
 import { schema } from "@epilove/db";
 import { and, eq, sql } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createTestApi, insertActiveMember, TEST_KEY_RING } from "../test-support";
 
 const url = process.env.DATABASE_URL;
@@ -177,6 +177,28 @@ describe.skipIf(!url)("safety, privacy and account", () => {
     expect(vault?.purgeAfter.getUTCFullYear()).toBe(2031);
     await expect(client.account.delete({ confirm: true })).rejects.toMatchObject({ code: "NOT_ALLOWED" });
     await expect(client.account.pause()).rejects.toMatchObject({ code: "NOT_ALLOWED" });
+  });
+
+  it("records the last activity, at most once per quarter of an hour (ADM-09)", async () => {
+    const me = await insertActiveMember(api.db);
+    await api.db.update(schema.appUser).set({ lastActiveAt: null }).where(eq(schema.appUser.id, me));
+    await api.clientFor(me).account.summary();
+    await vi.waitFor(async () => {
+      const [row] = await api.db
+        .select({ lastActiveAt: schema.appUser.lastActiveAt })
+        .from(schema.appUser)
+        .where(eq(schema.appUser.id, me));
+      expect(row?.lastActiveAt?.toISOString()).toBe("2026-10-02T10:00:00.000Z");
+    });
+    // Throttled: a second call in the same window writes nothing.
+    await api.db.update(schema.appUser).set({ lastActiveAt: null }).where(eq(schema.appUser.id, me));
+    await api.clientFor(me).account.summary();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const [row] = await api.db
+      .select({ lastActiveAt: schema.appUser.lastActiveAt })
+      .from(schema.appUser)
+      .where(eq(schema.appUser.id, me));
+    expect(row?.lastActiveAt).toBeNull();
   });
 
   it("remembers the interface language on the account (PLT-04)", async () => {

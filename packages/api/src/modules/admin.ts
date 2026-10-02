@@ -5,8 +5,13 @@ import {
   canReviewAppeal,
   isValidStatement,
   type Locale,
+  REPORT_PRIORITIES,
+  REPORT_TARGET_HOURS,
   type Sanction,
   type SanctionInput,
+  SCHOOL_HEADCOUNT_ESTIMATES,
+  SCHOOL_SLUGS,
+  type SchoolSlug,
   sanctionEffect,
 } from "@epilove/core";
 import { decryptText } from "@epilove/crypto";
@@ -36,6 +41,12 @@ import {
   setPhotoDecision,
   setReportStatus,
 } from "@epilove/db/repositories/admin";
+import {
+  healthMetrics,
+  meetingMetrics,
+  memberMetrics,
+  moderationMetrics,
+} from "@epilove/db/repositories/admin-metrics";
 import { writeAudit } from "@epilove/db/repositories/safety";
 import {
   appealOutcomeEmail,
@@ -131,6 +142,51 @@ export const admin = {
   })),
 
   overview: os.admin.overview.use(staff).handler(({ context }) => moderationOverview(context.database())),
+
+  dashboard: os.admin.dashboard.use(staff).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = context.services.now();
+    const [members, moderation, meeting, health] = await Promise.all([
+      memberMetrics(db, now, input.days),
+      moderationMetrics(db, now, input.days),
+      meetingMetrics(db, now, input.days),
+      healthMetrics(db, now),
+    ]);
+    return {
+      generatedAt: now.toISOString(),
+      periodDays: input.days,
+      members: {
+        ...members,
+        byStatus: members.byStatus as Partial<Record<AccountStatus, number>>,
+        schools: members.schools.map((row) => ({
+          ...row,
+          headcount: (SCHOOL_SLUGS as readonly string[]).includes(row.slug)
+            ? SCHOOL_HEADCOUNT_ESTIMATES[row.slug as SchoolSlug]
+            : null,
+        })),
+      },
+      moderation: {
+        ...moderation,
+        reports: REPORT_PRIORITIES.map((priority) => {
+          const row = moderation.reports.find((entry) => entry.priority === priority);
+          return {
+            priority,
+            targetHours: REPORT_TARGET_HOURS[priority],
+            open: row?.open ?? 0,
+            oldestOpenHours: row?.oldestOpenHours ?? null,
+            handled: row?.handled ?? 0,
+            within24h: row?.within24h ?? 0,
+            withinTarget: row?.withinTarget ?? 0,
+            medianHours: row?.medianHours ?? null,
+            p90Hours: row?.p90Hours ?? null,
+          };
+        }),
+        sanctions: moderation.sanctions as Partial<Record<Sanction, number>>,
+      },
+      meeting,
+      health: { version: context.version, ...health },
+    };
+  }),
 
   photoQueue: os.admin.photoQueue.use(staff).handler(async ({ context, input }) => {
     const { rows, total } = await listPendingPhotos(context.database(), {

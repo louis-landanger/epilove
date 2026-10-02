@@ -41,6 +41,20 @@ export async function findAccount(db: Db, userId: string) {
   return row ?? null;
 }
 
+/** Last activity, for retention indicators (ADM-09); written at most once per `resolutionMinutes`. */
+export async function touchLastActive(db: Db, userId: string, at: Date, resolutionMinutes = 15) {
+  const threshold = new Date(at.getTime() - resolutionMinutes * 60_000);
+  await db
+    .update(appUser)
+    .set({ lastActiveAt: at })
+    .where(
+      and(
+        eq(appUser.id, userId),
+        sql`(${appUser.lastActiveAt} is null or ${appUser.lastActiveAt} < ${threshold.toISOString()})`,
+      ),
+    );
+}
+
 /** Interface and email language (PLT-04). */
 export async function setAccountLocale(db: Db, userId: string, locale: Locale) {
   await db.update(appUser).set({ locale }).where(eq(appUser.id, userId));
