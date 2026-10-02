@@ -31,6 +31,10 @@ import { PHOTO_HEIGHT, PHOTO_WIDTH, syntheticPhoto } from "./photos";
 import { Random } from "./random";
 import type { DevStorage } from "./storage";
 
+// Reused by the Pact's dry runs on synthetic populations (apps/worker/src/tasks/pact).
+export { type DevMember, generateMembers } from "./members";
+export { Random } from "./random";
+
 export const DEV_SEED = 20_261_002;
 
 export interface DevSeedOptions {

@@ -37,3 +37,7 @@ export const personalChannel = (userId: string) => `personal:#${userId}`;
 
 /** Campus-wide broadcast channel of the Pact reveal (PAC-03). */
 export const PACT_CHANNEL = "broadcast:pact";
+
+/** Channels any signed-in member can subscribe to. Never anything personal on them. */
+export const BROADCAST_CHANNELS = [PACT_CHANNEL] as const;
+export type BroadcastChannel = (typeof BROADCAST_CHANNELS)[number];

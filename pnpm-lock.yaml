@@ -290,6 +290,8 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  apps/pact-solver: {}
+
   apps/web:
     dependencies:
       '@epilove/api':
@@ -392,6 +394,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@epilove/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@epilove/db':
         specifier: workspace:*
         version: link:../../packages/db

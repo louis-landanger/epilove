@@ -4,6 +4,7 @@ import { discoveryContract } from "./discovery";
 import { matchesContract } from "./matches";
 import { messagingContract } from "./messaging";
 import { notificationsContract } from "./notifications";
+import { pactContract } from "./pact";
 import { questionnaireContract } from "./questionnaire";
 import { realtimeContract } from "./realtime";
 import { safetyContract } from "./safety";
@@ -17,6 +18,7 @@ export const contract = {
   matches: matchesContract,
   messaging: messagingContract,
   notifications: notificationsContract,
+  pact: pactContract,
   questionnaire: questionnaireContract,
   realtime: realtimeContract,
   safety: safetyContract,
@@ -31,6 +33,7 @@ export * from "./discovery";
 export * from "./matches";
 export * from "./messaging";
 export * from "./notifications";
+export * from "./pact";
 export * from "./questionnaire";
 export * from "./realtime";
 export * from "./safety";

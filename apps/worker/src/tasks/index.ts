@@ -1,5 +1,6 @@
 import type { TaskList } from "graphile-worker";
 import { outboxPurge } from "./outbox/purge";
+import { pactReveal, pactRevealDue } from "./pact/reveal";
 
 /**
  * Every job the worker knows how to run. Jobs are added from the API inside
@@ -12,7 +13,13 @@ export const taskList: TaskList = {
     helpers.logger.info("heartbeat");
   },
   outbox_purge: outboxPurge,
+  pact_reveal: pactReveal,
+  pact_reveal_due: pactRevealDue,
 };
 
 /** Graphile Worker crontab format: minute hour day month weekday task. */
-export const crontab = ["*/15 * * * * heartbeat", "17 4 * * * outbox_purge"].join("\n");
+export const crontab = [
+  "*/15 * * * * heartbeat",
+  "17 4 * * * outbox_purge",
+  "* * * * * pact_reveal_due",
+].join("\n");

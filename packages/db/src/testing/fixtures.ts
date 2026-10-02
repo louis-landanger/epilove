@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { Gender, Mode } from "@epilove/core";
+import type { Gender, Importance, Mode } from "@epilove/core";
 import { eq, inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import { runMigrations } from "../migrations";
-import { appUser, photo, preferences, profile, school } from "../schema";
+import { appUser, photo, preferences, profile, question, questionAnswer, school } from "../schema";
 import { runSeeds } from "../seeds";
 
 /**
@@ -100,4 +100,38 @@ export async function cleanupTestMembers(db: Database) {
   if (ids.length > 0) {
     await db.delete(appUser).where(inArray(appUser.id, ids));
   }
+}
+
+/**
+ * Answers every active question with the same option (the first by default),
+ * accepting only that option: two members answering alike are highly compatible.
+ */
+export async function answerQuestionnaire(
+  db: Database,
+  userId: string,
+  options: { option?: number; importance?: Importance } = {},
+): Promise<number> {
+  const questions = await db
+    .select({ id: question.id, options: question.options })
+    .from(question)
+    .where(eq(question.active, true));
+  if (questions.length === 0) {
+    return 0;
+  }
+  await db
+    .insert(questionAnswer)
+    .values(
+      questions.map((q) => {
+        const value = q.options[Math.min(options.option ?? 0, q.options.length - 1)]?.value ?? "";
+        return {
+          userId,
+          questionId: q.id,
+          answer: value,
+          acceptable: [value],
+          importance: options.importance ?? "somewhat",
+        };
+      }),
+    )
+    .onConflictDoNothing();
+  return questions.length;
 }

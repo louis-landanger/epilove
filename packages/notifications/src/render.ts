@@ -25,7 +25,7 @@ const TEXTS = {
     message_received: "Nouveau message",
     message_received_named: "Nouveau message de {name}",
     drop_ready: "Ton Drop est arrivé.",
-    pact_reveal: "C'est l'heure : découvre ton match du Pacte.",
+    pact_reveal: "C'est l'heure : les résultats du Pacte sont là.",
   },
   en: {
     title: "Epilove",
@@ -36,7 +36,7 @@ const TEXTS = {
     message_received: "New message",
     message_received_named: "New message from {name}",
     drop_ready: "Your Drop is here.",
-    pact_reveal: "It's time: discover your Pact match.",
+    pact_reveal: "It's time: the Pact results are in.",
   },
 } as const;
 

@@ -228,6 +228,63 @@ export async function loadRelations(
   };
 }
 
+/**
+ * Relations between any two members of a group (the Pact's participants):
+ * blocks, likes and matches whose both ends are in `ids`, in three queries.
+ */
+export async function loadRelationsAmong(db: Database, ids: readonly string[]): Promise<Relations> {
+  const group = [...new Set(ids)];
+  if (group.length < 2) {
+    return {
+      hasBlocked: () => false,
+      hasLiked: () => false,
+      hasActiveMatch: () => false,
+      hasEndedMatch: () => false,
+    };
+  }
+  const idArray = sql`array[${sql.join(
+    group.map((id) => sql`${id}`),
+    sql`, `,
+  )}]::uuid[]`;
+  const inGroup = sql`any(${idArray})`;
+  const [blocks, likes, matches] = await Promise.all([
+    db
+      .select({ blockerId: block.blockerId, blockedId: block.blockedId })
+      .from(block)
+      .where(sql`${block.blockerId} = ${inGroup} and ${block.blockedId} = ${inGroup}`),
+    db
+      .select({ actorId: likeAction.actorId, targetId: likeAction.targetId })
+      .from(likeAction)
+      .where(
+        and(
+          ne(likeAction.kind, "pass"),
+          sql`${likeAction.actorId} = ${inGroup} and ${likeAction.targetId} = ${inGroup}`,
+        ),
+      ),
+    db
+      .select({ userLow: match.userLow, userHigh: match.userHigh, status: match.status })
+      .from(match)
+      .where(sql`${match.userLow} = ${inGroup} and ${match.userHigh} = ${inGroup}`),
+  ]);
+  const key = (a: string, b: string) => `${a}>${b}`;
+  const blockSet = new Set(blocks.map((b) => key(b.blockerId, b.blockedId)));
+  const likeSet = new Set(likes.map((l) => key(l.actorId, l.targetId)));
+  const pairs = (status: string) =>
+    new Set(
+      matches
+        .filter((m) => m.status === status)
+        .flatMap((m) => [key(m.userLow, m.userHigh), key(m.userHigh, m.userLow)]),
+    );
+  const matchSet = pairs("active");
+  const endedSet = pairs("unmatched");
+  return {
+    hasBlocked: (a, b) => blockSet.has(key(a, b)),
+    hasLiked: (a, b) => likeSet.has(key(a, b)),
+    hasActiveMatch: (a, b) => matchSet.has(key(a, b)),
+    hasEndedMatch: (a, b) => endedSet.has(key(a, b)),
+  };
+}
+
 /** Interest ids of several members (cheap: used to rank the whole deck). */
 export async function interestIdsOf(db: Database, ids: readonly string[]): Promise<Map<string, Set<string>>> {
   const result = new Map<string, Set<string>>(ids.map((id) => [id, new Set()]));

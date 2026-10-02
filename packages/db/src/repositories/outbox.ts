@@ -1,4 +1,4 @@
-import type { RealtimeEvent } from "@epilove/realtime/events";
+import type { BroadcastChannel, RealtimeEvent } from "@epilove/realtime/events";
 import { and, asc, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { outbox } from "../schema";
@@ -11,11 +11,17 @@ import { outbox } from "../schema";
  */
 export const OUTBOX_CHANNEL = "epilove_outbox";
 
-export interface OutboxEntry {
-  /** Recipient: the event goes to their personal channel. */
-  readonly userId: string;
-  readonly event: RealtimeEvent;
-}
+export type OutboxEntry =
+  | {
+      /** Recipient: the event goes to their personal channel. */
+      readonly userId: string;
+      readonly event: RealtimeEvent;
+    }
+  | {
+      /** Campus-wide broadcast (Pact reveal). */
+      readonly channel: BroadcastChannel;
+      readonly event: RealtimeEvent;
+    };
 
 type Executor = Pick<Database, "insert" | "execute">;
 
@@ -26,15 +32,16 @@ export async function enqueue(tx: Executor, entries: readonly OutboxEntry[]) {
   await tx.insert(outbox).values(
     entries.map((entry) => ({
       topic: entry.event.type,
-      payload: { userId: entry.userId, event: entry.event },
+      payload:
+        "userId" in entry
+          ? { userId: entry.userId, event: entry.event }
+          : { channel: entry.channel, event: entry.event },
     })),
   );
   await tx.execute(sql`select pg_notify(${OUTBOX_CHANNEL}, '')`);
 }
 
-export interface PendingEvent extends OutboxEntry {
-  readonly id: string;
-}
+export type PendingEvent = OutboxEntry & { readonly id: string };
 
 /**
  * Claims up to `limit` unpublished events, publishes them through `publish`
@@ -59,17 +66,26 @@ export async function relayPending(
           options.userId ? sql`${outbox.payload}->>'userId' = ${options.userId}` : undefined,
         ),
       )
-      .orderBy(asc(outbox.createdAt))
+      // Ids are UUIDv7 (monotonic per connection): the order of a transaction's events is kept.
+      .orderBy(asc(outbox.createdAt), asc(outbox.id))
       .limit(limit)
       .for("update", { skipLocked: true });
     if (rows.length === 0) {
       return 0;
     }
-    const events = rows.flatMap((row) => {
-      const payload = row.payload as Partial<OutboxEntry> | null;
-      return payload?.userId && payload.event
-        ? [{ id: row.id, userId: payload.userId, event: payload.event }]
-        : [];
+    const events = rows.flatMap((row): PendingEvent[] => {
+      const payload = row.payload as {
+        userId?: string;
+        channel?: BroadcastChannel;
+        event?: RealtimeEvent;
+      } | null;
+      if (!payload?.event) {
+        return [];
+      }
+      if (payload.userId) {
+        return [{ id: row.id, userId: payload.userId, event: payload.event }];
+      }
+      return payload.channel ? [{ id: row.id, channel: payload.channel, event: payload.event }] : [];
     });
     await publish(events);
     await tx

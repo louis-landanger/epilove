@@ -8,9 +8,12 @@
     "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "pact:compute": "tsx --env-file-if-exists=../../.env src/tasks/pact/cli.ts compute",
+    "pact:demo": "tsx --env-file-if-exists=../../.env src/tasks/pact/cli.ts demo"
   },
   "dependencies": {
+    "@epilove/core": "workspace:*",
     "@epilove/db": "workspace:*",
     "@epilove/notifications": "workspace:*",
     "@epilove/realtime": "workspace:*",

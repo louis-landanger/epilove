@@ -22,7 +22,9 @@
     "db:generate": "pnpm --filter @epilove/db db:generate",
     "db:migrate": "pnpm --filter @epilove/db db:migrate",
     "db:seed": "pnpm --filter @epilove/db db:seed",
-    "db:seed:dev": "pnpm --filter @epilove/db db:seed:dev"
+    "db:seed:dev": "pnpm --filter @epilove/db db:seed:dev",
+    "pact:compute": "pnpm --filter @epilove/worker pact:compute",
+    "pact:demo": "pnpm --filter @epilove/worker pact:demo"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

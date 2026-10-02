@@ -13,11 +13,12 @@ export interface OutboxRelayOptions {
   readonly afterDrain?: () => Promise<unknown>;
 }
 
-/** Publishes a batch: one personal-channel event each, deduplicated by Centrifugo on retries. */
+/** Publishes a batch, deduplicated by Centrifugo on retries: personal-channel events and broadcasts. */
 export function publishBatch(publisher: Publisher) {
   return async (events: readonly PendingEvent[]) => {
     for (const event of events) {
-      await publisher.publish(personalChannel(event.userId), event.event, { idempotencyKey: event.id });
+      const channel = "userId" in event ? personalChannel(event.userId) : event.channel;
+      await publisher.publish(channel, event.event, { idempotencyKey: event.id });
     }
   };
 }

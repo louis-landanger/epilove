@@ -226,14 +226,20 @@ function ageIn2026(birthDate: string): number {
   return TODAY_YEAR - Number(birthDate.slice(0, 4)) - (birthDate.slice(5) > "10-02" ? 1 : 0);
 }
 
-export function generateMembers(random: Random): DevMember[] {
+/**
+ * The development population. `count` scales the school mix: the default is
+ * the seeded data set; larger populations (in memory only) feed the Pact's
+ * dry runs (`pnpm pact:compute --synthetic 3000`).
+ */
+export function generateMembers(random: Random, count: number = DEV_MEMBER_COUNT): DevMember[] {
   const members: DevMember[] = [];
   const usedNames = new Map<string, number>();
 
   const slots: SchoolSlug[] = [];
   for (const [slug, mix] of Object.entries(SCHOOL_MIX) as [SchoolSlug, (typeof SCHOOL_MIX)[SchoolSlug]][]) {
     const personaCount = PERSONAS.filter((persona) => persona.schoolSlug === slug).length;
-    for (let i = 0; i < mix.count - personaCount; i++) {
+    const schoolCount = Math.round((mix.count * count) / DEV_MEMBER_COUNT);
+    for (let i = 0; i < schoolCount - personaCount; i++) {
       slots.push(slug);
     }
   }
