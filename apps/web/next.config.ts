@@ -35,7 +35,16 @@ const nextConfig: NextConfig = {
   // esbuild bundles the service worker at build time (@serwist/turbopack).
   serverExternalPackages: ["postgres", "esbuild", "esbuild-wasm"],
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Voice messages (CHAT-07, session B): the microphone, in conversations only (last match wins).
+      {
+        source: "/messages/:path*",
+        headers: [
+          { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(), payment=()" },
+        ],
+      },
+    ];
   },
 };
 

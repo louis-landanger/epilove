@@ -16,6 +16,17 @@ import { Sheet } from "../ui/sheet";
 import { Avatar } from "./avatar";
 import { DateCard } from "./date-card";
 import { type DateDraft, DateSheet } from "./date-sheet";
+import {
+  ImageBubble,
+  MAX_VOICE_MS,
+  PhotoSheet,
+  type PreparedPhoto,
+  preparePhoto,
+  type RecordedVoice,
+  useVoiceRecorder,
+  VoiceComposer,
+  VoicePlayer,
+} from "./media";
 import { type PickedGif, StickerPicker } from "./sticker-picker";
 import { StickerArt } from "./stickers";
 
@@ -67,6 +78,12 @@ export function Conversation({ thread }: { thread: ThreadView }) {
   const [warning, setWarning] = useState<string | null>(null);
   /** Date proposal sheet (CHAT-10), possibly answering another proposal. */
   const [dateSheet, setDateSheet] = useState<{ counterTo: string | null } | null>(null);
+  /** A photo waiting in its preview (CHAT-06), and the upload in progress. */
+  const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [mediaBusy, setMediaBusy] = useState(false);
+  /** Kept across retries of the same upload, so that it stays idempotent. */
+  const mediaId = useRef<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
   const lastTyping = useRef(0);
@@ -263,6 +280,109 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           ? t("errors.rate_limited")
           : t("errors.generic"),
       );
+    }
+  };
+
+  const mediaError = (error: unknown) => {
+    if (error instanceof ORPCError) {
+      if (error.message === "rate_limited") {
+        return t("errors.rate_limited");
+      }
+      if (error.message === "unsupported_media" || error.message === "already_viewed") {
+        return t(`media.errors.${error.message}`);
+      }
+      if (error.code === "NOT_FOUND") {
+        setClosed(true);
+      }
+    }
+    return t("errors.generic");
+  };
+
+  const pickPhoto = async (file: File) => {
+    try {
+      mediaId.current = null;
+      setPhotoError(null);
+      setPhoto(await preparePhoto(file));
+    } catch {
+      say(t("media.errors.unsupported_media"));
+    }
+  };
+
+  const closePhoto = () => {
+    if (photo) {
+      URL.revokeObjectURL(photo.previewUrl);
+    }
+    setPhoto(null);
+    mediaId.current = null;
+  };
+
+  const sendPhoto = async (viewOnce: boolean) => {
+    if (!photo || closed) {
+      return;
+    }
+    mediaId.current ??= newMessageId();
+    setMediaBusy(true);
+    setPhotoError(null);
+    try {
+      const result = await api.messaging.sendImage({
+        id: mediaId.current,
+        matchId: thread.matchId,
+        file: photo.file,
+        width: photo.width,
+        height: photo.height,
+        viewOnce,
+        replyTo: replyTo?.id ?? null,
+      });
+      nearBottom.current = true;
+      setReplyTo(null);
+      setShowIcebreakers(false);
+      setMessages((current) => mergeMessages(current, [result.message]));
+      closePhoto();
+    } catch (error) {
+      setPhotoError(mediaError(error));
+    } finally {
+      setMediaBusy(false);
+    }
+  };
+
+  const sendVoice = async (voice: RecordedVoice) => {
+    if (closed) {
+      return false;
+    }
+    mediaId.current ??= newMessageId();
+    setMediaBusy(true);
+    try {
+      const result = await api.messaging.sendVoice({
+        id: mediaId.current,
+        matchId: thread.matchId,
+        file: voice.file,
+        durationMs: Math.min(MAX_VOICE_MS, Math.max(300, Math.round(voice.durationMs))),
+        waveform: voice.waveform,
+        replyTo: replyTo?.id ?? null,
+      });
+      mediaId.current = null;
+      nearBottom.current = true;
+      setReplyTo(null);
+      setShowIcebreakers(false);
+      setMessages((current) => mergeMessages(current, [result.message]));
+      return true;
+    } catch (error) {
+      say(mediaError(error));
+      return false;
+    } finally {
+      setMediaBusy(false);
+    }
+  };
+
+  /** Opens a view-once photo, once (CHAT-06): a link valid for a minute. */
+  const openViewOnce = async (target: ChatMessage) => {
+    try {
+      const result = await api.messaging.viewMedia({ matchId: thread.matchId, messageId: target.id });
+      return result.url;
+    } catch (error) {
+      say(mediaError(error));
+      void refreshRecent();
+      return null;
     }
   };
 
@@ -528,6 +648,7 @@ export function Conversation({ thread }: { thread: ThreadView }) {
                     onDelete={() => void removeForEveryone(item.message)}
                     onRespondDate={(response) => void respondDate(item.message, response)}
                     onCounterDate={() => setDateSheet({ counterTo: item.message.id })}
+                    onOpenMedia={() => openViewOnce(item.message)}
                   />
                 ) : (
                   <PendingBubble
@@ -569,6 +690,15 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           setReporting(null);
           say(t("reported"));
         }}
+      />
+
+      <PhotoSheet
+        photo={photo}
+        name={thread.other.firstName}
+        busy={mediaBusy}
+        error={photoError}
+        onCancel={closePhoto}
+        onSend={(viewOnce) => void sendPhoto(viewOnce)}
       />
 
       <DateSheet
@@ -639,6 +769,12 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           onSticker={(sticker) => void sendAttachment({ type: "sticker", sticker })}
           onProposeDate={() => setDateSheet({ counterTo: null })}
           onGif={(gif) => void sendAttachment({ type: "gif", gif })}
+          onPhoto={(file) => void pickPhoto(file)}
+          onVoice={sendVoice}
+          onVoiceError={(key) =>
+            say(key === "microphone" ? t("media.errors.microphone") : t("media.maxDuration"))
+          }
+          mediaBusy={mediaBusy}
           editing={editing !== null}
           onCancelEdit={() => {
             setEditing(null);
@@ -709,6 +845,7 @@ function Bubble({
   onDelete,
   onRespondDate,
   onCounterDate,
+  onOpenMedia,
 }: {
   message: ChatMessage;
   mine: boolean;
@@ -724,6 +861,7 @@ function Bubble({
   onDelete: () => void;
   onRespondDate: (response: "accept" | "decline") => void;
   onCounterDate: () => void;
+  onOpenMedia: () => Promise<string | null>;
 }) {
   const t = useTranslations("chat");
   const format = useFormatter();
@@ -801,6 +939,10 @@ function Bubble({
               onRespond={onRespondDate}
               onCounter={onCounterDate}
             />
+          ) : message.attachment?.type === "image" ? (
+            <ImageBubble image={message.attachment} mine={mine} onOpen={onOpenMedia} onReport={onReport} />
+          ) : message.attachment?.type === "voice" ? (
+            <VoicePlayer voice={message.attachment} mine={mine} />
           ) : message.attachment?.type === "gif" ? (
             // biome-ignore lint/performance/noImgElement: GIPHY serves the GIF.
             <img
@@ -1022,6 +1164,10 @@ function Composer({
   onSticker,
   onGif,
   onProposeDate,
+  onPhoto,
+  onVoice,
+  onVoiceError,
+  mediaBusy,
   icebreakers,
   showIcebreakers,
   onToggleIcebreakers,
@@ -1040,6 +1186,10 @@ function Composer({
   onSticker: (sticker: StickerId) => void;
   onGif: (gif: PickedGif) => void;
   onProposeDate: () => void;
+  onPhoto: (file: File) => void;
+  onVoice: (voice: RecordedVoice) => Promise<boolean>;
+  onVoiceError: (key: "microphone" | "maxDuration") => void;
+  mediaBusy: boolean;
   icebreakers: IcebreakerView[];
   showIcebreakers: boolean;
   onToggleIcebreakers: () => void;
@@ -1048,6 +1198,10 @@ function Composer({
 }) {
   const t = useTranslations("chat");
   const [picker, setPicker] = useState(false);
+  /** On phones, the tools fold behind "+" so that the text field keeps its width. */
+  const [tools, setTools] = useState(false);
+  const recorder = useVoiceRecorder(onVoiceError);
+  const photoInput = useRef<HTMLInputElement>(null);
   const icebreakerText = (i: IcebreakerView) =>
     i.key === "campus"
       ? t(`icebreakers.campus.${String(i.params.index)}` as "icebreakers.campus.0")
@@ -1118,116 +1272,209 @@ function Composer({
           </button>
         </div>
       )}
-      <form
-        className="flex items-end gap-2"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSend();
-        }}
-      >
-        <button
-          type="button"
-          onClick={onToggleIcebreakers}
-          aria-label={t("icebreakers.title")}
-          aria-pressed={showIcebreakers}
-          className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-volt"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="size-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.8}
-            aria-hidden="true"
-          >
-            <path
-              d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => setPicker((v) => !v)}
-          aria-label={t("stickers.title")}
-          aria-pressed={picker}
-          disabled={editing}
-          className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-plasma disabled:opacity-40"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="size-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.8}
-            aria-hidden="true"
-          >
-            <path
-              d="M14 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h7l8-8V6a3 3 0 0 0-3-3h-4Z"
-              strokeLinejoin="round"
-            />
-            <path d="M13 21v-5a3 3 0 0 1 3-3h5" strokeLinejoin="round" />
-            <path d="M8.5 9.5h.01M14.5 9.5h.01M8.5 14c1.5 1.2 3.5 1.2 5 0" strokeLinecap="round" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={onProposeDate}
-          aria-label={t("date.open")}
-          disabled={editing}
-          className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-volt disabled:opacity-40"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="size-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.8}
-            aria-hidden="true"
-          >
-            <rect x="3.5" y="5" width="17" height="15" rx="3" />
-            <path d="M3.5 10h17M8 3v4M16 3v4" strokeLinecap="round" />
-            <path
-              d="M12 13.2c-.9-1-2.6-.6-2.6.8 0 1.3 2.6 2.8 2.6 2.8s2.6-1.5 2.6-2.8c0-1.4-1.7-1.8-2.6-.8Z"
-              fill="currentColor"
-              stroke="none"
-            />
-          </svg>
-        </button>
-        <label className="sr-only" htmlFor="composer">
-          {t("composer.label", { name })}
-        </label>
-        <textarea
-          ref={textareaRef}
-          id="composer"
-          rows={1}
-          value={draft}
-          maxLength={MESSAGING_RULES.maxLength}
-          placeholder={t("composer.placeholder")}
-          onChange={(event) => {
-            onDraftChange(event.target.value);
-            event.target.style.height = "auto";
-            event.target.style.height = `${Math.min(event.target.scrollHeight, 140)}px`;
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-              event.preventDefault();
-              onSend();
+      {recorder.state !== "idle" ? (
+        <VoiceComposer
+          recorder={recorder}
+          busy={mediaBusy}
+          onSend={async (voice) => {
+            if (await onVoice(voice)) {
+              recorder.reset();
             }
           }}
-          className="max-h-36 min-h-11 flex-1 resize-none rounded-3xl border border-paper/20 bg-transparent px-4 py-2.5 placeholder:text-paper/50 focus:border-volt focus:outline-none"
         />
-        <button
-          type="submit"
-          disabled={!draft.trim()}
-          aria-label={editing ? t("composer.save") : t("composer.send")}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-plasma text-ink disabled:opacity-40"
+      ) : (
+        <form
+          className="flex flex-wrap items-end gap-2 sm:flex-nowrap"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSend();
+          }}
         >
-          <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
-            <path d="M3.4 20.4 21 12 3.4 3.6l-.1 6.5L15 12l-11.7 1.9z" />
-          </svg>
-        </button>
-      </form>
+          <button
+            type="button"
+            onClick={() => setTools((v) => !v)}
+            aria-label={t("composer.tools")}
+            aria-expanded={tools}
+            aria-controls="composer-tools"
+            className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-paper sm:hidden"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className={`size-5 transition-transform ${tools ? "rotate-45" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+            </svg>
+          </button>
+          <div
+            id="composer-tools"
+            className={`${tools ? "order-first flex basis-full" : "hidden"} gap-2 sm:order-none sm:flex sm:basis-auto`}
+          >
+            <button
+              type="button"
+              onClick={onToggleIcebreakers}
+              aria-label={t("icebreakers.title")}
+              aria-pressed={showIcebreakers}
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-volt"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPicker((v) => !v)}
+              aria-label={t("stickers.title")}
+              aria-pressed={picker}
+              disabled={editing}
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-plasma disabled:opacity-40"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              >
+                <path
+                  d="M14 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h7l8-8V6a3 3 0 0 0-3-3h-4Z"
+                  strokeLinejoin="round"
+                />
+                <path d="M13 21v-5a3 3 0 0 1 3-3h5" strokeLinejoin="round" />
+                <path d="M8.5 9.5h.01M14.5 9.5h.01M8.5 14c1.5 1.2 3.5 1.2 5 0" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={onProposeDate}
+              aria-label={t("date.open")}
+              disabled={editing}
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-volt disabled:opacity-40"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              >
+                <rect x="3.5" y="5" width="17" height="15" rx="3" />
+                <path d="M3.5 10h17M8 3v4M16 3v4" strokeLinecap="round" />
+                <path
+                  d="M12 13.2c-.9-1-2.6-.6-2.6.8 0 1.3 2.6 2.8 2.6 2.8s2.6-1.5 2.6-2.8c0-1.4-1.7-1.8-2.6-.8Z"
+                  fill="currentColor"
+                  stroke="none"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => photoInput.current?.click()}
+              aria-label={t("media.photo")}
+              disabled={editing || mediaBusy}
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-paper disabled:opacity-40"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              >
+                <rect x="3" y="5" width="18" height="14" rx="3" />
+                <circle cx="9" cy="10" r="1.6" />
+                <path d="m4 17 5-4.5 3.5 3L16 12l4 4" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <input
+              ref={photoInput}
+              type="file"
+              accept="image/*"
+              tabIndex={-1}
+              aria-hidden="true"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) {
+                  onPhoto(file);
+                }
+              }}
+            />
+          </div>
+          <label className="sr-only" htmlFor="composer">
+            {t("composer.label", { name })}
+          </label>
+          <textarea
+            ref={textareaRef}
+            id="composer"
+            rows={1}
+            value={draft}
+            maxLength={MESSAGING_RULES.maxLength}
+            placeholder={t("composer.placeholder")}
+            onChange={(event) => {
+              onDraftChange(event.target.value);
+              event.target.style.height = "auto";
+              event.target.style.height = `${Math.min(event.target.scrollHeight, 140)}px`;
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                onSend();
+              }
+            }}
+            className="max-h-36 min-h-11 min-w-0 flex-1 resize-none rounded-3xl border border-paper/20 bg-transparent px-4 py-2.5 placeholder:text-paper/50 focus:border-volt focus:outline-none"
+          />
+          {!draft.trim() && !editing ? (
+            <button
+              type="button"
+              onClick={() => void recorder.start()}
+              disabled={mediaBusy}
+              aria-label={t("media.record")}
+              className="grid size-11 shrink-0 place-items-center rounded-full bg-plasma text-ink disabled:opacity-40"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <rect x="9" y="3" width="6" height="11" rx="3" />
+                <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" strokeLinecap="round" />
+              </svg>
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!draft.trim()}
+              aria-label={editing ? t("composer.save") : t("composer.send")}
+              className="grid size-11 shrink-0 place-items-center rounded-full bg-plasma text-ink disabled:opacity-40"
+            >
+              <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
+                <path d="M3.4 20.4 21 12 3.4 3.6l-.1 6.5L15 12l-11.7 1.9z" />
+              </svg>
+            </button>
+          )}
+        </form>
+      )}
     </div>
   );
 }

@@ -22,7 +22,8 @@
     "replyingToSelf": "Replying to your message",
     "editing": "Editing your message",
     "cancelEdit": "Cancel",
-    "save": "Save the change"
+    "save": "Save the change",
+    "tools": "Open tools"
   },
   "icebreakers": {
     "title": "Need an icebreaker?",
@@ -147,5 +148,40 @@
       "unknown_spot": "This place is no longer available.",
       "generic": "That didn't go through. Try again?"
     }
+  },
+  "media": {
+    "photo": "Send a photo",
+    "photoAlt": "Photo sent in the conversation",
+    "preview": "Photo preview",
+    "viewOnce": "View once",
+    "viewOnceHint": "{name} can open it once, then it's gone.",
+    "send": "Send",
+    "cancel": "Cancel",
+    "sending": "Sending…",
+    "ephemeral": "View-once photo",
+    "open": "Open",
+    "opened": "Opened",
+    "notOpened": "Not opened yet",
+    "close": "Close",
+    "explicit": "This photo might be explicit.",
+    "showAnyway": "Show anyway",
+    "report": "Report",
+    "record": "Record a voice message",
+    "recording": "Recording",
+    "stop": "Stop recording",
+    "discard": "Delete the recording",
+    "sendVoice": "Send the voice message",
+    "play": "Play",
+    "pause": "Pause",
+    "speed": "Playback speed: {speed}",
+    "voiceLabel": "Voice message, {duration}",
+    "maxDuration": "2 minutes max: recording stopped.",
+    "errors": {
+      "unsupported_media": "This format isn't supported.",
+      "too_large": "File too large.",
+      "microphone": "Can't access the microphone. Check your browser's permission.",
+      "already_viewed": "This photo has already been opened."
+    },
+    "once": "Can be opened once"
   }
 }

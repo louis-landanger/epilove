@@ -22,7 +22,8 @@
     "replyingToSelf": "Réponse à ton message",
     "editing": "Modification du message",
     "cancelEdit": "Annuler",
-    "save": "Enregistrer la modification"
+    "save": "Enregistrer la modification",
+    "tools": "Ouvrir les outils"
   },
   "icebreakers": {
     "title": "Besoin d'un brise-glace ?",
@@ -147,5 +148,40 @@
       "unknown_spot": "Ce lieu n'est plus disponible.",
       "generic": "Ça n'est pas passé. On réessaie ?"
     }
+  },
+  "media": {
+    "photo": "Envoyer une photo",
+    "photoAlt": "Photo envoyée dans la conversation",
+    "preview": "Aperçu de la photo",
+    "viewOnce": "Éphémère : une seule ouverture",
+    "viewOnceHint": "{name} pourra l'ouvrir une fois, puis elle disparaît.",
+    "send": "Envoyer",
+    "cancel": "Annuler",
+    "sending": "Envoi…",
+    "ephemeral": "Photo éphémère",
+    "open": "Ouvrir",
+    "opened": "Ouverte",
+    "notOpened": "Pas encore ouverte",
+    "close": "Fermer",
+    "explicit": "Cette photo pourrait être explicite.",
+    "showAnyway": "Afficher quand même",
+    "report": "Signaler",
+    "record": "Enregistrer un message vocal",
+    "recording": "Enregistrement en cours",
+    "stop": "Arrêter l'enregistrement",
+    "discard": "Supprimer l'enregistrement",
+    "sendVoice": "Envoyer le message vocal",
+    "play": "Écouter",
+    "pause": "Pause",
+    "speed": "Vitesse de lecture : {speed}",
+    "voiceLabel": "Message vocal de {duration}",
+    "maxDuration": "2 minutes maximum : l'enregistrement s'est arrêté.",
+    "errors": {
+      "unsupported_media": "Ce format n'est pas pris en charge.",
+      "too_large": "Fichier trop lourd.",
+      "microphone": "Impossible d'accéder au micro. Vérifie l'autorisation dans ton navigateur.",
+      "already_viewed": "Cette photo a déjà été ouverte."
+    },
+    "once": "Une seule ouverture possible"
   }
 }

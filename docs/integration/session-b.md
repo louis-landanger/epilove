@@ -18,6 +18,7 @@
 | 2 | Relances douces (CHAT-09) | ✅ fait et testé (cœur, worker) |
 | 2 | Stickers maison et GIF (CHAT-05) | ✅ fait et testé (API avec GIPHY simulé) ; GIPHY désactivé sans clé |
 | 2 | Modifier / supprimer (CHAT-08), avertissement avant envoi (SAF-09), « Ce message te dérange ? » (SAF-10) | ✅ fait et testé (cœur, API, Playwright) |
+| 2 | Photos, photo éphémère, flou explicite (CHAT-06) ; messages vocaux (CHAT-07) | ✅ fait et testé (API, worker, Playwright à deux navigateurs avec micro simulé) ; transcription non faite, classifieur d'images à brancher (SAF-11) |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
@@ -130,6 +131,16 @@
 - Un message supprimé disparaît pour les deux membres mais son corps chiffré est conservé 30 jours pour la modération (sinon un harceleur effacerait avant le signalement), puis effacé par la tâche quotidienne `message_purge` (`apps/worker/src/tasks/messaging/`). **À valider avec A** (signalements) et dans le registre RGPD.
 - Interface : actions « Modifier » et « Supprimer pour tout le monde » dans le menu du message, bandeau de modification dans la zone de saisie, feuille « Tu es sûr·e de vouloir envoyer ça ? » (reformuler par défaut, ou envoyer quand même), lien « Ce message te dérange ? Signaler » sous un message signalé par le palier 1.
 
+### Photos et messages vocaux (CHAT-06, CHAT-07)
+
+- Stockage objet `@epilove/db/storage` (S3 compatible via `aws4fetch`, SeaweedFS en développement ; magasin en mémoire pour les tests) : clés `chat/<matchId>/<messageId>.<ext>`, jamais publiques. Photos servies par imgproxy (URL signée, 1 heure ; 1 minute pour une photo éphémère), vocaux par URL S3 présignée (1 heure).
+- `packages/api/src/rencontre/media-files.ts` : reconnaissance du format par les octets (JPEG, PNG, WebP ; WebM, Ogg, MP4 audio ; jamais le type annoncé par le client), suppression des métadonnées (EXIF, XMP, ICC, commentaires, blocs texte PNG) avant stockage, classifieur d'images remplaçable (`setImageClassifier`).
+- Le navigateur redessine déjà la photo sur un canvas (1 600 px au plus, JPEG) : EXIF et GPS ne quittent pas l'appareil ; le serveur les retire de nouveau.
+- API `messaging.sendImage` (8 Mo, option éphémère), `sendVoice` (2 minutes, 64 barres de forme d'onde), `viewMedia` (photo éphémère : une seule ouverture par le destinataire, réservée atomiquement ; l'objet est effacé 2 minutes après). Un renvoi avec le même identifiant rend le message existant sans remplacer son média (sinon un second fichier contournerait le classifieur).
+- Table `media_deletion` (file d'effacement) et tâche `media_purge` toutes les 5 minutes (`apps/worker/src/tasks/messaging/purge.ts`) : photos éphémères ouvertes, médias des messages supprimés purgés après 30 jours. Un échec d'effacement est retenté.
+- Interface : bouton photo (aperçu, case « Éphémère : une seule ouverture »), bouton micro à la place d'« Envoyer » quand le champ est vide (enregistrement MediaRecorder 64 kbit/s, arrêt automatique à 2 minutes, écoute avant envoi), lecteur avec forme d'onde et vitesses 1×/1,5×/2×, photo floutée avec « Afficher quand même » et « Signaler » quand le classifieur la signale. Sur téléphone, les outils de la zone de saisie se replient derrière « + ».
+- **Non fait** : transcription des vocaux (CHAT-07, accessibilité) ; classifieur réel (SAF-11, aujourd'hui aucun signalement : toutes les photos s'affichent nettes).
+
 ### Crush secret (DEC-08) et seconde chance (DEC-09)
 
 - `packages/core/src/discovery/crush.ts` : règles (3 crushs actifs, 90 jours, 10 ajouts par 30 jours retraits compris, contre le sondage), indice affiché au membre (« a•••@epita.fr »), mode du match (`crushMatchMode` : mêmes règles que la découverte dans les deux sens, incognito levé comme pour un like réciproque, Love si possible sinon Amis).
@@ -159,7 +170,7 @@
 |---|---|
 | `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo`, `drop:run` |
 | `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
-| `packages/db/package.json` | dépendance `@epilove/crypto`, devDependency `aws4fetch`, script `db:seed:dev`, exports `./repositories/*`, `./dev-seed` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
+| `packages/db/package.json` | dépendances `@epilove/crypto` et `aws4fetch` (stockage des médias de conversation), script `db:seed:dev`, exports `./repositories/*`, `./dev-seed`, `./storage` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `maplibre-gl`, `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `dev`, `discovery`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
@@ -169,16 +180,18 @@
 | `packages/db/src/schema/index.ts` | `spots` (ajout) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
-| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `chat_nudge` (ajouts) |
+| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `media_purge`, `chat_nudge` (ajouts) |
 | `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `drop:run` |
 | `turbo.json` | `ENCRYPTION_KEYS`, `ENCRYPTION_CURRENT_KEY_ID` et `EMAIL_HMAC_SECRET` transmis aux tests : le test du dépôt `members` ré-exécute le seed de développement, qui chiffrait sinon les messages fictifs avec la clé de test, illisibles ensuite par `pnpm dev` |
 | `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
 | `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base) et second `webServer` pour le worker |
-| `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media`, `@epilove/realtime` ; `serverExternalPackages` : `esbuild`, `esbuild-wasm` (Serwist) |
+| `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media`, `@epilove/realtime` ; `serverExternalPackages` : `esbuild`, `esbuild-wasm` (Serwist) ; `Permissions-Policy` avec `microphone=(self)` sur `/messages/*` seulement (messages vocaux), le reste du site garde `microphone=()` |
 | `apps/web/tsconfig.json`, `apps/web/package.json` | `service-worker/` exclu du tsconfig principal et vérifié par son propre tsconfig (lib WebWorker) dans `typecheck` |
 | `infra/scripts/cloud-docker.sh` | repli sur l'image Docker Hub `darthsim/imgproxy` (même version) quand le proxy de la session cloud bloque les téléchargements de ghcr.io |
 
 ## Variables d'environnement
+
+- `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` (existantes) servent aussi aux médias de conversation ; `S3_REGION` facultative (`eu-west-1` par défaut). Les URL présignées des vocaux pointent vers `S3_ENDPOINT` : en production, il doit être joignable par les navigateurs (sinon prévoir un point d'accès public distinct). Sans S3 configuré, l'API garde les médias en mémoire (tests seulement).
 
 - `GIPHY_API_KEY` (facultative, API) : active les GIF (CHAT-05). Absente : stickers seulement.
 
@@ -190,6 +203,7 @@
 
 ## Migrations
 
+- `0012_*` : table `media_deletion`.
 - `0011_*` : table `spot`.
 - `0010_*` : colonne `match.nudged_at`.
 - `0009_*` : type de message `sticker`.
@@ -224,6 +238,9 @@
 - `RencontreProviders` monte une connexion temps réel par section ; à l'intégration, le remonter dans `(app)/layout.tsx` pour garder une seule connexion entre les onglets.
 - Administration du Pacte (ADM-07, A) : créer et ouvrir les saisons (`pact_season`, statut `open`), lancer `pnpm pact:compute` et lire `pact_season.report` ; la révélation est automatique à `reveal_at` une fois la saison `computed`.
 - Le worker doit disposer de Python et du solveur (`apps/pact-solver`) dans son conteneur, ou d'un conteneur dédié pour `pact:compute`.
+- CSP (A, `proxy.ts`) : autoriser l'hôte d'imgproxy dans `img-src` (photos de conversation, déjà le cas des photos de profil), l'hôte S3 public dans `media-src` (URL présignées des vocaux) et `blob:` dans `img-src` et `media-src` (aperçus locaux avant envoi).
+- Suppression de compte (A) : effacer aussi les médias de conversation (préfixe `chat/<matchId>/` des matchs du membre), par exemple en les mettant dans `media_deletion`.
+- Modération (SAF-11, A) : brancher le vrai classifieur via `setImageClassifier` ; les photos signalées portent le drapeau `explicit_image` dans `message.moderation`.
 - Le menu de sécurité d'une conversation et le signalement d'un message appellent `safety.block` / `safety.report` (contexte `message`, `contextRef` = id du message) : à vérifier avec l'implémentation de A (copie chiffrée des messages précédents comme preuve).
 
 ## ADR
