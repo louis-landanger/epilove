@@ -1,0 +1,42 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Exact versions only: upgrades go through Renovate pull requests.
+savePrefix: ""
+
+# Supply-chain safety: ignore package versions published less than 24 hours ago.
+minimumReleaseAge: 1440
+
+# Dependencies allowed to run install scripts. Anything else fails the install
+# (strictDepBuilds) until it has been reviewed and added here.
+allowBuilds:
+  esbuild: true
+  lefthook: true
+
+# Shared dependency versions, referenced as "catalog:" in package.json files.
+catalog:
+  '@axe-core/playwright': 4.13.0
+  '@orpc/client': 1.15.4
+  '@orpc/contract': 1.15.4
+  '@orpc/server': 1.15.4
+  '@playwright/test': 1.63.0
+  '@tailwindcss/postcss': 4.3.3
+  '@types/node': 24.19.0
+  '@types/react': 19.3.0
+  '@types/react-dom': 19.3.0
+  babel-plugin-react-compiler: 1.0.0
+  drizzle-kit: 0.31.11
+  drizzle-orm: 0.45.3
+  fast-check: 4.10.2
+  graphile-worker: 0.18.0
+  hono: 4.13.12
+  next: 16.3.8
+  postgres: 3.4.9
+  react: 19.3.0
+  react-dom: 19.3.0
+  tailwindcss: 4.3.3
+  tsx: 4.23.15
+  typescript: 7.0.2
+  vitest: 5.0.3
+  zod: 4.6.5

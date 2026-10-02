@@ -1,0 +1,21 @@
+{
+  "name": "@epilove/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Framework-free domain logic: campus rules, access policies, matching.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@epilove/config": "workspace:*",
+    "@types/node": "catalog:",
+    "fast-check": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

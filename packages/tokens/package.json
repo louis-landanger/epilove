@@ -1,0 +1,23 @@
+{
+  "name": "@epilove/tokens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design tokens shared by the web app, the 3D scenes and the future mobile app.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./theme.gen.css"
+  },
+  "scripts": {
+    "generate": "tsx scripts/generate.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@epilove/config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

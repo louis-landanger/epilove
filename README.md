@@ -2,7 +2,7 @@
 
 > Nom de code. Application de rencontre **et** d'amitié réservée aux étudiantes et étudiants vérifiés du campus IONIS de Lyon : **EPITA, ESME, Sup'Biotech, ISG, IPSA**.
 
-**Statut : phase 0 (cadrage), octobre 2026.** Ce dépôt contient pour l'instant le plan complet du projet. Le code arrive avec le sprint 0 (voir la [roadmap](docs/09-roadmap.md#sprint-0--les-dix-premières-actions)).
+**Statut : phase 0 (cadrage), octobre 2026.** Le plan complet est dans [`docs/`](docs/) et le socle technique du sprint 0 est en place (monorepo, CI, environnement local). Voir la [roadmap](docs/09-roadmap.md#sprint-0--les-dix-premières-actions).
 
 *Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées.*
 
@@ -49,6 +49,32 @@ TypeScript partout · monorepo pnpm + Turborepo · Next.js 16 + React 19 · Tail
 | Deck ouvert le soir du lancement ou une semaine après | Selon l'avancement, décidé au go/no-go | 9 février 2027 |
 | Usage de l'API Claude (modération ambiguë, brise-glace) et choix du modèle | Défaut `claude-opus-5-5`, modèle plus léger seulement après évaluation | Phase 2 |
 
+## Démarrer en local
+
+Prérequis : Node 24 (voir `.node-version`), Corepack (`corepack enable`), Docker.
+
+```bash
+pnpm install
+cp .env.example .env
+pnpm services:up          # PostgreSQL, Valkey, Centrifugo, SeaweedFS, imgproxy, Mailpit
+pnpm db:migrate && pnpm db:seed
+pnpm dev                  # http://localhost:3000
+```
+
+Vérifications : `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm test:e2e`. Toutes les commandes sont décrites dans [`CLAUDE.md`](CLAUDE.md#commandes).
+
+| Dossier | Contenu |
+|---|---|
+| `apps/web` | Next.js 16 : site, application, API montée sous `/api` |
+| `apps/worker` | Jobs et tâches planifiées (Graphile Worker) |
+| `packages/core` | Domaine sans framework : écoles et emails, âge, politique de visibilité `canSee`, compatibilité |
+| `packages/db` | Schéma Drizzle, migrations, seed |
+| `packages/contracts` | Contrats oRPC et schémas Zod partagés, client typé |
+| `packages/api` | Routeur Hono + oRPC |
+| `packages/tokens` | Jetons de design (source TypeScript, thème Tailwind généré) |
+| `packages/config` | Configurations TypeScript partagées |
+| `infra/` | Services locaux (Docker Compose), configuration Centrifugo et SeaweedFS |
+
 ## Contribuer
 
-Le plan est une proposition : ouvrez une issue ou une pull request pour le discuter. Les décisions structurantes sont consignées dans [`docs/adr/`](docs/adr/0000-template.md).
+Le plan est une proposition : ouvrez une issue ou une pull request pour le discuter. Les décisions structurantes sont consignées dans [`docs/adr/`](docs/adr/0000-template.md). Les vulnérabilités se signalent en privé (voir [SECURITY.md](SECURITY.md)).

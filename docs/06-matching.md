@@ -34,7 +34,7 @@ Une paire (A, B) n'est jamais proposée si l'une de ces conditions échoue. **To
 | Activité | B actif dans les 21 derniers jours |
 | Dealbreakers | Si A a marqué une réponse « obligatoire » et que B ne la satisfait pas |
 
-Ces règles vivent dans **une seule fonction de politique** du domaine (`canSee(viewer, target)`), réutilisée par le deck, le Drop, le Pacte, les likes reçus et les profils. Elle est couverte par des tests basés sur les propriétés (voir [11](11-qualite-ops.md)).
+Ces règles vivent dans **une seule fonction de politique** du domaine (`canSee(viewer, target)`, dans `packages/core/src/policies/can-see.ts`), réutilisée par le deck, le Drop, le Pacte et les likes reçus. Les deux règles propres au deck (historique et dealbreakers) s'y ajoutent dans `isDeckCandidate`. Elle est couverte par des tests basés sur les propriétés (voir [11](11-qualite-ops.md)).
 
 ## 3. Compatibilité par questionnaire
 

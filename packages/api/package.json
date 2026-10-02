@@ -1,0 +1,28 @@
+{
+  "name": "@epilove/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "HTTP API (Hono + oRPC), mounted under /api by the web app.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@epilove/contracts": "workspace:*",
+    "@epilove/core": "workspace:*",
+    "@orpc/client": "catalog:",
+    "@orpc/server": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@epilove/config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

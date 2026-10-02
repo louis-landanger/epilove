@@ -185,13 +185,15 @@ Toutes les écoles doivent être représentées dans l'équipe ou au moins parmi
 
 ## Sprint 0 : les dix premières actions
 
-1. Constituer l'équipe et attribuer les rôles.
-2. Lancer le vote sur le nom auprès des ambassadeurs des cinq écoles.
-3. Envoyer un email de test vers une adresse de chaque école et vérifier la réception (boîte de réception ou courrier indésirable).
-4. Écrire aux BDE pour obtenir les calendriers et proposer un partenariat.
-5. Demander l'accès à Forge ID au CRI de l'EPITA.
-6. Rédiger et déposer les statuts de l'association.
-7. Initialiser le monorepo, la CI et l'environnement local.
-8. Réserver le nom de domaine et les comptes Instagram / TikTok.
-9. Produire les trois planches d'ambiance.
-10. Prototyper le champ d'ions sur un téléphone Android d'entrée de gamme.
+Le socle technique (action 7) est en place depuis le 2 octobre 2026 : voir [ADR-0001](adr/0001-socle-technique-sprint-0.md) et le README. Les autres actions relèvent de l'équipe.
+
+- [ ] Constituer l'équipe et attribuer les rôles.
+- [ ] Lancer le vote sur le nom auprès des ambassadeurs des cinq écoles.
+- [ ] Envoyer un email de test vers une adresse de chaque école et vérifier la réception (boîte de réception ou courrier indésirable).
+- [ ] Écrire aux BDE pour obtenir les calendriers et proposer un partenariat.
+- [ ] Demander l'accès à Forge ID au CRI de l'EPITA.
+- [ ] Rédiger et déposer les statuts de l'association.
+- [x] Initialiser le monorepo, la CI et l'environnement local.
+- [ ] Réserver le nom de domaine et les comptes Instagram / TikTok.
+- [ ] Produire les trois planches d'ambiance.
+- [ ] Prototyper le champ d'ions sur un téléphone Android d'entrée de gamme.

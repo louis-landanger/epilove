@@ -1,0 +1,24 @@
+{
+  "client": {
+    "allowed_origins": ["http://localhost:3000"]
+  },
+  "health": {
+    "enabled": true
+  },
+  "channel": {
+    "namespaces": [
+      {
+        "name": "personal",
+        "allow_user_limited_channels": true,
+        "history_size": 100,
+        "history_ttl": "300s",
+        "force_recovery": true
+      },
+      {
+        "name": "broadcast",
+        "allow_subscribe_for_client": true,
+        "presence": true
+      }
+    ]
+  }
+}

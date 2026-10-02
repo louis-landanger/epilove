@@ -1,0 +1,8 @@
+# Security-sensitive paths require a review from their owners (docs/07-confiance-securite.md).
+# Add the team's GitHub handles here as people join.
+
+/packages/core/src/policies/ @louis-landanger
+/packages/db/drizzle/ @louis-landanger
+/packages/api/ @louis-landanger
+/infra/ @louis-landanger
+/.github/ @louis-landanger

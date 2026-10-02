@@ -1,0 +1,105 @@
+# Local development services. Start with `pnpm services:up` from the repository root.
+# Every port is bound to 127.0.0.1 and every secret below is a development-only value.
+name: epilove
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_USER: epilove
+      POSTGRES_PASSWORD: epilove
+      POSTGRES_DB: epilove
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U epilove -d epilove"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  valkey:
+    image: valkey/valkey:9.1
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  centrifugo:
+    image: centrifugo/centrifugo:v6.9
+    command: ["centrifugo", "--config=/centrifugo/config.json"]
+    environment:
+      CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY: dev-only-centrifugo-token-secret
+      CENTRIFUGO_HTTP_API_KEY: dev-only-centrifugo-api-key
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ../centrifugo/config.json:/centrifugo/config.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+    command:
+      - server
+      - -dir=/data
+      - -s3
+      - -s3.config=/etc/seaweedfs/s3.json
+      - -master.volumeSizeLimitMB=256
+    ports:
+      - "127.0.0.1:8333:8333"
+    volumes:
+      - seaweedfs-data:/data
+      - ../seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8333/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  imgproxy:
+    image: ghcr.io/imgproxy/imgproxy:v4.0.17
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    environment:
+      # Development-only signing key and salt (hex). Production values live in the secret manager.
+      IMGPROXY_KEY: 6465762d6f6e6c792d696d6770726f78792d6b6579
+      IMGPROXY_SALT: 6465762d6f6e6c792d696d6770726f78792d73616c74
+      IMGPROXY_USE_S3: "true"
+      IMGPROXY_S3_ENDPOINT: http://seaweedfs:8333
+      AWS_ACCESS_KEY_ID: epilove
+      AWS_SECRET_ACCESS_KEY: epilove-dev-secret
+      AWS_REGION: eu-west-1
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD", "imgproxy", "health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:
+  valkey-data:
+  seaweedfs-data:

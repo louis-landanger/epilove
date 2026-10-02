@@ -16,7 +16,7 @@
 |---|---|---|
 | Monorepo | pnpm + Turborepo | pnpm 12.8, Turborepo 2.11 |
 | Langage | TypeScript (strict) | 7.0 (compilateur natif) |
-| Runtime | Node.js | 26 (LTS à partir de fin octobre 2026), 24 LTS en repli |
+| Runtime | Node.js | 24 LTS au démarrage, 26 dès sa promotion LTS (fin octobre 2026) |
 | Front | Next.js (App Router, React Compiler, Turbopack) | 16.3 |
 | UI | React | 19.3 |
 | Styles | Tailwind CSS + jetons en variables CSS | 4.3 |
@@ -170,8 +170,8 @@ Le choix d'un modèle plus léger (Claude Sonnet 5.5 ou Haiku 4.5) pour réduire
 
 | Besoin | Outil | Remarque |
 |---|---|---|
-| Formatage et lint | **Biome 2.5** | + règles React Hooks / React Compiler via `eslint-plugin-react-hooks` dans une configuration ESLint minimale |
-| Typage | **TypeScript 7** | Compilateur natif, ~10× plus rapide. Pas encore d'API programmatique stable : garder TypeScript 6 (`@typescript/typescript6`) pour les outils qui en dépendent |
+| Formatage et lint | **Biome 2.5** | Domaines React, Next et test activés. Les règles du React Compiler (`eslint-plugin-react-hooks`) viendront quand `typescript-eslint` supportera TypeScript 7 ([ADR-0001](adr/0001-socle-technique-sprint-0.md)) |
+| Typage | **TypeScript 7** | Compilateur natif, ~10× plus rapide, validé avec `next build` (Next.js 16.3). Pas encore d'API programmatique stable : garder TypeScript 6 (`@typescript/typescript6`) pour les outils qui en dépendent |
 | Tests unitaires et d'intégration | **Vitest 5** | Testcontainers pour PostgreSQL ; fast-check pour les tests par propriétés |
 | Tests de bout en bout | **Playwright 1.63** | Scénarios à plusieurs navigateurs (deux utilisateurs qui matchent et discutent), axe pour l'accessibilité |
 | Composants | **Storybook 10** | Documentation et tests visuels |

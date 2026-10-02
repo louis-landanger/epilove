@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "epilove-dev",
+      "credentials": [
+        {
+          "accessKey": "epilove",
+          "secretKey": "epilove-dev-secret"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}
