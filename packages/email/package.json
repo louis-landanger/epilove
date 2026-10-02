@@ -1,0 +1,24 @@
+{
+  "name": "@epilove/email",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Transactional emails: SMTP transport and templates (sign-in code, waiting list\u2026).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "nodemailer": "catalog:"
+  },
+  "devDependencies": {
+    "@epilove/config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/nodemailer": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
