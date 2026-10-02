@@ -14,7 +14,7 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
-      "passThroughEnv": ["DATABASE_URL"]
+      "passThroughEnv": ["DATABASE_URL", "ENCRYPTION_KEYS", "ENCRYPTION_CURRENT_KEY_ID", "EMAIL_HMAC_SECRET"]
     },
     "test:e2e": {
       "dependsOn": ["build"],
