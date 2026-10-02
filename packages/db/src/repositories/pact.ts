@@ -2,7 +2,7 @@ import { canComputePact, canJoinPact, type Mode, type PactStatus } from "@epilov
 import { PACT_CHANNEL } from "@epilove/realtime/events";
 import { and, asc, count, desc, eq, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { Database } from "../client";
-import { block, match, notification, pactParticipant, pactResult, pactSeason } from "../schema";
+import { appUser, block, match, notification, pactParticipant, pactResult, pactSeason } from "../schema";
 import { enqueue, type OutboxEntry } from "./outbox";
 
 /**
@@ -245,7 +245,22 @@ export async function revealSeason(
       })
       .from(pactResult)
       .where(eq(pactResult.seasonId, input.seasonId));
-    const kept = results.filter((result) => input.keep.has(result.id));
+    const candidates = [...new Set(results.flatMap((r) => [r.userLow, r.userHigh]))];
+    // Accounts deleted since the computation are left out; the others are locked until commit.
+    const live = candidates.length
+      ? new Set(
+          (
+            await tx
+              .select({ id: appUser.id })
+              .from(appUser)
+              .where(inArray(appUser.id, candidates))
+              .for("key share")
+          ).map((row) => row.id),
+        )
+      : new Set<string>();
+    const kept = results.filter(
+      (result) => input.keep.has(result.id) && live.has(result.userLow) && live.has(result.userHigh),
+    );
     const members = [...new Set(kept.flatMap((r) => [r.userLow, r.userHigh]))];
 
     const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
@@ -271,7 +286,8 @@ export async function revealSeason(
     // A pair that matched by themselves since the computation keeps their match.
     const linked: { resultId: string; matchId: string }[] = [];
     const toCreate: typeof kept = [];
-    const dropped = new Set(results.filter((r) => !input.keep.has(r.id)).map((r) => r.id));
+    const keptIds = new Set(kept.map((r) => r.id));
+    const dropped = new Set(results.filter((r) => !keptIds.has(r.id)).map((r) => r.id));
     for (const result of kept) {
       const key = pairKey(result.userLow, result.userHigh);
       const current = existing.get(key);

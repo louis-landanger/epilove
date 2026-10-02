@@ -1,7 +1,7 @@
 import type { DeckFilter, IsoDate } from "@epilove/core";
 import { and, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Database } from "../client";
-import { discoveryFilter, drop, dropRun, likeAction, notification } from "../schema";
+import { appUser, discoveryFilter, drop, dropRun, likeAction, notification } from "../schema";
 import { DEFAULT_DECK_FILTER, type SwipeRecord } from "./discovery";
 import { enqueue } from "./outbox";
 
@@ -99,7 +99,22 @@ export async function saveDrops(
 ) {
   await db.transaction(async (tx) => {
     await tx.delete(drop).where(eq(drop.day, input.day));
-    const rows = [...input.drops].filter(([, candidates]) => candidates.length > 0);
+    // Accounts deleted while the Drop was computed are skipped; the others are locked until commit.
+    const wanted = [...input.drops.keys()];
+    const existing = wanted.length
+      ? new Set(
+          (
+            await tx
+              .select({ id: appUser.id })
+              .from(appUser)
+              .where(inArray(appUser.id, wanted))
+              .for("key share")
+          ).map((row) => row.id),
+        )
+      : new Set<string>();
+    const rows = [...input.drops].filter(
+      ([userId, candidates]) => candidates.length > 0 && existing.has(userId),
+    );
     for (let start = 0; start < rows.length; start += 1000) {
       await tx.insert(drop).values(
         rows.slice(start, start + 1000).map(([userId, candidates]) => ({
