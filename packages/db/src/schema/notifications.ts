@@ -1,5 +1,16 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createdAt, id, timestamps } from "./columns";
 import { appUser } from "./users";
 
@@ -54,4 +65,37 @@ export const notificationPreference = pgTable(
     ...timestamps,
   },
   (t) => [primaryKey({ columns: [t.userId, t.group] })],
+);
+
+/** Quiet hours (NOT-04); no row means the defaults (23:00 to 08:00, messages held). */
+export const quietHours = pgTable(
+  "quiet_hours",
+  {
+    userId: uuid()
+      .primaryKey()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    enabled: boolean().notNull(),
+    startHour: integer().notNull(),
+    endHour: integer().notNull(),
+    allowMessages: boolean().notNull(),
+    ...timestamps,
+  },
+  (t) => [
+    check("quiet_hours_start_check", sql`${t.startHour} between 0 and 23`),
+    check("quiet_hours_end_check", sql`${t.endHour} between 0 and 23`),
+  ],
+);
+
+/** Weekly e-mail digest (NOT-05): one row per member and ISO week, claimed before sending. */
+export const emailDigest = pgTable(
+  "email_digest",
+  {
+    userId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    week: text().notNull(),
+    sentAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.week] })],
 );

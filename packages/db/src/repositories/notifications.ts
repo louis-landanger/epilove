@@ -1,12 +1,17 @@
 import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import {
+  appUser,
+  block,
+  emailDigest,
+  likeAction,
   match,
   notification,
   notificationPreference,
   preferences,
   profile,
   pushSubscription,
+  quietHours,
 } from "../schema";
 
 /** Notification centre (NOT-02), preferences (NOT-03) and Web Push subscriptions (NOT-01). */
@@ -225,4 +230,105 @@ export async function otherFirstName(db: Database, matchId: string, userId: stri
     .from(profile)
     .where(eq(profile.userId, otherId));
   return other?.firstName ?? null;
+}
+
+/** A member's quiet hours (NOT-04), or null for the defaults. */
+export async function quietHoursOf(db: Database, userId: string) {
+  const [row] = await db
+    .select({
+      enabled: quietHours.enabled,
+      startHour: quietHours.startHour,
+      endHour: quietHours.endHour,
+      allowMessages: quietHours.allowMessages,
+    })
+    .from(quietHours)
+    .where(eq(quietHours.userId, userId));
+  return row ?? null;
+}
+
+export async function saveQuietHours(
+  db: Database,
+  userId: string,
+  settings: { enabled: boolean; startHour: number; endHour: number; allowMessages: boolean },
+) {
+  await db
+    .insert(quietHours)
+    .values({ userId, ...settings })
+    .onConflictDoUpdate({ target: quietHours.userId, set: { ...settings, updatedAt: new Date() } });
+}
+
+const DIGEST_STATUSES = sql`${appUser.status} in ('active', 'restricted', 'paused')`;
+
+/**
+ * Members who asked for at least one group by e-mail (NOT-05) and have not
+ * had this week's digest yet. The address is read only to send the e-mail.
+ */
+export async function digestRecipients(db: Database, week: string, limit = 200) {
+  const rows = await db
+    .select({
+      userId: appUser.id,
+      email: appUser.email,
+      schoolId: appUser.schoolId,
+      groups: sql<string[]>`array_agg(${notificationPreference.group})`,
+    })
+    .from(appUser)
+    .innerJoin(
+      notificationPreference,
+      and(eq(notificationPreference.userId, appUser.id), eq(notificationPreference.email, true)),
+    )
+    .where(
+      and(
+        DIGEST_STATUSES,
+        sql`not exists (select 1 from ${emailDigest} d where d.user_id = ${appUser.id} and d.week = ${week})`,
+      ),
+    )
+    .groupBy(appUser.id, appUser.email, appUser.schoolId)
+    .limit(limit);
+  return rows;
+}
+
+/** Claims this week's digest for a member; false when another run already has it. */
+export async function claimDigest(db: Database, userId: string, week: string): Promise<boolean> {
+  const rows = await db.insert(emailDigest).values({ userId, week }).onConflictDoNothing().returning();
+  return rows.length > 0;
+}
+
+export async function markDigestSent(db: Database, userId: string, week: string, now: Date) {
+  await db
+    .update(emailDigest)
+    .set({ sentAt: now })
+    .where(and(eq(emailDigest.userId, userId), eq(emailDigest.week, week)));
+}
+
+/** Gives the claim back after a failed send, so that the next run retries. */
+export async function releaseDigest(db: Database, userId: string, week: string) {
+  await db
+    .delete(emailDigest)
+    .where(and(eq(emailDigest.userId, userId), eq(emailDigest.week, week), isNull(emailDigest.sentAt)));
+}
+
+/** Likes received and matches made since `since`, leaving out people the member blocked or who blocked them. */
+export async function digestCounts(db: Database, userId: string, since: Date) {
+  const [likes] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(likeAction)
+    .where(
+      and(
+        eq(likeAction.targetId, userId),
+        sql`${likeAction.kind} <> 'pass'`,
+        gte(likeAction.createdAt, since),
+        sql`not exists (select 1 from ${block} b where (b.blocker_id = ${userId} and b.blocked_id = ${likeAction.actorId}) or (b.blocker_id = ${likeAction.actorId} and b.blocked_id = ${userId}))`,
+      ),
+    );
+  const [matches] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(match)
+    .where(
+      and(
+        sql`(${match.userLow} = ${userId} or ${match.userHigh} = ${userId})`,
+        eq(match.status, "active"),
+        gte(match.createdAt, since),
+      ),
+    );
+  return { likes: likes?.n ?? 0, matches: matches?.n ?? 0 };
 }

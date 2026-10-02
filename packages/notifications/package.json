@@ -6,13 +6,15 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./types": "./src/types.ts"
+    "./types": "./src/types.ts",
+    "./quiet-hours": "./src/quiet-hours.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
+    "nodemailer": "catalog:",
     "web-push": "catalog:"
   },
   "devDependencies": {

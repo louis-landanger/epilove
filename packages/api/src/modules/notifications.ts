@@ -3,10 +3,13 @@ import {
   listNotifications,
   markNotificationsRead,
   notificationPreferencesOf,
+  quietHoursOf,
   saveNotificationPreferences,
+  saveQuietHours,
   saveSubscription,
   unreadCount,
 } from "@epilove/db/repositories/notifications";
+import { DEFAULT_QUIET_HOURS } from "@epilove/notifications/quiet-hours";
 import {
   DEFAULT_CHANNELS,
   isNotificationType,
@@ -63,6 +66,15 @@ export const notifications = {
       NOTIFICATION_GROUP_NAMES.map((group) => [group, stored.get(group) ?? DEFAULT_CHANNELS]),
     ) as Groups;
     return { groups };
+  }),
+
+  quietHours: os.notifications.quietHours.use(requireViewer).handler(async ({ context }) => {
+    return (await quietHoursOf(context.database(), context.viewer.userId)) ?? { ...DEFAULT_QUIET_HOURS };
+  }),
+
+  saveQuietHours: os.notifications.saveQuietHours.use(requireViewer).handler(async ({ context, input }) => {
+    await saveQuietHours(context.database(), context.viewer.userId, input);
+    return (await quietHoursOf(context.database(), context.viewer.userId)) ?? { ...DEFAULT_QUIET_HOURS };
   }),
 
   savePreferences: os.notifications.savePreferences.use(requireViewer).handler(async ({ context, input }) => {

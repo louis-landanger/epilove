@@ -17,6 +17,15 @@ export const notificationPreferences = z.object({
 });
 export type NotificationPreferencesView = z.infer<typeof notificationPreferences>;
 
+/** Quiet hours (NOT-04), in campus time. */
+export const quietHoursView = z.object({
+  enabled: z.boolean(),
+  startHour: z.number().int().min(0).max(23),
+  endHour: z.number().int().min(0).max(23),
+  allowMessages: z.boolean(),
+});
+export type QuietHoursView = z.infer<typeof quietHoursView>;
+
 export const pushSubscriptionInput = z.object({
   endpoint: z.url().max(2048),
   keys: z.object({ p256dh: z.string().min(1).max(512), auth: z.string().min(1).max(512) }),
@@ -35,6 +44,9 @@ export const notificationsContract = {
   /** Preferences per group and channel (NOT-03). */
   preferences: oc.output(notificationPreferences),
   savePreferences: oc.input(notificationPreferences).output(notificationPreferences),
+  /** Quiet hours (NOT-04): no push in that window, except what the member lets through. */
+  quietHours: oc.output(quietHoursView),
+  saveQuietHours: oc.input(quietHoursView).output(quietHoursView),
   /** Public VAPID key for the browser, or null when push is not configured. */
   pushConfig: oc.output(z.object({ publicKey: z.string().nullable() })),
   subscribe: oc.input(pushSubscriptionInput).output(z.object({ ok: z.literal(true) })),

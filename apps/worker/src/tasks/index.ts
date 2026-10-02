@@ -3,6 +3,7 @@ import { dropTickTask } from "./drop/tick";
 import { dateCheckIn } from "./messaging/check-in";
 import { chatNudgeTick } from "./messaging/nudge";
 import { mediaPurge, messagePurge } from "./messaging/purge";
+import { weeklyDigest } from "./notifications/digest";
 import { outboxPurge } from "./outbox/purge";
 import { pactReveal, pactRevealDue } from "./pact/reveal";
 
@@ -24,6 +25,7 @@ export const taskList: TaskList = {
   outbox_purge: outboxPurge,
   pact_reveal: pactReveal,
   pact_reveal_due: pactRevealDue,
+  weekly_digest: weeklyDigest,
 };
 
 /** Graphile Worker crontab format: minute hour day month weekday task. */
@@ -36,4 +38,5 @@ export const crontab = [
   "7 * * * * chat_nudge",
   "*/5 * * * * media_purge",
   "*/5 * * * * date_check_in",
+  "11 * * * 0 weekly_digest",
 ].join("\n");
