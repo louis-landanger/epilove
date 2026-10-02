@@ -1,7 +1,7 @@
 "use client";
 
 import type { MessageAttachment } from "@epilove/contracts";
-import { dateIcs } from "@epilove/core";
+import { DATE_SAFETY_RULES, dateIcs } from "@epilove/core";
 import { useFormatter, useTranslations } from "next-intl";
 
 type DateAttachment = Extract<MessageAttachment, { type: "date" }>;
@@ -15,18 +15,23 @@ export function DateCard({
   mine,
   onRespond,
   onCounter,
+  onSafetyKit,
 }: {
   messageId: string;
   date: DateAttachment;
   mine: boolean;
   onRespond: (response: "accept" | "decline") => void;
   onCounter: () => void;
+  /** Accepted dates offer the safety kit (IRL-03) until a day after they start. */
+  onSafetyKit?: () => void;
 }) {
   const t = useTranslations("chat.date");
+  const kit = useTranslations("chat.safetyKit");
   const format = useFormatter();
   const startsAt = new Date(date.startsAt);
   const where = date.spot?.name ?? date.place ?? "";
   const upcoming = startsAt.getTime() > Date.now();
+  const kitOpen = startsAt.getTime() + DATE_SAFETY_RULES.expiresAfterHours * 3_600_000 > Date.now();
 
   const downloadIcs = () => {
     const ics = dateIcs({
@@ -92,14 +97,27 @@ export function DateCard({
           </button>
         </div>
       )}
-      {date.status === "accepted" && upcoming && (
-        <button
-          type="button"
-          onClick={downloadIcs}
-          className="self-start rounded-full border border-volt/50 px-4 py-2 text-sm"
-        >
-          {t("calendar")}
-        </button>
+      {date.status === "accepted" && (upcoming || (kitOpen && onSafetyKit)) && (
+        <div className="flex flex-wrap gap-2">
+          {upcoming && (
+            <button
+              type="button"
+              onClick={downloadIcs}
+              className="rounded-full border border-volt/50 px-4 py-2 text-sm"
+            >
+              {t("calendar")}
+            </button>
+          )}
+          {kitOpen && onSafetyKit && (
+            <button
+              type="button"
+              onClick={onSafetyKit}
+              className="rounded-full border border-paper/25 px-4 py-2 text-sm"
+            >
+              {kit("open")}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

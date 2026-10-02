@@ -13,7 +13,8 @@
     "drop_ready": "Your evening Drop is here.",
     "pact_reveal": "It's time: the Pact results are in.",
     "chat_nudge": "A conversation is waiting for a nudge. An idea to restart?",
-    "event_cancelled": "An event you answered has been cancelled."
+    "event_cancelled": "An event you answered has been cancelled.",
+    "date_check_in": "Your date is over: did everything go well?"
   },
   "settings": {
     "title": "Notification settings",

@@ -13,7 +13,8 @@
     "drop_ready": "Ton Drop du soir est arrivé.",
     "pact_reveal": "C'est l'heure : les résultats du Pacte sont là.",
     "chat_nudge": "Une conversation attend une relance. Une idée pour repartir ?",
-    "event_cancelled": "Un événement auquel tu as répondu est annulé."
+    "event_cancelled": "Un événement auquel tu as répondu est annulé.",
+    "date_check_in": "Ton date est passé : tout s'est bien passé ?"
   },
   "settings": {
     "title": "Réglages des notifications",

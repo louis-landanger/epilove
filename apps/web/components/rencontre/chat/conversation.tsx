@@ -27,6 +27,7 @@ import {
   VoiceComposer,
   VoicePlayer,
 } from "./media";
+import { SafetyKitSheet } from "./safety-kit";
 import { type PickedGif, StickerPicker } from "./sticker-picker";
 import { StickerArt } from "./stickers";
 
@@ -78,6 +79,8 @@ export function Conversation({ thread }: { thread: ThreadView }) {
   const [warning, setWarning] = useState<string | null>(null);
   /** Date proposal sheet (CHAT-10), possibly answering another proposal. */
   const [dateSheet, setDateSheet] = useState<{ counterTo: string | null } | null>(null);
+  /** The accepted date whose safety kit is open (IRL-03). */
+  const [kitFor, setKitFor] = useState<string | null>(null);
   /** A photo waiting in its preview (CHAT-06), and the upload in progress. */
   const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -649,6 +652,7 @@ export function Conversation({ thread }: { thread: ThreadView }) {
                     onRespondDate={(response) => void respondDate(item.message, response)}
                     onCounterDate={() => setDateSheet({ counterTo: item.message.id })}
                     onOpenMedia={() => openViewOnce(item.message)}
+                    onSafetyKit={() => setKitFor(item.message.id)}
                   />
                 ) : (
                   <PendingBubble
@@ -690,6 +694,14 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           setReporting(null);
           say(t("reported"));
         }}
+      />
+
+      <SafetyKitSheet
+        open={kitFor !== null}
+        matchId={thread.matchId}
+        messageId={kitFor}
+        otherName={thread.other.firstName}
+        onClose={() => setKitFor(null)}
       />
 
       <PhotoSheet
@@ -846,6 +858,7 @@ function Bubble({
   onRespondDate,
   onCounterDate,
   onOpenMedia,
+  onSafetyKit,
 }: {
   message: ChatMessage;
   mine: boolean;
@@ -862,6 +875,7 @@ function Bubble({
   onRespondDate: (response: "accept" | "decline") => void;
   onCounterDate: () => void;
   onOpenMedia: () => Promise<string | null>;
+  onSafetyKit: () => void;
 }) {
   const t = useTranslations("chat");
   const format = useFormatter();
@@ -938,6 +952,7 @@ function Bubble({
               mine={mine}
               onRespond={onRespondDate}
               onCounter={onCounterDate}
+              onSafetyKit={onSafetyKit}
             />
           ) : message.attachment?.type === "image" ? (
             <ImageBubble image={message.attachment} mine={mine} onOpen={onOpenMedia} onReport={onReport} />

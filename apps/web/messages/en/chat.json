@@ -183,5 +183,71 @@
       "already_viewed": "This photo has already been opened."
     },
     "once": "Can be opened once"
+  },
+  "safetyKit": {
+    "open": "Safety kit",
+    "title": "Safety kit",
+    "lead": "Before you go, send your date's details to someone you trust. The link stops 24 hours after the start, or as soon as you stop it.",
+    "whatShared": "What's shared: {name}'s first name, the place and the time. Nothing else.",
+    "create": "Create a link to share",
+    "another": "Create another link",
+    "links": "Your links",
+    "copy": "Copy the link",
+    "copied": "Link copied.",
+    "share": "Share…",
+    "shareText": "Here are the details of my date, just in case.",
+    "revoke": "Stop this link",
+    "states": {
+      "active": "Active",
+      "revoked": "Stopped",
+      "expired": "Expired"
+    },
+    "createdAt": "Created at {time}",
+    "errors": {
+      "not_accepted": "The kit is for accepted dates.",
+      "over": "This date is over.",
+      "too_many": "Three active links at most for one date.",
+      "rate_limited": "You've created a lot of links today. Try again tomorrow.",
+      "generic": "That didn't work. Try again in a moment."
+    },
+    "pageTitle": "Your safety kit",
+    "back": "Back to the conversation",
+    "summary": "With {name} · {place} · {date}",
+    "checkInTitle": "Did everything go well?",
+    "checkInLead": "Your answer shows for the people you sent the link to.",
+    "ok": "Yes, all good",
+    "help": "Not really",
+    "okDone": "Noted. The people you trust can see everything's fine.",
+    "helpDone": "We're here. You can call emergency services, report or block {name}, or talk to your school's support service. The people you trust can see it didn't go well.",
+    "report": "Report {name}",
+    "reported": "Report sent. The moderation team is on it.",
+    "changeAnswer": "Change my answer",
+    "emergencyTitle": "If you need help",
+    "numbers": {
+      "112": "112: emergencies",
+      "17": "17: police",
+      "114": "114: emergencies by text",
+      "3919": "3919: violence against women helpline (free, anonymous)"
+    },
+    "schoolHelp": "Support services and contacts at your school",
+    "public": {
+      "metaTitle": "Date details",
+      "title": "Date details",
+      "lead": "{sharer} sent you the details of their date, just in case.",
+      "with": "With",
+      "where": "Where",
+      "when": "When",
+      "map": "See on a map",
+      "newsTitle": "News",
+      "pending": "No news yet. {sharer} will get a quick question after the date.",
+      "ok": "{sharer} said everything went well ({time}).",
+      "help": "{sharer} said it didn't go well ({time}). Check in on them. If they're in danger, call 17 or 112.",
+      "expires": "This link stops on {date}.",
+      "refresh": "Refresh",
+      "goneTitle": "Inactive link",
+      "goneLead": "This link has expired or was stopped by the person who created it.",
+      "about": "Epilove is a dating app for students on the campus. No account needed to see this page."
+    },
+    "linkLabel": "Link to send"
   }
 }

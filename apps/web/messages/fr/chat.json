@@ -183,5 +183,71 @@
       "already_viewed": "Cette photo a déjà été ouverte."
     },
     "once": "Une seule ouverture possible"
+  },
+  "safetyKit": {
+    "open": "Kit sécurité",
+    "title": "Kit sécurité",
+    "lead": "Avant de partir, envoie les détails de ton date à une personne de confiance. Le lien s'arrête 24 heures après le début, ou dès que tu l'arrêtes.",
+    "whatShared": "Ce qui est partagé : le prénom de {name}, le lieu et l'heure. Rien d'autre.",
+    "create": "Créer un lien à partager",
+    "another": "Créer un autre lien",
+    "links": "Tes liens",
+    "copy": "Copier le lien",
+    "copied": "Lien copié.",
+    "share": "Partager…",
+    "shareText": "Je te partage les détails de mon date, au cas où.",
+    "revoke": "Arrêter ce lien",
+    "states": {
+      "active": "Actif",
+      "revoked": "Arrêté",
+      "expired": "Expiré"
+    },
+    "createdAt": "Créé à {time}",
+    "errors": {
+      "not_accepted": "Le kit sert aux dates acceptés.",
+      "over": "Ce date est passé.",
+      "too_many": "Trois liens actifs au plus pour un même date.",
+      "rate_limited": "Tu as créé beaucoup de liens aujourd'hui. Réessaie demain.",
+      "generic": "Ça n'a pas marché. Réessaie dans un instant."
+    },
+    "pageTitle": "Ton kit sécurité",
+    "back": "Revenir à la conversation",
+    "summary": "Avec {name} · {place} · {date}",
+    "checkInTitle": "Tout s'est bien passé ?",
+    "checkInLead": "Ta réponse s'affiche pour les personnes à qui tu as envoyé le lien.",
+    "ok": "Oui, tout va bien",
+    "help": "Pas vraiment",
+    "okDone": "Noté. Tes personnes de confiance voient que tout va bien.",
+    "helpDone": "On est là. Tu peux appeler les secours, signaler ou bloquer {name}, ou en parler à la cellule d'écoute de ton école. Tes personnes de confiance voient que ça ne s'est pas bien passé.",
+    "report": "Signaler {name}",
+    "reported": "Signalement envoyé. L'équipe de modération s'en occupe.",
+    "changeAnswer": "Changer ma réponse",
+    "emergencyTitle": "En cas de besoin",
+    "numbers": {
+      "112": "112 : urgences",
+      "17": "17 : police",
+      "114": "114 : urgences par SMS",
+      "3919": "3919 : violences femmes info (gratuit, anonyme)"
+    },
+    "schoolHelp": "Cellules d'écoute et référents de ton école",
+    "public": {
+      "metaTitle": "Détails d'un date",
+      "title": "Détails d'un date",
+      "lead": "{sharer} t'a envoyé les détails de son date, au cas où.",
+      "with": "Avec",
+      "where": "Où",
+      "when": "Quand",
+      "map": "Voir sur une carte",
+      "newsTitle": "Nouvelles",
+      "pending": "Pas encore de nouvelles. {sharer} recevra une petite question après le date.",
+      "ok": "{sharer} a indiqué que tout s'est bien passé ({time}).",
+      "help": "{sharer} a indiqué que ça ne s'est pas bien passé ({time}). Prends de ses nouvelles. En cas de danger, appelle le 17 ou le 112.",
+      "expires": "Ce lien s'arrête le {date}.",
+      "refresh": "Actualiser",
+      "goneTitle": "Lien inactif",
+      "goneLead": "Ce lien a expiré ou a été arrêté par la personne qui l'a créé.",
+      "about": "Epilove est une app de rencontre réservée aux étudiants du campus. Pas besoin de compte pour voir cette page."
+    },
+    "linkLabel": "Lien à envoyer"
   }
 }

@@ -19,6 +19,7 @@
 | 2 | Stickers maison et GIF (CHAT-05) | ✅ fait et testé (API avec GIPHY simulé) ; GIPHY désactivé sans clé |
 | 2 | Modifier / supprimer (CHAT-08), avertissement avant envoi (SAF-09), « Ce message te dérange ? » (SAF-10) | ✅ fait et testé (cœur, API, Playwright) |
 | 2 | Photos, photo éphémère, flou explicite (CHAT-06) ; messages vocaux (CHAT-07) | ✅ fait et testé (API, worker, Playwright à deux navigateurs avec micro simulé) ; transcription non faite, classifieur d'images à brancher (SAF-11) |
+| 2 | Kit sécurité date (IRL-03) | ✅ fait et testé (cœur, API, Playwright avec une personne de confiance sans compte, axe) |
 | 2 | Événements (IRL-01) | ✅ fait et testé (cœur, API, Playwright à trois navigateurs, axe) ; pas d'image de couverture |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
@@ -142,6 +143,15 @@
 - Interface : bouton photo (aperçu, case « Éphémère : une seule ouverture »), bouton micro à la place d'« Envoyer » quand le champ est vide (enregistrement MediaRecorder 64 kbit/s, arrêt automatique à 2 minutes, écoute avant envoi), lecteur avec forme d'onde et vitesses 1×/1,5×/2×, photo floutée avec « Afficher quand même » et « Signaler » quand le classifieur la signale. Sur téléphone, les outils de la zone de saisie se replient derrière « + ».
 - **Non fait** : transcription des vocaux (CHAT-07, accessibilité) ; classifieur réel (SAF-11, aujourd'hui aucun signalement : toutes les photos s'affichent nettes).
 
+### Kit sécurité date (IRL-03)
+
+- `packages/core/src/messaging/date-safety.ts` : règles (question 3 heures après le début, lien valable 24 heures après le début, 3 liens actifs par date, 10 par jour), état d'un lien, numéros d'urgence (112, 17, 114 par SMS, 3919, d'après SAF-15).
+- Table `date_share` : un lien par personne de confiance, retrouvé par l'empreinte SHA-256 de son jeton (32 octets aléatoires) ; le jeton et les détails (prénoms, lieu, heure, coordonnées du Spot) sont chiffrés avec la clé des messages. Créer deux fois avec le même identifiant rend le même lien.
+- API `dateSafety.share` (conversation ouverte et date accepté obligatoires), `kit`, `checkIn`, `revoke` (il suffit d'être l'auteur du lien : le kit reste utilisable après un blocage ou un unmatch, c'est justement là qu'il sert), et `shared`, **publique** (sans compte, `NOT_FOUND` dès que le lien a expiré ou a été arrêté).
+- Tâche `date_check_in` toutes les 5 minutes : notification `date_check_in` (« Petite vérification : tout va bien ? » en push, sans mot « date » sur l'écran verrouillé), une seule par date même avec plusieurs liens.
+- Interface : bouton « Kit sécurité » sur un date accepté (jusqu'à 24 heures après le début), feuille avec création, copie, partage natif et arrêt des liens, numéros d'urgence et lien vers `/aide` ; page du membre `(app)/messages/securite/[shareId]` (« Tout s'est bien passé ? », puis signalement et ressources si « Pas vraiment ») ; page publique `/partage/[token]` (non indexée, `referrer: no-referrer`) qui affiche la réponse.
+- Ce que voit la personne de confiance : le prénom de la personne qui partage, le prénom du match, le lieu, l'heure et la réponse au check-in. Rien d'autre (ni photo, ni école, ni conversation).
+
 ### Événements (IRL-01)
 
 - `packages/core/src/events/events.ts` : règles (titre, lieu, au plus un an à l'avance, 24 heures au plus, 3 heures par défaut sans heure de fin), `canOrganize` (rôles `organizer` et `admin`), `attendanceVisible` (réciprocité). `canUseApp` ajouté aux politiques (compte utilisable et majeur).
@@ -183,15 +193,15 @@
 | `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendances `@epilove/crypto` et `aws4fetch` (stockage des médias de conversation), script `db:seed:dev`, exports `./repositories/*`, `./dev-seed`, `./storage` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `maplibre-gl`, `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
-| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `dev`, `discovery`, `events`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
+| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `dateSafety`, `dev`, `discovery`, `events`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
 | `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `events`, `likes`, `matches`, `notifications`, `pact`, `questionnaire`, `spots` (ajouts) |
-| `packages/core/src/index.ts` | `discovery/crush`, `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/second-chance`, `discovery/rules`, `events/events`, `matching/explain`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
+| `packages/core/src/index.ts` | `discovery/crush`, `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/second-chance`, `discovery/rules`, `events/events`, `matching/explain`, `messaging/date-safety`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
 | `packages/db/src/seeds/index.ts` | seeds `questions`, `spots` (ajouts) |
-| `packages/db/src/schema/index.ts` | `events`, `spots` (ajouts) |
+| `packages/db/src/schema/index.ts` | `date-safety`, `events`, `spots` (ajouts) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
-| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `media_purge`, `chat_nudge` (ajouts) |
+| `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `media_purge`, `date_check_in`, `chat_nudge` (ajouts) |
 | `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `drop:run` |
 | `turbo.json` | `ENCRYPTION_KEYS`, `ENCRYPTION_CURRENT_KEY_ID` et `EMAIL_HMAC_SECRET` transmis aux tests : le test du dépôt `members` ré-exécute le seed de développement, qui chiffrait sinon les messages fictifs avec la clé de test, illisibles ensuite par `pnpm dev` |
 | `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
@@ -214,6 +224,7 @@
 
 ## Migrations
 
+- `0014_*` : table `date_share`.
 - `0013_*` : tables `event` et `event_rsvp`.
 - `0012_*` : table `media_deletion`.
 - `0011_*` : table `spot`.
@@ -253,6 +264,7 @@
 - CSP (A, `proxy.ts`) : autoriser l'hôte d'imgproxy dans `img-src` (photos de conversation, déjà le cas des photos de profil), l'hôte S3 public dans `media-src` (URL présignées des vocaux) et `blob:` dans `img-src` et `media-src` (aperçus locaux avant envoi).
 - Suppression de compte (A) : effacer aussi les médias de conversation (préfixe `chat/<matchId>/` des matchs du membre), par exemple en les mettant dans `media_deletion`.
 - Modération (SAF-11, A) : brancher le vrai classifieur via `setImageClassifier` ; les photos signalées portent le drapeau `explicit_image` dans `message.moderation`.
+- `proxy.ts` (A) : la route `/partage/*` doit rester **publique** (personne de confiance sans compte) ; c'est la seule page de B hors connexion.
 - Rôle `organizer` (IRL-01) : l'espace organisateurs du back-office (ADM-08) attribue ce rôle aux comptes des BDE ; l'app lit `app_user.role`.
 - Le menu de sécurité d'une conversation et le signalement d'un message appellent `safety.block` / `safety.report` (contexte `message`, `contextRef` = id du message) : à vérifier avec l'implémentation de A (copie chiffrée des messages précédents comme preuve).
 
