@@ -1,4 +1,5 @@
 import { createDatabase, schema } from "@epilove/db";
+import { createEvent } from "@epilove/db/repositories/campus-events";
 import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -180,5 +181,88 @@ describe.skipIf(!url)("events (IRL-01)", () => {
     ).rejects.toMatchObject({
       message: "closed",
     });
+  });
+
+  it("makes a match when two participants scan each other's Flash code (IRL-04)", async () => {
+    const host = await organizer();
+    const eventId = await createEvent(db, host, {
+      organizerName: "BDE (test)",
+      title: "Soirée Flash",
+      description: "",
+      venue: "Foyer",
+      spotId: null,
+      startsAt: new Date(Date.now() - 10 * 60_000),
+      endsAt: new Date(Date.now() + 3 * 3_600_000),
+      schoolIds: [],
+    });
+    created.push(eventId);
+    const ada = await createTestMember(db, {
+      firstName: "Ada",
+      gender: "woman",
+      interestedIn: ["man"],
+      graduationYear: 2038,
+    });
+    const ben = await createTestMember(db, {
+      firstName: "Ben",
+      gender: "man",
+      interestedIn: ["woman"],
+      graduationYear: 2038,
+    });
+    const outsider = await createTestMember(db, { graduationYear: 2038 });
+    for (const member of [ada, ben]) {
+      await as(member).events.rsvp({ eventId, status: "going", shareWithMatches: false });
+    }
+
+    await expect(as(outsider).events.flashCode({ eventId })).rejects.toMatchObject({
+      message: "flash_closed",
+    });
+    const adaCode = await as(ada).events.flashCode({ eventId });
+    expect(adaCode.code).toMatch(/^[0-9A-Z]{8}$/);
+    expect(Date.parse(adaCode.expiresAt)).toBeGreaterThan(Date.now());
+    await expect(as(ben).events.flashScan({ eventId, code: "ZZZZZZZZ" })).rejects.toMatchObject({
+      message: "invalid_code",
+    });
+
+    // One scan: nothing yet. The code is typed with a dash and in lower case.
+    const first = await as(ben).events.flashScan({
+      eventId,
+      code: `${adaCode.code.slice(0, 4)}-${adaCode.code.slice(4)}`.toLowerCase(),
+    });
+    expect(first).toEqual({ outcome: "waiting", match: null });
+    const benCode = await as(ben).events.flashCode({ eventId });
+    const second = await as(ada).events.flashScan({ eventId, code: benCode.code });
+    expect(second).toMatchObject({ outcome: "matched", match: { firstName: "Ben" } });
+    const [row] = await db
+      .select({ source: schema.match.source })
+      .from(schema.match)
+      .where(eq(schema.match.id, second.match?.matchId ?? ""));
+    expect(row?.source).toBe("flash");
+  });
+
+  it("never makes a Flash match across a block, and says nothing about it", async () => {
+    const host = await organizer();
+    const eventId = await createEvent(db, host, {
+      organizerName: "BDE (test)",
+      title: "Soirée Flash bis",
+      description: "",
+      venue: "Foyer",
+      spotId: null,
+      startsAt: new Date(Date.now() - 10 * 60_000),
+      endsAt: null,
+      schoolIds: [],
+    });
+    created.push(eventId);
+    const a = await createTestMember(db, { graduationYear: 2038 });
+    const b = await createTestMember(db, { graduationYear: 2038 });
+    for (const member of [a, b]) {
+      await as(member).events.rsvp({ eventId, status: "going", shareWithMatches: false });
+    }
+    await db.insert(schema.block).values({ blockerId: b, blockedId: a });
+    await as(a).events.flashScan({ eventId, code: (await as(b).events.flashCode({ eventId })).code });
+    const back = await as(b).events.flashScan({
+      eventId,
+      code: (await as(a).events.flashCode({ eventId })).code,
+    });
+    expect(back).toEqual({ outcome: "waiting", match: null });
   });
 });

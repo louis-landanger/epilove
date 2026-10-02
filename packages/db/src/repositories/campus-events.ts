@@ -1,7 +1,7 @@
 import type { RsvpStatus } from "@epilove/core";
 import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { Database } from "../client";
-import { event, eventRsvp, notification, school } from "../schema";
+import { event, eventRsvp, flashScan, match, notification, school } from "../schema";
 import { enqueue } from "./outbox";
 
 /**
@@ -201,4 +201,87 @@ export async function eventsBetween(db: Database, from: Date, to: Date) {
       ),
     )
     .orderBy(asc(event.startsAt));
+}
+
+/** Members who answered an event: the only ones Flash can resolve a code to (IRL-04). */
+export async function answeredBy(db: Database, eventId: string): Promise<string[]> {
+  const rows = await db
+    .select({ userId: eventRsvp.userId })
+    .from(eventRsvp)
+    .where(eq(eventRsvp.eventId, eventId));
+  return rows.map((r) => r.userId);
+}
+
+export async function flashScansSince(db: Database, scannerId: string, since: Date): Promise<number> {
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(flashScan)
+    .where(and(eq(flashScan.scannerId, scannerId), sql`${flashScan.createdAt} >= ${since.toISOString()}`));
+  return row?.n ?? 0;
+}
+
+/** Records a scan (idempotent) and says whether the other one already scanned back. */
+export async function recordFlashScan(
+  db: Database,
+  input: { eventId: string; scannerId: string; scannedId: string; now: Date },
+): Promise<{ mutual: boolean }> {
+  await db
+    .insert(flashScan)
+    .values({
+      eventId: input.eventId,
+      scannerId: input.scannerId,
+      scannedId: input.scannedId,
+      createdAt: input.now,
+    })
+    .onConflictDoNothing();
+  const [back] = await db
+    .select({ eventId: flashScan.eventId })
+    .from(flashScan)
+    .where(
+      and(
+        eq(flashScan.eventId, input.eventId),
+        eq(flashScan.scannerId, input.scannedId),
+        eq(flashScan.scannedId, input.scannerId),
+      ),
+    );
+  return { mutual: Boolean(back) };
+}
+
+/**
+ * Turns a mutual Flash into a match (source `flash`), once the caller checked
+ * the access policies. An existing match for the pair is reused, an ended one
+ * is never reopened. Both members are notified as for any match.
+ */
+export async function createFlashMatch(
+  db: Database,
+  input: { a: string; b: string; mode: "love" | "friends"; now: Date },
+): Promise<{ matchId: string; created: boolean } | null> {
+  return db.transaction(async (tx) => {
+    const [low, high] = input.a < input.b ? [input.a, input.b] : [input.b, input.a];
+    const [created] = await tx
+      .insert(match)
+      .values({ userLow: low, userHigh: high, mode: input.mode, source: "flash", createdAt: input.now })
+      .onConflictDoNothing()
+      .returning({ id: match.id });
+    if (!created) {
+      const [existing] = await tx
+        .select({ id: match.id, status: match.status })
+        .from(match)
+        .where(and(eq(match.userLow, low), eq(match.userHigh, high)));
+      return existing?.status === "active" ? { matchId: existing.id, created: false } : null;
+    }
+    await tx
+      .insert(notification)
+      .values(
+        [low, high].map((userId) => ({ userId, type: "match_created", payload: { matchId: created.id } })),
+      );
+    await enqueue(
+      tx,
+      [low, high].flatMap((userId) => [
+        { userId, event: { type: "match.created" as const, matchId: created.id } },
+        { userId, event: { type: "notification.created" as const } },
+      ]),
+    );
+    return { matchId: created.id, created: true };
+  });
 }

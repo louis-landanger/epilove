@@ -76,4 +76,15 @@ export const eventsContract = {
   update: oc.input(eventInput.extend({ eventId: z.uuid() })).output(z.object({ eventId: z.uuid() })),
   /** Tells the members who answered. */
   cancel: oc.input(z.object({ eventId: z.uuid() })).output(z.object({ ok: z.literal(true) })),
+  /** Flash (IRL-04): one's code for the next 30 seconds, during the event. */
+  flashCode: oc
+    .input(z.object({ eventId: z.uuid() }))
+    .output(z.object({ code: z.string(), expiresAt: z.iso.datetime() })),
+  /** Scans someone's code: a match once both scanned each other. */
+  flashScan: oc.input(z.object({ eventId: z.uuid(), code: z.string().min(4).max(20) })).output(
+    z.object({
+      outcome: z.enum(["waiting", "matched"]),
+      match: z.object({ matchId: z.uuid(), firstName: z.string() }).nullable(),
+    }),
+  ),
 };

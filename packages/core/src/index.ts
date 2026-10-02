@@ -10,6 +10,7 @@ export * from "./discovery/ranking";
 export * from "./discovery/rules";
 export * from "./discovery/second-chance";
 export * from "./events/events";
+export * from "./events/flash";
 export * from "./matching/compatibility";
 export * from "./matching/explain";
 export * from "./messaging/date-proposal";

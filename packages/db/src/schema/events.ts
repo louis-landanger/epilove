@@ -55,3 +55,24 @@ export const eventRsvp = pgTable(
     index("event_rsvp_user_idx").on(t.userId),
   ],
 );
+
+/** Flash scans (IRL-04): two scans of each other at the same event make a match. */
+export const flashScan = pgTable(
+  "flash_scan",
+  {
+    eventId: uuid()
+      .notNull()
+      .references(() => event.id, { onDelete: "cascade" }),
+    scannerId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    scannedId: uuid()
+      .notNull()
+      .references(() => appUser.id, { onDelete: "cascade" }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.eventId, t.scannerId, t.scannedId] }),
+    index("flash_scan_scanner_idx").on(t.scannerId, t.createdAt),
+  ],
+);

@@ -4,15 +4,25 @@ import {
   canUseApp,
   canViewProfile,
   checkEventDraft,
+  crushMatchMode,
   eventEndsAt,
+  FLASH_RULES,
+  flashExpiresAt,
+  flashOpen,
+  flashWindow,
+  normalizeFlashCode,
 } from "@epilove/core";
 import type { Database } from "@epilove/db";
 import {
+  answeredBy,
   cancelEvent,
   createEvent,
+  createFlashMatch,
   type EventValues,
   eventById,
   eventForViewer,
+  flashScansSince,
+  recordFlashScan,
   removeRsvp,
   saveRsvp,
   schoolIdsBySlugs,
@@ -32,8 +42,9 @@ import {
 } from "@epilove/db/repositories/members";
 import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
-import { requireMemberRow } from "../rencontre/access";
+import { loadPairAccess, requireMemberRow } from "../rencontre/access";
 import { hiddenPhotos } from "../rencontre/blind";
+import { flashCodeFor, resolveFlashCode } from "../rencontre/flash";
 import { signedPhotoUrl } from "../rencontre/media";
 
 type Row = NonNullable<Awaited<ReturnType<typeof eventForViewer>>>;
@@ -243,5 +254,70 @@ export const events = {
     const row = await requireOwnEvent(db, context.viewer.userId, input.eventId);
     await cancelEvent(db, row.id);
     return { ok: true as const };
+  }),
+
+  flashCode: os.events.flashCode.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const viewer = await requireAttendee(db, context.viewer.userId);
+    const row = await requireEvent(db, input.eventId, viewer);
+    if (!flashOpen(row, row.myStatus !== null, now)) {
+      throw new ORPCError("BAD_REQUEST", { message: "flash_closed" });
+    }
+    return {
+      code: flashCodeFor(row.id, viewer.member.id, flashWindow(now)),
+      expiresAt: flashExpiresAt(now).toISOString(),
+    };
+  }),
+
+  flashScan: os.events.flashScan.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const viewer = await requireAttendee(db, context.viewer.userId);
+    const row = await requireEvent(db, input.eventId, viewer);
+    if (!flashOpen(row, row.myStatus !== null, now)) {
+      throw new ORPCError("BAD_REQUEST", { message: "flash_closed" });
+    }
+    if (
+      (await flashScansSince(db, viewer.member.id, new Date(now.getTime() - 60_000))) >=
+      FLASH_RULES.scansPerMinute
+    ) {
+      throw new ORPCError("TOO_MANY_REQUESTS", { message: "rate_limited" });
+    }
+    const code = normalizeFlashCode(input.code);
+    const participants = (await answeredBy(db, row.id)).filter((id) => id !== viewer.member.id);
+    const scannedId = resolveFlashCode(row.id, code, participants, now);
+    if (!scannedId) {
+      throw new ORPCError("BAD_REQUEST", { message: "invalid_code" });
+    }
+    const { mutual } = await recordFlashScan(db, {
+      eventId: row.id,
+      scannerId: viewer.member.id,
+      scannedId,
+      now,
+    });
+    if (!mutual) {
+      return { outcome: "waiting" as const, match: null };
+    }
+    // Both scanned each other: the access policies still decide (blocks, hidden contacts, modes).
+    const pair = await loadPairAccess(db, viewer.member.id, scannedId, now);
+    if (!pair) {
+      return { outcome: "waiting" as const, match: null };
+    }
+    const mode = crushMatchMode(pair.viewer.member, pair.target.member, {
+      today: pair.today,
+      relations: pair.relations,
+    });
+    const created = mode
+      ? await createFlashMatch(db, { a: viewer.member.id, b: scannedId, mode, now })
+      : null;
+    if (!created) {
+      // Said the same way as a one-sided scan: nothing reveals a block or a preference.
+      return { outcome: "waiting" as const, match: null };
+    }
+    return {
+      outcome: "matched" as const,
+      match: { matchId: created.matchId, firstName: pair.target.firstName },
+    };
   }),
 };
