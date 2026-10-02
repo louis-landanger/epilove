@@ -137,8 +137,8 @@ export function SettingsScreen({ account, settings: initial, hiddenContacts, blo
 
       <Section id="links" title={t("links.title")}>
         <RowLink href={"/aide" as Route}>{t("links.help")}</RowLink>
-        <RowLink href={"/cgu" as Route}>{t("links.terms")}</RowLink>
-        <RowLink href={"/confidentialite" as Route}>{t("links.privacy")}</RowLink>
+        <RowLink href={"/legal/cgu" as Route}>{t("links.terms")}</RowLink>
+        <RowLink href={"/legal/confidentialite" as Route}>{t("links.privacy")}</RowLink>
       </Section>
     </main>
   );

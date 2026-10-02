@@ -23,11 +23,15 @@
 
 | Back-office | ADM-01 à ADM-03, ADM-05, ADM-06 | `apps/admin` (port 3001, ADR 0011) : connexion staff distincte, vue d'ensemble, file photos au clavier (A, R puis 1–8, J/K) avec email de refus, file des signalements par priorité, fiche membre pseudonymisée, révélation d'identité justifiée, décisions graduées motivées (modèles par règle, emails DSA art. 17, information du signalant), levée du masquage, journal d'audit, édition des prompts et intérêts (admin). Job horaire `accounts/lift-sanctions` | `packages/api/src/modules/admin.test.ts`, `apps/admin/e2e` |
 
+| Vitrine et liste d'attente | ONB-01, PLT-02 | Landing : champ d'ions (`@epilove/three`, WebGPU + TSL, repli WebGL2, poster si mouvement réduit), titre cinétique, manifeste, étapes épinglées, course des écoles en éprouvettes (sondage 20 s), teaser du Pacte, sécurité, FAQ, pied de page géant ; liste d'attente avec parrainage (HMAC uniquement, Server Function sans JS) ; pages légales en brouillon sous `/legal/*` | e2e (desktop et mobile, axe avec et sans mouvement réduit) |
+| Recours | ADM-04 | `/compte/recours` côté membre, file `/recours` côté back-office, réexamen par une autre personne | API + e2e |
+| Mode partiels | SAF-08 | Pause programmée (1 jour à 2 mois), retour automatique (job horaire) | API, worker |
+| Export | SAF-14 | Zip (`donnees.json` + photos) construit par le worker, email, téléchargement réservé au titulaire pendant 7 jours | API, worker, e2e |
+
 ## Pas encore fait
 
-- Export des données (SAF-14, palier 2), mode partiels (SAF-08).
 - Recours (ADM-04), tableaux de bord (ADM-09), page `/compte/recours` (lien présent dans les emails de décision).
-- Vitrine, liste d'attente et pages légales (en cours, branche de travail séparée, fusionnée dans cette branche à la fin).
+- Vitrine : JavaScript initial de `/` à 196 Ko gzip (budget 180 Ko, dont 185 Ko pour React, Next et next-intl) ; WebGPU non vérifié sur un vrai GPU ; limites de la liste d'attente en mémoire (à passer sur Valkey) ; effectifs par école estimés (à confirmer) ; pas de design sonore ni de préchargeur.
 - Paliers 2 et 3.
 
 ## Fichiers partagés modifiés
@@ -91,7 +95,8 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 
 ## Points d'intégration et questions ouvertes
 
-- Les liens de la charte pointent vers `/cgu` et `/confidentialite` : à aligner avec les chemins des pages légales.
+- Les pages légales sont sous `/legal/*` (mentions légales, CGU, confidentialité, transparence), en brouillon « à valider par un juriste » avec des `[champs]` à compléter.
+- Nouvelle variable `SITE_URL` (liens de parrainage), obligatoire hors développement et test.
 - `HOME_PATH` vaut `/decouvrir` (page de B) : l'onboarding y redirige à la fin.
 - Le client API du navigateur est dans `apps/web/components/acces/api-client.ts` ; si B en a un autre, les unifier dans `apps/web/lib/`.
 - Ordre des étapes de l'onboarding : charte → prénom → naissance → genre → je cherche → qui je veux voir → photos → prompts → intérêts → campus. Le campus est en dernier (comme demandé dans le prompt de la session A), alors que docs/01 ne le place pas : à confirmer.

@@ -35,13 +35,13 @@ export function CharterStep({ state, save, pending, focusTitle }: StepProps) {
             <p className="text-paper/60 text-sm">
               {t.rich("legal", {
                 terms: (chunks) => (
-                  <Link href="/cgu" className="text-paper underline underline-offset-4" target="_blank">
+                  <Link href="/legal/cgu" className="text-paper underline underline-offset-4" target="_blank">
                     {chunks}
                   </Link>
                 ),
                 privacy: (chunks) => (
                   <Link
-                    href="/confidentialite"
+                    href="/legal/confidentialite"
                     className="text-paper underline underline-offset-4"
                     target="_blank"
                   >
