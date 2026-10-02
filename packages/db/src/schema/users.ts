@@ -37,6 +37,8 @@ export const appUser = pgTable(
     status: text({ enum: ACCOUNT_STATUSES }).notNull().default("onboarding"),
     verifiedAt: timestamp({ withTimezone: true }),
     reverifyDueAt: timestamp({ withTimezone: true }),
+    /** Set when Forge ID (ONB-11) confirmed a student on the Lyon campus: "Campus vérifié" badge. */
+    campusVerifiedAt: timestamp({ withTimezone: true }),
     /** Last sign-in with a code sent to the school address: proof the mailbox is still theirs (ONB-09). */
     emailProvenAt: timestamp({ withTimezone: true }),
     reverifyRemindedAt: timestamp({ withTimezone: true }),

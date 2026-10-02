@@ -41,6 +41,8 @@ export const ownProfile = z.object({
   graduationYear: z.int(),
   graduationYears: z.object({ min: z.int(), max: z.int() }),
   schoolSlug: z.string(),
+  /** Forge ID confirmed the Lyon campus (ONB-11). */
+  campusVerified: z.boolean(),
   languages: z.array(z.enum(LANGUAGES)),
   intentions: z.array(z.enum(INTENTIONS)),
   modes: z.array(z.enum(MODES)),

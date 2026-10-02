@@ -3,7 +3,7 @@
 import { authClient } from "@epilove/auth/client";
 import { parseSchoolEmail } from "@epilove/core";
 import { Button, OtpInput, TextField, useToast } from "@epilove/ui";
-import { ArrowLeft, Fingerprint, Mail } from "lucide-react";
+import { ArrowLeft, Fingerprint, KeyRound, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { type FormEvent, useEffect, useState } from "react";
@@ -21,6 +21,8 @@ type ErrorKey =
   | "generic";
 
 const RESEND_DELAY_SECONDS = 30;
+/** ONB-11: shown only when the server is configured for Forge ID. */
+const FORGE_ID_ENABLED = process.env.NEXT_PUBLIC_FORGE_ID_ENABLED === "1";
 
 function errorKeyFor(error: { code?: string | undefined; status?: number | undefined } | null): ErrorKey {
   switch (error?.code) {
@@ -219,6 +221,24 @@ export function SignInForm({ next }: { next: string | null }) {
           {t("passkey")}
         </Button>
         <p className="text-center text-paper/55 text-sm">{t("passkeyHelp")}</p>
+        {FORGE_ID_ENABLED ? (
+          <>
+            <Button
+              variant="outline"
+              block
+              onClick={() =>
+                void authClient.signIn.social({
+                  provider: "forge-id",
+                  callbackURL: safeNextPath(next) ?? ONBOARDING_PATH,
+                })
+              }
+              leadingIcon={<KeyRound className="size-5" aria-hidden="true" />}
+            >
+              {t("forgeId")}
+            </Button>
+            <p className="text-center text-paper/55 text-sm">{t("forgeIdHelp")}</p>
+          </>
+        ) : null}
         {error === "passkey_failed" ? (
           <p role="alert" className="text-center text-danger text-sm">
             {t("errors.passkey_failed")}

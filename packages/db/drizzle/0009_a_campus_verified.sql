@@ -1,0 +1,1 @@
+ALTER TABLE "app_user" ADD COLUMN "campus_verified_at" timestamp with time zone;

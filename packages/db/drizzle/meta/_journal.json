@@ -64,6 +64,13 @@
       "when": 1790955402923,
       "tag": "0008_a_reverification",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790955652488,
+      "tag": "0009_a_campus_verified",
+      "breakpoints": true
     }
   ]
 }

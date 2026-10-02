@@ -1,5 +1,11 @@
 import "server-only";
-import { type Auth, authEnvFromProcess, createAuth, valkeySecondaryStorage } from "@epilove/auth";
+import {
+  type Auth,
+  authEnvFromProcess,
+  createAuth,
+  forgeIdConfigFromEnv,
+  valkeySecondaryStorage,
+} from "@epilove/auth";
 import { createMailer, mailerConfigFromEnv } from "@epilove/email";
 import { createMemoryRateLimiter, createValkeyRateLimiter, valkeyFromEnv } from "@epilove/rate-limit";
 import { getDatabase } from "./database";
@@ -17,6 +23,7 @@ export function getAuth(): Auth {
       mailer: createMailer(mailerConfigFromEnv()),
       limiter: valkey ? createValkeyRateLimiter(valkey) : createMemoryRateLimiter(),
       secondaryStorage: valkey ? valkeySecondaryStorage(valkey) : undefined,
+      forgeId: forgeIdConfigFromEnv(),
     });
   }
   return auth;

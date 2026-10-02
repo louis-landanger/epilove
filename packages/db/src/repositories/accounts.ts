@@ -20,6 +20,7 @@ type Db = Pick<Database, "select" | "insert" | "update" | "delete" | "execute">;
 export async function findAccount(db: Db, userId: string) {
   const [row] = await db
     .select({
+      campusVerifiedAt: appUser.campusVerifiedAt,
       reverifyDueAt: appUser.reverifyDueAt,
       pausedForReverification: appUser.pausedForReverification,
       pausedUntil: appUser.pausedUntil,
@@ -366,4 +367,9 @@ export async function pauseOverdueReverifications(db: Db, now: Date) {
     .where(and(inArray(appUser.status, ["active", "restricted"]), lt(appUser.reverifyDueAt, now)))
     .returning({ id: appUser.id });
   return paused.length;
+}
+
+/** Forge ID confirmed a student of the Lyon campus (ONB-11). */
+export async function markCampusVerified(db: Db, userId: string, at: Date) {
+  await db.update(appUser).set({ campusVerifiedAt: at }).where(eq(appUser.id, userId));
 }

@@ -72,6 +72,7 @@ export function ProfileScreen({ initialProfile, initialPhotos, catalog }: Profil
       firstName: profile.firstName,
       age: profile.age,
       schoolSlug: profile.schoolSlug,
+      campusVerified: profile.campusVerified,
       graduationYear: profile.graduationYear,
       program: profile.program,
       pronouns: profile.pronouns,

@@ -3,15 +3,16 @@ import { calendarDateIn, LYON_CAMPUS, nextReverificationDue, parseSchoolEmail, u
 import { emailHmac } from "@epilove/crypto";
 import type { Database } from "@epilove/db";
 import { schema } from "@epilove/db";
-import { isSignupBlocked, recordEmailProof } from "@epilove/db/repositories/accounts";
+import { isSignupBlocked, markCampusVerified, recordEmailProof } from "@epilove/db/repositories/accounts";
 import { type Mailer, signInCodeEmail } from "@epilove/email";
 import type { RateLimiter } from "@epilove/rate-limit";
 import { betterAuth, type SecondaryStorage } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { admin, captcha, emailOTP } from "better-auth/plugins";
+import { admin, captcha, emailOTP, genericOAuth } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { type AuthEnv, OTP_POLICY, SESSION_POLICY } from "./config";
+import { checkForgeIdProfile, FORGE_ID_PROVIDER, type ForgeIdConfig } from "./forge-id";
 
 export interface AuthDependencies {
   readonly env: AuthEnv;
@@ -21,6 +22,8 @@ export interface AuthDependencies {
   /** Key-value store for sessions and rate limits (Valkey); in-memory when absent. */
   readonly secondaryStorage?: SecondaryStorage;
   readonly options?: AuthOptions;
+  /** ONB-11: Forge ID sign-in, only when configured. */
+  readonly forgeId?: ForgeIdConfig | null;
 }
 
 /** Differences between the member app and the back-office. */
@@ -48,7 +51,15 @@ const list = (value: string) =>
  * one-time codes sent only to eligible school addresses, passkeys, admin
  * roles, rate limits, optional Turnstile.
  */
-export function createAuth({ env, db, mailer, limiter, secondaryStorage, options = {} }: AuthDependencies) {
+export function createAuth({
+  env,
+  db,
+  mailer,
+  limiter,
+  secondaryStorage,
+  options = {},
+  forgeId = null,
+}: AuthDependencies) {
   const sessionExpiresIn = options.sessionExpiresInSeconds ?? SESSION_POLICY.expiresInSeconds;
   const trustedOrigins = [
     env.APP_URL,
@@ -105,6 +116,18 @@ export function createAuth({ env, db, mailer, limiter, secondaryStorage, options
     },
     hooks: {
       after: createAuthMiddleware(async (ctx) => {
+        // Generic OAuth providers are social providers in Better Auth 1.7: callback at /callback/<id>.
+        if (
+          ctx.path.startsWith("/callback/") &&
+          ctx.params?.id === FORGE_ID_PROVIDER &&
+          ctx.context.newSession
+        ) {
+          // Only Lyon students get through `mapProfileToUser`: the campus is now proven.
+          await markCampusVerified(db, ctx.context.newSession.user.id, new Date()).catch(() => {
+            console.error("[auth] campus verification could not be recorded");
+          });
+          return;
+        }
         if (ctx.path !== "/sign-in/email-otp" || !ctx.context.newSession) {
           return;
         }
@@ -207,6 +230,32 @@ export function createAuth({ env, db, mailer, limiter, secondaryStorage, options
         defaultRole: "user",
         adminRoles: ["admin"],
       }),
+      ...(forgeId
+        ? [
+            genericOAuth({
+              config: [
+                {
+                  providerId: FORGE_ID_PROVIDER,
+                  discoveryUrl: forgeId.discoveryUrl,
+                  clientId: forgeId.clientId,
+                  clientSecret: forgeId.clientSecret,
+                  scopes: ["openid", "email", "profile"],
+                  pkce: true,
+                  disableSignUp: options.allowSignUp === false,
+                  mapProfileToUser: (profile) => {
+                    const check = checkForgeIdProfile(profile, forgeId);
+                    if (!check.ok) {
+                      throw new APIError("FORBIDDEN", {
+                        code: check.reason === "not_lyon" ? "FORGE_ID_NOT_LYON" : "SCHOOL_EMAIL_REQUIRED",
+                      });
+                    }
+                    return { email: check.email, name: "", emailVerified: true };
+                  },
+                },
+              ],
+            }),
+          ]
+        : []),
       ...(env.TURNSTILE_SECRET_KEY
         ? [
             captcha({

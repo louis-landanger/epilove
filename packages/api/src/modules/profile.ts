@@ -11,7 +11,7 @@ import {
   normalizePronouns,
 } from "@epilove/core";
 import type { Database } from "@epilove/db";
-import { readPreferences } from "@epilove/db/repositories/accounts";
+import { findAccount, readPreferences } from "@epilove/db/repositories/accounts";
 import {
   findOwnProfile,
   listActivePrompts,
@@ -31,12 +31,13 @@ import { campusToday } from "../lib/time";
 import { os, requireViewer } from "../procedures";
 
 async function loadOwnProfile(db: Database, userId: string, now: Date): Promise<OwnProfile> {
-  const [profile, prefs, answers, interestIds, completeness] = await Promise.all([
+  const [profile, prefs, answers, interestIds, completeness, account] = await Promise.all([
     findOwnProfile(db, userId),
     readPreferences(db, userId),
     listPromptAnswers(db, userId),
     listInterestIds(db, userId),
     refreshCompleteness(db, userId),
+    findAccount(db, userId),
   ]);
   if (!profile || !completeness) {
     throw new ORPCError("NO_PROFILE", { status: 409 });
@@ -51,6 +52,7 @@ async function loadOwnProfile(db: Database, userId: string, now: Date): Promise<
     graduationYear: profile.graduationYear,
     graduationYears: graduationYearRange(today),
     schoolSlug: profile.schoolSlug,
+    campusVerified: Boolean(account?.campusVerifiedAt),
     languages: profile.languages as Language[],
     intentions: profile.intentions as Intention[],
     modes: (prefs?.modes ?? []) as Mode[],
