@@ -1,4 +1,5 @@
 import { createDatabase, schema } from "@epilove/db";
+import { recordNudges } from "@epilove/db/repositories/matches";
 import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -50,5 +51,17 @@ describe.skipIf(!url)("gentle nudges", () => {
 
     await sendNudges(db, new Date());
     expect(await nudgesOf([silent.a, silent.b])).toHaveLength(2);
+  });
+
+  it("still nudges the others when a member is deleted after the matches were picked", async () => {
+    const kept = await silentMatch(4);
+    const gone = await silentMatch(4);
+    const picked = [kept, gone].map((m) => ({ id: m.matchId, members: [m.a, m.b] }));
+    // Account deleted between the selection and the insert (the match goes with it).
+    await db.delete(schema.appUser).where(eq(schema.appUser.id, gone.a));
+
+    await recordNudges(db, picked, new Date());
+    expect(await nudgesOf([kept.a, kept.b])).toHaveLength(2);
+    expect(await nudgesOf([gone.b])).toHaveLength(0);
   });
 });

@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { Database } from "../client";
-import { match, message, messageRead, notification } from "../schema";
+import { appUser, match, message, messageRead, notification } from "../schema";
 import { enqueue } from "./outbox";
 
 /** Matches of a member (CHAT-01, CHAT-13). Callers check `canMessage` / `canViewProfile` per match. */
@@ -131,18 +131,38 @@ export async function recordNudges(
     return;
   }
   await db.transaction(async (tx) => {
-    await tx
+    // Members first, as account deletion does (no deadlock): an account
+    // deleted since the matches were picked drops its match from the batch
+    // instead of failing everyone's nudges on the foreign key.
+    const present = await tx
+      .select({ id: appUser.id })
+      .from(appUser)
+      .where(inArray(appUser.id, [...new Set(matches.flatMap((m) => m.members))]))
+      .for("key share");
+    const alive = new Set(present.map((p) => p.id));
+    const candidates = matches.filter((m) => m.members.every((id) => alive.has(id)));
+    if (candidates.length === 0) {
+      return;
+    }
+    const updated = await tx
       .update(match)
       .set({ nudgedAt: now })
       .where(
         inArray(
           match.id,
-          matches.map((m) => m.id),
+          candidates.map((m) => m.id),
         ),
+      )
+      .returning({ id: match.id });
+    const still = new Set(updated.map((u) => u.id));
+    const rows = candidates
+      .filter((m) => still.has(m.id))
+      .flatMap((m) =>
+        m.members.map((userId) => ({ userId, type: "chat_nudge", payload: { matchId: m.id } })),
       );
-    const rows = matches.flatMap((m) =>
-      m.members.map((userId) => ({ userId, type: "chat_nudge", payload: { matchId: m.id } })),
-    );
+    if (rows.length === 0) {
+      return;
+    }
     for (let start = 0; start < rows.length; start += 1000) {
       await tx.insert(notification).values(rows.slice(start, start + 1000));
     }
