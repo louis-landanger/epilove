@@ -278,5 +278,6 @@
       "duration": "Entre un quart d'heure et douze heures.",
       "generic": "Ça n'a pas marché. Réessaie dans un instant."
     }
-  }
+  },
+  "blind": "Photos dévoilées à {needed} messages chacun·e : toi {mine}/{needed}, {name} {theirs}/{needed}."
 }

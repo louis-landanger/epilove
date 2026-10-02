@@ -107,5 +107,13 @@
     "founder": "Founder",
     "photo_verified": "Verified photo",
     "ambassador": "Ambassador"
+  },
+  "blind": {
+    "title": "Blind evening",
+    "lead": "Tonight, a deck without photos: just words. Photos show after 10 messages each.",
+    "on": "No photos tonight: read, and like what speaks to you.",
+    "enter": "Try it",
+    "leave": "Back to the deck",
+    "cardLead": "Tonight, reading comes first. Photos come after 10 messages each."
   }
 }

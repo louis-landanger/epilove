@@ -21,6 +21,8 @@ export interface DeckInitial {
   readonly empty: EmptyReason | null;
   /** Profiles back for a second chance (DEC-09). */
   readonly secondChance?: readonly string[];
+  /** The current or next blind evening (DEC-10). */
+  readonly blindEvening?: { readonly active: boolean; readonly startsAt: string; readonly endsAt: string };
 }
 
 const THROW_DISTANCE = 120;
@@ -47,8 +49,11 @@ export function Deck({
   filtersActive,
   onOpenFilters,
   onQuota,
+  blind = false,
 }: {
   initial: DeckInitial;
+  /** The blind deck (DEC-10): no photos, likes given blind. */
+  blind?: boolean;
   me: MemberCardData | null;
   filtersActive: boolean;
   onOpenFilters: () => void;
@@ -99,6 +104,7 @@ export function Deck({
         locale: "fr",
         limit: 8,
         exclude: [...cards.map((c) => c.userId), ...decided.current.slice(-80)],
+        blind,
       })
       .then((result) => {
         setQuota(result.quota);
@@ -113,7 +119,7 @@ export function Deck({
       })
       .catch(() => showToast(t("errors.generic")))
       .finally(() => setLoadingMore(false));
-  }, [cards, loadingMore, empty, online, showToast, t]);
+  }, [cards, loadingMore, empty, online, showToast, t, blind]);
 
   const send = useCallback(
     async (card: MemberCardData, kind: Kind, content: LikedContent | null, comment: string | null) => {
@@ -127,6 +133,7 @@ export function Deck({
           kind,
           content: content ? { type: content.type, id: content.id } : null,
           comment,
+          blind,
         });
         setQuota(result.quota);
         if (result.outcome === "matched" && result.matchId) {
@@ -140,7 +147,7 @@ export function Deck({
         return false;
       }
     },
-    [showToast, t],
+    [showToast, t, blind],
   );
 
   const like = useCallback(

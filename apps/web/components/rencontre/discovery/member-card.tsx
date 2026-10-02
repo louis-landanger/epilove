@@ -59,6 +59,17 @@ export function MemberCard({
             className="absolute inset-0 size-full select-none object-cover"
           />
         </ViewTransition>
+      ) : card.blind ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-start gap-3 bg-[radial-gradient(circle_at_50%_30%,color-mix(in_oklch,var(--school)_35%,transparent),transparent_60%)] pt-[18%] text-center">
+          <span aria-hidden="true" className="relative block size-20">
+            <span className="absolute inset-0 rounded-full border border-paper/25" />
+            <span className="absolute inset-3 rounded-full border border-paper/15" />
+            <span className="absolute top-1/2 left-1/2 grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-paper/10 font-display font-semibold text-2xl">
+              ?
+            </span>
+          </span>
+          <p className="max-w-56 px-4 text-paper/80 text-sm">{t("blind.cardLead")}</p>
+        </div>
       ) : (
         <div className="absolute inset-0 grid place-items-center bg-paper/5 text-paper/60">
           {t("card.noPhoto")}

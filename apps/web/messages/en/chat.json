@@ -278,5 +278,6 @@
       "duration": "Between a quarter of an hour and twelve hours.",
       "generic": "That didn't work. Try again in a moment."
     }
-  }
+  },
+  "blind": "Photos show at {needed} messages each: you {mine}/{needed}, {name} {theirs}/{needed}."
 }

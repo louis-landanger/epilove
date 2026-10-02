@@ -107,5 +107,13 @@
     "founder": "Fondateur·rice",
     "photo_verified": "Photo vérifiée",
     "ambassador": "Ambassadeur·rice"
+  },
+  "blind": {
+    "title": "Soirée à l'aveugle",
+    "lead": "Ce soir, un deck sans photos : juste des mots. Les photos se dévoilent après 10 messages chacun·e.",
+    "on": "Pas de photos ce soir : lis, et like ce qui te parle.",
+    "enter": "J'essaie",
+    "leave": "Revenir au deck",
+    "cardLead": "Ce soir, on lit d'abord. Les photos viendront après 10 messages chacun·e."
   }
 }

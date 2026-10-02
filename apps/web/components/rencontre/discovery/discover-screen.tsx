@@ -23,7 +23,29 @@ export function DiscoverScreen({
   const [deck, setDeck] = useState({ version: 0, initial });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [likesLeft, setLikesLeft] = useState(initial.quota.likesLeft);
+  const [blind, setBlind] = useState(false);
+  const [switching, setSwitching] = useState(false);
   const active = isFilterActive(filter);
+  const evening = deck.initial.blindEvening ?? initial.blindEvening;
+
+  // Blind mode (DEC-10): one evening a week, a deck of words only.
+  const toggleBlind = async () => {
+    setSwitching(true);
+    try {
+      const next = await api.discovery.deck({ locale: "fr", limit: 8, exclude: [], blind: !blind });
+      setBlind(!blind);
+      setDeck((current) => ({ version: current.version + 1, initial: next }));
+    } catch {
+      // The evening may just have ended: back to the usual deck.
+      const next = await api.discovery.deck({ locale: "fr", limit: 8, exclude: [] }).catch(() => null);
+      setBlind(false);
+      if (next) {
+        setDeck((current) => ({ version: current.version + 1, initial: next }));
+      }
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-5 px-4 pt-6 pb-8">
@@ -57,7 +79,30 @@ export function DiscoverScreen({
         </button>
       </header>
 
-      <DropHeader />
+      {evening?.active && (
+        <section
+          aria-labelledby="blind-title"
+          className="flex flex-wrap items-center gap-3 rounded-3xl border border-plasma/40 bg-plasma/10 px-4 py-3"
+        >
+          <div className="mr-auto flex min-w-0 flex-col">
+            <h2 id="blind-title" className="font-semibold">
+              {t("blind.title")}
+            </h2>
+            <p className="text-paper/75 text-sm">{blind ? t("blind.on") : t("blind.lead")}</p>
+          </div>
+          <button
+            type="button"
+            disabled={switching}
+            aria-pressed={blind}
+            onClick={() => void toggleBlind()}
+            className="rounded-full border border-plasma/60 px-4 py-2 font-semibold text-sm disabled:opacity-50 aria-pressed:bg-plasma aria-pressed:text-ink"
+          >
+            {blind ? t("blind.leave") : t("blind.enter")}
+          </button>
+        </section>
+      )}
+
+      {!blind && <DropHeader />}
 
       <Deck
         key={deck.version}
@@ -66,6 +111,7 @@ export function DiscoverScreen({
         filtersActive={active}
         onQuota={(quota) => setLikesLeft(quota.likesLeft)}
         onOpenFilters={() => setFiltersOpen(true)}
+        blind={blind}
       />
 
       <FiltersDrawer
@@ -75,7 +121,7 @@ export function DiscoverScreen({
         onSaved={async (saved) => {
           setFilter(saved);
           setFiltersOpen(false);
-          const next = await api.discovery.deck({ locale: "fr", limit: 8, exclude: [] });
+          const next = await api.discovery.deck({ locale: "fr", limit: 8, exclude: [], blind });
           setDeck((current) => ({ version: current.version + 1, initial: next }));
         }}
       />

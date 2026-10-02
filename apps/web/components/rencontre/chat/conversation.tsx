@@ -586,6 +586,17 @@ export function Conversation({ thread }: { thread: ThreadView }) {
         </div>
       </header>
 
+      {thread.blind && (
+        <p className="border-paper/10 border-b bg-plasma/10 px-4 py-2 text-center text-sm">
+          {t("blind", {
+            name: thread.other.firstName,
+            mine: Math.min(thread.blind.mine, thread.blind.needed),
+            theirs: Math.min(thread.blind.theirs, thread.blind.needed),
+            needed: thread.blind.needed,
+          })}
+        </p>
+      )}
+
       {(!online || connection === "disconnected") && (
         <p role="status" className="bg-plasma/15 px-4 py-2 text-center text-sm">
           {online ? t("reconnecting") : t("offline")}

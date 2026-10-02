@@ -25,6 +25,7 @@
 | 2 | Événements (IRL-01) | ✅ fait et testé (cœur, API, Playwright à trois navigateurs, axe) ; pas d'image de couverture |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
+| 3 | Mode à l'aveugle (DEC-10) | ✅ fait et testé (cœur, API avec horloge simulée) ; bandeau du jeudi soir non testé en automatique (le serveur décide de la soirée) |
 | 3 | Badges discrets (COM-04), statut « Dispo » (IRL-05) | ✅ fait et testé (cœur, API) ; affichage vérifié à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
 
@@ -146,6 +147,13 @@
 - Interface : bouton photo (aperçu, case « Éphémère : une seule ouverture »), bouton micro à la place d'« Envoyer » quand le champ est vide (enregistrement MediaRecorder 64 kbit/s, arrêt automatique à 2 minutes, écoute avant envoi), lecteur avec forme d'onde et vitesses 1×/1,5×/2×, photo floutée avec « Afficher quand même » et « Signaler » quand le classifieur la signale. Sur téléphone, les outils de la zone de saisie se replient derrière « + ».
 - **Non fait** : transcription des vocaux (CHAT-07, accessibilité) ; classifieur réel (SAF-11, aujourd'hui aucun signalement : toutes les photos s'affichent nettes).
 
+### Mode à l'aveugle (DEC-10)
+
+- `packages/core/src/discovery/blind.ts` : la soirée à l'aveugle a lieu le jeudi de 19 h à minuit (heure de Lyon) ; une liaison à l'aveugle se dévoile quand les deux ont envoyé 10 messages.
+- Colonnes `like_action.blind` et `match.blind` : un like donné dans le deck à l'aveugle est marqué ; une liaison est à l'aveugle si l'un des deux likes l'était.
+- API : `discovery.deck({ blind: true })` pendant la soirée seulement (`not_blind_evening` sinon), cartes sans photos et seulement les profils qui ont au moins un prompt ; `deck.blindEvening` donne la soirée en cours ou la prochaine ; `discovery.decide({ blind })`. Les photos restent masquées (`memberCard.blind`, photo de la liste des conversations, de la conversation, des événements) tant que la liaison n'est pas dévoilée, ou tant qu'un like à l'aveugle attend une réponse dans un sens ou dans l'autre. La conversation affiche la progression (`threadView.blind`).
+- Interface : bandeau « Soirée à l'aveugle » dans Découvrir pendant la soirée, carte sans photo avec un rappel, compteur dans la conversation.
+
 ### Badges (COM-04) et statut « Dispo » (IRL-05)
 
 - `packages/core/src/community/badges.ts` : « Fondateur·rice » (inscription avant l'ouverture publique du 11 février 2027 à 20 h, `PUBLIC_LAUNCH_AT`), « Photo vérifiée » et « Ambassadeur·rice » (attribués). Aucun badge lié à la popularité. Table `member_badge` pour les badges attribués ; affichés discrètement sur les cartes et les profils (`memberCard.badges`).
@@ -249,6 +257,7 @@
 
 ## Migrations
 
+- `0019_*` : colonnes `like_action.blind` et `match.blind`.
 - `0018_*` : table `availability`.
 - `0017_*` : table `member_badge`.
 - `0016_*` : tables `quiet_hours` et `email_digest`.
