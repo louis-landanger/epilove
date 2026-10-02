@@ -5,6 +5,7 @@ import { exportTask } from "./export";
 import { liftSanctionsTask } from "./lift-sanctions";
 import { type AccountsDependencies, purgeTask } from "./purge";
 import { resumePausedTask } from "./resume-paused";
+import { reverificationTask } from "./reverification";
 
 let database: Database | undefined;
 let storage: Storage | undefined;
@@ -27,6 +28,7 @@ export function accountsTasks(dependencies: AccountsDependencies = fromEnv): Tas
     "accounts/lift-sanctions": liftSanctionsTask(dependencies),
     "accounts/purge": purgeTask(dependencies),
     "accounts/resume-paused": resumePausedTask(dependencies),
+    "accounts/reverification": reverificationTask(dependencies),
   };
 }
 
@@ -35,4 +37,5 @@ export const accountsCrontab = [
   "41 3 * * * accounts/purge",
   "7 * * * * accounts/lift-sanctions",
   "9 * * * * accounts/resume-paused",
+  "23 8 * * * accounts/reverification",
 ];

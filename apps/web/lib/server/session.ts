@@ -16,6 +16,8 @@ export interface CurrentMember {
   readonly status: AccountStatus;
   readonly email: string;
   readonly schoolId: string;
+  readonly reverifyDueAt: Date | null;
+  readonly pausedForReverification: boolean;
 }
 
 function devAuthAllowed() {
@@ -42,6 +44,8 @@ export const getCurrentMember = cache(async (): Promise<CurrentMember | null> =>
       status: schema.appUser.status,
       email: schema.appUser.email,
       schoolId: schema.appUser.schoolId,
+      reverifyDueAt: schema.appUser.reverifyDueAt,
+      pausedForReverification: schema.appUser.pausedForReverification,
     })
     .from(schema.appUser)
     .where(eq(schema.appUser.id, userId))

@@ -155,5 +155,18 @@
     "sent": "Appeal sent. You'll get the answer by email.",
     "error": "The appeal couldn't be sent.",
     "back": "Back"
+  },
+  "reverify": {
+    "banner": "New year: confirm your school address before {date}.",
+    "paused": "Your profile is paused: confirm your school address to show up again.",
+    "action": "Confirm",
+    "metaTitle": "Confirm my address",
+    "title": "Still on campus?",
+    "lead": "Every new academic year, we check you can still access your school address. We'll send a code to {email}.",
+    "send": "Get the code",
+    "code": "6-digit code",
+    "verify": "Confirm",
+    "done": "Confirmed, thanks! See you next year.",
+    "error": "Wrong or expired code. Ask for a new one."
   }
 }

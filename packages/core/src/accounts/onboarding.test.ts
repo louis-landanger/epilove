@@ -14,6 +14,7 @@ import {
   nextStep,
   ONBOARDING_STEPS,
   type OnboardingProgress,
+  reverificationState,
 } from "./onboarding";
 
 const today = "2026-10-02";
@@ -175,5 +176,15 @@ describe("academic calendar", () => {
   it("schedules the re-verification after the next September", () => {
     expect(nextReverificationDue("2026-10-02")).toBe("2027-10-01");
     expect(nextReverificationDue("2027-08-15")).toBe("2028-10-01");
+  });
+});
+
+describe("reverificationState", () => {
+  it("opens on 1 September and becomes overdue on the deadline", () => {
+    expect(reverificationState("2027-08-31", "2027-10-01")).toBe("ok");
+    expect(reverificationState("2027-09-01", "2027-10-01")).toBe("due");
+    expect(reverificationState("2027-09-30", "2027-10-01")).toBe("due");
+    expect(reverificationState("2027-10-01", "2027-10-01")).toBe("overdue");
+    expect(reverificationState("2027-10-01", null)).toBe("ok");
   });
 });

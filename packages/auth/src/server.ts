@@ -1,9 +1,9 @@
 import { passkey } from "@better-auth/passkey";
-import { calendarDateIn, LYON_CAMPUS, parseSchoolEmail, uuidv7 } from "@epilove/core";
+import { calendarDateIn, LYON_CAMPUS, nextReverificationDue, parseSchoolEmail, uuidv7 } from "@epilove/core";
 import { emailHmac } from "@epilove/crypto";
 import type { Database } from "@epilove/db";
 import { schema } from "@epilove/db";
-import { isSignupBlocked } from "@epilove/db/repositories/accounts";
+import { isSignupBlocked, recordEmailProof } from "@epilove/db/repositories/accounts";
 import { type Mailer, signInCodeEmail } from "@epilove/email";
 import type { RateLimiter } from "@epilove/rate-limit";
 import { betterAuth, type SecondaryStorage } from "better-auth";
@@ -104,6 +104,19 @@ export function createAuth({ env, db, mailer, limiter, secondaryStorage, options
       },
     },
     hooks: {
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-in/email-otp" || !ctx.context.newSession) {
+          return;
+        }
+        // Every sign-in with a code proves the school mailbox again (ONB-09).
+        const now = new Date();
+        const nextDue = new Date(
+          `${nextReverificationDue(calendarDateIn(LYON_CAMPUS.timeZone, now))}T00:00:00Z`,
+        );
+        await recordEmailProof(db, ctx.context.newSession.user.id, now, nextDue).catch(() => {
+          console.error("[auth] email proof could not be recorded");
+        });
+      }),
       before: createAuthMiddleware(async (ctx) => {
         if (!EMAIL_ENDPOINTS.has(ctx.path)) {
           return;

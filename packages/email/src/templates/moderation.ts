@@ -122,3 +122,26 @@ ${paragraphs(lines)}
     }),
   };
 }
+
+/** Yearly re-verification reminder (ONB-09): a sign-in with a code is enough. */
+export function reverificationReminderEmail(deadline: Date, verifyUrl: string): RenderedEmail {
+  const date = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Europe/Paris" }).format(
+    deadline,
+  );
+  const lines = [
+    "C'est la rentrée : comme chaque année, on vérifie que tu fais toujours partie du campus.",
+    `Connecte-toi avec un code envoyé sur ton adresse d'école avant le ${date}. C'est tout.`,
+    "Sans cela, ton profil sera mis en pause, jusqu'à ta prochaine connexion avec un code.",
+  ];
+  return {
+    subject: "Confirme ton adresse d'école",
+    text: [...lines, "", `Confirmer : ${verifyUrl}`, "", FOOTER].join("\n"),
+    html: layout({
+      preheader: `Avant le ${date}.`,
+      footer: FOOTER,
+      body: `<p style="margin:0 0 16px 0;font-size:22px;font-weight:600;">Nouvelle année, même campus ?</p>
+${paragraphs(lines)}
+<p style="margin:16px 0 0 0;"><a href="${escapeHtml(verifyUrl)}" style="color:#c2187a;font-weight:600;">Confirmer mon adresse</a></p>`,
+    }),
+  };
+}

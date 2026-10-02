@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 /** Pages that need a signed-in member (the app, onboarding, settings). */
 const PROTECTED_PREFIXES = [
   "/compte/recours",
+  "/compte/verifier",
   "/onboarding",
   "/profil",
   "/reglages",

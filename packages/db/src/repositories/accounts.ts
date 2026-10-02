@@ -1,5 +1,5 @@
 import type { Gender, Mode } from "@epilove/core";
-import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import {
   appUser,
@@ -20,6 +20,8 @@ type Db = Pick<Database, "select" | "insert" | "update" | "delete" | "execute">;
 export async function findAccount(db: Db, userId: string) {
   const [row] = await db
     .select({
+      reverifyDueAt: appUser.reverifyDueAt,
+      pausedForReverification: appUser.pausedForReverification,
       pausedUntil: appUser.pausedUntil,
       id: appUser.id,
       email: appUser.email,
@@ -305,4 +307,63 @@ export async function resumeScheduledPauses(db: Db, now: Date) {
     .where(and(eq(appUser.status, "paused"), lt(appUser.pausedUntil, now)))
     .returning({ id: appUser.id });
   return resumed.length;
+}
+
+// --- Yearly re-verification (ONB-09) -------------------------------------------------------
+
+/**
+ * Records a sign-in with a code sent to the school address. During the
+ * re-verification window it moves the deadline to next year and lifts a
+ * pause caused by a missed re-verification.
+ */
+export async function recordEmailProof(db: Db, userId: string, at: Date, nextDue: Date) {
+  const [account] = await db
+    .select({ reverifyDueAt: appUser.reverifyDueAt, paused: appUser.pausedForReverification })
+    .from(appUser)
+    .where(eq(appUser.id, userId))
+    .limit(1);
+  if (!account) {
+    return;
+  }
+  // The window opens 30 days before the deadline (1 September for a 1 October deadline).
+  const inWindow =
+    account.reverifyDueAt !== null && at.getTime() >= account.reverifyDueAt.getTime() - 30 * 86_400_000;
+  await db
+    .update(appUser)
+    .set({
+      emailProvenAt: at,
+      ...(inWindow ? { reverifyDueAt: nextDue, reverifyRemindedAt: null } : {}),
+      ...(inWindow && account.paused ? { status: "active", pausedForReverification: false } : {}),
+    })
+    .where(eq(appUser.id, userId));
+}
+
+/** Members whose window is open, not reminded in the last `remindEvery`. */
+export async function listReverificationReminders(db: Db, today: Date, horizon: Date, remindedBefore: Date) {
+  return db
+    .select({ id: appUser.id, email: appUser.email, reverifyDueAt: appUser.reverifyDueAt })
+    .from(appUser)
+    .where(
+      and(
+        inArray(appUser.status, ["active", "restricted", "paused"]),
+        lt(appUser.reverifyDueAt, horizon),
+        gt(appUser.reverifyDueAt, today),
+        sql`(${appUser.reverifyRemindedAt} is null or ${appUser.reverifyRemindedAt} < ${remindedBefore.toISOString()})`,
+      ),
+    )
+    .limit(1000);
+}
+
+export async function markReminded(db: Db, userId: string, at: Date) {
+  await db.update(appUser).set({ reverifyRemindedAt: at }).where(eq(appUser.id, userId));
+}
+
+/** Pauses members past their deadline (the next proof brings them back). */
+export async function pauseOverdueReverifications(db: Db, now: Date) {
+  const paused = await db
+    .update(appUser)
+    .set({ status: "paused", pausedForReverification: true, pausedUntil: null })
+    .where(and(inArray(appUser.status, ["active", "restricted"]), lt(appUser.reverifyDueAt, now)))
+    .returning({ id: appUser.id });
+  return paused.length;
 }

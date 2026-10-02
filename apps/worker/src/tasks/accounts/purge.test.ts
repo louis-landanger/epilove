@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { liftSanctionsTask } from "./lift-sanctions";
 import { purgeTask } from "./purge";
 import { resumePausedTask } from "./resume-paused";
+import { reverificationTask } from "./reverification";
 
 const url = process.env.DATABASE_URL;
 const helpers = {
@@ -127,6 +128,49 @@ describe.skipIf(!url)("retention purge", () => {
       [over]: "active",
       [running]: "paused",
       [openEnded]: "paused",
+    });
+  });
+
+  it("reminds members during the window and pauses them after the deadline", async () => {
+    const [school] = await db.select({ id: schema.school.id }).from(schema.school).limit(1);
+    const make = async (reverifyDueAt: Date) => {
+      const id = uuidv7();
+      await db.insert(schema.appUser).values({
+        id,
+        schoolId: school?.id ?? "",
+        email: `reverify.${id}@epita.fr`,
+        emailHmac: `reverify-${id}`,
+        status: "active",
+        reverifyDueAt,
+      });
+      return id;
+    };
+    const due = await make(new Date("2026-10-20T00:00:00Z"));
+    const overdue = await make(new Date("2026-09-30T00:00:00Z"));
+    const later = await make(new Date("2027-10-01T00:00:00Z"));
+    const sent: string[] = [];
+    await reverificationTask({
+      database: () => db,
+      storage: () => storage,
+      now: () => now,
+      sendEmail: async (to) => {
+        sent.push(to);
+      },
+    })({}, helpers);
+    expect(sent).toContain(`reverify.${due}@epita.fr`);
+    expect(sent).not.toContain(`reverify.${later}@epita.fr`);
+    const rows = await db
+      .select({
+        id: schema.appUser.id,
+        status: schema.appUser.status,
+        flag: schema.appUser.pausedForReverification,
+      })
+      .from(schema.appUser)
+      .where(inArray(schema.appUser.id, [due, overdue, later]));
+    expect(Object.fromEntries(rows.map((row) => [row.id, [row.status, row.flag]]))).toEqual({
+      [due]: ["active", false],
+      [overdue]: ["paused", true],
+      [later]: ["active", false],
     });
   });
 });

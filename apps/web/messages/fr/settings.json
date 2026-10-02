@@ -155,5 +155,18 @@
     "sent": "Recours envoyé. Tu recevras la réponse par email.",
     "error": "Le recours n'a pas pu être envoyé.",
     "back": "Retour"
+  },
+  "reverify": {
+    "banner": "Nouvelle année : confirme ton adresse d'école avant le {date}.",
+    "paused": "Ton profil est en pause : confirme ton adresse d'école pour réapparaître.",
+    "action": "Confirmer",
+    "metaTitle": "Confirmer mon adresse",
+    "title": "Toujours sur le campus ?",
+    "lead": "Chaque rentrée, on vérifie que tu as toujours accès à ton adresse d'école. On t'envoie un code à {email}.",
+    "send": "Recevoir le code",
+    "code": "Code à 6 chiffres",
+    "verify": "Confirmer",
+    "done": "C'est confirmé, merci ! À l'année prochaine.",
+    "error": "Code incorrect ou expiré. Redemande un code."
   }
 }

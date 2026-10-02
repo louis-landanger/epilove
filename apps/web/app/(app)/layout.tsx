@@ -1,6 +1,7 @@
 import { ToastProvider } from "@epilove/ui";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { ReverifyBanner } from "@/components/acces/account/reverify-banner";
 import { EasterEggs } from "@/components/acces/fun/easter-eggs";
 import { AppNav } from "@/components/acces/shell/app-nav";
 import { requireAppMember } from "@/lib/server/session";
@@ -11,7 +12,7 @@ import { requireAppMember } from "@/lib/server/session";
  * desktop (docs/02-design.md, section 6).
  */
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  await requireAppMember();
+  const member = await requireAppMember();
   const t = await getTranslations("nav");
   return (
     <ToastProvider>
@@ -24,6 +25,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <AppNav />
       <EasterEggs />
       <div id="contenu" className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0 lg:pl-60">
+        <ReverifyBanner due={member.reverifyDueAt} paused={member.pausedForReverification} />
         {children}
       </div>
     </ToastProvider>

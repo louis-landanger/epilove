@@ -37,6 +37,11 @@ export const appUser = pgTable(
     status: text({ enum: ACCOUNT_STATUSES }).notNull().default("onboarding"),
     verifiedAt: timestamp({ withTimezone: true }),
     reverifyDueAt: timestamp({ withTimezone: true }),
+    /** Last sign-in with a code sent to the school address: proof the mailbox is still theirs (ONB-09). */
+    emailProvenAt: timestamp({ withTimezone: true }),
+    reverifyRemindedAt: timestamp({ withTimezone: true }),
+    /** Paused because the yearly re-verification was missed: lifted by the next proof. */
+    pausedForReverification: boolean().notNull().default(false),
     lastActiveAt: timestamp({ withTimezone: true }),
     /** Scheduled pause (SAF-08, "mode partiels"): the account comes back by itself after this date. */
     pausedUntil: timestamp({ withTimezone: true }),

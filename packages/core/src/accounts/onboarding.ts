@@ -159,3 +159,25 @@ export function nextReverificationDue(today: IsoDate): IsoDate {
   // 1 September + 30 days.
   return `${academicYearOf(today) + 1}-10-01`;
 }
+
+/** The re-verification window opens 30 days before the deadline (1 September). */
+export const REVERIFICATION_WINDOW_DAYS = 30;
+
+/** First day a fresh proof of the school address counts for the deadline `due`. */
+export function reverificationOpensOn(due: IsoDate): IsoDate {
+  const { year } = parseIsoDate(due);
+  return `${year}-09-01`;
+}
+
+export type ReverificationState = "ok" | "due" | "overdue";
+
+/**
+ * ONB-09: from 1 September the member must sign in once with a code sent to
+ * the school address; after the deadline the account is paused until they do.
+ */
+export function reverificationState(today: IsoDate, due: IsoDate | null): ReverificationState {
+  if (!due || today < reverificationOpensOn(due)) {
+    return "ok";
+  }
+  return today >= due ? "overdue" : "due";
+}

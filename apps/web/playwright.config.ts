@@ -1,4 +1,10 @@
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
+
+// Some tests adjust data directly in the database (dates that cannot be waited for).
+if (existsSync("../../.env")) {
+  process.loadEnvFile("../../.env");
+}
 
 // Overridable so several checkouts can run their end-to-end tests side by side.
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 3100);

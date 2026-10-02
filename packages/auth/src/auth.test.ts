@@ -108,6 +108,31 @@ describe.skipIf(!url)("authentication", () => {
     ).rejects.toMatchObject({ body: { code: "OTP_EMAIL_QUOTA" } });
   });
 
+  it("treats a code sign-in during the window as the yearly re-verification", async () => {
+    const soon = new Date(Date.now() + 10 * 86_400_000);
+    await db
+      .update(schema.appUser)
+      .set({ reverifyDueAt: soon, status: "paused", pausedForReverification: true })
+      .where(eq(schema.appUser.email, email));
+    mailer.sent.length = 0;
+    await auth.api.sendVerificationOTP({ body: { email, type: "sign-in" } });
+    const otp = await codeSentTo(mailer, email);
+    await auth.api.signInEmailOTP({ body: { email, otp } });
+    const [user] = await db
+      .select({
+        status: schema.appUser.status,
+        due: schema.appUser.reverifyDueAt,
+        provenAt: schema.appUser.emailProvenAt,
+        flag: schema.appUser.pausedForReverification,
+      })
+      .from(schema.appUser)
+      .where(eq(schema.appUser.email, email));
+    expect(user).toMatchObject({ status: "active", flag: false });
+    expect(user?.provenAt).toBeInstanceOf(Date);
+    expect(user?.due?.getUTCMonth()).toBe(9);
+    expect((user?.due?.getTime() ?? 0) > soon.getTime()).toBe(true);
+  });
+
   it("refuses an address blocked after an underage declaration, until the date", async () => {
     const blocked = `minor.${Date.now()}@ipsa.fr`;
     const fingerprint = emailHmac(env.EMAIL_HMAC_SECRET, blocked);
