@@ -42,5 +42,11 @@
     "notFile": "cat: {file}: no such file",
     "unknown": "command not found: {command}. Type help.",
     "bye": "See you. Back to the surface…"
+  },
+  "meta": {
+    "description": "Dating and friendship between verified students of EPITA, ESME, Sup'Biotech, ISG and IPSA in Lyon."
+  },
+  "language": {
+    "label": "Language"
   }
 }

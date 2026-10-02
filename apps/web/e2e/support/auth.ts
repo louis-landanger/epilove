@@ -2,11 +2,12 @@ import { expect, type Page } from "@playwright/test";
 
 const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
 
-export async function latestCode(to: string): Promise<string> {
+/** The code of the newest email to `to`, once at least `count` emails have arrived. */
+export async function latestCode(to: string, count = 1): Promise<string> {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const response = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:${to}`)}`);
     const body = (await response.json()) as { messages: Array<{ Subject: string }> };
-    const match = body.messages[0]?.Subject.match(/^(\d{3}) (\d{3})/);
+    const match = body.messages.length >= count ? body.messages[0]?.Subject.match(/^(\d{3}) (\d{3})/) : null;
     if (match) {
       return `${match[1]}${match[2]}`;
     }

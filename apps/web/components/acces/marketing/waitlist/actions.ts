@@ -2,6 +2,7 @@
 
 import { REFERRAL_CODE_PATTERN } from "@epilove/contracts";
 import { headers } from "next/headers";
+import { getLocale } from "next-intl/server";
 import { serverApi } from "../server/api";
 import { clientAddress, takeToken } from "./rate-limit";
 import type { WaitlistFormState } from "./state";
@@ -30,7 +31,10 @@ export async function joinWaitlistAction(
     typeof rawCode === "string" && REFERRAL_CODE_PATTERN.test(rawCode) ? rawCode : undefined;
 
   try {
-    const result = await serverApi.waitlist.join(referralCode ? { email, referralCode } : { email });
+    const locale = (await getLocale()) as "fr" | "en";
+    const result = await serverApi.waitlist.join(
+      referralCode ? { email, referralCode, locale } : { email, locale },
+    );
     if (!result.ok) {
       return { status: "error", error: result.reason, email };
     }

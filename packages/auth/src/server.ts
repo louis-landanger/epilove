@@ -1,5 +1,15 @@
 import { passkey } from "@better-auth/passkey";
-import { calendarDateIn, LYON_CAMPUS, nextReverificationDue, parseSchoolEmail, uuidv7 } from "@epilove/core";
+import {
+  calendarDateIn,
+  DEFAULT_LOCALE,
+  isLocale,
+  LOCALE_COOKIE,
+  LYON_CAMPUS,
+  nextReverificationDue,
+  parseSchoolEmail,
+  requestLocale,
+  uuidv7,
+} from "@epilove/core";
 import { emailHmac } from "@epilove/crypto";
 import type { Database } from "@epilove/db";
 import { schema } from "@epilove/db";
@@ -89,6 +99,7 @@ export function createAuth({
         schoolId: { type: "string", input: false, required: false },
         emailHmac: { type: "string", input: false, required: false },
         status: { type: "string", input: false, required: false, defaultValue: "onboarding" },
+        locale: { type: "string", input: false, required: false, defaultValue: DEFAULT_LOCALE },
       },
     },
     session: {
@@ -127,6 +138,19 @@ export function createAuth({
             console.error("[auth] campus verification could not be recorded");
           });
           return;
+        }
+        if (ctx.context.newSession) {
+          // The account's language follows the member from one device to another (PLT-04).
+          const locale = (ctx.context.newSession.user as { locale?: unknown }).locale;
+          if (isLocale(locale)) {
+            ctx.setCookie(LOCALE_COOKIE, locale, {
+              path: "/",
+              maxAge: 365 * 86_400,
+              sameSite: "lax",
+              httpOnly: true,
+              secure: env.APP_ENV === "production" || env.APP_ENV === "staging",
+            });
+          }
         }
         if (ctx.path !== "/sign-in/email-otp" || !ctx.context.newSession) {
           return;
@@ -181,7 +205,7 @@ export function createAuth({
     databaseHooks: {
       user: {
         create: {
-          before: async (user) => {
+          before: async (user, ctx) => {
             const parsed = parseSchoolEmail(user.email);
             if (!parsed.ok || parsed.canonicalEmail !== user.email) {
               throw new APIError("BAD_REQUEST", { code: "SCHOOL_EMAIL_REQUIRED" });
@@ -201,6 +225,7 @@ export function createAuth({
                 schoolId: schoolRow.id,
                 emailHmac: emailHmac(env.EMAIL_HMAC_SECRET, parsed.canonicalEmail),
                 status: "onboarding",
+                locale: ctx?.headers ? requestLocale(ctx.headers) : DEFAULT_LOCALE,
               },
             };
           },
@@ -214,11 +239,14 @@ export function createAuth({
         allowedAttempts: OTP_POLICY.allowedAttempts,
         storeOTP: "hashed",
         disableSignUp: options.allowSignUp === false,
-        async sendVerificationOTP({ email, otp }) {
+        async sendVerificationOTP({ email, otp }, ctx) {
+          const locale = ctx?.headers ? requestLocale(ctx.headers) : DEFAULT_LOCALE;
           // Not awaited by the caller's response path to avoid timing differences.
-          void mailer.send(email, signInCodeEmail(otp, OTP_POLICY.expiresInSeconds / 60)).catch(() => {
-            console.error("[auth] sign-in code email could not be sent");
-          });
+          void mailer
+            .send(email, signInCodeEmail(otp, OTP_POLICY.expiresInSeconds / 60, locale))
+            .catch(() => {
+              console.error("[auth] sign-in code email could not be sent");
+            });
         },
       }),
       passkey({

@@ -33,6 +33,7 @@
 | Carte de profil partageable | PRO-08 | `/profil/carte` (image générée par `next/og`, effet holographique côté client), sans nom de famille ni données sensibles | e2e |
 | Easter eggs | COM-05 | 404 jouable (attrape les ions), code Konami, terminal caché `/terminal` | e2e `fun.spec.ts` |
 | Limitation de débit générique | — | Plafond par membre (600 appels par minute) ou par IP (120 par minute) sur toutes les procédures `/rpc/*`, en plus des quotas métier ; réponse 429 avec `Retry-After` | `packages/api/src/app.test.ts`, `lib/client-ip.test.ts` |
+| Anglais | PLT-04 | Langue résolue dans `proxy.ts` (préfixe `/en` des pages publiques, cookie `NEXT_LOCALE`, `Accept-Language`), `<html lang>` et métadonnées traduites, alternatives `hreflang`, sélecteur FR / EN (vitrine, connexion et onboarding, réglages) qui marche sans JavaScript, langue enregistrée sur le compte (`app_user.locale`) et reprise à chaque connexion, emails dans les deux langues (ADR 0012) | `packages/core/src/accounts/locale.test.ts`, `packages/email`, `packages/auth`, API, e2e `locale.spec.ts` |
 
 ## Pas encore fait
 
@@ -64,7 +65,10 @@
 | `pnpm-workspace.yaml` | Catalogue : `@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp`, `thumbhash` |
 | `.env.example` | Section `# Session A` |
 | `apps/web/app/layout.tsx` | `viewport.themeColor` aligné sur le jeton `ink` ; `app/manifest.ts` (à B) garde `#100e18` : à aligner à la fusion |
-| `apps/web/playwright.config.ts` | `API_RATE_LIMIT_ANONYMOUS=100000` pour le serveur de test (la suite e2e partage une seule IP) |
+| `apps/web/playwright.config.ts` | `API_RATE_LIMIT_ANONYMOUS=100000` pour le serveur de test (la suite e2e partage une seule IP) ; `locale: "fr-FR"` par défaut (le navigateur envoie `Accept-Language`, qui choisit la langue) |
+| `apps/web/i18n/request.ts` | La langue vient de l'en-tête `x-epilove-locale` posé par `proxy.ts` (ADR 0012) |
+| `apps/web/app/layout.tsx` | `<html lang>` selon la langue, métadonnées traduites, `metadataBase` (`SITE_URL`) ; toutes les pages sont désormais rendues à la demande |
+| `apps/web/i18n/paths.ts` (nouveau) | `publicHref(locale, chemin)` et `publicAlternates` pour les liens vers les pages publiques |
 
 ## Variables d'environnement (section `# Session A`)
 
@@ -80,7 +84,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 
 ## Migrations
 
-`0003_a_auth_and_identity_vault` à `0009_a_campus_verified` (jetables, à régénérer à la fusion) : tables Better Auth, `identity_vault`, `onboarding_draft`, `signup_block`, `data_export`, colonne `photo.stage`, `profile.hidden_at`, `hidden_contact` (identifiant, indice), colonnes `app_user.deletion_requested_at`, `paused_until`, `email_proven_at`, `reverify_reminded_at`, `paused_for_reverification`, `campus_verified_at`.
+`0003_a_auth_and_identity_vault` à `0010_a_locale` (jetables, à régénérer à la fusion) : tables Better Auth, `identity_vault`, `onboarding_draft`, `signup_block`, `data_export`, colonne `photo.stage`, `profile.hidden_at`, `hidden_contact` (identifiant, indice), colonnes `app_user.deletion_requested_at`, `paused_until`, `email_proven_at`, `reverify_reminded_at`, `paused_for_reverification`, `campus_verified_at`, `locale`.
 
 ## Pour la session B (coutures)
 
@@ -98,6 +102,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 - **Jobs** : `enqueueJob(tx, "tache", payload, { jobKey })` dans la transaction métier.
 - **Badge « Campus vérifié »** : `app_user.campus_verified_at` non nul (connexion Forge ID) ; à afficher sur les cartes de découverte si souhaité.
 - **Re-vérification** : un compte en pause pour re-vérification (`paused_for_reverification`) a le statut `paused` : il suit les mêmes règles de découvrabilité.
+- **Langue** : les pages de B reçoivent la langue sans rien faire (`useLocale`, `getTranslations`) ; chaque namespace de B doit exister en `fr` et en `en` (test `messages.test.ts`). Les emails et notifications de B s'écrivent dans `app_user.locale`. Les liens vers les pages publiques passent par `publicHref`.
 - **Débit** : toutes les procédures passent déjà par le plafond générique ; les quotas métier de B (likes, messages) restent à poser avec `withinQuota`.
 
 ## Mises à jour souhaitées (CLAUDE.md, README, docs)

@@ -1,4 +1,4 @@
-import { ACCOUNT_STATUSES, type Gender } from "@epilove/core";
+import { ACCOUNT_STATUSES, type Gender, LOCALES } from "@epilove/core";
 import { sql } from "drizzle-orm";
 import { boolean, check, date, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { school } from "./campus";
@@ -49,9 +49,12 @@ export const appUser = pgTable(
     pausedUntil: timestamp({ withTimezone: true }),
     /** Self-service deletion (SAF-14): content is purged 30 days later. */
     deletionRequestedAt: timestamp({ withTimezone: true }),
+    /** Interface and email language (PLT-04). */
+    locale: text({ enum: LOCALES }).notNull().default("fr"),
     ...timestamps,
   },
   (t) => [
+    check("app_user_locale_check", oneOf(t.locale, LOCALES)),
     check("app_user_role_check", oneOf(t.role, ROLES)),
     check("app_user_status_check", oneOf(t.status, ACCOUNT_STATUSES)),
     index("app_user_active_idx").on(t.lastActiveAt).where(sql`${t.status} = 'active'`),

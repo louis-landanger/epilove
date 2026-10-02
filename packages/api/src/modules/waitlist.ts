@@ -1,6 +1,7 @@
 import { REFERRAL_CODE_ALPHABET, REFERRAL_CODE_LENGTH, type WaitlistStats } from "@epilove/contracts";
 import {
   collectiveGoalProgress,
+  localizedPath,
   parseSchoolEmail,
   rankSchoolRace,
   SCHOOL_SLUGS,
@@ -109,8 +110,12 @@ export function createWaitlistProcedures(dependencies: WaitlistDependencies) {
 
       if (result.created) {
         statsCache = null;
-        const referralUrl = new URL(`/?r=${result.referralCode}`, dependencies.siteUrl()).toString();
-        const email = waitlistWelcomeEmail({ schoolName: parsed.school.name, referralUrl });
+        const locale = input.locale ?? "fr";
+        const referralUrl = new URL(
+          `${localizedPath(locale, "/")}?r=${result.referralCode}`,
+          dependencies.siteUrl(),
+        ).toString();
+        const email = waitlistWelcomeEmail({ schoolName: parsed.school.name, referralUrl, locale });
         const to = parsed.canonicalEmail;
         dependencies.runInBackground(() => dependencies.mailer().send(to, email));
       }

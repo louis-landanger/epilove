@@ -1,5 +1,7 @@
+import type { Locale } from "@epilove/core";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { publicHref } from "@/i18n/paths";
 import { LogoMark } from "./logo";
 
 const MARQUEE = ["one", "two", "three", "four"] as const;
@@ -9,7 +11,8 @@ export async function SiteFooter({ onLanding = true }: { onLanding?: boolean }) 
   const t = await getTranslations("marketing.footer");
   const nav = await getTranslations("marketing.nav");
   const common = await getTranslations("common");
-  const prefix = onLanding ? "" : "/";
+  const locale = (await getLocale()) as Locale;
+  const prefix = onLanding ? "" : publicHref(locale, "/");
   const items = MARQUEE.map((key) => t(`marquee.${key}`));
 
   return (
@@ -59,22 +62,22 @@ export async function SiteFooter({ onLanding = true }: { onLanding?: boolean }) 
             <p className="font-mono text-paper/70 text-xs uppercase tracking-[0.18em]">{t("legal")}</p>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/legal/mentions-legales" className="footer-link">
+                <Link href={publicHref(locale, "/legal/mentions-legales")} className="footer-link">
                   {t("legalNotice")}
                 </Link>
               </li>
               <li>
-                <Link href="/legal/cgu" className="footer-link">
+                <Link href={publicHref(locale, "/legal/cgu")} className="footer-link">
                   {t("terms")}
                 </Link>
               </li>
               <li>
-                <Link href="/legal/confidentialite" className="footer-link">
+                <Link href={publicHref(locale, "/legal/confidentialite")} className="footer-link">
                   {t("privacy")}
                 </Link>
               </li>
               <li>
-                <Link href="/legal/transparence" className="footer-link">
+                <Link href={publicHref(locale, "/legal/transparence")} className="footer-link">
                   {t("transparency")}
                 </Link>
               </li>

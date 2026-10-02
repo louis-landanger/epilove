@@ -222,7 +222,7 @@ export async function memberForModeration(db: Db, userId: string) {
 
 export async function identityOf(db: Db, userId: string) {
   const [row] = await db
-    .select({ email: appUser.email, firstName: profile.firstName })
+    .select({ email: appUser.email, firstName: profile.firstName, locale: appUser.locale })
     .from(appUser)
     .leftJoin(profile, eq(profile.userId, appUser.id))
     .where(eq(appUser.id, userId))

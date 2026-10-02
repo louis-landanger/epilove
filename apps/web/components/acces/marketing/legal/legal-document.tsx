@@ -1,6 +1,8 @@
+import type { Locale } from "@epilove/core";
 import Link from "next/link";
-import { getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Fragment } from "react";
+import { publicHref } from "@/i18n/paths";
 import {
   asLegalPage,
   LEGAL_PAGES,
@@ -84,6 +86,7 @@ function Block({ block }: { block: LegalBlock }) {
 /** A draft legal page, plainly typeset, with its table of contents and the "draft" warning on top. */
 export async function LegalDocument({ page }: { page: LegalPageKey }) {
   const t = await getTranslations("legal");
+  const locale = (await getLocale()) as Locale;
   const content = asLegalPage((await getMessages()).legal[page]);
   return (
     <article>
@@ -102,7 +105,7 @@ export async function LegalDocument({ page }: { page: LegalPageKey }) {
           {(Object.keys(LEGAL_PAGES) as LegalPageKey[]).map((key) => (
             <li key={key}>
               <Link
-                href={LEGAL_PAGES[key]}
+                href={publicHref(locale, LEGAL_PAGES[key])}
                 aria-current={key === page ? "page" : undefined}
                 className="inline-flex min-h-11 items-center rounded-full border border-paper/15 px-4 font-mono text-paper/85 text-xs uppercase tracking-[0.12em] hover:border-paper/50 aria-[current=page]:border-plasma aria-[current=page]:bg-plasma aria-[current=page]:text-ink"
               >

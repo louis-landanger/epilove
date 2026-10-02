@@ -59,8 +59,8 @@ function subscribe(listener: () => void) {
   listeners.add(listener);
   if (listeners.size === 1) {
     document.addEventListener("visibilitychange", onVisibilityChange);
-    // The server snapshot may be a few seconds old (static page, revalidated
-    // every 30 s): refresh soon after load, once the page has settled.
+    // The server snapshot may be a few seconds old (cached for 30 s on the
+    // server): refresh soon after load, once the page has settled.
     schedule(current ? POLL_MS : 2_500);
   }
   return () => {

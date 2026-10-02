@@ -4,6 +4,7 @@ import {
   ageOn,
   canReviewAppeal,
   isValidStatement,
+  type Locale,
   type Sanction,
   type SanctionInput,
   sanctionEffect,
@@ -62,27 +63,6 @@ const STATUS_SET_BY: Partial<Record<string, "restricted" | "suspended" | "banned
 
 const PHOTO_REVIEW_SIZE = { width: 600, height: 750, ttlSeconds: 900 } as const;
 
-const PHOTO_REJECTION_TEXT: Record<string, string> = {
-  no_face: "on ne voit pas ton visage sur la photo principale",
-  not_a_person: "la photo ne te représente pas",
-  explicit: "la photo est à caractère sexuel",
-  violence: "la photo montre de la violence ou des armes",
-  minor: "la photo semble montrer une personne mineure",
-  contact_details: "la photo contient des coordonnées ou un pseudo de réseau social",
-  stolen: "la photo semble ne pas t'appartenir",
-  low_quality: "la photo est trop floue ou trop sombre",
-};
-
-const RULE_LABELS: Record<string, string> = {
-  respect: "Respect des autres (charte, règle 1)",
-  consent: "Consentement (charte, règle 2)",
-  authenticity: "Authenticité du profil (charte, règle 3)",
-  discretion: "Discrétion et vie privée (charte, règle 4)",
-  commerce: "Pas de commerce ni de promotion (charte, règle 5)",
-  eligibility: "Réservé aux étudiants du campus (conditions d'utilisation)",
-  minimum_age: "Âge minimum de 18 ans (conditions d'utilisation)",
-};
-
 function pseudonym(services: ApiServices, userId: string | null) {
   return userId ? { userId, pseudonym: pseudonymOf(services.emailHmacSecret(), userId) } : null;
 }
@@ -90,15 +70,15 @@ function pseudonym(services: ApiServices, userId: string | null) {
 /** Sends an email without letting a mail failure undo a decision already saved. */
 async function notify(
   services: ApiServices,
-  to: string | null,
-  email: Parameters<ReturnType<ApiServices["mailer"]>["send"]>[1],
+  to: { email: string; locale: Locale } | null,
+  email: (locale: Locale) => Parameters<ReturnType<ApiServices["mailer"]>["send"]>[1],
 ) {
   if (!to) {
     return;
   }
   await services
     .mailer()
-    .send(to, email)
+    .send(to.email, email(to.locale))
     .catch(() => {
       console.error("[admin] notification email could not be sent");
     });
@@ -204,11 +184,7 @@ export const admin = {
     await refreshCompleteness(db, photo.userId);
     if (input.decision === "reject") {
       const identity = await identityOf(db, photo.userId);
-      await notify(
-        context.services,
-        identity?.email ?? null,
-        photoRejectedEmail(PHOTO_REJECTION_TEXT[input.reason] ?? input.reason),
-      );
+      await notify(context.services, identity, (locale) => photoRejectedEmail(input.reason, locale));
     }
     return { ok: true as const };
   }),
@@ -342,21 +318,20 @@ export const admin = {
     }
     if (targetId && decision.action !== "no_action") {
       const identity = await identityOf(db, targetId);
-      await notify(
-        context.services,
-        identity?.email ?? null,
+      await notify(context.services, identity, (locale) =>
         moderationDecisionEmail({
           action: decision.action,
-          rule: RULE_LABELS[rule] ?? rule,
+          rule,
           statement,
           until: effect.expiresAt,
           appealUrl: `${context.services.appUrl()}/compte/recours`,
+          locale,
         }),
       );
     }
     if (row.reporterId) {
       const reporter = await identityOf(db, row.reporterId);
-      await notify(context.services, reporter?.email ?? null, reportHandledEmail());
+      await notify(context.services, reporter, (locale) => reportHandledEmail(locale));
     }
     return { ok: true as const };
   }),
@@ -445,10 +420,8 @@ export const admin = {
     });
     if (decision.targetUserId) {
       const identity = await identityOf(db, decision.targetUserId);
-      await notify(
-        context.services,
-        identity?.email ?? null,
-        appealOutcomeEmail({ overturned, statement: input.statement.trim() }),
+      await notify(context.services, identity, (locale) =>
+        appealOutcomeEmail({ overturned, statement: input.statement.trim(), locale }),
       );
     }
     return { ok: true as const };

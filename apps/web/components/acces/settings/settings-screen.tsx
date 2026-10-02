@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { api, errorCode } from "../api-client";
+import { LocaleSwitcher } from "../locale/locale-switcher";
 import { DataExport } from "./data-export";
 import { DeleteAccount } from "./delete-account";
 import { Section } from "./section";
@@ -126,6 +127,11 @@ export function SettingsScreen({ account, settings: initial, hiddenContacts, blo
           onCheckedChange={(discreetNotifications) => void update({ discreetNotifications })}
         />
         <RowLink href={"/reglages/notifications" as Route}>{t("notifications.more")}</RowLink>
+      </Section>
+
+      <Section id="language" title={t("language.title")}>
+        <p className="text-paper/70 text-sm">{t("language.hint")}</p>
+        <LocaleSwitcher />
       </Section>
 
       <SecuritySection email={account.email} />

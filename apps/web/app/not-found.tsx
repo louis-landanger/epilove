@@ -1,8 +1,10 @@
+import type { Locale } from "@epilove/core";
 import { buttonVariants } from "@epilove/ui";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { IonCatcher } from "@/components/acces/fun/ion-catcher";
+import { publicHref } from "@/i18n/paths";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("common.notFound");
@@ -25,7 +27,10 @@ export default async function NotFound() {
         <p className="max-w-prose text-lg text-paper/70">{t("lead")}</p>
       </div>
       <IonCatcher />
-      <Link href="/" className={buttonVariants({ variant: "secondary", className: "w-fit" })}>
+      <Link
+        href={publicHref((await getLocale()) as Locale, "/")}
+        className={buttonVariants({ variant: "secondary", className: "w-fit" })}
+      >
         {t("home")}
       </Link>
     </main>

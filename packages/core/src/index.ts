@@ -1,4 +1,5 @@
 export * from "./accounts/lifecycle";
+export * from "./accounts/locale";
 export * from "./accounts/onboarding";
 export * from "./campus/headcounts";
 export * from "./campus/schools";

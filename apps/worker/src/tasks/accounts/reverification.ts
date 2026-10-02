@@ -36,7 +36,7 @@ export function reverificationTask({
       if (!member.reverifyDueAt) continue;
       await send(
         member.email,
-        reverificationReminderEmail(member.reverifyDueAt, `${appUrl}/compte/verifier`),
+        reverificationReminderEmail(member.reverifyDueAt, `${appUrl}/compte/verifier`, member.locale),
       ).catch(() => helpers.logger.warn("re-verification reminder could not be sent"));
       await markReminded(db, member.id, at);
     }

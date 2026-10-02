@@ -1,9 +1,10 @@
 "use client";
 
-import { parseSchoolEmail } from "@epilove/core";
+import { type Locale, parseSchoolEmail } from "@epilove/core";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
+import { publicHref } from "@/i18n/paths";
 import { refreshWaitlistStats } from "../stats-store";
 import { joinWaitlistAction } from "./actions";
 import { INITIAL_WAITLIST_STATE, type WaitlistError, type WaitlistFormState } from "./state";
@@ -28,6 +29,7 @@ function validate(email: string): WaitlistError | null {
  */
 export function WaitlistForm() {
   const t = useTranslations("waitlist");
+  const locale = useLocale();
   const [state, formAction, pending] = useActionState(joinWaitlistAction, INITIAL_WAITLIST_STATE);
   const [clientError, setClientError] = useState<WaitlistError | null>(null);
   const [touched, setTouched] = useState(false);
@@ -151,7 +153,10 @@ export function WaitlistForm() {
       <p className="mt-5 max-w-xl text-paper/70 text-xs leading-relaxed">
         {t.rich("privacy", {
           link: (chunks) => (
-            <Link href="/legal/confidentialite" className="underline underline-offset-2 hover:text-paper">
+            <Link
+              href={publicHref(locale as Locale, "/legal/confidentialite")}
+              className="underline underline-offset-2 hover:text-paper"
+            >
               {chunks}
             </Link>
           ),

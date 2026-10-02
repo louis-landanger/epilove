@@ -69,6 +69,10 @@
     "discreetHelp": "No first name or content in notifications: just \"New message\".",
     "more": "All notifications"
   },
+  "language": {
+    "title": "Language",
+    "hint": "The Epilove interface and emails. Your choice follows your account on all your devices."
+  },
   "security": {
     "title": "Sign-in and security",
     "email": "Sign-in address",

@@ -96,6 +96,7 @@ export async function collectPersonalData(db: Db, userId: string) {
         email: appUser.email,
         school: school.name,
         status: appUser.status,
+        locale: appUser.locale,
         createdAt: appUser.createdAt,
         verifiedAt: appUser.verifiedAt,
       })

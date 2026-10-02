@@ -37,6 +37,7 @@ describe.skipIf(!url)("authentication", () => {
   const mailer = createMemoryMailer();
   const auth = createAuth({ env, db, mailer, limiter: createMemoryRateLimiter() });
   const email = `test.${Date.now()}@isg.fr`;
+  const englishEmail = `test.en.${Date.now()}@ipsa.fr`;
 
   beforeAll(async () => {
     await runMigrations(db);
@@ -45,6 +46,7 @@ describe.skipIf(!url)("authentication", () => {
 
   afterAll(async () => {
     await db.delete(schema.appUser).where(eq(schema.appUser.email, email));
+    await db.delete(schema.appUser).where(eq(schema.appUser.email, englishEmail));
     await close();
   });
 
@@ -59,18 +61,40 @@ describe.skipIf(!url)("authentication", () => {
     const [user] = await db
       .select({
         status: schema.appUser.status,
+        locale: schema.appUser.locale,
         emailHmac: schema.appUser.emailHmac,
         schoolId: schema.appUser.schoolId,
       })
       .from(schema.appUser)
       .where(eq(schema.appUser.email, email));
     expect(user?.status).toBe("onboarding");
+    expect(user?.locale).toBe("fr");
     expect(user?.emailHmac).toMatch(/^[0-9a-f]{64}$/);
     const [isg] = await db
       .select({ id: schema.school.id })
       .from(schema.school)
       .where(eq(schema.school.slug, "isg"));
     expect(user?.schoolId).toBe(isg?.id);
+  });
+
+  it("writes in the page's language and remembers it on the account (PLT-04)", async () => {
+    const headers = new Headers({ "x-epilove-locale": "en", "accept-language": "fr-FR" });
+    await auth.api.sendVerificationOTP({ body: { email: englishEmail, type: "sign-in" }, headers });
+    const otp = await codeSentTo(mailer, englishEmail);
+    const message = mailer.sent.find((entry) => entry.to === englishEmail);
+    expect(message?.email.subject).toMatch(/is your Epilove code$/);
+
+    const signedIn = await auth.api.signInEmailOTP({
+      body: { email: englishEmail, otp },
+      headers,
+      returnHeaders: true,
+    });
+    expect(signedIn.headers.get("set-cookie")).toContain("NEXT_LOCALE=en");
+    const [user] = await db
+      .select({ locale: schema.appUser.locale })
+      .from(schema.appUser)
+      .where(eq(schema.appUser.email, englishEmail));
+    expect(user?.locale).toBe("en");
   });
 
   it("stores codes hashed, never in clear", async () => {

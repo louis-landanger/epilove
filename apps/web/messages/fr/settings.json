@@ -69,6 +69,10 @@
     "discreetHelp": "Aucun prénom ni contenu dans les notifications : juste « Nouveau message ».",
     "more": "Toutes les notifications"
   },
+  "language": {
+    "title": "Langue",
+    "hint": "L'interface et les emails d'Epilove. Ton choix suit ton compte sur tous tes appareils."
+  },
   "security": {
     "title": "Connexion et sécurité",
     "email": "Adresse de connexion",

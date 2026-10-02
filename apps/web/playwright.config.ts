@@ -20,6 +20,8 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL,
+    // French is the default language; English tests opt in (Accept-Language follows the locale).
+    locale: "fr-FR",
     trace: "retain-on-failure",
     launchOptions: executablePath ? { executablePath } : {},
   },

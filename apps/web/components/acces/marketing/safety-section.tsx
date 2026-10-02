@@ -1,5 +1,7 @@
+import type { Locale } from "@epilove/core";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { publicHref } from "@/i18n/paths";
 import { Eyebrow } from "./eyebrow";
 
 const ITEMS = [
@@ -24,6 +26,7 @@ const ITEMS = [
 /** Safety and discretion commitments: a deliberately calm, light section (docs/02, section 5). */
 export async function SafetySection() {
   const t = await getTranslations("marketing.safety");
+  const locale = (await getLocale()) as Locale;
   return (
     <section
       id="securite"
@@ -42,7 +45,7 @@ export async function SafetySection() {
             </h2>
             <p className="mt-6 max-w-md text-ink/80 text-lg leading-relaxed">{t("lead")}</p>
             <Link
-              href="/legal/confidentialite"
+              href={publicHref(locale, "/legal/confidentialite")}
               className="mt-8 inline-flex items-center gap-2 font-mono text-ink text-xs uppercase tracking-[0.16em] underline decoration-ink/30 underline-offset-4 hover:decoration-ink"
             >
               {t("link")}

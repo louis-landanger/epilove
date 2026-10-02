@@ -1,4 +1,4 @@
-import { SCHOOL_SLUGS } from "@epilove/core";
+import { LOCALES, SCHOOL_SLUGS } from "@epilove/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 
@@ -15,6 +15,8 @@ export const referralCode = z.string().regex(REFERRAL_CODE_PATTERN);
 export const joinWaitlistInput = z.object({
   email: z.string().max(320),
   referralCode: referralCode.optional(),
+  /** Language of the welcome email and of the referral link (PLT-04). */
+  locale: z.enum(LOCALES).optional(),
 });
 
 /**

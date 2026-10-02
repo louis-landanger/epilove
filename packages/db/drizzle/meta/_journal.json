@@ -71,6 +71,13 @@
       "when": 1790955652488,
       "tag": "0009_a_campus_verified",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790956455427,
+      "tag": "0010_a_locale",
+      "breakpoints": true
     }
   ]
 }

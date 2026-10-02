@@ -179,6 +179,17 @@ describe.skipIf(!url)("safety, privacy and account", () => {
     await expect(client.account.pause()).rejects.toMatchObject({ code: "NOT_ALLOWED" });
   });
 
+  it("remembers the interface language on the account (PLT-04)", async () => {
+    const me = await insertActiveMember(api.db);
+    const client = api.clientFor(me);
+    expect((await client.account.summary()).locale).toBe("fr");
+    expect((await client.account.setLocale({ locale: "en" })).locale).toBe("en");
+    await expect(client.account.setLocale({ locale: "de" as "en" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect((await client.account.summary()).locale).toBe("en");
+  });
+
   it("exports data on request, downloadable by its owner only", async () => {
     const me = await insertActiveMember(api.db);
     const client = api.clientFor(me);

@@ -16,6 +16,11 @@ const payloadSchema = z.object({ exportId: z.uuid() });
 /** Exports stay downloadable this long. */
 export const EXPORT_TTL_DAYS = 7;
 
+const NOTICE = {
+  fr: "Export de tes données Epilove (RGPD, art. 15 et 20). Les genres que tu recherches, donnée sensible, ne sont jamais exportés : tu les retrouves dans tes réglages.",
+  en: "Export of your Epilove data (GDPR, art. 15 and 20). The genders you are looking for, a sensitive piece of data, are never exported: you can find them in your settings.",
+} as const;
+
 export interface ExportDependencies extends AccountsDependencies {
   readonly sendEmail?: (to: string, email: ReturnType<typeof dataExportReadyEmail>) => Promise<void>;
   readonly appUrl?: string;
@@ -40,6 +45,8 @@ export function exportTask({
       return;
     }
     try {
+      const identity = await identityOf(db, row.userId);
+      const locale = identity?.locale ?? "fr";
       const data = await collectPersonalData(db, row.userId);
       const files: Record<string, Uint8Array> = {};
       const photos = [];
@@ -52,8 +59,7 @@ export function exportTask({
       }
       const document = {
         exportedAt: now().toISOString(),
-        notice:
-          "Export de tes données Epilove (RGPD, art. 15 et 20). Les genres que tu recherches, donnée sensible, ne sont jamais exportés : tu les retrouves dans tes réglages.",
+        notice: NOTICE[locale],
         ...data,
         photos,
       };
@@ -64,9 +70,8 @@ export function exportTask({
       const at = now();
       await markExportReady(db, exportId, key, at, new Date(at.getTime() + EXPORT_TTL_DAYS * 86_400_000));
 
-      const identity = await identityOf(db, row.userId);
       if (identity) {
-        const email = dataExportReadyEmail(`${appUrl}/api/export/${exportId}`, EXPORT_TTL_DAYS);
+        const email = dataExportReadyEmail(`${appUrl}/api/export/${exportId}`, EXPORT_TTL_DAYS, locale);
         const send = sendEmail ?? ((to, message) => createMailer(mailerConfigFromEnv()).send(to, message));
         await send(identity.email, email).catch(() => helpers.logger.warn("export email could not be sent"));
       }

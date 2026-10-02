@@ -10,7 +10,12 @@ import {
 } from "@epilove/core";
 import type { Database } from "@epilove/db";
 import { enqueueJob } from "@epilove/db";
-import { findAccount, requestAccountDeletion, transitionStatus } from "@epilove/db/repositories/accounts";
+import {
+  findAccount,
+  requestAccountDeletion,
+  setAccountLocale,
+  transitionStatus,
+} from "@epilove/db/repositories/accounts";
 import { findDecision, hasAppeal, insertAppeal, listDecisionsFor } from "@epilove/db/repositories/admin";
 import { countRecentExports, insertExport, listExports } from "@epilove/db/repositories/exports";
 import { writeAudit } from "@epilove/db/repositories/safety";
@@ -27,6 +32,7 @@ async function summary(db: Database, userId: string) {
     schoolSlug: account.schoolSlug,
     status: account.status as AccountStatus,
     pausedUntil: account.status === "paused" ? (account.pausedUntil?.toISOString() ?? null) : null,
+    locale: account.locale,
   };
 }
 
@@ -68,6 +74,12 @@ export const account = {
       }
     }
     return summary(db, userId);
+  }),
+
+  setLocale: os.account.setLocale.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    await setAccountLocale(db, context.viewer.userId, input.locale);
+    return summary(db, context.viewer.userId);
   }),
 
   decisions: os.account.decisions.use(requireViewer).handler(async ({ context }) => {

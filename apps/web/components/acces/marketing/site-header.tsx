@@ -1,11 +1,15 @@
+import type { Locale } from "@epilove/core";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { publicHref } from "@/i18n/paths";
+import { LocaleSwitcher } from "../locale/locale-switcher";
 import { Logotype } from "./logo";
 
 /** Fixed top bar. On the landing the links are anchors; elsewhere they lead back to the landing. */
 export async function SiteHeader({ onLanding = true }: { onLanding?: boolean }) {
   const t = await getTranslations("marketing.nav");
-  const prefix = onLanding ? "" : "/";
+  const home = publicHref((await getLocale()) as Locale, "/");
+  const prefix = onLanding ? "" : home;
   const links = [
     { href: `${prefix}#concept`, label: t("how") },
     { href: `${prefix}#course`, label: t("race") },
@@ -20,7 +24,7 @@ export async function SiteHeader({ onLanding = true }: { onLanding?: boolean }) 
       </a>
       <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-10 sm:py-4">
         <Link
-          href="/"
+          href={home}
           aria-label={t("home")}
           className="rounded-full border border-paper/10 bg-ink/55 py-1.5 pr-4 pl-2 backdrop-blur-md"
         >
@@ -40,9 +44,12 @@ export async function SiteHeader({ onLanding = true }: { onLanding?: boolean }) 
             ))}
           </ul>
         </nav>
-        <a href={`${prefix}#rejoindre`} data-magnetic className="cta-small">
-          {t("join")}
-        </a>
+        <div className="flex items-center gap-2">
+          <LocaleSwitcher variant="marketing" />
+          <a href={`${prefix}#rejoindre`} data-magnetic className="cta-small">
+            {t("join")}
+          </a>
+        </div>
       </div>
     </header>
   );

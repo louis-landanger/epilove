@@ -1,4 +1,4 @@
-import { ACCOUNT_STATUSES, SANCTIONS } from "@epilove/core";
+import { ACCOUNT_STATUSES, LOCALES, SANCTIONS } from "@epilove/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 
@@ -8,6 +8,8 @@ export const accountSummary = z.object({
   status: z.enum(ACCOUNT_STATUSES),
   /** End of a scheduled pause (SAF-08), `null` for an open-ended pause. */
   pausedUntil: z.iso.datetime().nullable(),
+  /** Interface and email language (PLT-04). */
+  locale: z.enum(LOCALES),
 });
 
 /** The member's account: pause (SAF-05) and self-service deletion (SAF-14). */
@@ -19,10 +21,8 @@ export const accountContract = {
     .input(z.object({ until: z.iso.datetime().nullable().default(null) }).default({ until: null }))
     .output(accountSummary),
   resume: oc.errors({ NOT_ALLOWED: { status: 409 } }).output(accountSummary),
-  /**
-   * Immediate and final: the account disappears at once, sessions end, and
-   * content is erased within 30 days.
-   */
+  /** Language of the interface and of the emails, kept across devices (PLT-04). */
+  setLocale: oc.input(z.object({ locale: z.enum(LOCALES) })).output(accountSummary),
   /** Decisions taken about the member, with their statement of reasons (DSA art. 17). */
   decisions: oc.output(
     z.object({
@@ -61,6 +61,10 @@ export const accountContract = {
       ),
     }),
   ),
+  /**
+   * Immediate and final: the account disappears at once, sessions end, and
+   * content is erased within 30 days.
+   */
   delete: oc
     .errors({ NOT_ALLOWED: { status: 409 } })
     .input(z.object({ confirm: z.literal(true) }))

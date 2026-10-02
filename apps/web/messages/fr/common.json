@@ -42,5 +42,11 @@
     "notFile": "cat : {file} : fichier introuvable",
     "unknown": "commande introuvable : {command}. Tape help.",
     "bye": "À plus. Retour à la surface…"
+  },
+  "meta": {
+    "description": "Rencontres et amitiés entre étudiantes et étudiants vérifiés de l'EPITA, l'ESME, Sup'Biotech, l'ISG et l'IPSA à Lyon."
+  },
+  "language": {
+    "label": "Langue"
   }
 }

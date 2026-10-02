@@ -1,5 +1,15 @@
+import {
+  DEFAULT_LOCALE,
+  isLocale,
+  LOCALE_COOKIE,
+  LOCALE_HEADER,
+  localizedPath,
+  negotiateLocale,
+  splitLocalePrefix,
+} from "@epilove/core";
 import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
+import { isLocalizedPublicPath } from "./i18n/paths";
 
 /** Pages that need a signed-in member (the app, onboarding, settings). */
 const PROTECTED_PREFIXES = [
@@ -70,32 +80,66 @@ function hasDevMember(request: NextRequest) {
 
 /**
  * Fast checks before rendering (docs/07-confiance-securite.md, part B):
- * redirect signed-out visitors away from the app (the real session check
- * happens in the layouts) and attach a per-request CSP nonce.
+ * resolve the language (PLT-04, ADR 0012), redirect signed-out visitors away
+ * from the app (the real session check happens in the layouts) and attach a
+ * per-request CSP nonce.
  */
 export function proxy(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
+  const { search } = request.nextUrl;
+  const requested = request.nextUrl.pathname;
+
+  // French pages have no prefix: `/fr/legal/cgu` is `/legal/cgu`.
+  if (requested === `/${DEFAULT_LOCALE}` || requested.startsWith(`/${DEFAULT_LOCALE}/`)) {
+    const target = request.nextUrl.clone();
+    target.pathname = requested.slice(DEFAULT_LOCALE.length + 1) || "/";
+    return NextResponse.redirect(target, 308);
+  }
+
+  const { locale: prefixed, pathname } = splitLocalePrefix(requested);
+  const chosen = request.cookies.get(LOCALE_COOKIE)?.value;
+  const preferred = isLocale(chosen) ? chosen : negotiateLocale(request.headers.get("accept-language"));
+  const isPublic = isLocalizedPublicPath(pathname);
+
+  // Public pages have one URL per language: send English readers to theirs.
+  if (!prefixed && isPublic && preferred !== DEFAULT_LOCALE) {
+    const target = request.nextUrl.clone();
+    target.pathname = localizedPath(preferred, pathname);
+    const response = NextResponse.redirect(target, 307);
+    response.headers.set("Vary", "Cookie, Accept-Language");
+    return response;
+  }
+  const locale = prefixed ?? (isPublic ? DEFAULT_LOCALE : preferred);
 
   if (matches(pathname, PROTECTED_PREFIXES)) {
     const signedIn = Boolean(getSessionCookie(request, { cookiePrefix: "epilove" })) || hasDevMember(request);
     if (!signedIn) {
-      const target = new URL("/connexion", request.url);
+      const target = new URL(prefixed ? localizedPath(prefixed, "/connexion") : "/connexion", request.url);
       target.searchParams.set("suite", `${pathname}${search}`);
       return NextResponse.redirect(target);
     }
   }
 
-  if (!matches(pathname, NONCE_PREFIXES)) {
-    return NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(LOCALE_HEADER, locale);
+  const nonce = matches(pathname, NONCE_PREFIXES) ? btoa(crypto.randomUUID()) : null;
+  const policy = nonce ? contentSecurityPolicy(nonce) : null;
+  if (nonce && policy) {
+    requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("Content-Security-Policy", policy);
   }
 
-  const nonce = btoa(crypto.randomUUID());
-  const policy = contentSecurityPolicy(nonce);
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("Content-Security-Policy", policy);
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
-  response.headers.set("Content-Security-Policy", policy);
+  const response = prefixed
+    ? NextResponse.rewrite(new URL(`${pathname}${search}`, request.url), {
+        request: { headers: requestHeaders },
+      })
+    : NextResponse.next({ request: { headers: requestHeaders } });
+  if (policy) {
+    response.headers.set("Content-Security-Policy", policy);
+  }
+  response.headers.set("Content-Language", locale);
+  if (!prefixed && isPublic) {
+    response.headers.set("Vary", "Cookie, Accept-Language");
+  }
   return response;
 }
 

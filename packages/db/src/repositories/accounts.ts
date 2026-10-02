@@ -1,4 +1,4 @@
-import type { Gender, Mode } from "@epilove/core";
+import type { Gender, Locale, Mode } from "@epilove/core";
 import { and, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import {
@@ -32,12 +32,18 @@ export async function findAccount(db: Db, userId: string) {
       schoolId: appUser.schoolId,
       schoolSlug: school.slug,
       verifiedAt: appUser.verifiedAt,
+      locale: appUser.locale,
     })
     .from(appUser)
     .innerJoin(school, eq(school.id, appUser.schoolId))
     .where(eq(appUser.id, userId))
     .limit(1);
   return row ?? null;
+}
+
+/** Interface and email language (PLT-04). */
+export async function setAccountLocale(db: Db, userId: string, locale: Locale) {
+  await db.update(appUser).set({ locale }).where(eq(appUser.id, userId));
 }
 
 // --- Onboarding draft ------------------------------------------------------------
@@ -342,7 +348,12 @@ export async function recordEmailProof(db: Db, userId: string, at: Date, nextDue
 /** Members whose window is open, not reminded in the last `remindEvery`. */
 export async function listReverificationReminders(db: Db, today: Date, horizon: Date, remindedBefore: Date) {
   return db
-    .select({ id: appUser.id, email: appUser.email, reverifyDueAt: appUser.reverifyDueAt })
+    .select({
+      id: appUser.id,
+      email: appUser.email,
+      locale: appUser.locale,
+      reverifyDueAt: appUser.reverifyDueAt,
+    })
     .from(appUser)
     .where(
       and(

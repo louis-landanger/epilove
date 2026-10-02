@@ -17,9 +17,17 @@ export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => ENTITIES[character] ?? character);
 }
 
-export function layout(options: { preheader: string; body: string; footer: string }): string {
+/** Same codes as `LOCALES` in `@epilove/core` (PLT-04). */
+export type EmailLocale = "fr" | "en";
+
+export function layout(options: {
+  preheader: string;
+  body: string;
+  footer: string;
+  locale?: EmailLocale;
+}): string {
   return `<!doctype html>
-<html lang="fr">
+<html lang="${options.locale ?? "fr"}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,5 +49,38 @@ export function layout(options: { preheader: string; body: string; footer: strin
 </html>`;
 }
 
-export const FOOTER =
-  "Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées. Tu reçois cet email parce que ton adresse d'école a été saisie sur Epilove.";
+const FOOTERS: Record<EmailLocale, string> = {
+  fr: "Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées. Tu reçois cet email parce que ton adresse d'école a été saisie sur Epilove.",
+  en: "An independent student project, not affiliated with IONIS Education Group or the schools mentioned. You are receiving this email because your school address was entered on Epilove.",
+};
+
+export const FOOTER = FOOTERS.fr;
+
+export function footerFor(locale: EmailLocale): string {
+  return FOOTERS[locale];
+}
+
+/** Dates in emails: campus time zone, long format in the reader's language. */
+export function longDate(date: Date, locale: EmailLocale): string {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", {
+    dateStyle: "long",
+    timeZone: "Europe/Paris",
+  }).format(date);
+}
+
+export function paragraphs(lines: readonly string[]): string {
+  return lines.map((line) => `<p style="margin:0 0 12px 0;">${escapeHtml(line)}</p>`).join("\n");
+}
+
+export function heading(text: string): string {
+  return `<p style="margin:0 0 16px 0;font-size:22px;font-weight:600;">${escapeHtml(text)}</p>`;
+}
+
+export function button(href: string, label: string): string {
+  return `<p style="margin:16px 0 0 0;"><a href="${escapeHtml(href)}" style="color:#c2187a;font-weight:600;">${escapeHtml(label)}</a></p>`;
+}
+
+/** "Label : value" with the French space before the colon, "Label: value" in English. */
+export function labelled(label: string, value: string, locale: EmailLocale): string {
+  return locale === "fr" ? `${label} : ${value}` : `${label}: ${value}`;
+}
