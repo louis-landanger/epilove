@@ -38,11 +38,12 @@
 | Guide d'installation | PLT-01 | `/aide/installer` : onglets iPhone, Android et Ordinateur (détection automatique), illustration animée synchronisée avec les étapes (pause, choix d'une étape, mouvement réduit respecté), bouton « Installer » quand le navigateur expose `beforeinstallprompt`, rappel que les notifications iOS exigent l'app installée ; bandeau discret sur téléphone dans l'app (masquable, mémorisé dans le navigateur), liens depuis l'aide et les réglages | `components/acces/install/platform.test.ts`, e2e `install.spec.ts` |
 | Vérification photo par geste | ONB-08 | `/profil/verification` : geste tiré au hasard (8 gestes, jamais deux fois le même), valable 15 minutes, selfie pris avec la caméra (aperçu en direct) ou l'appareil photo du téléphone, envoi présigné, ré-encodage par le worker (`media/process-selfie`, EXIF supprimé), file `/verifications` du back-office (selfie à côté des photos du profil, A / R au clavier, 4 motifs), badge « Photo vérifiée » (`app_user.photo_verified_at`), email de résultat. Comparaison à l'œil uniquement, sans reconnaissance faciale ; le selfie est supprimé dès la décision ; 3 essais par jour | `packages/core/src/profiles/verification.test.ts`, `packages/api/src/modules/verification.test.ts`, `apps/worker/src/tasks/media/process-selfie.test.ts`, e2e `verification.spec.ts` (fausse caméra Chromium) et `apps/admin/e2e` |
 | Prompts vocaux | PRO-06 | Sur une réponse enregistrée : enregistrement de 30 s max (MediaRecorder, WebM/Opus ou MP4/AAC selon le navigateur), niveaux en direct, forme d'onde de 48 barres, réécoute, envoi présigné (1 Mo max), contrôle du vrai format par le worker (`media/process-voice`), lecture via `/api/voice/:id` signée HMAC et expirante (1 h, `Range` géré pour Safari), réenregistrement, suppression. La réponse écrite sert de transcription (accessibilité, modération) ; la colonne `transcript` reste réservée à une transcription automatique future. Modifier le texte garde le vocal ; changer de prompt le supprime | `packages/core`, `packages/media/src/audio.test.ts`, `packages/api/src/lib/voice-url.test.ts`, `profile.test.ts`, `apps/worker/src/tasks/media/process-voice.test.ts`, e2e `voice.spec.ts` (faux micro Chromium) |
+| Verrouillage de l'application | SAF-13 | Réglage propre à l'appareil (rien côté serveur) : déverrouillage par passkey (vérification locale de l'utilisateur, bit UV contrôlé, sans nouvelle session) ou par code de 4 à 6 chiffres (PBKDF2 salé dans le navigateur, 5 essais puis déconnexion), verrouillage à l'ouverture d'un onglet et après 0, 1, 5 ou 15 minutes en arrière-plan (marge de 10 s), script inline avec nonce qui masque l'app avant le premier rendu | `components/acces/lock/lock-config.test.ts`, e2e `lock.spec.ts` |
 
 ## Pas encore fait
 
 - Vitrine : JavaScript initial de `/` à 196 Ko gzip (budget 180 Ko, dont 185 Ko pour React, Next et next-intl) ; WebGPU non vérifié sur un vrai GPU ; effectifs par école estimés (à confirmer) ; pas de design sonore ni de préchargeur.
-- Palier 3 : filigrane dynamique (SAF-12), verrouillage de l'application (SAF-13), Storybook, design sonore de la vitrine, connexion Microsoft (ONB-10), Lighthouse CI.
+- Palier 3 : filigrane dynamique (SAF-12), Storybook, design sonore de la vitrine, connexion Microsoft (ONB-10), Lighthouse CI.
 
 ## Fichiers partagés modifiés
 
@@ -74,6 +75,7 @@
 | `apps/web/next.config.ts` | `Permissions-Policy` : `camera=(self)` (selfie de vérification) et `microphone=(self)` (prompts vocaux), au lieu de `()` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | Ajout : `verification` |
 | `packages/media/package.json` | Export `./audio`, dépendance `@epilove/core` |
+| `apps/web/app/(app)/layout.tsx` | Script inline (nonce) et `AppLock` du verrouillage ; la navigation et `#contenu` sont masqués sous `html[data-locked]`. Les pages de B héritent du verrouillage sans rien faire |
 | `packages/media/src/storage.ts` | `presignUpload(…, maxBytes)` : plafond par appel (1 Mo pour les vocaux) |
 | `apps/web/i18n/paths.ts` (nouveau) | `publicHref(locale, chemin)` et `publicAlternates` pour les liens vers les pages publiques |
 

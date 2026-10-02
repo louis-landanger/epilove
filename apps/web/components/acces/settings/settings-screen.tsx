@@ -20,6 +20,7 @@ import { type FormEvent, type ReactNode, useState } from "react";
 import { publicHref } from "@/i18n/paths";
 import { api, errorCode } from "../api-client";
 import { LocaleSwitcher } from "../locale/locale-switcher";
+import { LockSettings } from "../lock/lock-settings";
 import { DataExport } from "./data-export";
 import { DeleteAccount } from "./delete-account";
 import { Section } from "./section";
@@ -30,6 +31,8 @@ type HiddenContact = { id: string; hint: string; createdAt: string };
 type Blocked = { userId: string; firstName: string | null; blockedAt: string };
 
 export interface SettingsScreenProps {
+  /** The member, for settings kept on this device (app lock). */
+  readonly userId: string;
   readonly account: Account;
   readonly settings: PrivacySettings;
   readonly hiddenContacts: readonly HiddenContact[];
@@ -39,7 +42,13 @@ export interface SettingsScreenProps {
 const AGE_SLIDER_MAX = 45;
 
 /** Settings (SAF-03 to SAF-07, SAF-14, ONB-05 withdrawal). */
-export function SettingsScreen({ account, settings: initial, hiddenContacts, blocked }: SettingsScreenProps) {
+export function SettingsScreen({
+  userId,
+  account,
+  settings: initial,
+  hiddenContacts,
+  blocked,
+}: SettingsScreenProps) {
   const t = useTranslations("settings");
   const locale = useLocale() as Locale;
   const toast = useToast();
@@ -137,6 +146,10 @@ export function SettingsScreen({ account, settings: initial, hiddenContacts, blo
       </Section>
 
       <SecuritySection email={account.email} />
+
+      <Section id="lock" title={t("lock.title")}>
+        <LockSettings userId={userId} />
+      </Section>
 
       <Section id="data" title={t("data.title")}>
         <DataExport />

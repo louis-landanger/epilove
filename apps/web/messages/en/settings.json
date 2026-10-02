@@ -73,6 +73,48 @@
     "title": "Language",
     "hint": "The Epilove interface and emails. Your choice follows your account on all your devices."
   },
+  "lock": {
+    "title": "App lock",
+    "toggle": "Lock the app on this device",
+    "toggleHelp": "When opening it and after a while in the background. Handy if you lend your phone. The setting stays on this device.",
+    "method": "Unlock with",
+    "methods": {
+      "passkey": {
+        "label": "Face ID, fingerprint or device code",
+        "help": "With one of your passkeys."
+      },
+      "pin": {
+        "label": "An Epilove code",
+        "help": "4 to 6 digits, different from your phone code."
+      }
+    },
+    "noPasskey": "First add a passkey in the Security section to use biometrics.",
+    "pin": "Code (4 to 6 digits)",
+    "pinConfirm": "Confirm the code",
+    "pinMismatch": "The two codes do not match.",
+    "pinInvalid": "The code must have 4 to 6 digits.",
+    "timeout": "Lock after",
+    "timeouts": {
+      "0": "Immediately",
+      "1": "1 minute",
+      "5": "5 minutes",
+      "15": "15 minutes"
+    },
+    "save": "Turn on the lock",
+    "enabled": "App lock is on for this device.",
+    "disabled": "App lock is off.",
+    "screen": {
+      "title": "Epilove is locked",
+      "lead": "Unlock to continue.",
+      "passkey": "Unlock",
+      "passkeyFailed": "The check did not go through. Try again.",
+      "pin": "Your code",
+      "unlock": "Unlock",
+      "wrongPin": "Wrong code. {left, plural, one {# attempt} other {# attempts}} left before signing out.",
+      "forgot": "Forgot the code? Sign out",
+      "forgotHelp": "You will sign in again with your school address; the lock will be removed from this device."
+    }
+  },
   "security": {
     "title": "Sign-in and security",
     "email": "Sign-in address",

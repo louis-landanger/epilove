@@ -73,6 +73,48 @@
     "title": "Langue",
     "hint": "L'interface et les emails d'Epilove. Ton choix suit ton compte sur tous tes appareils."
   },
+  "lock": {
+    "title": "Verrouillage",
+    "toggle": "Verrouiller l'application sur cet appareil",
+    "toggleHelp": "À l'ouverture et après un moment en arrière-plan. Pratique si tu prêtes ton téléphone. Le réglage reste sur cet appareil.",
+    "method": "Déverrouiller avec",
+    "methods": {
+      "passkey": {
+        "label": "Face ID, empreinte ou code de l'appareil",
+        "help": "Avec une de tes passkeys."
+      },
+      "pin": {
+        "label": "Un code Epilove",
+        "help": "4 à 6 chiffres, différent de ton code de téléphone."
+      }
+    },
+    "noPasskey": "Ajoute d'abord une passkey dans la section Sécurité pour utiliser la biométrie.",
+    "pin": "Code (4 à 6 chiffres)",
+    "pinConfirm": "Confirme le code",
+    "pinMismatch": "Les deux codes ne correspondent pas.",
+    "pinInvalid": "Le code doit contenir 4 à 6 chiffres.",
+    "timeout": "Verrouiller après",
+    "timeouts": {
+      "0": "Immédiatement",
+      "1": "1 minute",
+      "5": "5 minutes",
+      "15": "15 minutes"
+    },
+    "save": "Activer le verrouillage",
+    "enabled": "Verrouillage activé sur cet appareil.",
+    "disabled": "Verrouillage désactivé.",
+    "screen": {
+      "title": "Epilove est verrouillée",
+      "lead": "Déverrouille pour continuer.",
+      "passkey": "Déverrouiller",
+      "passkeyFailed": "La vérification n'a pas abouti. Réessaie.",
+      "pin": "Ton code",
+      "unlock": "Déverrouiller",
+      "wrongPin": "Code incorrect. {left, plural, one {Encore # essai} other {Encore # essais}} avant la déconnexion.",
+      "forgot": "Code oublié ? Se déconnecter",
+      "forgotHelp": "Tu te reconnecteras avec ton adresse d'école ; le verrouillage sera retiré de cet appareil."
+    }
+  },
   "security": {
     "title": "Connexion et sécurité",
     "email": "Adresse de connexion",

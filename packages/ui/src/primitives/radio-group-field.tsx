@@ -9,6 +9,7 @@ export interface RadioOption<T extends string> {
   readonly value: T;
   readonly label: ReactNode;
   readonly description?: ReactNode;
+  readonly disabled?: boolean;
 }
 
 export interface RadioGroupFieldProps<T extends string> {
@@ -45,10 +46,14 @@ export function RadioGroupField<T extends string>({
           // biome-ignore lint/a11y/noLabelWithoutControl: Radio.Root renders the control inside the label
           <label
             key={option.value}
-            className="flex cursor-pointer items-start gap-3 rounded-2xl border border-paper/10 px-4 py-3 transition-colors hover:border-paper/30 has-[[data-checked]]:border-plasma has-[[data-checked]]:bg-plasma/10"
+            className={cn(
+              "flex cursor-pointer items-start gap-3 rounded-2xl border border-paper/10 px-4 py-3 transition-colors hover:border-paper/30 has-[[data-checked]]:border-plasma has-[[data-checked]]:bg-plasma/10",
+              option.disabled && "cursor-not-allowed opacity-60 hover:border-paper/10",
+            )}
           >
             <Radio.Root
               value={option.value}
+              disabled={option.disabled}
               className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-paper/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-volt data-[checked]:border-plasma"
             >
               <Radio.Indicator className="size-2.5 rounded-full bg-plasma data-[unchecked]:hidden" />
