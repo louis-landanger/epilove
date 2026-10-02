@@ -78,5 +78,19 @@
     "attribution": "Extrait fourni par Apple Music",
     "open": "Ouvrir dans Apple Music",
     "saved": "Ton son du moment est sur ton profil."
+  },
+  "share": {
+    "open": "Partager ma carte",
+    "title": "Ta carte holographique",
+    "lead": "Une image à partager où tu veux. Tu choisis ce qu'elle montre ; elle n'est enregistrée nulle part en ligne.",
+    "name": "Mon prénom",
+    "school": "Mon école",
+    "interests": "Mes centres d'intérêt",
+    "song": "Mon son du moment",
+    "prompt": "Une réponse à afficher",
+    "noPrompt": "Aucune",
+    "preview": "Aperçu de ta carte",
+    "download": "Télécharger",
+    "share": "Partager"
   }
 }

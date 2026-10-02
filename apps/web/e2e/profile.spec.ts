@@ -37,6 +37,18 @@ test.describe("my profile", () => {
     await expect(preview.getByText("Cycle ingénieur aéro")).toBeVisible();
     await expect(preview.getByText("Anglais")).toBeVisible();
 
+    // Shareable card (PRO-08): generated for the owner only.
+    await page.getByRole("button", { name: "Partager ma carte" }).click();
+    const card = page
+      .getByRole("dialog", { name: "Ta carte holographique" })
+      .getByRole("img", { name: "Aperçu de ta carte" });
+    await expect(card).toBeVisible();
+    await expect.poll(() => card.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1080);
+    const png = await page.request.get("/profil/carte?prenom=1&ecole=1");
+    expect(png.headers()["content-type"]).toBe("image/png");
+    expect(png.headers()["cache-control"]).toContain("no-store");
+    await page.keyboard.press("Escape");
+
     // Edits survive a reload (server-rendered from the API).
     await page.reload();
     await expect(page.getByRole("article", { name: "Inès" }).getByText("Cycle ingénieur aéro")).toBeVisible();

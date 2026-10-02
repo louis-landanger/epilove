@@ -28,6 +28,7 @@ import { CompletenessGauge } from "./completeness-gauge";
 import { InterestsPicker } from "./interests-picker";
 import { ProfilePreview, type ProfilePreviewData } from "./profile-preview";
 import { invalidSlots, PromptAnswersEditor, type PromptSlot, promptSlots } from "./prompt-answers-editor";
+import { ShareCard } from "./share-card";
 
 export interface ProfileScreenProps {
   readonly initialProfile: OwnProfile;
@@ -100,6 +101,7 @@ export function ProfileScreen({ initialProfile, initialPhotos, catalog }: Profil
         </nav>
       </header>
       <CompletenessGauge completeness={profile.completeness} />
+      <ShareCard profile={profile} catalog={catalog} />
       <Tabs
         label={t("tabs.label")}
         defaultValue="preview"

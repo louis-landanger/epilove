@@ -78,5 +78,19 @@
     "attribution": "Preview provided by Apple Music",
     "open": "Open in Apple Music",
     "saved": "Your current song is on your profile."
+  },
+  "share": {
+    "open": "Share my card",
+    "title": "Your holographic card",
+    "lead": "An image to share wherever you like. You choose what it shows; it isn't stored anywhere online.",
+    "name": "My first name",
+    "school": "My school",
+    "interests": "My interests",
+    "song": "My current song",
+    "prompt": "An answer to show",
+    "noPrompt": "None",
+    "preview": "Preview of your card",
+    "download": "Download",
+    "share": "Share"
   }
 }
