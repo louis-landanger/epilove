@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const port = 3100;
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 3100);
 const baseURL = `http://127.0.0.1:${port}`;
 // Lets environments with a preinstalled Chromium skip `playwright install`.
 const executablePath = process.env.PW_CHROMIUM_PATH;
@@ -24,6 +24,8 @@ export default defineConfig({
     command: `pnpm start --port ${port}`,
     url: `${baseURL}/api/health`,
     reuseExistingServer: !process.env.CI,
+    // The auth server checks request origins against APP_URL.
+    env: { APP_URL: baseURL, PASSKEY_RP_ID: "127.0.0.1" },
     timeout: 120_000,
   },
 });

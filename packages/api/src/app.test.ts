@@ -63,6 +63,9 @@ describe("viewer resolution", () => {
       resolve(new Request("http://x", { headers: { "x-dev-user-id": "admin" } })),
     ).resolves.toBeNull();
     await expect(resolve(new Request("http://x"))).resolves.toBeNull();
+    await expect(
+      resolve(new Request("http://x", { headers: { cookie: `theme=dark; epilove_dev_user=${id}` } })),
+    ).resolves.toEqual({ userId: id, role: "user" });
   });
 
   it("refuses to run outside development and test, including when APP_ENV is unset", () => {

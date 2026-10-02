@@ -1,0 +1,12 @@
+{
+  "label": "Main navigation",
+  "discover": "Discover",
+  "likes": "Likes",
+  "messages": "Messages",
+  "campus": "Campus",
+  "profile": "Profile",
+  "settings": "Settings",
+  "help": "Help",
+  "skipToContent": "Skip to content",
+  "unread": "{count, plural, one {# unread} other {# unread}}"
+}

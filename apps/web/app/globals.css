@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "@epilove/tokens/theme.css";
 
+/* Classes used by the design system package. */
+@source "../../../packages/ui/src";
+
 @theme inline {
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-instrument), ui-serif, Georgia, serif;

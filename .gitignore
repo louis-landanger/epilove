@@ -28,3 +28,6 @@ __pycache__/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Agent worktrees
+.claude/worktrees/

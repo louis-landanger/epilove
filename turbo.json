@@ -14,7 +14,7 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
-      "passThroughEnv": ["DATABASE_URL", "SMTP_URL", "MAILPIT_URL"]
+      "passThroughEnv": ["DATABASE_URL", "MAILPIT_URL", "SMTP_URL", "VALKEY_URL"]
     },
     "test:e2e": {
       "dependsOn": ["build"],

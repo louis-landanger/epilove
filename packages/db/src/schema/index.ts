@@ -1,3 +1,4 @@
+export * from "./auth";
 export * from "./campus";
 export * from "./discovery";
 export * from "./messaging";

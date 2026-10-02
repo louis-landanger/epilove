@@ -20,21 +20,32 @@ allowBuilds:
 # Shared dependency versions, referenced as "catalog:" in package.json files.
 catalog:
   '@axe-core/playwright': 4.13.0
+  '@base-ui/react': 1.8.0
+  '@better-auth/passkey': 1.7.7
   '@orpc/client': 1.15.4
   '@orpc/contract': 1.15.4
   '@orpc/server': 1.15.4
   '@playwright/test': 1.63.0
   '@tailwindcss/postcss': 4.3.3
+  '@testing-library/react': 16.3.3
+  '@testing-library/user-event': 14.6.7
   '@types/node': 24.19.0
   '@types/nodemailer': 8.0.2
   '@types/react': 19.3.0
   '@types/react-dom': 19.3.0
+  '@vitejs/plugin-react': 6.1.1
   babel-plugin-react-compiler: 1.0.0
+  better-auth: 1.7.7
+  clsx: 2.1.1
   drizzle-kit: 0.31.11
   drizzle-orm: 0.45.3
   fast-check: 4.10.2
   graphile-worker: 0.18.0
+  happy-dom: 20.14.5
   hono: 4.13.12
+  ioredis: 6.0.0
+  lucide-react: 1.49.0
+  motion: 13.5.0
   next: 16.3.8
   next-intl: 4.14.8
   nodemailer: 10.0.13
@@ -42,6 +53,8 @@ catalog:
   react: 19.3.0
   react-dom: 19.3.0
   server-only: 0.0.1
+  tailwind-merge: 3.7.0
+  tailwind-variants: 3.3.1
   tailwindcss: 4.3.3
   tsx: 4.23.15
   typescript: 7.0.2

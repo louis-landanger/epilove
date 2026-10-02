@@ -9,9 +9,14 @@
 
 export const colors = {
   ink: "oklch(0.15 0.02 285)",
+  /** Raised surfaces on the dark theme (sheets, popovers). */
+  ink2: "oklch(0.2 0.025 285)",
   paper: "oklch(0.97 0.01 85)",
   plasma: "oklch(0.68 0.25 350)",
   volt: "oklch(0.9 0.19 125)",
+  /** System states only, never decorative. */
+  danger: "oklch(0.7 0.19 25)",
+  success: "oklch(0.78 0.16 155)",
 } as const;
 
 export const schoolColors = {

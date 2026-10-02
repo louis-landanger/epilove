@@ -74,3 +74,19 @@ export const waitlistEntry = pgTable("waitlist_entry", {
   referredBy: uuid(),
   createdAt: createdAt(),
 });
+
+/**
+ * Legal retention after an account is closed (docs/08-juridique-rgpd.md,
+ * décret n° 2021-1362): only the identity already collected, in a separate
+ * table that only the purge job and authorised staff read.
+ */
+export const identityVault = pgTable("identity_vault", {
+  id: id(),
+  /** Not a foreign key: the account itself is deleted. */
+  formerUserId: uuid().notNull(),
+  email: text().notNull(),
+  firstName: text(),
+  birthDate: text(),
+  closedAt: createdAt(),
+  purgeAfter: timestamp({ withTimezone: true }).notNull(),
+});

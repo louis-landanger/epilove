@@ -24,12 +24,16 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   transpilePackages: [
     "@epilove/api",
+    "@epilove/auth",
     "@epilove/contracts",
     "@epilove/core",
     "@epilove/db",
+    "@epilove/email",
+    "@epilove/rate-limit",
     "@epilove/tokens",
+    "@epilove/ui",
   ],
-  serverExternalPackages: ["postgres"],
+  serverExternalPackages: ["postgres", "ioredis", "nodemailer"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

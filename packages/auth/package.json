@@ -1,0 +1,36 @@
+{
+  "name": "@epilove/auth",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Authentication (Better Auth): school email one-time codes, passkeys, sessions, admin.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@better-auth/passkey": "catalog:",
+    "@epilove/core": "workspace:*",
+    "@epilove/crypto": "workspace:*",
+    "@epilove/db": "workspace:*",
+    "@epilove/email": "workspace:*",
+    "@epilove/rate-limit": "workspace:*",
+    "better-auth": "catalog:",
+    "drizzle-orm": "catalog:",
+    "ioredis": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@epilove/config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,7 +1,11 @@
+import authEn from "../messages/en/auth.json";
 import commonEn from "../messages/en/common.json";
 import homeEn from "../messages/en/home.json";
+import navEn from "../messages/en/nav.json";
+import authFr from "../messages/fr/auth.json";
 import commonFr from "../messages/fr/common.json";
 import homeFr from "../messages/fr/home.json";
+import navFr from "../messages/fr/nav.json";
 
 export const LOCALES = ["fr", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -13,8 +17,10 @@ export const DEFAULT_LOCALE: Locale = "fr";
  * one line per namespace, alphabetical (docs/sessions-paralleles.md).
  */
 const namespaces = {
+  auth: { fr: authFr, en: authEn },
   common: { fr: commonFr, en: commonEn },
   home: { fr: homeFr, en: homeEn },
+  nav: { fr: navFr, en: navEn },
 } as const;
 
 type Namespaces = typeof namespaces;
