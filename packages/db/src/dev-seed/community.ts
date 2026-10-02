@@ -1,8 +1,8 @@
 import { LYON_CAMPUS, questionForWeek, recentWeeks } from "@epilove/core";
 import type { Database } from "../client";
 import { activeWeeklyBank } from "../repositories/campus-community";
-import { weeklyAnswer } from "../schema";
-import type { DevMember } from "./members";
+import { availability, memberBadge, weeklyAnswer } from "../schema";
+import { type DevMember, devMemberId } from "./members";
 import type { Random } from "./random";
 
 /**
@@ -35,4 +35,31 @@ export async function seedDevWeeklyAnswers(
     await db.insert(weeklyAnswer).values(rows.slice(start, start + 1000));
   }
   return rows.length;
+}
+
+/**
+ * A few granted badges (COM-04) and "Dispo" statuses (IRL-05) on the
+ * personas, so that both show up in development.
+ */
+export async function seedDevBadgesAndAvailability(db: Database, now: Date) {
+  await db.insert(memberBadge).values([
+    { userId: devMemberId(1), badge: "photo_verified" },
+    { userId: devMemberId(2), badge: "ambassador" },
+    { userId: devMemberId(2), badge: "photo_verified" },
+    { userId: devMemberId(3), badge: "ambassador" },
+  ]);
+  await db.insert(availability).values([
+    {
+      userId: devMemberId(2),
+      activity: "coffee",
+      area: "campus",
+      until: new Date(now.getTime() + 3 * 3_600_000),
+    },
+    {
+      userId: devMemberId(4),
+      activity: "study",
+      area: "campus",
+      until: new Date(now.getTime() + 2 * 3_600_000),
+    },
+  ]);
 }

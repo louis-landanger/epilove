@@ -1,4 +1,6 @@
 export * from "./campus/schools";
+export * from "./community/availability";
+export * from "./community/badges";
 export * from "./community/community";
 export * from "./discovery/crush";
 export * from "./discovery/drop";

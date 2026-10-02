@@ -1,5 +1,6 @@
 import type { ChatMessage, MessageAttachment } from "@epilove/contracts";
 import {
+  availabilityShown,
   canMessage,
   checkDateProposal,
   checkDateResponse,
@@ -17,6 +18,7 @@ import {
 } from "@epilove/core";
 import { encryptText } from "@epilove/crypto";
 import type { Database } from "@epilove/db";
+import { availabilityOf } from "@epilove/db/repositories/campus-community";
 import { listSpots, spotById } from "@epilove/db/repositories/campus-life";
 import { loadProfileContent } from "@epilove/db/repositories/discovery";
 import { matchForMember } from "@epilove/db/repositories/matches";
@@ -465,6 +467,7 @@ export const messaging = {
     });
     const photo = otherContent?.photos[0];
     const bothShareOnline = Boolean(mine?.onlineStatus && theirs?.onlineStatus);
+    const dispo = (await availabilityOf(db, [other.member.id])).get(other.member.id);
 
     return {
       matchId: match.id,
@@ -483,6 +486,10 @@ export const messaging = {
       otherOnline: bothShareOnline
         ? await realtimePublisher().isOnline(personalChannel(other.member.id))
         : null,
+      otherAvailable:
+        dispo && availabilityShown(dispo, other.member, now)
+          ? { activity: dispo.activity, area: dispo.area, until: dispo.until.toISOString() }
+          : null,
       icebreakers: pickIcebreakers({
         sharedInterests: shared.map((i) => (input.locale === "en" ? i.labelEn : i.labelFr)),
         theirPrompts: (otherContent?.prompts ?? []).map((p) =>

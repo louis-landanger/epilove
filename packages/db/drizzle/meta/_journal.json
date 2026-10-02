@@ -120,6 +120,20 @@
       "when": 1790961581684,
       "tag": "0016_cool_frightful_four",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790962340640,
+      "tag": "0017_bitter_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790962423582,
+      "tag": "0018_curly_purple_man",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { MODES } from "@epilove/core";
+import { BADGES, MODES } from "@epilove/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 import { compatibilityView, contentLocale } from "./questionnaire";
@@ -32,6 +32,8 @@ export const memberCard = z.object({
   prompts: z.array(memberPrompt),
   interests: z.array(memberInterest),
   compatibility: compatibilityView.nullable(),
+  /** Discreet badges (COM-04): founder, verified photo, ambassador. Never about popularity. */
+  badges: z.array(z.enum(BADGES)),
 });
 export type MemberCard = z.infer<typeof memberCard>;
 

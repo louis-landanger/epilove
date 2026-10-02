@@ -1,6 +1,7 @@
 import type { MemberCard } from "@epilove/contracts";
-import { type AnswerSheet, ageOn, type Mode } from "@epilove/core";
+import { type AnswerSheet, ageOn, badgesOf, type Mode } from "@epilove/core";
 import type { Database } from "@epilove/db";
+import { grantedBadgesOf } from "@epilove/db/repositories/campus-community";
 import { loadProfileContent } from "@epilove/db/repositories/discovery";
 import type { MemberRow } from "@epilove/db/repositories/members";
 import { interestIdsOf } from "@epilove/db/repositories/members";
@@ -23,11 +24,12 @@ export async function buildCards(
     return [];
   }
   const ids = targets.map((t) => t.row.member.id);
-  const [content, questions, sheets, viewerInterests] = await Promise.all([
+  const [content, questions, sheets, viewerInterests, granted] = await Promise.all([
     loadProfileContent(db, ids),
     listActiveQuestions(db),
     answerSheets(db, [viewer.member.id, ...ids]),
     interestIdsOf(db, [viewer.member.id]),
+    grantedBadgesOf(db, ids),
   ]);
   const mine = viewerInterests.get(viewer.member.id) ?? new Set<string>();
   const viewerSheet: AnswerSheet = sheets.get(viewer.member.id) ?? new Map();
@@ -68,6 +70,7 @@ export async function buildCards(
         isSelf || sheet.size === 0 || viewerSheet.size === 0
           ? null
           : compatibilityView(questions, viewerSheet, sheet, locale),
+      badges: badgesOf({ createdAt: row.createdAt, granted: granted.get(row.member.id) ?? new Set() }),
     };
   });
 }

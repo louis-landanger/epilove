@@ -3,7 +3,9 @@ import { alias } from "drizzle-orm/pg-core";
 import type { Database } from "../client";
 import {
   appUser,
+  availability,
   match,
+  memberBadge,
   pactParticipant,
   pactResult,
   pactSeason,
@@ -164,4 +166,61 @@ export async function seasonAnswerCounts(db: Database, seasonId: string, section
       question.options,
       questionAnswer.answer,
     );
+}
+
+/** Badges granted to members (COM-04), by member. */
+export async function grantedBadgesOf(
+  db: Database,
+  userIds: readonly string[],
+): Promise<Map<string, Set<string>>> {
+  const result = new Map<string, Set<string>>();
+  if (userIds.length === 0) {
+    return result;
+  }
+  const rows = await db
+    .select({ userId: memberBadge.userId, badge: memberBadge.badge })
+    .from(memberBadge)
+    .where(inArray(memberBadge.userId, [...userIds]));
+  for (const row of rows) {
+    result.set(row.userId, (result.get(row.userId) ?? new Set()).add(row.badge));
+  }
+  return result;
+}
+
+export interface AvailabilityRow {
+  readonly activity: (typeof availability.$inferSelect)["activity"];
+  readonly area: (typeof availability.$inferSelect)["area"];
+  readonly until: Date;
+}
+
+/** "Dispo" statuses (IRL-05) of some members; the caller checks expiry and visibility. */
+export async function availabilityOf(
+  db: Database,
+  userIds: readonly string[],
+): Promise<Map<string, AvailabilityRow>> {
+  if (userIds.length === 0) {
+    return new Map();
+  }
+  const rows = await db
+    .select({
+      userId: availability.userId,
+      activity: availability.activity,
+      area: availability.area,
+      until: availability.until,
+    })
+    .from(availability)
+    .where(inArray(availability.userId, [...userIds]));
+  return new Map(rows.map(({ userId, ...row }) => [userId, row]));
+}
+
+/** Sets or clears (null) one's "Dispo" status. */
+export async function setAvailability(db: Database, userId: string, value: AvailabilityRow | null) {
+  if (!value) {
+    await db.delete(availability).where(eq(availability.userId, userId));
+    return;
+  }
+  await db
+    .insert(availability)
+    .values({ userId, ...value })
+    .onConflictDoUpdate({ target: availability.userId, set: { ...value, updatedAt: new Date() } });
 }

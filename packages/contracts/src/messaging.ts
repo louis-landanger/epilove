@@ -1,6 +1,7 @@
 import { MODES } from "@epilove/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
+import { availabilityView } from "./matches";
 import { contentLocale } from "./questionnaire";
 
 const UUIDV7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -96,6 +97,8 @@ export const threadView = z.object({
   otherLastReadId: z.uuid().nullable(),
   /** Only when both members share their online status, and only between matches. */
   otherOnline: z.boolean().nullable(),
+  /** The other member's "Dispo" status (IRL-05), while it lasts. */
+  otherAvailable: availabilityView.nullable(),
   icebreakers: z.array(icebreaker),
   /** Silent for a few days (CHAT-09): the screen suggests restarting with an icebreaker. */
   nudge: z.boolean(),

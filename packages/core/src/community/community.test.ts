@@ -1,5 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
+import { availabilityShown, checkAvailability } from "./availability";
+import { badgesOf } from "./badges";
 import {
   anonymousResults,
   crossSchoolIndex,
@@ -133,5 +135,41 @@ describe("anonymous aggregates (COM-01, COM-02, PAC-04)", () => {
       { a: "ipsa", b: "supbiotech", count: 21 },
       { a: "epita", b: "isg", count: 13 },
     ]);
+  });
+});
+
+describe("badges (COM-04)", () => {
+  it("makes founders of early members and shows granted badges, in a fixed order", () => {
+    const early = new Date("2026-11-01T10:00:00Z");
+    const late = new Date("2027-03-01T10:00:00Z");
+    expect(badgesOf({ createdAt: early, granted: new Set() })).toEqual(["founder"]);
+    expect(badgesOf({ createdAt: late, granted: new Set(["ambassador", "photo_verified"]) })).toEqual([
+      "photo_verified",
+      "ambassador",
+    ]);
+    expect(badgesOf({ createdAt: late, granted: new Set(["most_liked"]) })).toEqual([]);
+  });
+});
+
+describe("Dispo status (IRL-05)", () => {
+  const now = new Date("2026-10-02T12:00:00Z");
+  it("lasts between a quarter of an hour and twelve hours", () => {
+    expect(checkAvailability(new Date("2026-10-02T14:00:00Z"), now)).toEqual({ ok: true });
+    expect(checkAvailability(new Date("2026-10-02T12:10:00Z"), now)).toEqual({
+      ok: false,
+      reason: "too_short",
+    });
+    expect(checkAvailability(new Date("2026-10-03T01:00:00Z"), now)).toEqual({
+      ok: false,
+      reason: "too_long",
+    });
+  });
+
+  it("disappears when it expires or when the member pauses", () => {
+    const until = new Date("2026-10-02T14:00:00Z");
+    expect(availabilityShown({ until }, { status: "active" }, now)).toBe(true);
+    expect(availabilityShown({ until }, { status: "paused" }, now)).toBe(false);
+    expect(availabilityShown({ until }, { status: "active" }, until)).toBe(false);
+    expect(availabilityShown(null, { status: "active" }, now)).toBe(false);
   });
 });
