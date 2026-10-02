@@ -7,7 +7,7 @@ import {
   createTestMember,
   prepareTestDatabase,
 } from "@epilove/db/testing";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { computeDrops } from "./compute";
 import { dropTick } from "./tick";
@@ -27,6 +27,11 @@ describe.skipIf(!url)("evening Drop", () => {
   });
 
   it("proposes eligible profiles only, within the caps, then publishes once", async () => {
+    // Members left by an interrupted earlier run (same school and year) would join the Drop.
+    await db.execute(sql`
+      delete from ${schema.appUser} where ${schema.appUser.email} like 'test-%' and ${schema.appUser.id} in (
+        select ${schema.profile.userId} from ${schema.profile} where ${schema.profile.graduationYear} = 2040
+      )`);
     const viewer = await createTestMember(db, {
       firstName: "Vera",
       gender: "woman",

@@ -4,6 +4,7 @@ import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epil
 import { createMemoryPublisher } from "@epilove/realtime";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { setGiphyFetch } from "../rencontre/giphy";
 import { setRealtimePublisher } from "../rencontre/realtime";
 import { createTestApi } from "../rencontre/testing";
 
@@ -175,6 +176,67 @@ describe.skipIf(!url)("messaging", () => {
     expect(
       (await as(b).messaging.history({ matchId, limit: 10 })).messages.find((m) => m.id === calm)?.flagged,
     ).toBe(false);
+  });
+
+  it("sends house stickers, and shows them in the conversation list (CHAT-05)", async () => {
+    const { a, b, matchId } = await conversation();
+    const id = newId();
+    const sent = await as(a).messaging.sendSticker({ id, matchId, sticker: "bond", replyTo: null });
+    expect(sent.message).toMatchObject({
+      kind: "sticker",
+      text: "",
+      attachment: { type: "sticker", sticker: "bond" },
+    });
+    await expect(
+      as(a).messaging.sendSticker({ id: newId(), matchId, sticker: "not-a-sticker", replyTo: null }),
+    ).rejects.toMatchObject({ message: "unknown_sticker" });
+    const list = await as(b).matches.list({ locale: "fr" });
+    expect(list.matches.find((m) => m.matchId === matchId)?.lastMessage).toMatchObject({
+      kind: "sticker",
+      preview: "",
+      fromMe: false,
+    });
+  });
+
+  it("keeps GIFs off without a GIPHY key, and only shows GIPHY media with one (CHAT-05)", async () => {
+    const { a, matchId } = await conversation();
+    const previous = process.env.GIPHY_API_KEY;
+    delete process.env.GIPHY_API_KEY;
+    try {
+      expect(await as(a).messaging.gifs({ query: "chat" })).toEqual({ enabled: false, gifs: [] });
+      process.env.GIPHY_API_KEY = "test-key";
+      const asked: string[] = [];
+      setGiphyFetch(async (input) => {
+        const url = String(input);
+        asked.push(url);
+        const item = (id: string, host: string) => ({
+          id,
+          title: `GIF ${id}`,
+          images: {
+            fixed_width: { url: `https://${host}/media/${id}/200w.gif`, width: "200", height: "150" },
+          },
+        });
+        const body = url.includes("/search")
+          ? { data: [item("abc", "media1.giphy.com"), item("evil", "tracker.example")] }
+          : { data: item("abc", "media1.giphy.com") };
+        return new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
+      });
+      const result = await as(a).messaging.gifs({ query: "chat" });
+      expect(result.gifs.map((g) => g.id)).toEqual(["abc"]);
+      expect(asked[0]).not.toContain(a);
+      const sent = await as(a).messaging.sendGif({ id: newId(), matchId, gifId: "abc", replyTo: null });
+      expect(sent.message.attachment).toMatchObject({
+        type: "gif",
+        url: "https://media1.giphy.com/media/abc/200w.gif",
+      });
+    } finally {
+      setGiphyFetch(undefined);
+      if (previous === undefined) {
+        delete process.env.GIPHY_API_KEY;
+      } else {
+        process.env.GIPHY_API_KEY = previous;
+      }
+    }
   });
 
   it("relays typing to the other member only", async () => {

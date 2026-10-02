@@ -79,5 +79,35 @@
     "edit": "Le reformuler",
     "sendAnyway": "Envoyer quand même"
   },
-  "flagged": "Ce message te dérange ? Signaler"
+  "flagged": "Ce message te dérange ? Signaler",
+  "stickers": {
+    "title": "Stickers et GIF",
+    "stickers": "Stickers",
+    "gifs": "GIF",
+    "search": "Chercher un GIF",
+    "giphy": "Propulsé par GIPHY",
+    "names": {
+      "atom-heart": "Atome amoureux",
+      "bond": "Liaison",
+      "spark": "Étincelle",
+      "coffee": "Un café ?",
+      "laugh": "Mort de rire",
+      "blush": "Rougissant",
+      "wow": "Waouh",
+      "cheers": "Santé !",
+      "school-epita": "Team EPITA",
+      "school-esme": "Team ESME",
+      "school-supbiotech": "Team Sup'Biotech",
+      "school-isg": "Team ISG",
+      "school-ipsa": "Team IPSA"
+    }
+  },
+  "previewKinds": {
+    "sticker": "Sticker",
+    "gif": "GIF",
+    "image": "Photo",
+    "voice": "Message vocal",
+    "date_proposal": "Proposition de date",
+    "system": "Message"
+  }
 }

@@ -13,6 +13,7 @@
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
 | 1 | Notifications (NOT-01 à NOT-03) | ✅ fait et testé (API, worker, Playwright pour le service worker) ; push réel non testé en automatique (pas de service de push dans la session) |
+| 2 | Stickers maison et GIF (CHAT-05) | ✅ fait et testé (API avec GIPHY simulé) ; GIPHY désactivé sans clé |
 | 2 | Modifier / supprimer (CHAT-08), avertissement avant envoi (SAF-09), « Ce message te dérange ? » (SAF-10) | ✅ fait et testé (cœur, API, Playwright) |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
@@ -93,6 +94,14 @@
 - Mesures : séquence démarrée 830 ms après l'heure sur deux navigateurs (2 ms d'écart) ; dry run 3 000 membres en 2 min 30 s (détail dans le README du solveur).
 - Chorégraphie faite avec Motion (déjà présent) plutôt que GSAP (docs/02 le suggère) : pas de dépendance supplémentaire pour une séquence de quelques secondes.
 
+### Stickers et GIF (CHAT-05)
+
+- 13 stickers maison (`packages/core/src/messaging/stickers.ts` pour les identifiants, dessins SVG dans `apps/web/components/rencontre/chat/stickers.tsx`) : atomes, liaison, étincelle, café, visages, et un sticker par école aux couleurs et glyphes de l'app (jamais un logo d'école).
+- Nouveau type de message `sticker` (migration 0009) ; les messages non textuels gardent une petite charge JSON dans le corps chiffré (`chatMessage.attachment`). Aperçu de la liste des conversations par type (`lastMessage.kind`).
+- GIF GIPHY derrière un drapeau : actif seulement si `GIPHY_API_KEY` est défini. Recherche relayée par l'API (seuls les mots cherchés partent chez GIPHY, jamais l'identité), GIF re-téléchargé par identifiant avant l'envoi (aucune URL arbitraire), hôtes `*.giphy.com` seulement, mention « Propulsé par GIPHY ». **À l'activation** : ajouter `media*.giphy.com` à la CSP `img-src` (A) et le mentionner dans la politique de confidentialité (les images sont chargées depuis GIPHY).
+- Sélecteur dans la zone de saisie (onglets Stickers / GIF quand GIPHY est actif).
+- Robustesse : un corps de message indéchiffrable (clé retirée) s'affiche vide au lieu de faire échouer toute la conversation.
+
 ### Modifier, supprimer, avertir (CHAT-08, SAF-09, SAF-10)
 
 - Règles dans `packages/core/src/messaging/rules.ts` : modification (texte seulement) et suppression pour tout le monde par l'expéditeur, dans les 10 minutes (même fenêtre pour les deux : on ne réécrit pas un vieux message après un signalement) ; `needsSendWarning` (insulte) et `isPotentiallyOffensive` (insulte, cris).
@@ -140,6 +149,7 @@
 | `.env.example` | section `# Session B` |
 | `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge` (ajouts) |
 | `apps/worker/package.json` | dépendance `@epilove/core`, scripts `pact:compute`, `pact:demo`, `drop:run` |
+| `turbo.json` | `ENCRYPTION_KEYS`, `ENCRYPTION_CURRENT_KEY_ID` et `EMAIL_HMAC_SECRET` transmis aux tests : le test du dépôt `members` ré-exécute le seed de développement, qui chiffrait sinon les messages fictifs avec la clé de test, illisibles ensuite par `pnpm dev` |
 | `.github/workflows/ci.yml` | job `pact-solver` (uv installé par `pipx`, ruff, pytest) : les tests Python ne passent pas par `pnpm test`, faute d'`uv` dans le job `quality` |
 | `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base) et second `webServer` pour le worker |
 | `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media`, `@epilove/realtime` ; `serverExternalPackages` : `esbuild`, `esbuild-wasm` (Serwist) |
@@ -147,6 +157,8 @@
 | `infra/scripts/cloud-docker.sh` | repli sur l'image Docker Hub `darthsim/imgproxy` (même version) quand le proxy de la session cloud bloque les téléchargements de ghcr.io |
 
 ## Variables d'environnement
+
+- `GIPHY_API_KEY` (facultative, API) : active les GIF (CHAT-05). Absente : stickers seulement.
 
 - `PACT_SOLVER_COMMAND`, `PACT_SOLVER_DIRECTORY` (facultatives, worker) : commande et dossier du solveur du Pacte dans un conteneur (par défaut `uv run --frozen --extra cpsat python -m pact_solver` depuis `apps/pact-solver`).
 
@@ -156,6 +168,7 @@
 
 ## Migrations
 
+- `0009_*` : type de message `sticker`.
 - `0008_*` : table `secret_crush`.
 - `0007_*` : table `drop_run`, index `drop (day)`.
 - `0006_*` : `pact_season.report`, `computed_at`, `revealed_at` ; `pact_result.match_id` (+ index `(season_id, user_high)`).

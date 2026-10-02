@@ -14,7 +14,15 @@ export const matchSummary = z.object({
     school: z.object({ slug: z.string(), name: z.string() }),
   }),
   /** Short preview of the last message, decrypted for the viewer only. */
-  lastMessage: z.object({ preview: z.string(), at: z.iso.datetime(), fromMe: z.boolean() }).nullable(),
+  lastMessage: z
+    .object({
+      /** Text of a text message; empty for the other kinds, named by `kind`. */
+      preview: z.string(),
+      kind: z.string(),
+      at: z.iso.datetime(),
+      fromMe: z.boolean(),
+    })
+    .nullable(),
   unread: z.number().int(),
 });
 export type MatchSummary = z.infer<typeof matchSummary>;

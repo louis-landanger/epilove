@@ -79,5 +79,35 @@
     "edit": "Rephrase it",
     "sendAnyway": "Send anyway"
   },
-  "flagged": "Does this message bother you? Report"
+  "flagged": "Does this message bother you? Report",
+  "stickers": {
+    "title": "Stickers and GIFs",
+    "stickers": "Stickers",
+    "gifs": "GIFs",
+    "search": "Search a GIF",
+    "giphy": "Powered by GIPHY",
+    "names": {
+      "atom-heart": "Atom in love",
+      "bond": "Bond",
+      "spark": "Spark",
+      "coffee": "Coffee?",
+      "laugh": "Laughing",
+      "blush": "Blushing",
+      "wow": "Wow",
+      "cheers": "Cheers!",
+      "school-epita": "Team EPITA",
+      "school-esme": "Team ESME",
+      "school-supbiotech": "Team Sup'Biotech",
+      "school-isg": "Team ISG",
+      "school-ipsa": "Team IPSA"
+    }
+  },
+  "previewKinds": {
+    "sticker": "Sticker",
+    "gif": "GIF",
+    "image": "Photo",
+    "voice": "Voice message",
+    "date_proposal": "Date proposal",
+    "system": "Message"
+  }
 }

@@ -5,6 +5,27 @@ import { contentLocale } from "./questionnaire";
 
 const UUIDV7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
+/** What a non-text message carries (CHAT-05 to CHAT-10). */
+export const messageAttachment = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("sticker"), sticker: z.string() }),
+  z.object({
+    type: z.literal("gif"),
+    url: z.string(),
+    width: z.number().int(),
+    height: z.number().int(),
+    title: z.string(),
+  }),
+]);
+export type MessageAttachment = z.infer<typeof messageAttachment>;
+
+export const gifResult = z.object({
+  id: z.string(),
+  url: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+  title: z.string(),
+});
+
 export const chatMessage = z.object({
   id: z.uuid(),
   senderId: z.uuid().nullable(),
@@ -18,6 +39,7 @@ export const chatMessage = z.object({
   deleted: z.boolean(),
   /** Detected as potentially offensive (SAF-10): the recipient is offered a one-tap report. */
   flagged: z.boolean(),
+  attachment: messageAttachment.nullable(),
 });
 export type ChatMessage = z.infer<typeof chatMessage>;
 
@@ -77,6 +99,34 @@ export const messagingContract = {
       }),
     )
     .output(z.object({ message: chatMessage, flags: z.array(z.string()) })),
+  /** Sends a house sticker (CHAT-05). Idempotent like `send`. */
+  sendSticker: oc
+    .input(
+      z.object({
+        id: z.string().regex(UUIDV7),
+        matchId: z.uuid(),
+        sticker: z.string().max(40),
+        replyTo: z.uuid().nullable().default(null),
+      }),
+    )
+    .output(z.object({ message: chatMessage })),
+  /**
+   * GIF search through GIPHY (CHAT-05), off unless the server has a GIPHY
+   * key. Only the search terms are sent to GIPHY, never who is searching.
+   */
+  gifs: oc
+    .input(z.object({ query: z.string().max(50) }))
+    .output(z.object({ enabled: z.boolean(), gifs: z.array(gifResult) })),
+  sendGif: oc
+    .input(
+      z.object({
+        id: z.string().regex(UUIDV7),
+        matchId: z.uuid(),
+        gifId: z.string().regex(/^[A-Za-z0-9]{1,64}$/),
+        replyTo: z.uuid().nullable().default(null),
+      }),
+    )
+    .output(z.object({ message: chatMessage })),
   /** Edits one's own text message within 10 minutes (CHAT-08); shown as "modifié". */
   edit: oc
     .input(z.object({ matchId: z.uuid(), messageId: z.uuid(), text: z.string().min(1).max(2000) }))

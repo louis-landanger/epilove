@@ -1,4 +1,4 @@
-import type { ChatMessage } from "@epilove/contracts";
+import type { ChatMessage, MessageAttachment } from "@epilove/contracts";
 import {
   canMessage,
   checkMessageChange,
@@ -6,6 +6,7 @@ import {
   explainCompatibility,
   isPotentiallyOffensive,
   isReaction,
+  isSticker,
   MESSAGING_RULES,
   pickIcebreakers,
   screenMessage,
@@ -41,8 +42,10 @@ import {
 import { answerSheets, listActiveQuestions } from "@epilove/db/repositories/questionnaire";
 import { personalChannel } from "@epilove/realtime";
 import { ORPCError } from "@orpc/server";
+import { z } from "zod";
 import { os, requireViewer } from "../procedures";
 import { optionLabel, questionText } from "../rencontre/compatibility";
+import { gifById, giphyEnabled, searchGifs } from "../rencontre/giphy";
 import { signedPhotoUrl } from "../rencontre/media";
 import { decryptBody, messageKeyRing } from "../rencontre/messages";
 import { realtimePublisher } from "../rencontre/realtime";
@@ -71,10 +74,90 @@ async function requireConversation(db: Database, viewerId: string, matchId: stri
   return { match: found, viewer, other };
 }
 
+/** Non-text messages keep a small JSON payload in their encrypted body. */
+const payloads = {
+  sticker: z.object({ sticker: z.string() }),
+  gif: z.object({
+    gif: z.object({ url: z.string(), width: z.number(), height: z.number(), title: z.string() }),
+  }),
+};
+
+function attachmentOf(kind: string, body: string): MessageAttachment | null {
+  let json: unknown;
+  try {
+    json = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  if (kind === "sticker") {
+    const parsed = payloads.sticker.safeParse(json);
+    return parsed.success ? { type: "sticker", sticker: parsed.data.sticker } : null;
+  }
+  if (kind === "gif") {
+    const parsed = payloads.gif.safeParse(json);
+    return parsed.success ? { type: "gif", ...parsed.data.gif } : null;
+  }
+  return null;
+}
+
 const flagsOf = (moderation: unknown): string[] => {
   const flags = (moderation as { flags?: unknown } | null)?.flags;
   return Array.isArray(flags) ? flags.filter((f): f is string => typeof f === "string") : [];
 };
+
+type Conversation = Awaited<ReturnType<typeof requireConversation>>;
+
+/**
+ * Stores a message of any kind: anti-spam quota, recent client id (it
+ * orders the conversation), encryption, idempotent insert, realtime events.
+ */
+async function deliverMessage(
+  db: Database,
+  conversation: Conversation,
+  input: {
+    id: string;
+    kind: "text" | "sticker" | "gif";
+    plaintext: string;
+    replyTo: string | null;
+    flags: readonly string[];
+    now: Date;
+  },
+): Promise<ChatMessage> {
+  const { match, viewer, other } = conversation;
+  const { now } = input;
+  if (
+    (await messagesSentSince(db, viewer.member.id, new Date(now.getTime() - 60_000))) >=
+    MESSAGING_RULES.perMinute
+  ) {
+    throw new ORPCError("TOO_MANY_REQUESTS", { message: "rate_limited" });
+  }
+  const idTime = Number.parseInt(input.id.replaceAll("-", "").slice(0, 12), 16);
+  if (Math.abs(idTime - now.getTime()) > 5 * 60_000) {
+    throw new ORPCError("BAD_REQUEST", { message: "invalid_id" });
+  }
+  const result = await insertMessage(db, {
+    id: input.id,
+    matchId: match.id,
+    kind: input.kind,
+    senderId: viewer.member.id,
+    recipientId: other.member.id,
+    body: encryptText(messageKeyRing(), input.plaintext),
+    replyTo: input.replyTo,
+    moderation: input.flags.length > 0 ? { flags: [...input.flags] } : null,
+    now,
+  });
+  if (!result.ok) {
+    throw new ORPCError(result.reason === "id_conflict" ? "CONFLICT" : "BAD_REQUEST", {
+      message: result.reason,
+    });
+  }
+  await touchLastActive(db, viewer.member.id, now);
+  const [message] = await toChatMessages(db, [result.message]);
+  if (!message) {
+    throw new ORPCError("INTERNAL_SERVER_ERROR");
+  }
+  return message;
+}
 
 /** A message of this conversation that the viewer may still edit or delete (CHAT-08). */
 async function requireOwnChange(
@@ -117,7 +200,8 @@ async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Pro
     db,
     rows.map((m) => m.id),
   );
-  const text = (m: StoredMessage) => (m.deletedAt ? "" : decryptBody(m.bodyEncrypted, m.keyId));
+  const body = (m: StoredMessage) => (m.deletedAt ? "" : decryptBody(m.bodyEncrypted, m.keyId));
+  const text = (m: StoredMessage) => (m.kind === "text" ? body(m) : "");
   return rows.map((m) => {
     const reply = m.replyTo ? known.get(m.replyTo) : undefined;
     return {
@@ -136,6 +220,7 @@ async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Pro
       editedAt: m.editedAt?.toISOString() ?? null,
       deleted: m.deletedAt !== null,
       flagged: m.deletedAt === null && isPotentiallyOffensive(flagsOf(m.moderation)),
+      attachment: m.deletedAt || m.kind === "text" ? null : attachmentOf(m.kind, body(m)),
     };
   });
 }
@@ -224,44 +309,75 @@ export const messaging = {
   send: os.messaging.send.use(requireViewer).handler(async ({ context, input }) => {
     const db = context.database();
     const now = new Date();
-    const { match, viewer, other } = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const conversation = await requireConversation(db, context.viewer.userId, input.matchId, now);
     const text = cleanMessage(input.text);
     if (text.length === 0 || text.length > MESSAGING_RULES.maxLength) {
       throw new ORPCError("BAD_REQUEST", { message: "empty_message" });
     }
-    if (
-      (await messagesSentSince(db, viewer.member.id, new Date(now.getTime() - 60_000))) >=
-      MESSAGING_RULES.perMinute
-    ) {
-      throw new ORPCError("TOO_MANY_REQUESTS", { message: "rate_limited" });
-    }
-    // The client-generated id must be recent: it orders the conversation.
-    const idTime = Number.parseInt(input.id.replaceAll("-", "").slice(0, 12), 16);
-    if (Math.abs(idTime - now.getTime()) > 5 * 60_000) {
-      throw new ORPCError("BAD_REQUEST", { message: "invalid_id" });
-    }
     const flags = screenMessage(text);
-    const result = await insertMessage(db, {
+    const message = await deliverMessage(db, conversation, {
       id: input.id,
-      matchId: match.id,
-      senderId: viewer.member.id,
-      recipientId: other.member.id,
-      body: encryptText(messageKeyRing(), text),
+      kind: "text",
+      plaintext: text,
       replyTo: input.replyTo,
-      moderation: flags.length > 0 ? { flags } : null,
+      flags,
       now,
     });
-    if (!result.ok) {
-      throw new ORPCError(result.reason === "id_conflict" ? "CONFLICT" : "BAD_REQUEST", {
-        message: result.reason,
-      });
-    }
-    await touchLastActive(db, viewer.member.id, now);
-    const [message] = await toChatMessages(db, [result.message]);
-    if (!message) {
-      throw new ORPCError("INTERNAL_SERVER_ERROR");
-    }
     return { message, flags };
+  }),
+
+  sendSticker: os.messaging.sendSticker.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    if (!isSticker(input.sticker)) {
+      throw new ORPCError("BAD_REQUEST", { message: "unknown_sticker" });
+    }
+    const conversation = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const message = await deliverMessage(db, conversation, {
+      id: input.id,
+      kind: "sticker",
+      plaintext: JSON.stringify({ sticker: input.sticker }),
+      replyTo: input.replyTo,
+      flags: [],
+      now,
+    });
+    return { message };
+  }),
+
+  gifs: os.messaging.gifs.use(requireViewer).handler(async ({ input }) => {
+    if (!giphyEnabled()) {
+      return { enabled: false, gifs: [] };
+    }
+    const query = input.query.trim();
+    try {
+      return { enabled: true, gifs: query ? await searchGifs(query) : [] };
+    } catch {
+      throw new ORPCError("SERVICE_UNAVAILABLE", { message: "gifs_unavailable" });
+    }
+  }),
+
+  sendGif: os.messaging.sendGif.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    if (!giphyEnabled()) {
+      throw new ORPCError("NOT_FOUND", { message: "gifs_disabled" });
+    }
+    const conversation = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const gif = await gifById(input.gifId).catch(() => null);
+    if (!gif) {
+      throw new ORPCError("BAD_REQUEST", { message: "unknown_gif" });
+    }
+    const message = await deliverMessage(db, conversation, {
+      id: input.id,
+      kind: "gif",
+      plaintext: JSON.stringify({
+        gif: { url: gif.url, width: gif.width, height: gif.height, title: gif.title },
+      }),
+      replyTo: input.replyTo,
+      flags: [],
+      now,
+    });
+    return { message };
   }),
 
   edit: os.messaging.edit.use(requireViewer).handler(async ({ context, input }) => {

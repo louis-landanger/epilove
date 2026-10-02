@@ -10,6 +10,7 @@ export * from "./matching/explain";
 export * from "./messaging/icebreakers";
 export * from "./messaging/ids";
 export * from "./messaging/rules";
+export * from "./messaging/stickers";
 export * from "./pact/clock";
 export * from "./pact/edges";
 export * from "./pact/report";

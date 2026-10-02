@@ -109,6 +109,10 @@ export async function messagesSentSince(db: Database, senderId: string, since: D
 export interface NewMessage {
   readonly id: string;
   readonly matchId: string;
+  /** Text by default; other kinds keep their JSON payload in the encrypted body. */
+  readonly kind?: "text" | "sticker" | "gif" | "image" | "voice" | "date_proposal";
+  /** Storage key of an attached file (photo, voice message). */
+  readonly mediaKey?: string | null;
   readonly senderId: string;
   readonly recipientId: string;
   readonly body: { readonly keyId: string; readonly data: Uint8Array };
@@ -149,8 +153,9 @@ export async function insertMessage(db: Database, input: NewMessage): Promise<In
         id: input.id,
         matchId: input.matchId,
         senderId: input.senderId,
-        kind: "text",
+        kind: input.kind ?? "text",
         bodyEncrypted: input.body.data,
+        mediaKey: input.mediaKey ?? null,
         keyId: input.body.keyId,
         replyTo: input.replyTo,
         moderation: input.moderation,

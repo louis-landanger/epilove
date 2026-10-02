@@ -73,9 +73,11 @@ export function ConversationList({
           <ul className="flex flex-col">
             {conversations.map((m) => {
               const active = m.matchId === activeMatchId;
-              const preview = m.lastMessage?.fromMe
-                ? t("you", { text: m.lastMessage.preview })
-                : m.lastMessage?.preview;
+              const text =
+                m.lastMessage && m.lastMessage.kind !== "text"
+                  ? t(`previewKinds.${m.lastMessage.kind}` as "previewKinds.sticker")
+                  : (m.lastMessage?.preview ?? "");
+              const preview = m.lastMessage?.fromMe ? t("you", { text }) : text;
               return (
                 <li key={m.matchId}>
                   <a

@@ -47,6 +47,7 @@ export const matches = {
             lastMessage: preview
               ? {
                   preview: preview.text,
+                  kind: preview.kind,
                   at: preview.at.toISOString(),
                   fromMe: preview.senderId === viewer.member.id,
                 }

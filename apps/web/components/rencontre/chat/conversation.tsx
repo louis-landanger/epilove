@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChatMessage, IcebreakerView, ThreadView } from "@epilove/contracts";
-import { MESSAGING_RULES, needsSendWarning, screenMessage, uuidv7 } from "@epilove/core";
+import { MESSAGING_RULES, needsSendWarning, type StickerId, screenMessage, uuidv7 } from "@epilove/core";
 import { ORPCError } from "@orpc/client";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -14,6 +14,8 @@ import { useOnline } from "@/lib/rencontre/use-online";
 import { ReportSheet, SafetyMenu } from "../safety/safety-menu";
 import { Sheet } from "../ui/sheet";
 import { Avatar } from "./avatar";
+import { type PickedGif, StickerPicker } from "./sticker-picker";
+import { StickerArt } from "./stickers";
 
 type PendingStatus = "sending" | "queued" | "failed";
 interface PendingMessage {
@@ -231,6 +233,30 @@ export function Conversation({ thread }: { thread: ThreadView }) {
       say(
         error instanceof ORPCError && error.message === "too_late"
           ? t("errors.too_late")
+          : t("errors.generic"),
+      );
+    }
+  };
+
+  const sendAttachment = async (
+    attachment: { type: "sticker"; sticker: StickerId } | { type: "gif"; gif: PickedGif },
+  ) => {
+    if (closed) {
+      return;
+    }
+    const base = { id: newMessageId(), matchId: thread.matchId, replyTo: replyTo?.id ?? null };
+    setReplyTo(null);
+    nearBottom.current = true;
+    try {
+      const result =
+        attachment.type === "sticker"
+          ? await api.messaging.sendSticker({ ...base, sticker: attachment.sticker })
+          : await api.messaging.sendGif({ ...base, gifId: attachment.gif.id });
+      setMessages((current) => mergeMessages(current, [result.message]));
+    } catch (error) {
+      say(
+        error instanceof ORPCError && error.message === "rate_limited"
+          ? t("errors.rate_limited")
           : t("errors.generic"),
       );
     }
@@ -555,6 +581,8 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           replyTo={replyTo}
           replyName={replyTo?.senderId === me ? null : thread.other.firstName}
           onCancelReply={() => setReplyTo(null)}
+          onSticker={(sticker) => void sendAttachment({ type: "sticker", sticker })}
+          onGif={(gif) => void sendAttachment({ type: "gif", gif })}
           editing={editing !== null}
           onCancelEdit={() => {
             setEditing(null);
@@ -677,12 +705,14 @@ function Bubble({
               setBurst((b) => b + 1);
             }
           }}
-          className={`relative rounded-3xl px-4 py-2.5 ${
+          className={`relative rounded-3xl ${
             message.deleted
-              ? "border border-paper/15 text-paper/60 italic"
-              : mine
-                ? "rounded-br-lg bg-plasma text-ink"
-                : "rounded-bl-lg bg-paper/10 text-paper"
+              ? "border border-paper/15 px-4 py-2.5 text-paper/60 italic"
+              : message.attachment
+                ? "p-0"
+                : mine
+                  ? "rounded-br-lg bg-plasma px-4 py-2.5 text-ink"
+                  : "rounded-bl-lg bg-paper/10 px-4 py-2.5 text-paper"
           }`}
         >
           {reply && (
@@ -694,9 +724,27 @@ function Bubble({
               {reply.text}
             </p>
           )}
-          <p className="whitespace-pre-wrap break-words">
-            {message.deleted ? t("status.deleted") : message.text}
-          </p>
+          {message.deleted ? (
+            <p>{t("status.deleted")}</p>
+          ) : message.attachment?.type === "sticker" ? (
+            <div className="size-28">
+              <StickerArt
+                id={message.attachment.sticker as StickerId}
+                label={t(`stickers.names.${message.attachment.sticker}` as "stickers.names.bond")}
+              />
+            </div>
+          ) : message.attachment?.type === "gif" ? (
+            // biome-ignore lint/performance/noImgElement: GIPHY serves the GIF.
+            <img
+              src={message.attachment.url}
+              alt={message.attachment.title}
+              width={message.attachment.width}
+              height={message.attachment.height}
+              className="max-w-60 rounded-3xl"
+            />
+          ) : (
+            <p className="whitespace-pre-wrap break-words">{message.text}</p>
+          )}
           <AnimatePresence>
             {burst > 0 && (
               <motion.span
@@ -903,6 +951,8 @@ function Composer({
   onCancelReply,
   editing,
   onCancelEdit,
+  onSticker,
+  onGif,
   icebreakers,
   showIcebreakers,
   onToggleIcebreakers,
@@ -918,6 +968,8 @@ function Composer({
   onCancelReply: () => void;
   editing: boolean;
   onCancelEdit: () => void;
+  onSticker: (sticker: StickerId) => void;
+  onGif: (gif: PickedGif) => void;
   icebreakers: IcebreakerView[];
   showIcebreakers: boolean;
   onToggleIcebreakers: () => void;
@@ -925,6 +977,7 @@ function Composer({
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }) {
   const t = useTranslations("chat");
+  const [picker, setPicker] = useState(false);
   const icebreakerText = (i: IcebreakerView) =>
     i.key === "campus"
       ? t(`icebreakers.campus.${String(i.params.index)}` as "icebreakers.campus.0")
@@ -952,6 +1005,18 @@ function Composer({
             })}
           </ul>
         </div>
+      )}
+      {picker && !editing && (
+        <StickerPicker
+          onSticker={(sticker) => {
+            setPicker(false);
+            onSticker(sticker);
+          }}
+          onGif={(gif) => {
+            setPicker(false);
+            onGif(gif);
+          }}
+        />
       )}
       {editing && (
         <div className="mb-2 flex items-center gap-2 rounded-2xl bg-volt/10 px-3 py-2 text-sm">
@@ -1009,6 +1074,30 @@ function Composer({
               d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"
               strokeLinecap="round"
             />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPicker((v) => !v)}
+          aria-label={t("stickers.title")}
+          aria-pressed={picker}
+          disabled={editing}
+          className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-plasma disabled:opacity-40"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            aria-hidden="true"
+          >
+            <path
+              d="M14 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h7l8-8V6a3 3 0 0 0-3-3h-4Z"
+              strokeLinejoin="round"
+            />
+            <path d="M13 21v-5a3 3 0 0 1 3-3h5" strokeLinejoin="round" />
+            <path d="M8.5 9.5h.01M14.5 9.5h.01M8.5 14c1.5 1.2 3.5 1.2 5 0" strokeLinecap="round" />
           </svg>
         </button>
         <label className="sr-only" htmlFor="composer">
