@@ -292,7 +292,8 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
       await page.goto("/");
       await page.waitForLoadState("load");
       await page.waitForTimeout(1500);
-      await expect(page.locator("canvas")).toHaveAttribute("data-live", "false");
+      await expect(page.locator("[data-ion-field]")).toHaveAttribute("data-live", "false");
+      await expect(page.locator("[data-ion-field] canvas")).toHaveCount(0);
       await expect(page.locator("html")).not.toHaveClass(/lenis/);
       const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
       expect(results.violations).toEqual([]);

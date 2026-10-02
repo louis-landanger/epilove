@@ -26,7 +26,7 @@ const phone: DeviceProfile = {
 describe("particle budget", () => {
   it("gives GPU compute many more ions than the CPU fallback", () => {
     expect(particleBudget("webgpu", laptop)).toBe(8000);
-    expect(particleBudget("webgl2", laptop)).toBe(2200);
+    expect(particleBudget("webgl2", laptop)).toBe(1800);
     expect(particleBudget("webgpu", phone)).toBeLessThan(particleBudget("webgpu", laptop));
     expect(particleBudget("webgl2", { ...phone, cores: 2, memoryGb: 2 })).toBeGreaterThanOrEqual(400);
   });

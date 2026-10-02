@@ -61,12 +61,12 @@ const smoothstep = (value: number) => {
  * The field condenses into the logo mark while `[data-field-scope]` scrolls by.
  */
 export function IonFieldCanvas({ className }: { className?: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [live, setLive] = useState(false);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
+    const container = containerRef.current;
+    if (!container) {
       return;
     }
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -77,7 +77,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
     let disposed = false;
     const cleanups: Array<() => void> = [];
 
-    const start = async () => {
+    const start = async (forceWebGL = false) => {
       try {
         const { createIonField } = await import("@epilove/three/ion-field");
         if (disposed) {
@@ -85,17 +85,27 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         }
         const profile = deviceProfile();
         const field = await createIonField({
-          canvas,
-          width: canvas.clientWidth,
-          height: canvas.clientHeight,
+          container,
           particleCount: (backend) => particleBudget(backend, profile),
           onFirstFrame: () => setLive(true),
+          // A frame failed after start-up: back to the poster.
+          forceWebGL,
+          onError: () => {
+            setLive(false);
+            // WebGPU failed after start-up (device lost…): start again on WebGL2.
+            if (!forceWebGL && !disposed) {
+              for (const cleanup of cleanups.splice(0)) {
+                cleanup();
+              }
+              void start(true);
+            }
+          },
         });
         if (disposed) {
           field.dispose();
           return;
         }
-        canvas.dataset.backend = field.backend;
+        container.dataset.backend = field.backend;
         cleanups.push(() => field.dispose());
 
         // Run only while visible: on screen and in the foreground tab.
@@ -105,7 +115,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           onScreen = entry?.isIntersecting ?? false;
           update();
         });
-        observer.observe(canvas);
+        observer.observe(container);
         document.addEventListener("visibilitychange", update);
         cleanups.push(() => {
           observer.disconnect();
@@ -114,14 +124,14 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         update();
 
         const resizeObserver = new ResizeObserver(() =>
-          field.resize(canvas.clientWidth, canvas.clientHeight),
+          field.resize(container.clientWidth, container.clientHeight),
         );
-        resizeObserver.observe(canvas);
+        resizeObserver.observe(container);
         cleanups.push(() => resizeObserver.disconnect());
 
         // The pointer (or finger) is a charged particle; a click or tap flips its charge.
         const onPointerMove = (event: PointerEvent) => {
-          const rect = canvas.getBoundingClientRect();
+          const rect = container.getBoundingClientRect();
           const x = event.clientX - rect.left;
           const y = event.clientY - rect.top;
           const inside = x >= 0 && y >= 0 && x <= rect.width && y <= rect.height;
@@ -142,7 +152,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           if (target?.closest("a, button, input, label, summary, textarea, select")) {
             return;
           }
-          const rect = canvas.getBoundingClientRect();
+          const rect = container.getBoundingClientRect();
           if (event.clientY >= rect.top && event.clientY <= rect.bottom) {
             field.setPointer(event.clientX - rect.left, event.clientY - rect.top, true);
             field.pulse();
@@ -162,8 +172,8 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         });
 
         // Condense into the logo mark while the hero scrolls away.
-        const scope = canvas.closest<HTMLElement>("[data-field-scope]");
-        const backdrop = canvas.parentElement;
+        const scope = container.closest<HTMLElement>("[data-field-scope]");
+        const backdrop = container.parentElement;
         if (scope) {
           let frame = 0;
           const onScroll = () => {
@@ -216,9 +226,11 @@ export function IonFieldCanvas({ className }: { className?: string }) {
     };
   }, []);
 
+  // The scene creates its own canvas in here (it may need a fresh one to fall back to WebGL2).
   return (
-    <canvas
-      ref={canvasRef}
+    <div
+      ref={containerRef}
+      data-ion-field
       data-live={live ? "true" : "false"}
       className={`transition-opacity duration-[1200ms] ease-out ${live ? "opacity-100" : "opacity-0"} ${className ?? ""}`}
     />

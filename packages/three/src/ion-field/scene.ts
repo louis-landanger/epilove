@@ -52,10 +52,11 @@ import { createFrameMonitor, markPlacementFor } from "./quality";
 export type IonFieldBackend = "webgpu" | "webgl2";
 
 export interface IonFieldOptions {
-  readonly canvas: HTMLCanvasElement;
-  /** Initial size of the canvas in CSS pixels (the starting layout is stretched to its aspect ratio). */
-  readonly width: number;
-  readonly height: number;
+  /**
+   * Element the scene draws into: it creates (and removes) its own canvas there,
+   * so it can start again on a fresh canvas with WebGL2 if WebGPU fails.
+   */
+  readonly container: HTMLElement;
   /** Number of particles (even). Called once the backend is known. */
   readonly particleCount: (backend: IonFieldBackend) => number;
   /** Device pixel ratio ceiling (docs/02-design.md, section 9: 1.5). */
@@ -65,12 +66,16 @@ export interface IonFieldOptions {
   readonly onFirstFrame?: () => void;
   /** Called when the field lowers its quality to keep up (for diagnostics). */
   readonly onDegrade?: (state: { pixelRatio: number; visibleParticles: number }) => void;
+  /** Called if a frame fails or the GPU device is lost after start-up; the loop is then stopped for good. */
+  readonly onError?: (error: unknown) => void;
+  /** Skip WebGPU (for instance after a WebGPU field failed). */
+  readonly forceWebGL?: boolean;
 }
 
 export interface IonField {
   readonly backend: IonFieldBackend;
   readonly particleCount: number;
-  /** Pointer position in CSS pixels relative to the canvas; `active` false when it leaves. */
+  /** Pointer position in CSS pixels relative to the container; `active` false when it leaves. */
   setPointer(x: number, y: number, active: boolean): void;
   /** Flips the pointer's charge with a small shockwave (click or tap). */
   pulse(): void;
@@ -143,15 +148,46 @@ function flowAngle(x: number, y: number, t: number): number {
   );
 }
 
+class WebGpuStartError extends Error {
+  override readonly name = "WebGpuStartError";
+}
+
+/**
+ * Starts the field: WebGPU when available, WebGL2 otherwise. If WebGPU is
+ * exposed but fails on the first frame (older implementations, drivers), the
+ * field starts again on a fresh canvas with the WebGL2 backend. Rejects when
+ * neither works: the caller keeps the static poster.
+ */
 export async function createIonField(options: IonFieldOptions): Promise<IonField> {
+  try {
+    return await startIonField(options, options.forceWebGL ?? false);
+  } catch (error) {
+    if (error instanceof WebGpuStartError) {
+      return startIonField(options, true);
+    }
+    throw error;
+  }
+}
+
+async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Promise<IonField> {
   const maxPixelRatio = options.maxPixelRatio ?? 1.5;
+  const canvas = document.createElement("canvas");
+  canvas.setAttribute("aria-hidden", "true");
+  canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block";
+  options.container.append(canvas);
   const renderer = new WebGPURenderer({
-    canvas: options.canvas,
+    canvas,
     antialias: false,
     alpha: false,
     powerPreference: "high-performance",
+    forceWebGL,
   });
-  await renderer.init();
+  try {
+    await renderer.init();
+  } catch (error) {
+    canvas.remove();
+    throw error;
+  }
   const backend: IonFieldBackend = (renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend
     ? "webgpu"
     : "webgl2";
@@ -197,7 +233,9 @@ export async function createIonField(options: IonFieldOptions): Promise<IonField
   );
 
   // Same relative positions as the server-rendered poster: x is stretched to the aspect ratio.
-  const initialAspect = Math.max(1, options.width) / Math.max(1, options.height);
+  const initialWidth = options.container.clientWidth;
+  const initialHeight = options.container.clientHeight;
+  const initialAspect = Math.max(1, initialWidth) / Math.max(1, initialHeight);
   const initialPositions = new Float32Array(count * 2);
   for (let index = 0; index < count; index += 1) {
     initialPositions[index * 2] = (layout.positions[index * 2] ?? 0) * initialAspect;
@@ -437,7 +475,10 @@ export async function createIonField(options: IonFieldOptions): Promise<IonField
     depthTest: false,
     blending: AdditiveBlending,
   });
-  const radius = colorAttribute.w;
+  // Constant overall light whatever the particle count: thousands of GPU ions
+  // read as fine dust, a few hundred CPU ones as brighter sparks.
+  const density = Math.min(1, Math.max(0.45, Math.sqrt(1800 / count)));
+  const radius = colorAttribute.w.mul(density);
   const phase = markAttribute.w;
   const pointerProximity = float(1)
     .sub(smoothstep(0, 0.35, length(uPointer.sub(particleCenter))))
@@ -459,6 +500,7 @@ export async function createIonField(options: IonFieldOptions): Promise<IonField
   const ionColor = mix(colorAttribute.xyz, markAttribute.xyz, uCondense.mul(0.85))
     .mul(twinkle.add(particleBond.mul(0.5)).add(pointerProximity.mul(0.8)))
     .mul(depth)
+    .mul(0.5 + density * 0.5)
     .mul(mix(float(1), float(0.62), uCondense))
     .toVarying();
   const fromCenter = length(uv().sub(0.5)).mul(2);
@@ -485,7 +527,7 @@ export async function createIonField(options: IonFieldOptions): Promise<IonField
   const bondStrength = float(1)
     .sub(smoothstep(0.03, 0.14, segmentLength))
     .mul(float(1).sub(uCondense))
-    .mul(0.75)
+    .mul(0.75 * density)
     .toVarying();
   const bondColor = mix(bondColorA, bondColorB, along).toVarying();
   const across = abs(uv().y.sub(0.5)).mul(2);
@@ -507,6 +549,7 @@ export async function createIonField(options: IonFieldOptions): Promise<IonField
   let height = 1;
   let running = false;
   let firstFrame = true;
+  let broken = false;
   let lastTime = -1;
   let pointerTarget = 0;
   const pointerWorld = new Vector2(10, 10);
@@ -538,8 +581,15 @@ export async function createIonField(options: IonFieldOptions): Promise<IonField
     const pointer = uPointer.value;
     pointer.lerp(pointerWorld, Math.min(1, delta * 14));
 
-    step(delta);
-    renderer.render(scene, camera);
+    try {
+      step(delta);
+      renderer.render(scene, camera);
+    } catch (error) {
+      setRunning(false);
+      broken = true;
+      options.onError?.(error);
+      return;
+    }
 
     if (firstFrame) {
       firstFrame = false;
@@ -560,7 +610,7 @@ export async function createIonField(options: IonFieldOptions): Promise<IonField
   };
 
   const setRunning = (next: boolean) => {
-    if (next === running) {
+    if (next === running || (next && broken)) {
       return;
     }
     running = next;
@@ -569,7 +619,37 @@ export async function createIonField(options: IonFieldOptions): Promise<IonField
     void renderer.setAnimationLoop(running ? frame : null);
   };
 
-  resize(options.width, options.height);
+  const release = () => {
+    setRunning(false);
+    quad.dispose();
+    ionMaterial.dispose();
+    bondMaterial.dispose();
+    renderer.dispose();
+    canvas.remove();
+  };
+
+  // A lost GPU device silently draws nothing more: stop, and let the caller fall back.
+  const reportDeviceLost = renderer.onDeviceLost.bind(renderer);
+  renderer.onDeviceLost = (info) => {
+    reportDeviceLost(info);
+    setRunning(false);
+    broken = true;
+    options.onError?.(new Error(`${info.api} device lost`));
+  };
+
+  resize(initialWidth, initialHeight);
+
+  // Probe one frame now: a WebGPU implementation that does not support what
+  // three.js asks for throws here, and the field starts again with WebGL2.
+  try {
+    step(1 / 60);
+    renderer.render(scene, camera);
+  } catch (error) {
+    release();
+    throw backend === "webgpu"
+      ? new WebGpuStartError("WebGPU failed on the first frame.", { cause: error })
+      : error;
+  }
 
   return {
     backend,
@@ -592,13 +672,7 @@ export async function createIonField(options: IonFieldOptions): Promise<IonField
     },
     setRunning,
     resize,
-    dispose() {
-      setRunning(false);
-      quad.dispose();
-      ionMaterial.dispose();
-      bondMaterial.dispose();
-      renderer.dispose();
-    },
+    dispose: release,
   };
 }
 

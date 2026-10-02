@@ -38,7 +38,7 @@ export function particleBudget(backend: "webgpu" | "webgl2", profile: DeviceProf
   if (backend === "webgpu") {
     budget = small ? 4000 : 8000;
   } else {
-    budget = small ? 1200 : 2200;
+    budget = small ? 1000 : 1800;
   }
   if (modest) {
     budget *= 0.6;
