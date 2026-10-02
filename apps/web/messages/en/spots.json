@@ -1,0 +1,23 @@
+{
+  "title": "Spots",
+  "back": "Back to campus",
+  "lead": "Public places around the Vaise campus and the Presqu'île, perfect for a first date: parks, squares, riverbanks.",
+  "mapLabel": "Map of the spots",
+  "filter": "Filter by type",
+  "all": "All",
+  "kinds": {
+    "park": "Park",
+    "square": "Square",
+    "riverbank": "Riverbank",
+    "viewpoint": "Viewpoint"
+  },
+  "areas": {
+    "presquile": "Presqu'île",
+    "vieux-lyon": "Vieux-Lyon",
+    "rive-gauche": "Left bank",
+    "confluence": "Confluence",
+    "vaise": "Vaise",
+    "nord": "North of Lyon"
+  },
+  "publicOnly": "Public, busy places that are easy to reach only: for a first date, that's the basics."
+}

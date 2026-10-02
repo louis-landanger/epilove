@@ -1,4 +1,5 @@
 import { campusContract } from "./campus";
+import { campusLifeContract } from "./campus-life";
 import { devContract } from "./dev";
 import { discoveryContract } from "./discovery";
 import { matchesContract } from "./matches";
@@ -13,6 +14,7 @@ import { systemContract } from "./system";
 /** One entry per module, alphabetical. Each module lives in src/<module>.ts. */
 export const contract = {
   campus: campusContract,
+  campusLife: campusLifeContract,
   dev: devContract,
   discovery: discoveryContract,
   matches: matchesContract,
@@ -28,6 +30,7 @@ export const contract = {
 export type Contract = typeof contract;
 
 export * from "./campus";
+export * from "./campus-life";
 export * from "./dev";
 export * from "./discovery";
 export * from "./matches";

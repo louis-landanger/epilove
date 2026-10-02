@@ -27,6 +27,7 @@
     "@tanstack/react-query": "catalog:",
     "centrifuge": "catalog:",
     "esbuild": "catalog:",
+    "maplibre-gl": "catalog:",
     "motion": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",

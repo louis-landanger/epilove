@@ -33,6 +33,11 @@
       "lead": "Quarante-cinq questions qui nourrissent les scores du deck et le Pacte.",
       "progress": "{count, plural, =0 {Pas encore commencé} one {# réponse} other {# réponses}}",
       "action": "Répondre"
+    },
+    "spots": {
+      "title": "Spots",
+      "lead": "Parcs, places et berges autour du campus pour un premier date.",
+      "action": "Explorer"
     }
   }
 }

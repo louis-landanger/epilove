@@ -8,6 +8,7 @@ import matchesEn from "../messages/en/matches.json";
 import notificationsEn from "../messages/en/notifications.json";
 import pactEn from "../messages/en/pact.json";
 import questionnaireEn from "../messages/en/questionnaire.json";
+import spotsEn from "../messages/en/spots.json";
 import campusFr from "../messages/fr/campus.json";
 import chatFr from "../messages/fr/chat.json";
 import commonFr from "../messages/fr/common.json";
@@ -18,6 +19,7 @@ import matchesFr from "../messages/fr/matches.json";
 import notificationsFr from "../messages/fr/notifications.json";
 import pactFr from "../messages/fr/pact.json";
 import questionnaireFr from "../messages/fr/questionnaire.json";
+import spotsFr from "../messages/fr/spots.json";
 
 export const LOCALES = ["fr", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -39,6 +41,7 @@ const namespaces = {
   notifications: { fr: notificationsFr, en: notificationsEn },
   pact: { fr: pactFr, en: pactEn },
   questionnaire: { fr: questionnaireFr, en: questionnaireEn },
+  spots: { fr: spotsFr, en: spotsEn },
 } as const;
 
 type Namespaces = typeof namespaces;

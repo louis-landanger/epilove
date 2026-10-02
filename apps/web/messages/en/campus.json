@@ -33,6 +33,11 @@
       "lead": "Forty-five questions that feed the deck's scores and the Pact.",
       "progress": "{count, plural, =0 {Not started yet} one {# answer} other {# answers}}",
       "action": "Answer"
+    },
+    "spots": {
+      "title": "Spots",
+      "lead": "Parks, squares and riverbanks around campus for a first date.",
+      "action": "Explore"
     }
   }
 }

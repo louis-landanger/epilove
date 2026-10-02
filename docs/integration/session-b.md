@@ -13,6 +13,7 @@
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
 | 1 | Notifications (NOT-01 à NOT-03) | ✅ fait et testé (API, worker, Playwright pour le service worker) ; push réel non testé en automatique (pas de service de push dans la session) |
+| 2 | Spots (IRL-02) | ✅ fait et testé (API) ; carte vérifiée à la main (sans fond de carte dans la session) |
 | 2 | Relances douces (CHAT-09) | ✅ fait et testé (cœur, worker) |
 | 2 | Stickers maison et GIF (CHAT-05) | ✅ fait et testé (API avec GIPHY simulé) ; GIPHY désactivé sans clé |
 | 2 | Modifier / supprimer (CHAT-08), avertissement avant envoi (SAF-09), « Ce message te dérange ? » (SAF-10) | ✅ fait et testé (cœur, API, Playwright) |
@@ -95,6 +96,13 @@
 - Mesures : séquence démarrée 830 ms après l'heure sur deux navigateurs (2 ms d'écart) ; dry run 3 000 membres en 2 min 30 s (détail dans le README du solveur).
 - Chorégraphie faite avec Motion (déjà présent) plutôt que GSAP (docs/02 le suggère) : pas de dépendance supplémentaire pour une séquence de quelques secondes.
 
+### Spots (IRL-02)
+
+- Table `spot` (`packages/db/src/schema/spots.ts`, migration 0011) et seed `packages/db/src/seeds/spots.ts` : 16 lieux publics réels autour du campus de Vaise et de la Presqu'île (places, parcs, berges, points de vue ; aucun commerce). **Coordonnées approximatives, à vérifier sur place avant le lancement.**
+- API `campusLife.spots` (contrat `campus-life.ts`), page `(app)/campus/spots` : carte MapLibre (épingles numérotées, cadrage sur tous les lieux) et liste filtrable par type, entrée dans l'onglet Campus.
+- Fond de carte : `NEXT_PUBLIC_MAP_STYLE_URL` (style auto-hébergé ou ouvert, à choisir au déploiement : OpenFreeMap, Protomaps…). Sans elle, fond uni. **À l'activation** : ajouter l'hôte des tuiles à la CSP (`connect-src`, `img-src`) et le mentionner dans la politique de confidentialité.
+- Le worker de MapLibre 6 est servi par `app/(app)/campus/spots/maplibre/[file]/route.ts` (deux fichiers fixes du paquet) ; pour un déploiement `standalone`, ajouter `node_modules/maplibre-gl/dist/maplibre-gl-{worker,shared}.mjs` à `outputFileTracingIncludes`.
+
 ### Relances douces (CHAT-09)
 
 - Les matchs n'expirent pas. Après 3 jours de silence (`packages/core/src/messaging/nudge.ts`), les deux membres reçoivent une notification discrète `chat_nudge` (groupe « Messages »), une seule fois par silence (colonne `match.nudged_at`, migration 0010), à 18 h heure du campus (tâche horaire `chat_nudge`, `apps/worker/src/tasks/messaging/nudge.ts`), seulement si `canMessage` l'autorise toujours.
@@ -143,14 +151,15 @@
 | Fichier | Modification |
 |---|---|
 | `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo`, `drop:run` |
-| `pnpm-workspace.yaml` | catalogue : `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
+| `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendance `@epilove/crypto`, devDependency `aws4fetch`, script `db:seed:dev`, exports `./repositories/*`, `./dev-seed` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
-| `apps/web/package.json` | dépendances `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
-| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `discovery`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
+| `apps/web/package.json` | dépendances `maplibre-gl`, `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
+| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `dev`, `discovery`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
-| `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `likes`, `matches`, `notifications`, `pact`, `questionnaire` (ajouts) |
+| `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `likes`, `matches`, `notifications`, `pact`, `questionnaire`, `spots` (ajouts) |
 | `packages/core/src/index.ts` | `discovery/crush`, `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/second-chance`, `discovery/rules`, `matching/explain`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
-| `packages/db/src/seeds/index.ts` | seed `questions` (ajout) |
+| `packages/db/src/seeds/index.ts` | seeds `questions`, `spots` (ajouts) |
+| `packages/db/src/schema/index.ts` | `spots` (ajout) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
 | `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `chat_nudge` (ajouts) |
@@ -174,6 +183,7 @@
 
 ## Migrations
 
+- `0011_*` : table `spot`.
 - `0010_*` : colonne `match.nudged_at`.
 - `0009_*` : type de message `sticker`.
 - `0008_*` : table `secret_crush`.

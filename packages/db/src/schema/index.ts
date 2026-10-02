@@ -7,4 +7,5 @@ export * from "./pact";
 export * from "./profiles";
 export * from "./questionnaire";
 export * from "./safety";
+export * from "./spots";
 export * from "./users";

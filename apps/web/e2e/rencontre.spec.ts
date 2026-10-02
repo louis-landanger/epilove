@@ -104,6 +104,7 @@ test("the discovery, likes, messages and campus screens have no detectable acces
     "/messages",
     "/campus",
     "/campus/pacte",
+    "/campus/spots",
     "/campus/questionnaire",
     "/notifications",
     "/reglages/notifications",

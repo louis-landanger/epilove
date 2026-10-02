@@ -1,4 +1,5 @@
 import { campus } from "./modules/campus";
+import { campusLife } from "./modules/campus-life";
 import { dev } from "./modules/dev";
 import { discovery } from "./modules/discovery";
 import { matches } from "./modules/matches";
@@ -17,6 +18,7 @@ import { os } from "./procedures";
  */
 export const router = os.router({
   campus,
+  campusLife,
   dev,
   discovery,
   matches,
