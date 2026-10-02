@@ -1,6 +1,7 @@
 import type { ChatMessage, MessageAttachment } from "@epilove/contracts";
 import {
   availabilityShown,
+  BLIND_RULES,
   canMessage,
   checkDateProposal,
   checkDateResponse,
@@ -54,6 +55,7 @@ import { personalChannel } from "@epilove/realtime";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { os, requireViewer } from "../procedures";
+import { hiddenPhotos } from "../rencontre/blind";
 import { optionLabel, questionText } from "../rencontre/compatibility";
 import { gifById, giphyEnabled, searchGifs } from "../rencontre/giphy";
 import { chatMediaStore, signedChatImageUrl, signedPhotoUrl } from "../rencontre/media";
@@ -468,6 +470,9 @@ export const messaging = {
     const photo = otherContent?.photos[0];
     const bothShareOnline = Boolean(mine?.onlineStatus && theirs?.onlineStatus);
     const dispo = (await availabilityOf(db, [other.member.id])).get(other.member.id);
+    const blind = await hiddenPhotos(db, viewer.member.id, [other.member.id]);
+    const blindMatch = blind.states.get(other.member.id)?.match ?? null;
+    const photoHidden = blind.hidden.has(other.member.id);
 
     return {
       matchId: match.id,
@@ -477,7 +482,7 @@ export const messaging = {
       other: {
         userId: other.member.id,
         firstName: other.firstName,
-        photoUrl: photo ? signedPhotoUrl(photo.storageKey, "thumb") : null,
+        photoUrl: photo && !photoHidden ? signedPhotoUrl(photo.storageKey, "thumb") : null,
         school: { slug: other.member.schoolSlug, name: other.schoolName },
       },
       canMessage: true,
@@ -486,6 +491,10 @@ export const messaging = {
       otherOnline: bothShareOnline
         ? await realtimePublisher().isOnline(personalChannel(other.member.id))
         : null,
+      blind:
+        blindMatch && photoHidden
+          ? { mine: blindMatch.mine, theirs: blindMatch.theirs, needed: BLIND_RULES.messagesToReveal }
+          : null,
       otherAvailable:
         dispo && availabilityShown(dispo, other.member, now)
           ? { activity: dispo.activity, area: dispo.area, until: dispo.until.toISOString() }

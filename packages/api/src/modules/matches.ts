@@ -6,6 +6,7 @@ import { campusDate, loadMembers, loadRelations } from "@epilove/db/repositories
 import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
 import { requireMemberRow } from "../rencontre/access";
+import { hiddenPhotos } from "../rencontre/blind";
 import { signedPhotoUrl } from "../rencontre/media";
 import { lastMessagePreviews } from "../rencontre/messages";
 
@@ -17,7 +18,7 @@ export const matches = {
     const rows = await activeMatchesOf(db, viewer.member.id);
     const otherIds = rows.map((r) => r.otherId);
     const now = new Date();
-    const [members, relations, content, previews, dispo] = await Promise.all([
+    const [members, relations, content, previews, dispo, blind] = await Promise.all([
       loadMembers(db, otherIds),
       loadRelations(db, viewer.member.id, otherIds),
       loadProfileContent(db, otherIds),
@@ -26,6 +27,7 @@ export const matches = {
         rows.map((r) => r.id),
       ),
       availabilityOf(db, otherIds),
+      hiddenPhotos(db, viewer.member.id, otherIds),
     ]);
     return {
       matches: rows.flatMap((row) => {
@@ -45,7 +47,9 @@ export const matches = {
             other: {
               userId: row.otherId,
               firstName: other.firstName,
-              photoUrl: photo ? signedPhotoUrl(photo.storageKey, "thumb") : null,
+              // Blind mode (DEC-10): no photo until both sent ten messages.
+              photoUrl:
+                photo && !blind.hidden.has(row.otherId) ? signedPhotoUrl(photo.storageKey, "thumb") : null,
               school: { slug: other.member.schoolSlug, name: other.schoolName },
               available:
                 status && availabilityShown(status, other.member, now)

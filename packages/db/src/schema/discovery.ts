@@ -1,6 +1,7 @@
 import { MODES } from "@epilove/core";
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   date,
   index,
@@ -38,6 +39,8 @@ export const likeAction = pgTable(
     targetContentType: text({ enum: LIKE_TARGETS }),
     targetContentId: uuid(),
     comment: text(),
+    /** Given in the blind deck (DEC-10): no photo was seen. */
+    blind: boolean().notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [
@@ -65,6 +68,8 @@ export const match = pgTable(
       .references(() => appUser.id, { onDelete: "cascade" }),
     mode: text({ enum: MODES }).notNull(),
     source: text({ enum: MATCH_SOURCES }).notNull(),
+    /** Made from a blind like (DEC-10): photos hidden until both sent ten messages. */
+    blind: boolean().notNull().default(false),
     status: text({ enum: MATCH_STATUSES }).notNull().default("active"),
     unmatchedBy: uuid().references(() => appUser.id, { onDelete: "set null" }),
     createdAt: createdAt(),

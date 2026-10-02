@@ -28,6 +28,8 @@ export const memberCard = z.object({
   modes: z.array(z.enum(MODES)),
   intentions: z.array(z.string()),
   languages: z.array(z.string()),
+  /** Photos withheld by blind mode (DEC-10): prompts and answers only. */
+  blind: z.boolean(),
   photos: z.array(memberPhoto),
   prompts: z.array(memberPrompt),
   interests: z.array(memberInterest),
@@ -117,11 +119,15 @@ export const discoveryContract = {
         locale: contentLocale,
         limit: z.number().int().min(1).max(20).default(8),
         exclude: z.array(z.uuid()).max(100).default([]),
+        /** The blind deck (DEC-10), during the blind evening only. */
+        blind: z.boolean().default(false),
       }),
     )
     .output(
       z.object({
         cards: z.array(memberCard),
+        /** The current or next blind evening (DEC-10). */
+        blindEvening: z.object({ active: z.boolean(), startsAt: z.iso.datetime(), endsAt: z.iso.datetime() }),
         quota: quotaView,
         empty: deckEmptyReason.nullable(),
         /** Cards back for a second chance (DEC-09): passed more than 45 days ago, changed since. */
@@ -136,6 +142,8 @@ export const discoveryContract = {
         kind: decisionKind,
         content: likedContent.nullable().default(null),
         comment: z.string().max(150).nullable().default(null),
+        /** Decided in the blind deck (DEC-10). */
+        blind: z.boolean().default(false),
       }),
     )
     .output(decisionOutput),

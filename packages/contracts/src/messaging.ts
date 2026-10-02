@@ -99,6 +99,8 @@ export const threadView = z.object({
   otherOnline: z.boolean().nullable(),
   /** The other member's "Dispo" status (IRL-05), while it lasts. */
   otherAvailable: availabilityView.nullable(),
+  /** A blind match not revealed yet (DEC-10): messages sent by each, out of `needed`. */
+  blind: z.object({ mine: z.number().int(), theirs: z.number().int(), needed: z.number().int() }).nullable(),
   icebreakers: z.array(icebreaker),
   /** Silent for a few days (CHAT-09): the screen suggests restarting with an icebreaker. */
   nudge: z.boolean(),

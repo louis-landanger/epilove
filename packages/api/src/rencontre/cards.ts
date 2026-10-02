@@ -6,6 +6,7 @@ import { loadProfileContent } from "@epilove/db/repositories/discovery";
 import type { MemberRow } from "@epilove/db/repositories/members";
 import { interestIdsOf } from "@epilove/db/repositories/members";
 import { answerSheets, listActiveQuestions } from "@epilove/db/repositories/questionnaire";
+import { hiddenPhotos } from "./blind";
 import { type ContentLocale, compatibilityView } from "./compatibility";
 import { signedPhotoUrl } from "./media";
 
@@ -19,17 +20,19 @@ export async function buildCards(
   targets: readonly { row: MemberRow; modes: readonly Mode[] }[],
   locale: ContentLocale,
   today: string,
+  options: { readonly blindDeck?: boolean } = {},
 ): Promise<MemberCard[]> {
   if (targets.length === 0) {
     return [];
   }
   const ids = targets.map((t) => t.row.member.id);
-  const [content, questions, sheets, viewerInterests, granted] = await Promise.all([
+  const [content, questions, sheets, viewerInterests, granted, blind] = await Promise.all([
     loadProfileContent(db, ids),
     listActiveQuestions(db),
     answerSheets(db, [viewer.member.id, ...ids]),
     interestIdsOf(db, [viewer.member.id]),
     grantedBadgesOf(db, ids),
+    hiddenPhotos(db, viewer.member.id, ids),
   ]);
   const mine = viewerInterests.get(viewer.member.id) ?? new Set<string>();
   const viewerSheet: AnswerSheet = sheets.get(viewer.member.id) ?? new Map();
@@ -38,6 +41,8 @@ export async function buildCards(
     const c = content.get(row.member.id) ?? { photos: [], prompts: [], interests: [] };
     const sheet = sheets.get(row.member.id) ?? new Map();
     const isSelf = row.member.id === viewer.member.id;
+    // Blind mode (DEC-10): no photo in the blind deck, nor before a blind match is revealed.
+    const hidePhotos = !isSelf && (options.blindDeck === true || blind.hidden.has(row.member.id));
     return {
       userId: row.member.id,
       firstName: row.firstName,
@@ -49,7 +54,8 @@ export async function buildCards(
       modes: [...modes],
       intentions: [...row.intentions],
       languages: [...row.languages],
-      photos: c.photos.map((p) => ({
+      blind: hidePhotos,
+      photos: (hidePhotos ? [] : c.photos).map((p) => ({
         id: p.id,
         url: signedPhotoUrl(p.storageKey, "card"),
         alt: p.altText,

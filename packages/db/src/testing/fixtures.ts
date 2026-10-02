@@ -4,7 +4,18 @@ import { emailHmac } from "@epilove/crypto";
 import { eq, inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import { runMigrations } from "../migrations";
-import { appUser, event, photo, preferences, profile, question, questionAnswer, school } from "../schema";
+import {
+  appUser,
+  event,
+  photo,
+  preferences,
+  profile,
+  prompt,
+  promptAnswer,
+  question,
+  questionAnswer,
+  school,
+} from "../schema";
 import { runSeeds } from "../seeds";
 
 /**
@@ -23,6 +34,8 @@ export interface TestMemberOptions {
   readonly interestedIn?: readonly Gender[];
   readonly status?: "active" | "paused" | "restricted" | "suspended" | "banned" | "deleting" | "onboarding";
   readonly photos?: number;
+  /** Answers to a test prompt, in order (blind mode shows prompts only, DEC-10). */
+  readonly prompts?: readonly string[];
   readonly ageMin?: number;
   readonly ageMax?: number;
   readonly createdAt?: Date;
@@ -95,6 +108,24 @@ export async function createTestMember(db: Database, options: TestMemberOptions 
         storageKey: `test/${id}/${position}.png`,
         position,
         status: "approved" as const,
+      })),
+    );
+  }
+  if (options.prompts && options.prompts.length > 0) {
+    await db
+      .insert(prompt)
+      .values({ slug: "test-prompt", textFr: "Un sujet de test", textEn: "A test topic", category: "test" })
+      .onConflictDoNothing();
+    const [testPrompt] = await db
+      .select({ id: prompt.id })
+      .from(prompt)
+      .where(eq(prompt.slug, "test-prompt"));
+    await db.insert(promptAnswer).values(
+      options.prompts.map((text, position) => ({
+        userId: id,
+        promptId: testPrompt?.id ?? "",
+        text,
+        position,
       })),
     );
   }

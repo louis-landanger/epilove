@@ -1,5 +1,6 @@
 import type { MemberCard, QuotaView } from "@epilove/contracts";
 import {
+  blindEvening,
   CRUSH_RULES,
   canSee,
   canViewProfile,
@@ -117,12 +118,21 @@ export const discovery = {
     const viewer = await requireMemberRow(db, context.viewer.userId);
     const quota = await currentQuota(db, viewer, now);
     await touchLastActive(db, viewer.member.id, now);
+    const evening = blindEvening(now, LYON_CAMPUS.timeZone);
+    const blindView = {
+      active: evening.active,
+      startsAt: evening.startsAt.toISOString(),
+      endsAt: evening.endsAt.toISOString(),
+    };
+    if (input.blind && !evening.active) {
+      throw new ORPCError("BAD_REQUEST", { message: "not_blind_evening" });
+    }
 
     if (viewer.member.status === "paused") {
-      return { cards: [], quota, empty: "paused" as const };
+      return { cards: [], quota, empty: "paused" as const, blindEvening: blindView };
     }
     if (!viewer.member.profileComplete || !["active", "restricted"].includes(viewer.member.status)) {
-      return { cards: [], quota, empty: "profile_incomplete" as const };
+      return { cards: [], quota, empty: "profile_incomplete" as const, blindEvening: blindView };
     }
 
     const candidates = await loadDiscoverableMembers(db, viewer.member.id);
@@ -205,7 +215,9 @@ export const discovery = {
       return entry ? [{ row: entry.row, modes: entry.modes }] : [];
     });
 
-    const cards = await buildCards(db, viewer, page, input.locale, today);
+    const built = await buildCards(db, viewer, page, input.locale, today, { blindDeck: input.blind });
+    // The blind deck only shows profiles with something to read (DEC-10).
+    const cards = input.blind ? built.filter((c) => c.prompts.length > 0) : built;
     await recordImpressions(
       db,
       viewer.member.id,
@@ -216,6 +228,7 @@ export const discovery = {
     return {
       cards,
       quota,
+      blindEvening: blindView,
       empty: cards.length === 0 ? ("exhausted" as const) : null,
       secondChance: cards.filter((c) => history.get(c.userId)?.kind === "pass").map((c) => c.userId),
     };
@@ -265,6 +278,7 @@ export const discovery = {
         content: input.content,
         comment: input.comment,
         matchMode: matchMode ?? "friends",
+        blind: input.blind && blindEvening(now, LYON_CAMPUS.timeZone).active,
         quota: {
           since: startOfCampusDay(now, LYON_CAMPUS.timeZone),
           today: campusDate(now),

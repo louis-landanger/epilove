@@ -10,6 +10,7 @@ import {
   interest,
   likeAction,
   match,
+  message,
   notification,
   photo,
   profileInterest,
@@ -271,6 +272,8 @@ export interface DecideInput {
   readonly comment: string | null;
   /** Mode of the match if this like completes one (computed by the caller from the policies). */
   readonly matchMode: Mode;
+  /** Given in the blind deck (DEC-10). */
+  readonly blind?: boolean;
   /** Quota, re-checked inside the transaction under a per-member lock. */
   readonly quota: {
     readonly since: Date;
@@ -368,6 +371,7 @@ export async function decide(db: Database, input: DecideInput, now = new Date())
 
     const values = {
       kind: input.kind,
+      blind: input.kind !== "pass" && input.blind === true,
       targetContentType: input.kind === "pass" ? null : (input.content?.type ?? null),
       targetContentId: input.kind === "pass" ? null : (input.content?.id ?? null),
       comment: input.kind === "pass" ? null : input.comment?.trim() || null,
@@ -388,7 +392,7 @@ export async function decide(db: Database, input: DecideInput, now = new Date())
     }
 
     const [reciprocal] = await tx
-      .select({ kind: likeAction.kind })
+      .select({ kind: likeAction.kind, blind: likeAction.blind })
       .from(likeAction)
       .where(
         and(
@@ -411,7 +415,15 @@ export async function decide(db: Database, input: DecideInput, now = new Date())
 
     const [created] = await tx
       .insert(match)
-      .values({ userLow: low, userHigh: high, mode: input.matchMode, source: "like", createdAt: now })
+      .values({
+        userLow: low,
+        userHigh: high,
+        mode: input.matchMode,
+        source: "like",
+        // Either like given blind makes a blind match (DEC-10).
+        blind: input.blind === true || reciprocal.blind,
+        createdAt: now,
+      })
       .onConflictDoNothing()
       .returning({ id: match.id });
     const matchId =
@@ -564,4 +576,84 @@ export async function activeMatchBetween(db: Database, a: string, b: string) {
 /** Schools of the campus, for the deck filters. */
 export async function listSchools(db: Database) {
   return db.select({ slug: school.slug, name: school.name }).from(school).orderBy(asc(school.name));
+}
+
+export interface BlindState {
+  /** The blind match between the two, if any, with the messages each sent. */
+  readonly match: { readonly id: string; readonly mine: number; readonly theirs: number } | null;
+  /** A blind like between the two that has not become a match yet. */
+  readonly pendingLike: boolean;
+}
+
+/**
+ * Blind mode (DEC-10) between the viewer and some members: blind matches
+ * with the number of messages each sent, and pending blind likes either way.
+ * Members absent from the map have nothing blind with the viewer.
+ */
+export async function blindStates(
+  db: Database,
+  viewerId: string,
+  otherIds: readonly string[],
+): Promise<Map<string, BlindState>> {
+  const result = new Map<string, BlindState>();
+  const others = otherIds.filter((id) => id !== viewerId);
+  if (others.length === 0) {
+    return result;
+  }
+  const matches = await db
+    .select({ id: match.id, userLow: match.userLow, userHigh: match.userHigh })
+    .from(match)
+    .where(
+      and(
+        eq(match.blind, true),
+        or(
+          and(eq(match.userLow, viewerId), inArray(match.userHigh, others)),
+          and(eq(match.userHigh, viewerId), inArray(match.userLow, others)),
+        ),
+      ),
+    );
+  if (matches.length > 0) {
+    const counts = await db
+      .select({ matchId: message.matchId, senderId: message.senderId, n: sql<number>`count(*)::int` })
+      .from(message)
+      .where(
+        and(
+          inArray(
+            message.matchId,
+            matches.map((m) => m.id),
+          ),
+          isNull(message.deletedAt),
+        ),
+      )
+      .groupBy(message.matchId, message.senderId);
+    for (const m of matches) {
+      const otherId = m.userLow === viewerId ? m.userHigh : m.userLow;
+      const sent = (sender: string) =>
+        counts.find((c) => c.matchId === m.id && c.senderId === sender)?.n ?? 0;
+      result.set(otherId, {
+        match: { id: m.id, mine: sent(viewerId), theirs: sent(otherId) },
+        pendingLike: false,
+      });
+    }
+  }
+  const likes = await db
+    .select({ actorId: likeAction.actorId, targetId: likeAction.targetId })
+    .from(likeAction)
+    .where(
+      and(
+        eq(likeAction.blind, true),
+        ne(likeAction.kind, "pass"),
+        or(
+          and(eq(likeAction.targetId, viewerId), inArray(likeAction.actorId, others)),
+          and(eq(likeAction.actorId, viewerId), inArray(likeAction.targetId, others)),
+        ),
+      ),
+    );
+  for (const like of likes) {
+    const otherId = like.actorId === viewerId ? like.targetId : like.actorId;
+    if (!result.has(otherId)) {
+      result.set(otherId, { match: null, pendingLike: true });
+    }
+  }
+  return result;
 }

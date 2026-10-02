@@ -134,6 +134,13 @@
       "when": 1790962423582,
       "tag": "0018_curly_purple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790962821387,
+      "tag": "0019_polite_callisto",
+      "breakpoints": true
     }
   ]
 }

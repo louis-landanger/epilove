@@ -33,6 +33,7 @@ import {
 import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
 import { requireMemberRow } from "../rencontre/access";
+import { hiddenPhotos } from "../rencontre/blind";
 import { signedPhotoUrl } from "../rencontre/media";
 
 type Row = NonNullable<Awaited<ReturnType<typeof eventForViewer>>>;
@@ -169,10 +170,11 @@ export const events = {
     const matches = new Map((await activeMatchesOf(db, viewer.member.id)).map((m) => [m.otherId, m.id]));
     const candidates = sharing.filter((a) => matches.has(a.userId));
     const ids = candidates.map((a) => a.userId);
-    const [members, relations, content] = await Promise.all([
+    const [members, relations, content, blind] = await Promise.all([
       loadMembers(db, ids),
       loadRelations(db, viewer.member.id, ids),
       loadProfileContent(db, ids),
+      hiddenPhotos(db, viewer.member.id, ids),
     ]);
     const today = campusDate(new Date());
     const matchesGoing = candidates.flatMap((attendee) => {
@@ -187,7 +189,8 @@ export const events = {
           userId: attendee.userId,
           matchId,
           firstName: other.firstName,
-          photoUrl: photo ? signedPhotoUrl(photo.storageKey, "thumb") : null,
+          photoUrl:
+            photo && !blind.hidden.has(attendee.userId) ? signedPhotoUrl(photo.storageKey, "thumb") : null,
           status: attendee.status,
         },
       ];
