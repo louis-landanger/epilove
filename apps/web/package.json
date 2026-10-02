@@ -14,9 +14,13 @@
   },
   "dependencies": {
     "@epilove/api": "workspace:*",
+    "@epilove/contracts": "workspace:*",
     "@epilove/core": "workspace:*",
     "@epilove/db": "workspace:*",
+    "@epilove/three": "workspace:*",
     "@epilove/tokens": "workspace:*",
+    "gsap": "catalog:",
+    "lenis": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",
     "react": "catalog:",

@@ -194,6 +194,9 @@ catalogs:
     '@types/react-dom':
       specifier: 19.3.0
       version: 19.3.0
+    '@types/three':
+      specifier: 0.186.0
+      version: 0.186.0
     babel-plugin-react-compiler:
       specifier: 1.0.0
       version: 1.0.0
@@ -209,9 +212,15 @@ catalogs:
     graphile-worker:
       specifier: 0.18.0
       version: 0.18.0
+    gsap:
+      specifier: 3.15.0
+      version: 3.15.0
     hono:
       specifier: 4.13.12
       version: 4.13.12
+    lenis:
+      specifier: 1.3.26
+      version: 1.3.26
     next:
       specifier: 16.3.8
       version: 16.3.8
@@ -236,6 +245,9 @@ catalogs:
     tailwindcss:
       specifier: 4.3.3
       version: 4.3.3
+    three:
+      specifier: 0.186.1
+      version: 0.186.1
     tsx:
       specifier: 4.23.15
       version: 4.23.15
@@ -271,15 +283,27 @@ importers:
       '@epilove/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@epilove/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@epilove/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@epilove/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@epilove/three':
+        specifier: workspace:*
+        version: link:../../packages/three
       '@epilove/tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
+      gsap:
+        specifier: 'catalog:'
+        version: 3.15.0
+      lenis:
+        specifier: 'catalog:'
+        version: 1.3.26(react@19.3.0)
       next:
         specifier: 'catalog:'
         version: 16.3.8(@playwright/test@1.63.0)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -363,9 +387,15 @@ importers:
       '@epilove/core':
         specifier: workspace:*
         version: link:../core
+      '@epilove/crypto':
+        specifier: workspace:*
+        version: link:../crypto
       '@epilove/db':
         specifier: workspace:*
         version: link:../db
+      '@epilove/email':
+        specifier: workspace:*
+        version: link:../email
       '@orpc/client':
         specifier: 'catalog:'
         version: 1.15.4
@@ -520,6 +550,28 @@ importers:
         specifier: 'catalog:'
         version: 5.0.3(@types/node@24.19.0)(vite@8.3.2(@types/node@24.19.0))
 
+  packages/three:
+    dependencies:
+      '@epilove/tokens':
+        specifier: workspace:*
+        version: link:../tokens
+      three:
+        specifier: 'catalog:'
+        version: 0.186.1
+    devDependencies:
+      '@epilove/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/three':
+        specifier: 'catalog:'
+        version: 0.186.0
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@types/node@24.19.0)(vite@8.3.2(@types/node@24.19.0))
+
   packages/tokens:
     devDependencies:
       '@epilove/config':
@@ -621,6 +673,9 @@ packages:
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
+
+  '@dimforge/rapier3d-compat@0.12.0':
+    resolution: {integrity: sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow==}
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
@@ -1807,6 +1862,9 @@ packages:
     cpu: [arm64]
     os: [win32]
 
+  '@tweenjs/tween.js@23.1.3':
+    resolution: {integrity: sha512-vJmvvwFxYuGnF2axRtPYocag6Clbb5YS7kLL+SO/TeVFzHqDIWrNKYtcsPMibjDx9O+bu+psAy9NKfWklassUA==}
+
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
@@ -1847,6 +1905,15 @@ packages:
 
   '@types/semver@7.8.0':
     resolution: {integrity: sha512-1mAINjtQCXXeLkJ9ehXkwOcBpqtLxiVtKhpUf83DdRNdQKV0iXZpaHYqRr7nj+wvxuJzoAmAwXI+sCNMv1CzLQ==}
+
+  '@types/stats.js@0.17.4':
+    resolution: {integrity: sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==}
+
+  '@types/three@0.186.0':
+    resolution: {integrity: sha512-mxYSBpDC+D0pLfSP6sW4WZTcT+nrtmZcimMqnVmy36Hte3XpeYSrvgg4TRdaM1GemGog1AWzI5qL2VoIfMXbJQ==}
+
+  '@types/webxr@0.5.24':
+    resolution: {integrity: sha512-h8fgEd/DpoS9CBrjEQXR+dIDraopAEfu4wYVNY2tEPwk60stPWhvZMf4Foo5FakuQ7HFZoa8WceaWFervK2Ovg==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -2225,6 +2292,9 @@ packages:
       picomatch:
         optional: true
 
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -2248,6 +2318,9 @@ packages:
     resolution: {integrity: sha512-WDpuFp7v6TUoTeA5k9YFHfopaomZkyIy90PvRWMuM5BV0igRnNScw82HI6IehAiaI7wWpS56IWloLZ8ugZ2ceA==}
     engines: {node: '>=22.18.0'}
     hasBin: true
+
+  gsap@3.15.0:
+    resolution: {integrity: sha512-dMW4CWBTUK1AEEDeZc1g4xpPGIrSf9fJF960qbTZmN/QwZIWY5wgliS6JWl9/25fpTGJrMRtSjGtOmPnfjZB+A==}
 
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
@@ -2358,6 +2431,20 @@ packages:
   lefthook@2.1.15:
     resolution: {integrity: sha512-l/BSlOZBou3zLDuSIV8V+kbNyC6UiFCACVHu8dVUCDxH5+8qZXmJr8iROruI/7hv6W7c3sVlVT+6+BpVhGZRmA==}
     hasBin: true
+
+  lenis@1.3.26:
+    resolution: {integrity: sha512-s/xTCZCxTFvHbAN1OzuhNaN5YPJH2ail0XAkctKW1b+RUAG4nUL5UHLXwNko1h8aEeT2jspBXegMgPJd8zcuag==}
+    peerDependencies:
+      '@nuxt/kit': '>=3.0.0'
+      react: '>=17.0.0'
+      vue: '>=3.0.0'
+    peerDependenciesMeta:
+      '@nuxt/kit':
+        optional: true
+      react:
+        optional: true
+      vue:
+        optional: true
 
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
@@ -2515,6 +2602,9 @@ packages:
 
   magic-string@1.4.2:
     resolution: {integrity: sha512-vG+rjFRj1PqdIBozIxAGMjPlOhaVe+GXpbttY/iSK7rGcJRMlwNJO7dcUwmUqkymsFLJiNGI06t4D7Fr7yRC9g==}
+
+  meshoptimizer@1.1.1:
+    resolution: {integrity: sha512-oRFNWJRDA/WTrVj7NWvqa5HqE1t9MYDj2VaWirQCzCCrAd2GHrqR/sQezCxiWATPNlKTcRaPRHPJwIRoPBAp5g==}
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
@@ -2776,6 +2866,9 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
+  three@0.186.1:
+    resolution: {integrity: sha512-blFeqb49wRCSGUGj7gtpfnSGHy2lwDk94RhUmS1c/hTby70kvChbWpkJ4Pm1390LqzzvTmzgXKHPEafJwCb8jA==}
+
   tinybench@6.2.0:
     resolution: {integrity: sha512-78U2TlB2CnVenajOFzf3BKSm0J6oz5L0NV7g32LCPccvYc0lbWvys4d3uUUCS2B1N8PAf2+aekR8i1KbC3HO7Q==}
     engines: {node: '>=20.0.0'}
@@ -2994,6 +3087,8 @@ snapshots:
 
   '@biomejs/cli-win32-x64@2.5.15':
     optional: true
+
+  '@dimforge/rapier3d-compat@0.12.0': {}
 
   '@drizzle-team/brocli@0.10.2': {}
 
@@ -3769,6 +3864,8 @@ snapshots:
   '@turbo/windows-arm64@2.11.6':
     optional: true
 
+  '@tweenjs/tween.js@23.1.3': {}
+
   '@types/chai@5.2.3':
     dependencies:
       '@types/deep-eql': 4.0.2
@@ -3815,6 +3912,19 @@ snapshots:
       csstype: 3.2.3
 
   '@types/semver@7.8.0': {}
+
+  '@types/stats.js@0.17.4': {}
+
+  '@types/three@0.186.0':
+    dependencies:
+      '@dimforge/rapier3d-compat': 0.12.0
+      '@tweenjs/tween.js': 23.1.3
+      '@types/stats.js': 0.17.4
+      '@types/webxr': 0.5.24
+      fflate: 0.8.3
+      meshoptimizer: 1.1.1
+
+  '@types/webxr@0.5.24': {}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
@@ -4080,6 +4190,8 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.7
 
+  fflate@0.8.3: {}
+
   fsevents@2.3.3:
     optional: true
 
@@ -4119,6 +4231,8 @@ snapshots:
       - pg-native
       - supports-color
       - typescript
+
+  gsap@3.15.0: {}
 
   has-flag@4.0.0: {}
 
@@ -4204,6 +4318,10 @@ snapshots:
       lefthook-openbsd-x64: 2.1.15
       lefthook-windows-arm64: 2.1.15
       lefthook-windows-x64: 2.1.15
+
+  lenis@1.3.26(react@19.3.0):
+    optionalDependencies:
+      react: 19.3.0
 
   lightningcss-android-arm64@1.32.0:
     optional: true
@@ -4312,6 +4430,8 @@ snapshots:
   magic-string@1.4.2:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
+
+  meshoptimizer@1.1.1: {}
 
   ms@2.1.3: {}
 
@@ -4576,6 +4696,8 @@ snapshots:
   tailwindcss@4.3.3: {}
 
   tapable@2.3.3: {}
+
+  three@0.186.1: {}
 
   tinybench@6.2.0: {}
 
