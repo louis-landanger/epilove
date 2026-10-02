@@ -10,6 +10,7 @@ export const NOTIFICATION_TYPES = [
   "chat_nudge",
   "drop_ready",
   "pact_reveal",
+  "event_cancelled",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -23,6 +24,7 @@ export const NOTIFICATION_GROUPS = {
   messages: ["message_received", "chat_nudge"],
   drop: ["drop_ready"],
   pact: ["pact_reveal"],
+  events: ["event_cancelled"],
 } as const satisfies Record<string, readonly NotificationType[]>;
 export type NotificationGroup = keyof typeof NOTIFICATION_GROUPS;
 export const NOTIFICATION_GROUP_NAMES = Object.keys(NOTIFICATION_GROUPS) as NotificationGroup[];
@@ -40,7 +42,10 @@ export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 export const DEFAULT_CHANNELS: Readonly<Record<NotificationChannel, boolean>> = { push: true, email: false };
 
 /** Where a notification leads in the app. */
-export function notificationUrl(type: NotificationType, payload: { matchId?: string } | null): string {
+export function notificationUrl(
+  type: NotificationType,
+  payload: { matchId?: string; eventId?: string } | null,
+): string {
   switch (type) {
     case "match_created":
     case "message_received":
@@ -53,5 +58,7 @@ export function notificationUrl(type: NotificationType, payload: { matchId?: str
       return "/decouvrir";
     case "pact_reveal":
       return "/campus/pacte";
+    case "event_cancelled":
+      return payload?.eventId ? `/campus/evenements/${payload.eventId}` : "/campus/evenements";
   }
 }

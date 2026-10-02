@@ -28,6 +28,11 @@ export type ProfileAccess =
 
 const denied = (reason: ProfileAccessReason) => ({ visible: false, reason }) as const;
 
+/** Can this member use the community features (events, campus life)? Adult, with a usable account. */
+export function canUseApp(member: Member, today: string): boolean {
+  return USING_STATUSES.has(member.status) && ageOn(member.birthDate, today) >= MINIMUM_AGE;
+}
+
 function hardRules(viewer: Member, target: Member, context: PolicyContext): ProfileAccessReason | null {
   if (
     ageOn(viewer.birthDate, context.today) < MINIMUM_AGE ||

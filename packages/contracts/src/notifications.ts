@@ -13,7 +13,7 @@ export type NotificationItem = z.infer<typeof notificationItem>;
 
 export const channelPreference = z.object({ push: z.boolean(), email: z.boolean() });
 export const notificationPreferences = z.object({
-  groups: z.record(z.enum(["likes", "matches", "messages", "drop", "pact"]), channelPreference),
+  groups: z.record(z.enum(["likes", "matches", "messages", "drop", "pact", "events"]), channelPreference),
 });
 export type NotificationPreferencesView = z.infer<typeof notificationPreferences>;
 

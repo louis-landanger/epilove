@@ -2,6 +2,7 @@ import { campus } from "./modules/campus";
 import { campusLife } from "./modules/campus-life";
 import { dev } from "./modules/dev";
 import { discovery } from "./modules/discovery";
+import { events } from "./modules/events";
 import { matches } from "./modules/matches";
 import { messaging } from "./modules/messaging";
 import { notifications } from "./modules/notifications";
@@ -21,6 +22,7 @@ export const router = os.router({
   campusLife,
   dev,
   discovery,
+  events,
   matches,
   messaging,
   notifications,

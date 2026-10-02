@@ -1,5 +1,6 @@
 export * from "./campus";
 export * from "./discovery";
+export * from "./events";
 export * from "./messaging";
 export * from "./notifications";
 export * from "./outbox";

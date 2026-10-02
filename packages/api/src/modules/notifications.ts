@@ -34,7 +34,10 @@ export const notifications = {
               {
                 id: item.id,
                 type: item.type,
-                url: notificationUrl(item.type, item.payload as { matchId?: string } | null),
+                url: notificationUrl(
+                  item.type,
+                  item.payload as { matchId?: string; eventId?: string } | null,
+                ),
                 read: item.readAt !== null,
                 createdAt: item.createdAt.toISOString(),
               },

@@ -4,7 +4,7 @@ import { emailHmac } from "@epilove/crypto";
 import { eq, inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import { runMigrations } from "../migrations";
-import { appUser, photo, preferences, profile, question, questionAnswer, school } from "../schema";
+import { appUser, event, photo, preferences, profile, question, questionAnswer, school } from "../schema";
 import { runSeeds } from "../seeds";
 
 /**
@@ -26,6 +26,8 @@ export interface TestMemberOptions {
   readonly ageMin?: number;
   readonly ageMax?: number;
   readonly createdAt?: Date;
+  /** Account role ("organizer" publishes campus events, IRL-01). */
+  readonly role?: "user" | "organizer" | "moderator" | "admin";
   /** Fingerprint the address with this secret (secret crush tests); a placeholder otherwise. */
   readonly emailHmacSecret?: string;
 }
@@ -67,6 +69,7 @@ export async function createTestMember(db: Database, options: TestMemberOptions 
     emailVerified: true,
     name: options.firstName ?? "Test",
     status: options.status ?? "active",
+    role: options.role ?? "user",
     lastActiveAt: new Date(),
     createdAt: options.createdAt ?? new Date(Date.now() - 30 * 86_400_000),
   });
@@ -106,6 +109,8 @@ export async function cleanupTestMembers(db: Database) {
   const ids = [...created];
   created.clear();
   if (ids.length > 0) {
+    // Their events would otherwise outlive them (the organizer is set to null).
+    await db.delete(event).where(inArray(event.organizerId, ids));
     await db.delete(appUser).where(inArray(appUser.id, ids));
   }
 }

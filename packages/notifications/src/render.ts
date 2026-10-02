@@ -28,6 +28,7 @@ const TEXTS = {
     chat_nudge_named: "Ça fait quelques jours avec {name}. Une idée pour relancer ?",
     drop_ready: "Ton Drop est arrivé.",
     pact_reveal: "C'est l'heure : les résultats du Pacte sont là.",
+    event_cancelled: "Un événement auquel tu as répondu est annulé.",
   },
   en: {
     title: "Epilove",
@@ -41,6 +42,7 @@ const TEXTS = {
     chat_nudge_named: "It's been a few days with {name}. An idea to restart?",
     drop_ready: "Your Drop is here.",
     pact_reveal: "It's time: the Pact results are in.",
+    event_cancelled: "An event you answered has been cancelled.",
   },
 } as const;
 
@@ -49,7 +51,7 @@ export interface RenderOptions {
   /** First name of the other member, only used when discretion is off. */
   readonly otherFirstName?: string | null;
   readonly locale?: Locale;
-  readonly payload?: { matchId?: string } | null;
+  readonly payload?: { matchId?: string; eventId?: string } | null;
 }
 
 export function renderPush(type: NotificationType, options: RenderOptions): PushContent {

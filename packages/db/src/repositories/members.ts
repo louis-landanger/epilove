@@ -314,6 +314,15 @@ export async function touchLastActive(db: Database, userId: string, now: Date = 
     );
 }
 
+/**
+ * The account's current role, read from the database: a role granted or
+ * withdrawn (organizer, IRL-01) applies at once, whatever the session says.
+ */
+export async function roleOf(db: Database, userId: string) {
+  const [row] = await db.select({ role: appUser.role }).from(appUser).where(eq(appUser.id, userId));
+  return row?.role ?? null;
+}
+
 /** Development member picker (/dev): never used outside APP_ENV=development|test. */
 export async function listMembersForDevPicker(db: Database) {
   return db

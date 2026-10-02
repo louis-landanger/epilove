@@ -159,7 +159,7 @@ export interface PendingPush {
   readonly id: string;
   readonly userId: string;
   readonly type: string;
-  readonly payload: { matchId?: string } | null;
+  readonly payload: { matchId?: string; eventId?: string } | null;
 }
 
 /**

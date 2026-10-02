@@ -25,6 +25,7 @@ import {
 } from "../schema";
 import { runSeeds } from "../seeds";
 import { DEV_INTERESTS, DEV_PROMPTS, PRONOUNS } from "./content";
+import { seedDevEvents } from "./events";
 import { planActivity } from "./graph";
 import { DEV_ID_RANGE, type DevMember, generateMembers } from "./members";
 import { PHOTO_HEIGHT, PHOTO_WIDTH, syntheticPhoto } from "./photos";
@@ -397,6 +398,9 @@ export async function runDevSeed(options: DevSeedOptions): Promise<DevSeedSummar
     ),
   ];
   await insertInChunks(notificationRows, (chunk) => db.insert(notification).values(chunk));
+
+  const events = await seedDevEvents(db, { members, schools, now, random: random.fork("events") });
+  log(`${events} campus events.`);
 
   if (storage) {
     await storage.ensureBucket();

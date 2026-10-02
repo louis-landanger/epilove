@@ -2,6 +2,7 @@ import { campusContract } from "./campus";
 import { campusLifeContract } from "./campus-life";
 import { devContract } from "./dev";
 import { discoveryContract } from "./discovery";
+import { eventsContract } from "./events";
 import { matchesContract } from "./matches";
 import { messagingContract } from "./messaging";
 import { notificationsContract } from "./notifications";
@@ -17,6 +18,7 @@ export const contract = {
   campusLife: campusLifeContract,
   dev: devContract,
   discovery: discoveryContract,
+  events: eventsContract,
   matches: matchesContract,
   messaging: messagingContract,
   notifications: notificationsContract,
@@ -33,6 +35,7 @@ export * from "./campus";
 export * from "./campus-life";
 export * from "./dev";
 export * from "./discovery";
+export * from "./events";
 export * from "./matches";
 export * from "./messaging";
 export * from "./notifications";
