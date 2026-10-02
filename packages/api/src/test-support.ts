@@ -1,5 +1,6 @@
 import { createApiClient } from "@epilove/contracts/client";
 import { uuidv7 } from "@epilove/core";
+import type { KeyRing } from "@epilove/crypto";
 import { createDatabase, type Database, runSeeds, schema } from "@epilove/db";
 import { runJobQueueSchemaMigrations, runMigrations } from "@epilove/db/migrations";
 import { createMemoryStorage } from "@epilove/media/storage";
@@ -7,6 +8,11 @@ import { createMemoryRateLimiter } from "@epilove/rate-limit";
 import { eq } from "drizzle-orm";
 import { vi } from "vitest";
 import { createApp } from "./app";
+
+export const TEST_KEY_RING: KeyRing = {
+  currentKeyId: "test",
+  keys: new Map([["test", new Uint8Array(32).fill(7)]]),
+};
 
 /** API wired to a real database and in-memory services, for integration tests. */
 export function createTestApi(url: string, now = new Date("2026-10-02T10:00:00Z")) {
@@ -31,6 +37,7 @@ export function createTestApi(url: string, now = new Date("2026-10-02T10:00:00Z"
       limiter: createMemoryRateLimiter(),
       revokeSessions,
       emailHmacSecret: () => "test-only-email-hmac-secret-32-characters",
+      keyRing: () => TEST_KEY_RING,
       now: () => now,
     },
   });

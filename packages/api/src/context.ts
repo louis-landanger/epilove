@@ -1,3 +1,4 @@
+import type { KeyRing } from "@epilove/crypto";
 import type { Database, Role } from "@epilove/db";
 import type { ImgproxyConfig } from "@epilove/media";
 import type { Storage } from "@epilove/media/storage";
@@ -22,6 +23,8 @@ export interface ApiServices {
   readonly revokeSessions: (userId: string) => Promise<void>;
   /** Secret for email fingerprints (`emailHmac`). */
   readonly emailHmacSecret: () => string;
+  /** Keys for application-level encryption (report details, message bodies). */
+  readonly keyRing: () => KeyRing;
   readonly now: () => Date;
 }
 

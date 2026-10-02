@@ -1,0 +1,35 @@
+{
+  "block": {
+    "action": "Bloquer",
+    "title": "Bloquer {name} ?",
+    "body": "Vous ne vous verrez plus, nulle part. {name} n'est pas prévenu·e. Tu pourras débloquer depuis les réglages.",
+    "confirm": "Bloquer",
+    "done": "{name} est bloqué·e."
+  },
+  "report": {
+    "action": "Signaler",
+    "title": "Signaler {name}",
+    "lead": "C'est anonyme pour la personne signalée. Notre équipe lit chaque signalement.",
+    "reasonLabel": "Que se passe-t-il ?",
+    "reasons": {
+      "harassment": "Harcèlement ou insultes",
+      "threat": "Menaces ou violence",
+      "explicit_content": "Contenu sexuel non sollicité",
+      "hate": "Propos haineux",
+      "minor": "Cette personne semble mineure",
+      "impersonation": "Faux profil ou usurpation",
+      "outing": "Révélation de l'orientation ou de la vie privée",
+      "spam": "Spam ou arnaque",
+      "not_on_campus": "Ne fait pas partie du campus",
+      "other": "Autre chose"
+    },
+    "detailsLabel": "Détails (facultatif)",
+    "detailsHelp": "Chiffrés, lus uniquement par l'équipe de modération.",
+    "alsoBlock": "Bloquer aussi cette personne",
+    "submit": "Envoyer le signalement",
+    "sent": "Signalement envoyé. Merci, on s'en occupe.",
+    "urgent": "Si tu es en danger, appelle le 17 ou le 112.",
+    "error": "Le signalement n'a pas pu être envoyé. Réessaie.",
+    "rateLimited": "Tu as envoyé beaucoup de signalements aujourd'hui. Réessaie demain ou écris-nous depuis la page d'aide."
+  }
+}

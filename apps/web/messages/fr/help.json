@@ -1,0 +1,47 @@
+{
+  "metaTitle": "Aide et sécurité",
+  "title": "Aide et sécurité",
+  "lead": "Si tu es en danger ou si quelqu'un t'a fait du mal, tu n'es pas seul·e. Ces services sont gratuits et confidentiels.",
+  "emergency": {
+    "title": "En cas d'urgence",
+    "items": {
+      "police": { "number": "17", "label": "Police secours" },
+      "eu": { "number": "112", "label": "Numéro d'urgence européen" },
+      "samu": { "number": "15", "label": "Urgence médicale (SAMU)" },
+      "sms": { "number": "114", "label": "Urgences par SMS, si tu ne peux pas parler" }
+    }
+  },
+  "listen": {
+    "title": "Pour en parler",
+    "items": {
+      "violence": { "number": "3919", "label": "Violences Femmes Info, 24 h/24, anonyme" },
+      "cyber": { "number": "3018", "label": "Harcèlement et violences en ligne" },
+      "suicide": { "number": "3114", "label": "Prévention du suicide, 24 h/24" },
+      "youth": { "number": "0 800 235 236", "label": "Fil Santé Jeunes, anonyme" },
+      "lgbt": { "number": "01 48 06 42 41", "label": "SOS Homophobie, ligne d'écoute" }
+    }
+  },
+  "report": {
+    "title": "Signaler en dehors de l'application",
+    "violence": "Signaler des violences sexuelles ou sexistes à la police ou à la gendarmerie, en ligne et 24 h/24",
+    "pharos": "Signaler un contenu illicite sur internet (PHAROS)"
+  },
+  "schools": {
+    "title": "Dans ton école",
+    "lead": "Chaque école a un dispositif contre les violences sexistes et sexuelles. Tu peux les contacter même si les faits ont eu lieu en dehors du campus.",
+    "epita": "Plateforme de signalement des violences de l'EPITA (lien sur l'intranet)",
+    "esme": "Plateforme de signalement de l'ESME (lien sur l'intranet)",
+    "supbiotech": "Plateforme de signalement de Sup'Biotech (lien sur l'intranet)",
+    "isg": "Référente violences sexistes et sexuelles de l'ISG Lyon (contact auprès de l'administration)",
+    "ipsa": "Dispositif de l'IPSA : renseigne-toi auprès de l'administration du campus",
+    "verified": "Liens vérifiés à chaque rentrée."
+  },
+  "inApp": {
+    "title": "Dans Epilove",
+    "block": "Bloquer : immédiat, réciproque, la personne n'est pas prévenue.",
+    "report": "Signaler : depuis un profil, une photo ou un message. C'est anonyme pour la personne signalée.",
+    "hide": "Masquer des personnes précises ou ton école, depuis les réglages.",
+    "settings": "Ouvrir les réglages"
+  },
+  "call": "Appeler le {number}"
+}

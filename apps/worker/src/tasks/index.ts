@@ -1,4 +1,5 @@
 import type { TaskList } from "graphile-worker";
+import { accountsCrontab, accountsTasks } from "./accounts";
 import { mediaCrontab, mediaTasks } from "./media";
 
 /**
@@ -11,8 +12,9 @@ export const taskList: TaskList = {
   heartbeat: async (_payload, helpers) => {
     helpers.logger.info("heartbeat");
   },
+  ...accountsTasks(),
   ...mediaTasks(),
 };
 
 /** Graphile Worker crontab format: minute hour day month weekday task. */
-export const crontab = ["*/15 * * * * heartbeat", ...mediaCrontab].join("\n");
+export const crontab = ["*/15 * * * * heartbeat", ...accountsCrontab, ...mediaCrontab].join("\n");

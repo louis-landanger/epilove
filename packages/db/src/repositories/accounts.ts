@@ -1,12 +1,14 @@
 import type { Gender, Mode } from "@epilove/core";
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import {
   appUser,
   type ConsentKind,
   consent,
+  identityVault,
   type OnboardingDraftData,
   onboardingDraft,
+  photo,
   preferences,
   profile,
   school,
@@ -208,4 +210,87 @@ export async function deleteUnderageAccount(db: Db, userId: string, emailHmac: s
     .values({ emailHmac, reason: "underage", until })
     .onConflictDoUpdate({ target: signupBlock.emailHmac, set: { until } });
   await db.delete(appUser).where(eq(appUser.id, userId));
+}
+
+// --- Pause and deletion (SAF-05, SAF-14) -------------------------------------------------
+
+/** Moves an account from one status to another; false when it was not in `from` any more. */
+export async function transitionStatus(
+  db: Db,
+  userId: string,
+  from: "active" | "paused",
+  to: "active" | "paused",
+): Promise<boolean> {
+  const updated = await db
+    .update(appUser)
+    .set({ status: to })
+    .where(and(eq(appUser.id, userId), eq(appUser.status, from)))
+    .returning({ id: appUser.id });
+  return updated.length > 0;
+}
+
+/**
+ * Starts the deletion of an account: status `deleting` (invisible at once),
+ * declared identity copied to the legal vault. Content is purged later by
+ * the `accounts/purge` job.
+ */
+export async function requestAccountDeletion(db: Db, userId: string, at: Date, vaultPurgeAfter: Date) {
+  const [account] = await db
+    .select({ email: appUser.email, status: appUser.status })
+    .from(appUser)
+    .where(eq(appUser.id, userId))
+    .limit(1);
+  if (!account || account.status === "deleting") {
+    return false;
+  }
+  const [identity] = await db
+    .select({ firstName: profile.firstName, birthDate: profile.birthDate })
+    .from(profile)
+    .where(eq(profile.userId, userId))
+    .limit(1);
+  await db.insert(identityVault).values({
+    formerUserId: userId,
+    email: account.email,
+    firstName: identity?.firstName ?? null,
+    birthDate: identity?.birthDate ?? null,
+    closedAt: at,
+    purgeAfter: vaultPurgeAfter,
+  });
+  await db.update(appUser).set({ status: "deleting", deletionRequestedAt: at }).where(eq(appUser.id, userId));
+  return true;
+}
+
+/** Accounts whose deletion grace period is over. */
+export async function listAccountsToPurge(db: Db, requestedBefore: Date) {
+  return db
+    .select({ id: appUser.id })
+    .from(appUser)
+    .where(and(eq(appUser.status, "deleting"), lt(appUser.deletionRequestedAt, requestedBefore)))
+    .limit(200);
+}
+
+export async function listStorageKeys(db: Db, userId: string) {
+  const rows = await db.select({ key: photo.storageKey }).from(photo).where(eq(photo.userId, userId));
+  return rows.map((row) => row.key);
+}
+
+/** Final erasure: every row referencing the account cascades or is set to null (reports). */
+export async function deleteAccountRow(db: Db, userId: string) {
+  await db.delete(appUser).where(and(eq(appUser.id, userId), eq(appUser.status, "deleting")));
+}
+
+export async function purgeExpiredIdentities(db: Db, now: Date) {
+  const deleted = await db
+    .delete(identityVault)
+    .where(lt(identityVault.purgeAfter, now))
+    .returning({ id: identityVault.id });
+  return deleted.length;
+}
+
+export async function purgeExpiredSignupBlocks(db: Db, today: string) {
+  const deleted = await db
+    .delete(signupBlock)
+    .where(lt(signupBlock.until, today))
+    .returning({ emailHmac: signupBlock.emailHmac });
+  return deleted.length;
 }

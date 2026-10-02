@@ -20,7 +20,22 @@ export const reportInput = z.object({
  * Implemented by stream A (packages/api/src/modules/safety.ts); stream B only calls them.
  */
 export const safetyContract = {
-  block: oc.input(memberRef).output(z.object({ ok: z.literal(true) })),
+  block: oc
+    .errors({ NOT_FOUND: { status: 404 }, RATE_LIMITED: { status: 429 } })
+    .input(memberRef)
+    .output(z.object({ ok: z.literal(true) })),
   unblock: oc.input(memberRef).output(z.object({ ok: z.literal(true) })),
-  report: oc.input(reportInput).output(z.object({ reportId: z.uuid() })),
+  /** Idempotent: the same report sent twice within a day returns the first one. */
+  report: oc
+    .errors({ NOT_FOUND: { status: 404 }, RATE_LIMITED: { status: 429 } })
+    .input(reportInput)
+    .output(z.object({ reportId: z.uuid() })),
+  /** People the member blocked (settings), with the first name they had. */
+  blocked: oc.output(
+    z.object({
+      people: z.array(
+        z.object({ userId: z.uuid(), firstName: z.string().nullable(), blockedAt: z.iso.datetime() }),
+      ),
+    }),
+  ),
 };

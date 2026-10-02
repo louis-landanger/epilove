@@ -38,6 +38,8 @@ export const appUser = pgTable(
     verifiedAt: timestamp({ withTimezone: true }),
     reverifyDueAt: timestamp({ withTimezone: true }),
     lastActiveAt: timestamp({ withTimezone: true }),
+    /** Self-service deletion (SAF-14): content is purged 30 days later. */
+    deletionRequestedAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },
   (t) => [

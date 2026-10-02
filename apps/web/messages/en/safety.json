@@ -1,0 +1,35 @@
+{
+  "block": {
+    "action": "Block",
+    "title": "Block {name}?",
+    "body": "You won't see each other anywhere any more. {name} isn't told. You can unblock from settings.",
+    "confirm": "Block",
+    "done": "{name} is blocked."
+  },
+  "report": {
+    "action": "Report",
+    "title": "Report {name}",
+    "lead": "It's anonymous for the reported person. Our team reads every report.",
+    "reasonLabel": "What's going on?",
+    "reasons": {
+      "harassment": "Harassment or insults",
+      "threat": "Threats or violence",
+      "explicit_content": "Unsolicited sexual content",
+      "hate": "Hate speech",
+      "minor": "This person seems to be a minor",
+      "impersonation": "Fake profile or impersonation",
+      "outing": "Outing or exposing private life",
+      "spam": "Spam or scam",
+      "not_on_campus": "Not part of the campus",
+      "other": "Something else"
+    },
+    "detailsLabel": "Details (optional)",
+    "detailsHelp": "Encrypted, only read by the moderation team.",
+    "alsoBlock": "Also block this person",
+    "submit": "Send the report",
+    "sent": "Report sent. Thanks, we're on it.",
+    "urgent": "If you're in danger, call 17 or 112.",
+    "error": "The report couldn't be sent. Try again.",
+    "rateLimited": "You've sent many reports today. Try again tomorrow or write to us from the help page."
+  }
+}

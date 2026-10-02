@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/membres",
   "/campus",
   "/notifications",
+  "/aide",
 ];
 
 /** Dynamic pages served with a nonce-based Content-Security-Policy. */

@@ -1,6 +1,6 @@
 import { REPORT_CONTEXTS, REPORT_PRIORITIES, REPORT_REASONS } from "@epilove/core";
 import { sql } from "drizzle-orm";
-import { check, index, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { check, index, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { bytea, createdAt, id, oneOf } from "./columns";
 import { appUser } from "./users";
 
@@ -34,17 +34,20 @@ export const block = pgTable(
   ],
 );
 
-/** Hide from a specific address (SAF-04). Only the HMAC is stored. */
+/** Hide from a specific address (SAF-04). Only the HMAC is stored, plus a partial hint for its owner. */
 export const hiddenContact = pgTable(
   "hidden_contact",
   {
+    id: id(),
     userId: uuid()
       .notNull()
       .references(() => appUser.id, { onDelete: "cascade" }),
     emailHmac: text().notNull(),
+    /** "ca…@epita.fr", shown back to the member who hid the address. */
+    hint: text().notNull(),
     createdAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.emailHmac] }), index().on(t.emailHmac)],
+  (t) => [unique().on(t.userId, t.emailHmac), index().on(t.emailHmac)],
 );
 
 /** Reports outlive the accounts involved (kept one year after the decision). */

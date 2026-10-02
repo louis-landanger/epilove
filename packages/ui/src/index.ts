@@ -10,6 +10,7 @@ export * from "./primitives/display";
 export * from "./primitives/field";
 export * from "./primitives/icon-button";
 export * from "./primitives/otp-input";
+export * from "./primitives/radio-group-field";
 export * from "./primitives/range-field";
 export * from "./primitives/spinner";
 export * from "./primitives/switch-field";

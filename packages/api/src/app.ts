@@ -1,3 +1,4 @@
+import { type KeyRing, keyRingFromEnv } from "@epilove/crypto";
 import { imgproxyConfigFromEnv } from "@epilove/media";
 import { createStorage, type Storage, storageConfigFromEnv } from "@epilove/media/storage";
 import { createMemoryRateLimiter } from "@epilove/rate-limit";
@@ -21,6 +22,7 @@ export interface AppDependencies {
 /** Services built from environment variables, created on first use. */
 export function defaultServices(env: Record<string, string | undefined> = process.env): ApiServices {
   let storage: Storage | undefined;
+  let keyRing: KeyRing | undefined;
   return {
     storage: () => {
       const local = env.APP_ENV === "development" || env.APP_ENV === "test";
@@ -40,6 +42,10 @@ export function defaultServices(env: Record<string, string | undefined> = proces
         throw new Error("EMAIL_HMAC_SECRET must be set (32 characters or more).");
       }
       return secret;
+    },
+    keyRing: () => {
+      keyRing ??= keyRingFromEnv(env);
+      return keyRing;
     },
     now: () => new Date(),
   };

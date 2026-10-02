@@ -1,0 +1,116 @@
+{
+  "metaTitle": "Réglages",
+  "title": "Réglages",
+  "save": "Enregistrer",
+  "saved": "C'est enregistré.",
+  "error": "L'enregistrement a échoué. Réessaie.",
+  "visibility": {
+    "title": "Visibilité",
+    "pause": "Mettre mon profil en pause",
+    "pauseHelp": "Tu disparais de la découverte. Tes conversations restent accessibles.",
+    "paused": "Ton profil est en pause.",
+    "resumed": "Te revoilà visible.",
+    "incognito": "Mode incognito",
+    "incognitoHelp": "Seules les personnes que tu as likées peuvent voir ton profil.",
+    "hideSchool": "Me masquer des étudiants de mon école",
+    "hideSchoolHelp": "Ni toi ni eux ne vous verrez dans la découverte.",
+    "hideYear": "Me masquer de ma promo",
+    "hideYearHelp": "Les personnes de ton école et de ta promo ne te verront pas, et inversement."
+  },
+  "discovery": {
+    "title": "Qui je vois",
+    "modes": "Mode",
+    "modesValue": {
+      "love": "Love",
+      "friends": "Amis",
+      "both": "Love et Amis"
+    },
+    "edit": "Modifier",
+    "dialogTitle": "Ce que tu cherches",
+    "consentState": {
+      "granted": "Consentement aux données sensibles donné",
+      "none": "Sans consentement aux données sensibles : mode Amis uniquement"
+    },
+    "withdraw": "Retirer mon consentement",
+    "withdrawHelp": "Le mode Love se désactive et les genres que tu recherches sont effacés.",
+    "ageTitle": "Tranche d'âge",
+    "saveAge": "Enregistrer la tranche d'âge"
+  },
+  "hidden": {
+    "title": "Personnes masquées",
+    "lead": "Ex, colocataire, frère ou sœur, chargé·e de TD : ajoute son email d'école, vous ne vous verrez jamais. La personne n'est pas prévenue et on ne garde qu'une empreinte de l'adresse.",
+    "label": "Email d'école à masquer",
+    "placeholder": "prenom.nom@ecole.fr",
+    "add": "Masquer",
+    "added": "Adresse masquée.",
+    "invalid": "Une adresse EPITA, ESME, Sup'Biotech, ISG ou IPSA est nécessaire.",
+    "tooMany": "Tu as atteint le nombre maximum d'adresses masquées.",
+    "empty": "Personne pour l'instant.",
+    "remove": "Ne plus masquer {hint}"
+  },
+  "blocked": {
+    "title": "Personnes bloquées",
+    "empty": "Tu n'as bloqué personne.",
+    "unblock": "Débloquer",
+    "unblockLabel": "Débloquer {name}",
+    "unknown": "Compte supprimé",
+    "since": "Bloqué·e le {date}",
+    "unblocked": "Personne débloquée."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "discreet": "Notifications discrètes",
+    "discreetHelp": "Aucun prénom ni contenu dans les notifications : juste « Nouveau message ».",
+    "more": "Toutes les notifications"
+  },
+  "security": {
+    "title": "Connexion et sécurité",
+    "email": "Adresse de connexion",
+    "passkeys": "Passkeys",
+    "passkeysEmpty": "Aucune passkey enregistrée.",
+    "passkeyAdd": "Ajouter une passkey",
+    "passkeyAdded": "Passkey enregistrée.",
+    "passkeyFailed": "La passkey n'a pas pu être enregistrée.",
+    "passkeyRemove": "Supprimer la passkey {name}",
+    "passkeyDefault": "Passkey du {date}",
+    "sessions": "Appareils connectés",
+    "thisDevice": "Cet appareil",
+    "lastActive": "Connecté depuis le {date}",
+    "revoke": "Déconnecter",
+    "revokeLabel": "Déconnecter {device}",
+    "revokeOthers": "Déconnecter tous les autres appareils",
+    "revoked": "Appareil déconnecté.",
+    "unknownDevice": "Appareil inconnu",
+    "signOut": "Se déconnecter"
+  },
+  "data": {
+    "title": "Mes données",
+    "delete": "Supprimer mon compte",
+    "deleteHelp": "Immédiat et définitif : ton profil disparaît tout de suite et tes données sont effacées sous 30 jours.",
+    "dialogTitle": "Supprimer ton compte ?",
+    "dialogBody": "Ton profil, tes photos, tes likes et tes conversations disparaissent. Seule ton identité déclarée (email, prénom, date de naissance) est conservée à part pendant la durée légale, puis effacée.",
+    "confirmLabel": "Écris SUPPRIMER pour confirmer",
+    "confirmWord": "SUPPRIMER",
+    "confirm": "Supprimer définitivement",
+    "cancel": "Annuler"
+  },
+  "links": {
+    "title": "Aide et informations",
+    "help": "Aide et sécurité",
+    "terms": "Conditions d'utilisation",
+    "privacy": "Politique de confidentialité"
+  },
+  "deleted": {
+    "metaTitle": "Compte supprimé",
+    "title": "Ton compte est supprimé.",
+    "body": "Ton profil n'est plus visible et tes données seront effacées sous 30 jours. Merci d'être passé·e par ici.",
+    "home": "Retour à l'accueil"
+  },
+  "suspended": {
+    "metaTitle": "Compte suspendu",
+    "title": "Ton compte est suspendu.",
+    "body": "Une décision de modération a été prise. Tu as reçu par email ses motifs et la façon de la contester.",
+    "help": "Besoin d'aide ?",
+    "signOut": "Se déconnecter"
+  }
+}

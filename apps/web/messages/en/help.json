@@ -1,0 +1,47 @@
+{
+  "metaTitle": "Help and safety",
+  "title": "Help and safety",
+  "lead": "If you're in danger or someone hurt you, you're not alone. These services are free and confidential.",
+  "emergency": {
+    "title": "In an emergency",
+    "items": {
+      "police": { "number": "17", "label": "Police" },
+      "eu": { "number": "112", "label": "European emergency number" },
+      "samu": { "number": "15", "label": "Medical emergency (SAMU)" },
+      "sms": { "number": "114", "label": "Emergencies by text, if you can't speak" }
+    }
+  },
+  "listen": {
+    "title": "To talk about it",
+    "items": {
+      "violence": { "number": "3919", "label": "Violence against women helpline, 24/7, anonymous" },
+      "cyber": { "number": "3018", "label": "Online harassment and violence" },
+      "suicide": { "number": "3114", "label": "Suicide prevention, 24/7" },
+      "youth": { "number": "0 800 235 236", "label": "Fil Santé Jeunes, anonymous" },
+      "lgbt": { "number": "01 48 06 42 41", "label": "SOS Homophobie helpline" }
+    }
+  },
+  "report": {
+    "title": "Report outside the app",
+    "violence": "Report sexual or gender-based violence to the police, online, 24/7",
+    "pharos": "Report illegal content online (PHAROS)"
+  },
+  "schools": {
+    "title": "At your school",
+    "lead": "Each school has a service against sexual and gender-based violence. You can contact them even if it happened off campus.",
+    "epita": "EPITA violence reporting platform (link on the intranet)",
+    "esme": "ESME reporting platform (link on the intranet)",
+    "supbiotech": "Sup'Biotech reporting platform (link on the intranet)",
+    "isg": "ISG Lyon officer for sexual and gender-based violence (contact the administration)",
+    "ipsa": "IPSA: ask the campus administration",
+    "verified": "Links checked at the start of every academic year."
+  },
+  "inApp": {
+    "title": "In Epilove",
+    "block": "Block: immediate, mutual, the person isn't told.",
+    "report": "Report: from a profile, a photo or a message. It's anonymous for the reported person.",
+    "hide": "Hide specific people or your school, from settings.",
+    "settings": "Open settings"
+  },
+  "call": "Call {number}"
+}

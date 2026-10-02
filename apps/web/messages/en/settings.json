@@ -1,0 +1,116 @@
+{
+  "metaTitle": "Settings",
+  "title": "Settings",
+  "save": "Save",
+  "saved": "Saved.",
+  "error": "Saving failed. Try again.",
+  "visibility": {
+    "title": "Visibility",
+    "pause": "Pause my profile",
+    "pauseHelp": "You disappear from discovery. Your conversations stay available.",
+    "paused": "Your profile is paused.",
+    "resumed": "You're visible again.",
+    "incognito": "Incognito mode",
+    "incognitoHelp": "Only people you liked can see your profile.",
+    "hideSchool": "Hide me from students of my school",
+    "hideSchoolHelp": "Neither you nor they will see each other in discovery.",
+    "hideYear": "Hide me from my class",
+    "hideYearHelp": "People from your school and class won't see you, and vice versa."
+  },
+  "discovery": {
+    "title": "Who I see",
+    "modes": "Mode",
+    "modesValue": {
+      "love": "Love",
+      "friends": "Friends",
+      "both": "Love and Friends"
+    },
+    "edit": "Edit",
+    "dialogTitle": "What you're looking for",
+    "consentState": {
+      "granted": "Sensitive-data consent given",
+      "none": "No sensitive-data consent: Friends mode only"
+    },
+    "withdraw": "Withdraw my consent",
+    "withdrawHelp": "Love mode is switched off and the genders you're looking for are erased.",
+    "ageTitle": "Age range",
+    "saveAge": "Save the age range"
+  },
+  "hidden": {
+    "title": "Hidden people",
+    "lead": "An ex, a flatmate, a sibling, a teaching assistant: add their school email and you'll never see each other. They're not told, and we only keep a fingerprint of the address.",
+    "label": "School email to hide",
+    "placeholder": "first.last@school.fr",
+    "add": "Hide",
+    "added": "Address hidden.",
+    "invalid": "An EPITA, ESME, Sup'Biotech, ISG or IPSA address is needed.",
+    "tooMany": "You've reached the maximum number of hidden addresses.",
+    "empty": "Nobody yet.",
+    "remove": "Stop hiding {hint}"
+  },
+  "blocked": {
+    "title": "Blocked people",
+    "empty": "You haven't blocked anyone.",
+    "unblock": "Unblock",
+    "unblockLabel": "Unblock {name}",
+    "unknown": "Deleted account",
+    "since": "Blocked on {date}",
+    "unblocked": "Unblocked."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "discreet": "Discreet notifications",
+    "discreetHelp": "No first name or content in notifications: just \"New message\".",
+    "more": "All notifications"
+  },
+  "security": {
+    "title": "Sign-in and security",
+    "email": "Sign-in address",
+    "passkeys": "Passkeys",
+    "passkeysEmpty": "No passkey saved.",
+    "passkeyAdd": "Add a passkey",
+    "passkeyAdded": "Passkey saved.",
+    "passkeyFailed": "The passkey couldn't be saved.",
+    "passkeyRemove": "Remove passkey {name}",
+    "passkeyDefault": "Passkey from {date}",
+    "sessions": "Signed-in devices",
+    "thisDevice": "This device",
+    "lastActive": "Signed in since {date}",
+    "revoke": "Sign out",
+    "revokeLabel": "Sign out {device}",
+    "revokeOthers": "Sign out every other device",
+    "revoked": "Device signed out.",
+    "unknownDevice": "Unknown device",
+    "signOut": "Sign out"
+  },
+  "data": {
+    "title": "My data",
+    "delete": "Delete my account",
+    "deleteHelp": "Immediate and final: your profile disappears at once and your data is erased within 30 days.",
+    "dialogTitle": "Delete your account?",
+    "dialogBody": "Your profile, photos, likes and conversations disappear. Only your declared identity (email, first name, date of birth) is kept separately for the legal period, then erased.",
+    "confirmLabel": "Type SUPPRIMER to confirm",
+    "confirmWord": "SUPPRIMER",
+    "confirm": "Delete for good",
+    "cancel": "Cancel"
+  },
+  "links": {
+    "title": "Help and information",
+    "help": "Help and safety",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy"
+  },
+  "deleted": {
+    "metaTitle": "Account deleted",
+    "title": "Your account is deleted.",
+    "body": "Your profile is no longer visible and your data will be erased within 30 days. Thanks for stopping by.",
+    "home": "Back to home"
+  },
+  "suspended": {
+    "metaTitle": "Account suspended",
+    "title": "Your account is suspended.",
+    "body": "A moderation decision was taken. You received its reasons by email, and how to contest it.",
+    "help": "Need help?",
+    "signOut": "Sign out"
+  }
+}

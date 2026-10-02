@@ -11,6 +11,7 @@ import {
   primaryKey,
   smallint,
   text,
+  timestamp,
   unique,
   uuid,
   vector,
@@ -50,6 +51,11 @@ export const profile = pgTable(
     /** Multilingual embedding of prompts and interests (docs/06-matching.md, section 4). */
     embedding: vector({ dimensions: 384 }),
     completeness: smallint().notNull().default(0),
+    /**
+     * Set while a serious report waits for review (docs/07, section A4): the
+     * profile is not discoverable until a moderator clears it.
+     */
+    hiddenAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },
   (t) => [

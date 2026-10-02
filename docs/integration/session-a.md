@@ -16,9 +16,14 @@
 | Catalogues | PRO-02, PRO-04 | 40 prompts et 82 centres d'intérêt (fr/en), seeds idempotents | `pnpm db:seed` |
 | Mon profil | PRO-01 à PRO-05, PRO-11 | `/profil` rendu côté serveur (appel en processus de l'API) : aperçu « tel que les autres te voient » (photos et prompts intercalés, intérêts, langues), jauge de complétude et conseils, édition des photos (texte alternatif compris), des infos (prénom, genre, pronoms, cursus, promo, langues, intentions), des prompts et des intérêts. La date de naissance n'est pas modifiable | `packages/api/src/modules/profile.test.ts`, e2e `profile.spec.ts` |
 
+| Sécurité | SAF-01, SAF-02 | Contrat `safety` implémenté : blocage idempotent et silencieux, liste des personnes bloquées, signalement dédupliqué sur 24 h, détails chiffrés (AES-256-GCM, `keyRing`), priorité `reportPriority`, masquage conservatoire (`profile.hidden_at`) immédiat en P1 et à partir de deux signalants indépendants en P2, journal d'audit, quotas (50 blocages et 20 signalements par jour). Dialogues réutilisables `BlockDialog` et `ReportDialog` dans `apps/web/components/acces/safety/safety-dialogs.tsx` | `packages/api/src/modules/safety.test.ts` |
+| Réglages | SAF-03 à SAF-07 | `/reglages` : pause, incognito, masquage école et promo, modes avec consentement sensible (retrait = mode Amis et genres effacés), tranche d'âge, personnes masquées par email (empreinte HMAC + indice « ca…@epita.fr »), personnes bloquées, notifications discrètes, passkeys, appareils connectés révocables, déconnexion | API + e2e `settings.spec.ts` |
+| Suppression de compte | SAF-14 | Statut `deleting` immédiat, identité copiée dans `identity_vault` (5 ans), sessions révoquées, page `/compte/supprime` ; job quotidien `accounts/purge` : comptes supprimés depuis 30 jours (photos du stockage comprises), coffre expiré, blocages « mineur » expirés, compte rendu chiffré dans l'audit | API, worker, e2e |
+| Aide | SAF-15 | `/aide` : numéros d'urgence et d'écoute (liens `tel:`), signalements officiels (arretonslesviolences.gouv.fr, PHAROS), dispositifs VSS des écoles (sans lien tant qu'ils ne sont pas vérifiés), rappel des outils de l'application ; `/compte/suspendu` | e2e |
+
 ## Pas encore fait
 
-- Implémentation du contrat `safety`, réglages de confidentialité, pause, suppression de compte, page d'aide.
+- Export des données (SAF-14, palier 2), mode partiels (SAF-08).
 - Back-office `apps/admin`.
 - Vitrine, liste d'attente et pages légales (en cours, branche de travail séparée, fusionnée dans cette branche à la fin).
 - Paliers 2 et 3.
@@ -37,6 +42,7 @@
 | `packages/db/src/schema/profiles.ts` | `INTENTIONS` et `MAX_PHOTOS` viennent de `@epilove/core` (réexportés) ; colonne `photo.stage` ; contrainte sur `profile.languages` |
 | `apps/worker/src/tasks/index.ts` | Ajout : `...mediaTasks()` et `mediaCrontab` |
 | `packages/api/src/app.ts` | `createServerClient(dependencies, viewer)` : appel des procédures en processus depuis les composants serveur (`serverApi()` dans `apps/web/lib/server/api-app.ts`) |
+| `packages/api/src/context.ts` | `services.keyRing` (chiffrement applicatif) |
 | `apps/web/playwright.config.ts` | Second `webServer` : le worker tourne pendant les tests e2e (les photos sont réellement traitées) |
 | `apps/web/i18n/messages.ts` | Ajout : namespace `onboarding` |
 | `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media` ; `serverExternalPackages` : SDK S3 |
@@ -65,6 +71,10 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 - **Préférences** : `preferences.modes` est déjà filtré par le consentement (`effectiveModes`). `interested_in` est une donnée sensible : jamais dans les journaux, l'analytique ni les exports.
 - **Âge** : toujours calculé depuis `profile.birth_date` avec `ageOn` et la date du campus (`calendarDateIn(LYON_CAMPUS.timeZone, now)`).
 - **Appels serveur** : `serverApi()` (`apps/web/lib/server/api-app.ts`) donne un client typé des procédures pour les composants serveur, avec le membre connecté comme `viewer`.
+- **Profil découvrable** : `discoverableProfileSql(appUser.id)` (`@epilove/db/repositories/safety`) donne la condition SQL complète (profil présent, non masqué pour revue, au moins une photo prête et approuvée). `profile.hidden_at` non nul = profil retenu en attendant la modération.
+- **Comptes** : `paused` (pause, SAF-05) et `deleting` ne doivent pas être découvrables ; une conversation reste lisible en pause. À la purge, la ligne `app_user` est supprimée : les tables de B doivent cascader (ou anonymiser), sauf les messages rattachés à un signalement ouvert.
+- **Blocages** : table `block` (`blocker_id`, `blocked_id`) ; B ferme le match et la conversation au blocage (via `canMessage`).
+- **Signaler / bloquer depuis B** : utiliser `BlockDialog` et `ReportDialog` (props `target: { userId, firstName }`, `context`, `contextRef`).
 - **Quotas** : `withinQuota(services, nom, userId, limite, fenêtre)` (`packages/api/src/lib/quota.ts`).
 - **Jobs** : `enqueueJob(tx, "tache", payload, { jobKey })` dans la transaction métier.
 

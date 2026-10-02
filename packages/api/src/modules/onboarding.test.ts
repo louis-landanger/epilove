@@ -36,6 +36,7 @@ describe.skipIf(!url)("onboarding and photos", () => {
       limiter: createMemoryRateLimiter(),
       revokeSessions,
       emailHmacSecret: () => "test-only-email-hmac-secret-32-characters",
+      keyRing: () => ({ currentKeyId: "test", keys: new Map([["test", new Uint8Array(32).fill(7)]]) }),
       now: () => now,
     },
   });
