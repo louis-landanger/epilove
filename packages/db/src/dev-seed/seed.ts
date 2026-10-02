@@ -24,6 +24,7 @@ import {
   school,
 } from "../schema";
 import { runSeeds } from "../seeds";
+import { seedDevWeeklyAnswers } from "./community";
 import { DEV_INTERESTS, DEV_PROMPTS, PRONOUNS } from "./content";
 import { seedDevEvents } from "./events";
 import { planActivity } from "./graph";
@@ -401,6 +402,8 @@ export async function runDevSeed(options: DevSeedOptions): Promise<DevSeedSummar
 
   const events = await seedDevEvents(db, { members, schools, now, random: random.fork("events") });
   log(`${events} campus events.`);
+  const weekly = await seedDevWeeklyAnswers(db, { members, now, random: random.fork("weekly") });
+  log(`${weekly} answers to the questions of the week.`);
 
   if (storage) {
     await storage.ensureBucket();

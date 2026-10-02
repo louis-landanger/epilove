@@ -43,6 +43,11 @@ export interface RankingCandidate {
   readonly impressionsToday: number;
   /** The candidate already liked the viewer. */
   readonly likedViewer: boolean;
+  /**
+   * Share of identical answers to the recent questions of the week (COM-01),
+   * in [0, 1]; null or absent when too few were answered by both.
+   */
+  readonly weeklyAgreement?: number | null;
 }
 
 export const RANKING_WEIGHTS = {
@@ -51,6 +56,8 @@ export const RANKING_WEIGHTS = {
   /** Compatibility assumed when it is unknown (too few common questions). */
   unknownCompatibility: 0.45,
   interests: 1,
+  /** Centred on 0.5: answering alike helps a little, answering apart costs a little. */
+  weeklyAgreement: 0.6,
   completeness: 0.8,
   recency: 0.6,
   yearGap: 0.35,
@@ -80,12 +87,14 @@ function likeProbability(
   interests: number,
   target: { completeness: number; daysSinceActive: number },
   yearGap: number,
+  weeklyAgreement: number | null,
 ): number {
   const w = RANKING_WEIGHTS;
   return sigmoid(
     w.intercept +
       w.compatibility * (compatibility ?? w.unknownCompatibility) +
       w.interests * interests +
+      w.weeklyAgreement * ((weeklyAgreement ?? 0.5) - 0.5) +
       w.completeness * clamp01(target.completeness) +
       w.recency * recency(target.daysSinceActive) -
       w.yearGap * Math.min(4, yearGap),
@@ -95,10 +104,17 @@ function likeProbability(
 /** Reciprocal score R(A,B), in (0, 1). */
 export function reciprocalScore(self: RankingSelf, candidate: RankingCandidate): number {
   const gap = Math.abs(self.graduationYear - candidate.graduationYear);
-  const pViewer = likeProbability(candidate.compatibility, candidate.interestSimilarity, candidate, gap);
+  const agreement = candidate.weeklyAgreement ?? null;
+  const pViewer = likeProbability(
+    candidate.compatibility,
+    candidate.interestSimilarity,
+    candidate,
+    gap,
+    agreement,
+  );
   const pCandidate = candidate.likedViewer
     ? RANKING_WEIGHTS.alreadyLiked
-    : likeProbability(candidate.compatibility, candidate.interestSimilarity, self, gap);
+    : likeProbability(candidate.compatibility, candidate.interestSimilarity, self, gap, agreement);
   return Math.sqrt(pViewer * pCandidate);
 }
 

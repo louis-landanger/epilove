@@ -1,4 +1,5 @@
 export * from "./campus";
+export * from "./community";
 export * from "./date-safety";
 export * from "./discovery";
 export * from "./events";

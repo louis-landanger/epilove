@@ -22,12 +22,15 @@ import {
   quotaStatus,
   type RankingCandidate,
   rankDeck,
+  recentWeeks,
   sharedModes,
   startOfCampusDay,
   swipeBlocksCandidate,
   violatesDealbreaker,
+  weeklyAgreement,
 } from "@epilove/core";
 import type { Database } from "@epilove/db";
+import { weeklyAnswersOf } from "@epilove/db/repositories/campus-community";
 import {
   activeMatchBetween,
   decide,
@@ -124,16 +127,19 @@ export const discovery = {
 
     const candidates = await loadDiscoverableMembers(db, viewer.member.id);
     const ids = candidates.map((c) => c.member.id);
-    const [relations, history, sheets, filter, interests, pending, impressions, changes] = await Promise.all([
-      loadRelations(db, viewer.member.id, ids),
-      swipeHistory(db, viewer.member.id),
-      answerSheets(db, [viewer.member.id, ...ids]),
-      getDeckFilter(db, viewer.member.id),
-      interestIdsOf(db, [viewer.member.id, ...ids]),
-      pendingLikesReceived(db, ids),
-      impressionsToday(db, ids, today),
-      lastSignificantChanges(db, ids),
-    ]);
+    const [relations, history, sheets, filter, interests, pending, impressions, changes, weekly] =
+      await Promise.all([
+        loadRelations(db, viewer.member.id, ids),
+        swipeHistory(db, viewer.member.id),
+        answerSheets(db, [viewer.member.id, ...ids]),
+        getDeckFilter(db, viewer.member.id),
+        interestIdsOf(db, [viewer.member.id, ...ids]),
+        pendingLikesReceived(db, ids),
+        impressionsToday(db, ids, today),
+        lastSignificantChanges(db, ids),
+        // Questions of the week answered alike (COM-01) feed the ranking a little.
+        weeklyAnswersOf(db, [viewer.member.id, ...ids], recentWeeks(now, LYON_CAMPUS.timeZone)),
+      ]);
     const viewerSheet = sheets.get(viewer.member.id) ?? new Map();
     const viewerInterests = interests.get(viewer.member.id) ?? new Set<string>();
     // The profiles of the current Drop stay in the Drop (docs/06, section 8).
@@ -177,6 +183,7 @@ export const discovery = {
           pendingLikesReceived: pending.get(row.member.id) ?? 0,
           impressionsToday: impressions.get(row.member.id) ?? 0,
           likedViewer: relations.hasLiked(row.member.id, viewer.member.id),
+          weeklyAgreement: weeklyAgreement(weekly.get(viewer.member.id), weekly.get(row.member.id)),
         },
       });
     }

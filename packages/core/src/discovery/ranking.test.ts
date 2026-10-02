@@ -49,6 +49,22 @@ const candidateArb = fc.record({
 });
 
 describe("rankingScore", () => {
+  it("prefers members who answered the questions of the week alike (COM-01)", () => {
+    fc.assert(
+      fc.property(candidateArb, fc.double({ min: 0, max: 1, noNaN: true }), (c, agreement) => {
+        const unknown = rankingScore(self, { ...c, weeklyAgreement: null });
+        const known = rankingScore(self, { ...c, weeklyAgreement: agreement });
+        expect(rankingScore(self, { ...c, weeklyAgreement: 1 })).toBeGreaterThanOrEqual(known);
+        expect(rankingScore(self, { ...c, weeklyAgreement: 0 })).toBeLessThanOrEqual(known);
+        // Without enough common answers, the signal is neutral.
+        expect(rankingScore(self, { ...c, weeklyAgreement: 0.5 })).toBeCloseTo(unknown, 12);
+      }),
+    );
+    const alike = rankingScore(self, candidate({ id: "a", weeklyAgreement: 1 }));
+    const apart = rankingScore(self, candidate({ id: "a", weeklyAgreement: 0 }));
+    expect(alike).toBeGreaterThan(apart);
+  });
+
   it("prefers more compatible members, all else equal", () => {
     fc.assert(
       fc.property(candidateArb, fc.double({ min: 0, max: 0.5, noNaN: true }), (c, delta) => {

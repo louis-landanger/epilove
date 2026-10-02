@@ -1,4 +1,5 @@
 export * from "./campus/schools";
+export * from "./community/community";
 export * from "./discovery/crush";
 export * from "./discovery/drop";
 export * from "./discovery/filter";
