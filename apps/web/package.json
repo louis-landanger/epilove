@@ -10,7 +10,8 @@
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lighthouse": "lhci autorun"
   },
   "dependencies": {
     "@epilove/api": "workspace:*",
@@ -40,6 +41,7 @@
   "devDependencies": {
     "@axe-core/playwright": "catalog:",
     "@epilove/config": "workspace:*",
+    "@lhci/cli": "catalog:",
     "@playwright/test": "catalog:",
     "@tailwindcss/postcss": "catalog:",
     "@types/node": "catalog:",

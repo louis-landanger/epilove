@@ -1,6 +1,6 @@
 "use client";
 
-import { canAffordLiveField, type DeviceProfile, particleBudget } from "@epilove/three";
+import { canAffordLiveField, type DeviceProfile, isSoftwareRenderer, particleBudget } from "@epilove/three";
 import { useEffect, useRef, useState } from "react";
 
 function deviceProfile(): DeviceProfile {
@@ -15,6 +15,23 @@ function deviceProfile(): DeviceProfile {
     saveData: nav.connection?.saveData === true,
     viewportArea: window.innerWidth * window.innerHeight,
   };
+}
+
+/** The GPU behind WebGL, to skip the field on software rasterisers (no acceleration). */
+function rendererName(): string | null {
+  try {
+    const probe = document.createElement("canvas");
+    const gl = probe.getContext("webgl2") ?? probe.getContext("webgl");
+    if (!gl) {
+      return null;
+    }
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    const name: unknown = gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return typeof name === "string" ? name : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Runs `task` once the page has loaded and the main thread is idle: the 3D never competes with LCP. */
@@ -78,6 +95,10 @@ export function IonFieldCanvas({ className }: { className?: string }) {
     const cleanups: Array<() => void> = [];
 
     const start = async (forceWebGL = false) => {
+      if (isSoftwareRenderer(rendererName())) {
+        // No GPU acceleration: the poster stays rather than hogging the main thread.
+        return;
+      }
       try {
         const { createIonField } = await import("@epilove/three/ion-field");
         if (disposed) {
@@ -88,6 +109,13 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           container,
           particleCount: (backend) => particleBudget(backend, profile),
           onFirstFrame: () => setLive(true),
+          // The device cannot keep up even at the lowest quality: back to the poster for good.
+          onGiveUp: () => {
+            setLive(false);
+            for (const cleanup of cleanups.splice(0)) {
+              cleanup();
+            }
+          },
           // A frame failed after start-up: back to the poster.
           forceWebGL,
           onError: () => {

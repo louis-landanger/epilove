@@ -129,6 +129,10 @@
   transition: translate 0.7s var(--ease-out);
 }
 
+.headline {
+  font-family: var(--font-headline), var(--font-display);
+}
+
 /* Heavier near the pointer, a touch narrower so the advance width barely changes. */
 .headline-kinetic {
   font-variation-settings:

@@ -1,0 +1,58 @@
+name: Lighthouse
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - "packages/ui/**"
+      - "packages/three/**"
+      - "packages/tokens/**"
+      - "pnpm-lock.yaml"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+  DO_NOT_TRACK: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+  TURBO_TELEMETRY_DISABLED: "1"
+  LEFTHOOK: "0"
+
+jobs:
+  budgets:
+    name: Performance and accessibility budgets
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Local configuration
+        run: cp .env.example .env
+
+      - name: Start local services
+        run: pnpm services:up
+
+      - name: Migrate and seed
+        run: pnpm db:migrate && pnpm db:seed
+
+      - name: Build
+        run: pnpm build
+
+      - name: Lighthouse CI (blocking budgets, apps/web/lighthouserc.cjs)
+        run: pnpm lighthouse
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-reports
+          path: apps/web/.lighthouseci
+          retention-days: 7

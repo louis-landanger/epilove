@@ -40,11 +40,12 @@
 | Prompts vocaux | PRO-06 | Sur une réponse enregistrée : enregistrement de 30 s max (MediaRecorder, WebM/Opus ou MP4/AAC selon le navigateur), niveaux en direct, forme d'onde de 48 barres, réécoute, envoi présigné (1 Mo max), contrôle du vrai format par le worker (`media/process-voice`), lecture via `/api/voice/:id` signée HMAC et expirante (1 h, `Range` géré pour Safari), réenregistrement, suppression. La réponse écrite sert de transcription (accessibilité, modération) ; la colonne `transcript` reste réservée à une transcription automatique future. Modifier le texte garde le vocal ; changer de prompt le supprime | `packages/core`, `packages/media/src/audio.test.ts`, `packages/api/src/lib/voice-url.test.ts`, `profile.test.ts`, `apps/worker/src/tasks/media/process-voice.test.ts`, e2e `voice.spec.ts` (faux micro Chromium) |
 | Verrouillage de l'application | SAF-13 | Réglage propre à l'appareil (rien côté serveur) : déverrouillage par passkey (vérification locale de l'utilisateur, bit UV contrôlé, sans nouvelle session) ou par code de 4 à 6 chiffres (PBKDF2 salé dans le navigateur, 5 essais puis déconnexion), verrouillage à l'ouverture d'un onglet et après 0, 1, 5 ou 15 minutes en arrière-plan (marge de 10 s), script inline avec nonce qui masque l'app avant le premier rendu | `components/acces/lock/lock-config.test.ts`, e2e `lock.spec.ts` |
 | Filigrane dynamique | SAF-12 | Code propre au lecteur (« 7KQ2-XA9M », HMAC avec un contexte dédié, ni l'identifiant ni le pseudonyme de modération) répété en motif discret clair et sombre sur les photos : composants `WatermarkProvider` / `ViewerWatermark` / `Watermark` dans `@epilove/ui`, fournisseur dans la coquille de l'app (`account.watermark`) et dans le back-office (photos vues par le staff, avec le code du staff). Page `/filigrane` du back-office : retrouver le compte à l'origine d'une capture, avec justification journalisée | `packages/api/src/lib/watermark.test.ts`, `admin.test.ts`, `packages/ui/src/ui.test.tsx`, `apps/admin/e2e` |
+| Lighthouse CI | — | `pnpm lighthouse` (`apps/web/lighthouserc.cjs`, workflow `.github/workflows/lighthouse.yml`) : 4 pages (`/`, `/en`, `/legal/confidentialite`, `/connexion`), 3 passages, émulation mobile ; budgets bloquants : accessibilité 100, bonnes pratiques ≥ 95, CLS ≤ 0,05 partout ; performance, LCP, TBT et poids (script, polices, total) par page. Corrections faites pour les tenir : champ d'ions désactivé sur rendu logiciel et arrêté si l'appareil ne suit pas, moniteur d'images en temps réel, polices allégées (Bricolage 131 → 41 Ko hors vitrine ; instances titre et serif chargées sur la vitrine seulement) | `apps/web/lighthouserc.cjs`, `packages/three/src/ion-field/quality.test.ts` |
 
 ## Pas encore fait
 
-- Vitrine : JavaScript initial de `/` à 196 Ko gzip (budget 180 Ko, dont 185 Ko pour React, Next et next-intl) ; WebGPU non vérifié sur un vrai GPU ; effectifs par école estimés (à confirmer) ; pas de design sonore ni de préchargeur.
-- Palier 3 : Storybook, design sonore de la vitrine, connexion Microsoft (ONB-10), Lighthouse CI.
+- Vitrine : performance Lighthouse mobile ~70 (cible 90) : LCP ~4–5 s, limité par les polices d'affichage (~250 Ko) et l'hydratation (TBT ~400 ms) ; connexion et pages légales ~85–90 (LCP ~3,5 s). Pistes : sous-ensemble de la police du titre, moins de JavaScript initial (196 Ko gzip, budget 180 Ko), relever les budgets de `lighthouserc.cjs` à mesure. WebGPU non vérifié sur un vrai GPU (en CI, rendu logiciel : le poster reste) ; effectifs par école estimés (à confirmer) ; pas de design sonore ni de préchargeur.
+- Palier 3 : Storybook, design sonore de la vitrine, connexion Microsoft (ONB-10).
 
 ## Fichiers partagés modifiés
 
@@ -65,6 +66,9 @@
 | `package.json` (racine) | Script `db:promote` |
 | `apps/web/playwright.config.ts` | Second `webServer` : le worker tourne pendant les tests e2e (les photos sont réellement traitées) |
 | `apps/web/i18n/messages.ts` | Ajout : namespace `onboarding` |
+| `apps/web/app/layout.tsx` (polices) | Bricolage sans axes supplémentaires, Geist Mono non préchargée, Instrument Serif déplacée sur la page d'accueil |
+| `package.json` (racine) | Script `lighthouse` |
+| `.github/workflows/lighthouse.yml` (nouveau) | Budgets Lighthouse sur les PR qui touchent le web, l'UI, la 3D ou les jetons |
 | `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media` ; `serverExternalPackages` : SDK S3 |
 | `apps/web/proxy.ts` | CSP `connect-src` : origine du stockage objet (envoi direct des photos) |
 | `pnpm-workspace.yaml` | Catalogue : `@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp`, `thumbhash` |
@@ -73,6 +77,9 @@
 | `apps/web/playwright.config.ts` | `API_RATE_LIMIT_ANONYMOUS=100000` pour le serveur de test (la suite e2e partage une seule IP) ; `locale: "fr-FR"` par défaut (le navigateur envoie `Accept-Language`, qui choisit la langue) |
 | `apps/web/i18n/request.ts` | La langue vient de l'en-tête `x-epilove-locale` posé par `proxy.ts` (ADR 0012) |
 | `apps/web/app/layout.tsx` | `<html lang>` selon la langue, métadonnées traduites, `metadataBase` (`SITE_URL`) ; toutes les pages sont désormais rendues à la demande |
+| `apps/web/app/layout.tsx` (polices) | Bricolage sans axes supplémentaires, Geist Mono non préchargée, Instrument Serif déplacée sur la page d'accueil |
+| `package.json` (racine) | Script `lighthouse` |
+| `.github/workflows/lighthouse.yml` (nouveau) | Budgets Lighthouse sur les PR qui touchent le web, l'UI, la 3D ou les jetons |
 | `apps/web/next.config.ts` | `Permissions-Policy` : `camera=(self)` (selfie de vérification) et `microphone=(self)` (prompts vocaux), au lieu de `()` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | Ajout : `verification` |
 | `packages/media/package.json` | Export `./audio`, dépendance `@epilove/core` |
@@ -90,7 +97,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 
 ## Dépendances ajoutées
 
-`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp` (binaires précompilés, aucun script d'installation), `thumbhash`, `fflate` (zip de l'export, worker) ; `motion` et `thumbhash` dans `apps/web` ; `three` et `@types/three` (`packages/three`, vitrine).
+`@aws-sdk/client-s3`, `@aws-sdk/s3-presigned-post`, `sharp` (binaires précompilés, aucun script d'installation), `thumbhash`, `fflate` (zip de l'export, worker) ; `motion` et `thumbhash` dans `apps/web` ; `three` et `@types/three` (`packages/three`, vitrine). ; `@lhci/cli` (développement, `apps/web`, aucun script d'installation).
 
 ## Migrations
 

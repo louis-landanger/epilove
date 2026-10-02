@@ -76,37 +76,66 @@ export function markPlacementFor(aspect: number, mark: typeof MARK = MARK): Mark
 }
 
 /**
- * Watches frame times and asks for a lower quality when the median frame of
- * the last `window` frames exceeds the budget, at most once per `cooldown` frames.
+ * Watches real frame times and asks for a lower quality when the median of
+ * the recent frames exceeds the budget. The window and the cooldown are
+ * counted in frames *and* in time, whichever comes first, so that a device
+ * drawing three frames a second reacts in a couple of seconds, not minutes.
+ * `canGiveUp` tells it the quality is already at its floor: a frame rate
+ * still far below the budget then means "stop, keep the poster".
  */
-export function createFrameMonitor(options: { window?: number; budgetMs?: number; cooldown?: number } = {}) {
+export function createFrameMonitor(
+  options: {
+    window?: number;
+    windowMs?: number;
+    budgetMs?: number;
+    cooldown?: number;
+    cooldownMs?: number;
+  } = {},
+) {
   const size = options.window ?? 90;
+  const windowMs = options.windowMs ?? 1500;
   const budget = options.budgetMs ?? 24;
   const cooldown = options.cooldown ?? 180;
+  const cooldownMs = options.cooldownMs ?? 2000;
   let samples: number[] = [];
   let sinceLastChange = 0;
+  let msSinceLastChange = 0;
   return {
-    push(frameMs: number): "ok" | "degrade" {
+    push(frameMs: number, canGiveUp = false): "ok" | "degrade" | "give-up" {
       samples.push(frameMs);
       sinceLastChange += 1;
-      if (samples.length > size) {
+      msSinceLastChange += frameMs;
+      while (samples.length > size) {
         samples.shift();
       }
-      if (samples.length < size || sinceLastChange < cooldown) {
+      const elapsed = samples.reduce((sum, sample) => sum + sample, 0);
+      const fullWindow = samples.length >= size || (samples.length >= 5 && elapsed >= windowMs);
+      const cooledDown = sinceLastChange >= cooldown || msSinceLastChange >= cooldownMs;
+      if (!fullWindow || !cooledDown) {
         return "ok";
       }
       const sorted = [...samples].sort((a, b) => a - b);
       const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
-      if (median > budget) {
-        samples = [];
-        sinceLastChange = 0;
-        return "degrade";
+      if (median <= budget) {
+        return "ok";
       }
-      return "ok";
+      samples = [];
+      sinceLastChange = 0;
+      msSinceLastChange = 0;
+      return canGiveUp && median > budget * 3 ? "give-up" : "degrade";
     },
     reset() {
       samples = [];
       sinceLastChange = 0;
+      msSinceLastChange = 0;
     },
   };
+}
+
+/**
+ * Software rasterisers (no GPU acceleration): the field would hog the main
+ * thread for little effect, so the poster stays.
+ */
+export function isSoftwareRenderer(renderer: string | null | undefined): boolean {
+  return /swiftshader|llvmpipe|softpipe|software|basic render|mesa offscreen/i.test(renderer ?? "");
 }

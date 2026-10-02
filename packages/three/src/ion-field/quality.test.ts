@@ -3,6 +3,7 @@ import {
   canAffordLiveField,
   createFrameMonitor,
   type DeviceProfile,
+  isSoftwareRenderer,
   markPlacementFor,
   markScaleFor,
   particleBudget,
@@ -90,5 +91,39 @@ describe("createFrameMonitor", () => {
     const monitor = createFrameMonitor({ window: 10, budgetMs: 20, cooldown: 0 });
     const verdicts = Array.from({ length: 30 }, (_, index) => monitor.push(index % 5 === 0 ? 80 : 16));
     expect(verdicts).not.toContain("degrade");
+  });
+});
+
+describe("slow devices", () => {
+  it("reacts within seconds when frames are slow, not after hundreds of frames", () => {
+    const monitor = createFrameMonitor({
+      window: 90,
+      windowMs: 1500,
+      budgetMs: 24,
+      cooldown: 180,
+      cooldownMs: 2000,
+    });
+    const verdicts = Array.from({ length: 12 }, () => monitor.push(300));
+    expect(verdicts.indexOf("degrade")).toBeGreaterThanOrEqual(4);
+    expect(verdicts.indexOf("degrade")).toBeLessThan(8);
+  });
+
+  it("gives up once the quality is at its floor and frames stay far too slow", () => {
+    const monitor = createFrameMonitor({ windowMs: 1000, cooldownMs: 1000, budgetMs: 24 });
+    const verdicts = Array.from({ length: 10 }, () => monitor.push(250, true));
+    expect(verdicts).toContain("give-up");
+    const fine = createFrameMonitor({ windowMs: 1000, cooldownMs: 1000, budgetMs: 24 });
+    expect(Array.from({ length: 10 }, () => fine.push(40, true))).not.toContain("give-up");
+  });
+
+  it("recognises software rasterisers", () => {
+    expect(
+      isSoftwareRenderer("ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)"),
+    ).toBe(true);
+    expect(isSoftwareRenderer("llvmpipe (LLVM 15.0.7, 256 bits)")).toBe(true);
+    expect(isSoftwareRenderer("ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)")).toBe(
+      false,
+    );
+    expect(isSoftwareRenderer(null)).toBe(false);
   });
 });

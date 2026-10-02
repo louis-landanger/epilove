@@ -66,6 +66,8 @@ export interface IonFieldOptions {
   readonly onFirstFrame?: () => void;
   /** Called when the field lowers its quality to keep up (for diagnostics). */
   readonly onDegrade?: (state: { pixelRatio: number; visibleParticles: number }) => void;
+  /** Called when the device cannot keep up even at the lowest quality: the field has stopped. */
+  readonly onGiveUp?: () => void;
   /** Called if a frame fails or the GPU device is lost after start-up; the loop is then stopped for good. */
   readonly onError?: (error: unknown) => void;
   /** Skip WebGPU (for instance after a WebGPU field failed). */
@@ -571,6 +573,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
 
   const frame = (timestamp: number) => {
     const now = timestamp / 1000;
+    // Real frame time, for the quality monitor.
+    const frameMs = lastTime < 0 ? 1000 / 60 : (now - lastTime) * 1000;
     // Capped time step: stable integration, and slow devices are only slightly slowed down.
     const delta = lastTime < 0 ? 1 / 60 : Math.min(1 / 24, Math.max(1 / 240, now - lastTime));
     lastTime = now;
@@ -595,7 +599,15 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       firstFrame = false;
       options.onFirstFrame?.();
     }
-    const verdict = monitor.push(delta * 1000);
+    const atFloor = pixelRatio <= 1 && ions.count <= 600;
+    const verdict = monitor.push(frameMs, atFloor);
+    if (verdict === "give-up") {
+      // Even at the lowest quality the device cannot keep up: back to the poster.
+      setRunning(false);
+      broken = true;
+      options.onGiveUp?.();
+      return;
+    }
     if (verdict === "degrade") {
       if (pixelRatio > 1) {
         pixelRatio = 1;

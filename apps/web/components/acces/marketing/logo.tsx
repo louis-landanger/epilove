@@ -26,7 +26,7 @@ export function Logotype({ className }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-2 ${className ?? ""}`}>
       <LogoMark className="size-8 text-paper" />
-      <span className="font-display font-semibold text-xl lowercase tracking-tight [font-variation-settings:'wdth'_90]">
+      <span className="font-semibold font-[family-name:var(--font-headline,var(--font-display))] text-xl lowercase tracking-tight [font-variation-settings:'wdth'_90]">
         epilove
       </span>
     </span>
