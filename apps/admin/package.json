@@ -1,0 +1,47 @@
+{
+  "name": "@epilove/admin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Back-office: moderation queues, decisions, audit log and catalogues (staff only).",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@epilove/api": "workspace:*",
+    "@epilove/auth": "workspace:*",
+    "@epilove/contracts": "workspace:*",
+    "@epilove/core": "workspace:*",
+    "@epilove/db": "workspace:*",
+    "@epilove/email": "workspace:*",
+    "@epilove/rate-limit": "workspace:*",
+    "@epilove/tokens": "workspace:*",
+    "@epilove/ui": "workspace:*",
+    "better-auth": "catalog:",
+    "drizzle-orm": "catalog:",
+    "lucide-react": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "server-only": "catalog:"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "catalog:",
+    "@epilove/config": "workspace:*",
+    "@epilove/crypto": "workspace:*",
+    "@epilove/media": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@tailwindcss/postcss": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
+    "sharp": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  }
+}

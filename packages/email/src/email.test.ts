@@ -41,3 +41,26 @@ describe.skipIf(!smtpUrl)("smtp", () => {
     expect(body.messages[0]?.Subject).toBe("654 321 est ton code Epilove");
   });
 });
+
+describe("moderation emails", () => {
+  it("states the facts, the rule, the end date and how to appeal", async () => {
+    const { moderationDecisionEmail } = await import("./templates/moderation");
+    const email = moderationDecisionEmail({
+      action: "suspension",
+      rule: "Respect",
+      statement: "Insultes répétées <script> dans plusieurs conversations.",
+      until: new Date("2026-10-09T12:00:00Z"),
+      appealUrl: "https://epilove.test/compte/recours",
+    });
+    expect(email.text).toContain("la suspension de ton compte");
+    expect(email.text).toContain("9 octobre 2026");
+    expect(email.text).toContain("https://epilove.test/compte/recours");
+    expect(email.html).not.toContain("<script>");
+    expect(email.html).toContain("&lt;script&gt;");
+  });
+
+  it("tells reporters nothing about the outcome", async () => {
+    const { reportHandledEmail } = await import("./templates/moderation");
+    expect(reportHandledEmail().text).not.toMatch(/suspen|bann|avertissement/i);
+  });
+});

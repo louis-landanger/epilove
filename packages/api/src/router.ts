@@ -1,4 +1,5 @@
 import { account } from "./modules/account";
+import { admin } from "./modules/admin";
 import { campus } from "./modules/campus";
 import { media } from "./modules/media";
 import { onboarding } from "./modules/onboarding";
@@ -14,6 +15,7 @@ import { os } from "./procedures";
  */
 export const router = os.router({
   account,
+  admin,
   campus,
   media,
   onboarding,

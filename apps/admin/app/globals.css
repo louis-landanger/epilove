@@ -1,0 +1,25 @@
+@import "tailwindcss";
+@import "@epilove/tokens/theme.css";
+
+/* Classes used by the design system package. */
+@source "../../../packages/ui/src";
+
+@theme inline {
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-ink font-sans text-paper antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-4 outline-volt;
+  }
+}

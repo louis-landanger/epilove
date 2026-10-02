@@ -21,10 +21,12 @@
 | Suppression de compte | SAF-14 | Statut `deleting` immédiat, identité copiée dans `identity_vault` (5 ans), sessions révoquées, page `/compte/supprime` ; job quotidien `accounts/purge` : comptes supprimés depuis 30 jours (photos du stockage comprises), coffre expiré, blocages « mineur » expirés, compte rendu chiffré dans l'audit | API, worker, e2e |
 | Aide | SAF-15 | `/aide` : numéros d'urgence et d'écoute (liens `tel:`), signalements officiels (arretonslesviolences.gouv.fr, PHAROS), dispositifs VSS des écoles (sans lien tant qu'ils ne sont pas vérifiés), rappel des outils de l'application ; `/compte/suspendu` | e2e |
 
+| Back-office | ADM-01 à ADM-03, ADM-05, ADM-06 | `apps/admin` (port 3001, ADR 0011) : connexion staff distincte, vue d'ensemble, file photos au clavier (A, R puis 1–8, J/K) avec email de refus, file des signalements par priorité, fiche membre pseudonymisée, révélation d'identité justifiée, décisions graduées motivées (modèles par règle, emails DSA art. 17, information du signalant), levée du masquage, journal d'audit, édition des prompts et intérêts (admin). Job horaire `accounts/lift-sanctions` | `packages/api/src/modules/admin.test.ts`, `apps/admin/e2e` |
+
 ## Pas encore fait
 
 - Export des données (SAF-14, palier 2), mode partiels (SAF-08).
-- Back-office `apps/admin`.
+- Recours (ADM-04), tableaux de bord (ADM-09), page `/compte/recours` (lien présent dans les emails de décision).
 - Vitrine, liste d'attente et pages légales (en cours, branche de travail séparée, fusionnée dans cette branche à la fin).
 - Paliers 2 et 3.
 
@@ -42,7 +44,9 @@
 | `packages/db/src/schema/profiles.ts` | `INTENTIONS` et `MAX_PHOTOS` viennent de `@epilove/core` (réexportés) ; colonne `photo.stage` ; contrainte sur `profile.languages` |
 | `apps/worker/src/tasks/index.ts` | Ajout : `...mediaTasks()` et `mediaCrontab` |
 | `packages/api/src/app.ts` | `createServerClient(dependencies, viewer)` : appel des procédures en processus depuis les composants serveur (`serverApi()` dans `apps/web/lib/server/api-app.ts`) |
-| `packages/api/src/context.ts` | `services.keyRing` (chiffrement applicatif) |
+| `packages/api/src/context.ts` | `services.keyRing` (chiffrement applicatif), `services.mailer`, `services.appUrl` |
+| `packages/api/src/procedures.ts` | Ajout : `requireActiveMember` |
+| `package.json` (racine) | Script `db:promote` |
 | `apps/web/playwright.config.ts` | Second `webServer` : le worker tourne pendant les tests e2e (les photos sont réellement traitées) |
 | `apps/web/i18n/messages.ts` | Ajout : namespace `onboarding` |
 | `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media` ; `serverExternalPackages` : SDK S3 |
@@ -52,7 +56,7 @@
 
 ## Variables d'environnement (section `# Session A`)
 
-`EMAIL_FROM`, `APP_URL`, `AUTH_TRUSTED_ORIGINS`, `BETTER_AUTH_SECRET`, `PASSKEY_RP_ID`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `AUTH_IP_HEADERS`, `AUTH_TRUSTED_PROXIES`, `S3_PUBLIC_ENDPOINT`, `S3_REGION`.
+`EMAIL_FROM`, `APP_URL`, `AUTH_TRUSTED_ORIGINS`, `BETTER_AUTH_SECRET`, `PASSKEY_RP_ID`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `AUTH_IP_HEADERS`, `AUTH_TRUSTED_PROXIES`, `S3_PUBLIC_ENDPOINT`, `S3_REGION`, `ADMIN_URL`.
 
 En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle CORS (origine `APP_URL`) sont créés automatiquement au premier envoi de photo.
 
@@ -75,12 +79,13 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 - **Comptes** : `paused` (pause, SAF-05) et `deleting` ne doivent pas être découvrables ; une conversation reste lisible en pause. À la purge, la ligne `app_user` est supprimée : les tables de B doivent cascader (ou anonymiser), sauf les messages rattachés à un signalement ouvert.
 - **Blocages** : table `block` (`blocker_id`, `blocked_id`) ; B ferme le match et la conversation au blocage (via `canMessage`).
 - **Signaler / bloquer depuis B** : utiliser `BlockDialog` et `ReportDialog` (props `target: { userId, firstName }`, `context`, `contextRef`).
+- **Comptes actifs** : `requireActiveMember` (`packages/api/src/procedures.ts`) refuse les comptes suspendus, bannis, en suppression ou en onboarding, même avec une session valide : à utiliser pour les likes, messages et autres actions sociales.
 - **Quotas** : `withinQuota(services, nom, userId, limite, fenêtre)` (`packages/api/src/lib/quota.ts`).
 - **Jobs** : `enqueueJob(tx, "tache", payload, { jobKey })` dans la transaction métier.
 
 ## Mises à jour souhaitées (CLAUDE.md, README, docs)
 
-- `CLAUDE.md`, tableau des commandes : préciser que `pnpm db:migrate` crée aussi le schéma de Graphile Worker ; ajouter `pnpm --filter @epilove/worker dev` pour traiter les photos en local.
+- `CLAUDE.md`, tableau des commandes : ajouter `pnpm db:promote <email> <rôle>` et le back-office (http://localhost:3001) ; préciser que `pnpm db:migrate` crée aussi le schéma de Graphile Worker ; ajouter `pnpm --filter @epilove/worker dev` pour traiter les photos en local.
 - `docs/04-architecture.md`, section 4.4 : l'envoi utilise un **formulaire POST présigné** (politique S3 : taille 1 o à 10 Mo, `Content-Type` et clé imposés) plutôt qu'une URL PUT ; voir l'ADR 0010.
 - `docs/07-confiance-securite.md` : sessions stockées dans Valkey, révocation via `revokeAllSessions` ; en production, régler `AUTH_IP_HEADERS` (par exemple `cf-connecting-ip`) et `AUTH_TRUSTED_PROXIES`, sinon les quotas par IP retombent sur un compteur partagé.
 

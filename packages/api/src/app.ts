@@ -1,4 +1,5 @@
 import { type KeyRing, keyRingFromEnv } from "@epilove/crypto";
+import { createMailer, type Mailer, mailerConfigFromEnv } from "@epilove/email";
 import { imgproxyConfigFromEnv } from "@epilove/media";
 import { createStorage, type Storage, storageConfigFromEnv } from "@epilove/media/storage";
 import { createMemoryRateLimiter } from "@epilove/rate-limit";
@@ -23,6 +24,7 @@ export interface AppDependencies {
 export function defaultServices(env: Record<string, string | undefined> = process.env): ApiServices {
   let storage: Storage | undefined;
   let keyRing: KeyRing | undefined;
+  let mailer: Mailer | undefined;
   return {
     storage: () => {
       const local = env.APP_ENV === "development" || env.APP_ENV === "test";
@@ -47,6 +49,11 @@ export function defaultServices(env: Record<string, string | undefined> = proces
       keyRing ??= keyRingFromEnv(env);
       return keyRing;
     },
+    mailer: () => {
+      mailer ??= createMailer(mailerConfigFromEnv(env));
+      return mailer;
+    },
+    appUrl: () => env.APP_URL ?? "http://localhost:3000",
     now: () => new Date(),
   };
 }

@@ -5,6 +5,7 @@ import { createMemoryStorage } from "@epilove/media/storage";
 import { eq, inArray } from "drizzle-orm";
 import type { JobHelpers } from "graphile-worker";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { liftSanctionsTask } from "./lift-sanctions";
 import { purgeTask } from "./purge";
 
 const url = process.env.DATABASE_URL;
@@ -64,5 +65,38 @@ describe.skipIf(!url)("retention purge", () => {
     expect(await db.select().from(schema.identityVault).where(eq(schema.identityVault.id, vault))).toEqual(
       [],
     );
+  });
+
+  it("reinstates members whose suspension is over, not the others", async () => {
+    const [school] = await db.select({ id: schema.school.id }).from(schema.school).limit(1);
+    const make = async (expiresAt: Date) => {
+      const id = uuidv7();
+      await db.insert(schema.appUser).values({
+        id,
+        schoolId: school?.id ?? "",
+        email: `sanction.${id}@epita.fr`,
+        emailHmac: `sanction-${id}`,
+        status: "suspended",
+      });
+      await db.insert(schema.moderationAction).values({
+        targetUserId: id,
+        action: "suspension",
+        rule: "respect",
+        statement: "Test",
+        expiresAt,
+      });
+      return id;
+    };
+    const lapsed = await make(new Date("2026-10-01T00:00:00Z"));
+    const running = await make(new Date("2026-10-20T00:00:00Z"));
+    await liftSanctionsTask({ database: () => db, storage: () => storage, now: () => now })({}, helpers);
+    const rows = await db
+      .select({ id: schema.appUser.id, status: schema.appUser.status })
+      .from(schema.appUser)
+      .where(inArray(schema.appUser.id, [lapsed, running]));
+    expect(Object.fromEntries(rows.map((row) => [row.id, row.status]))).toEqual({
+      [lapsed]: "active",
+      [running]: "suspended",
+    });
   });
 });

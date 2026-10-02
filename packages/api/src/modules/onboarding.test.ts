@@ -3,6 +3,7 @@ import { uuidv7 } from "@epilove/core";
 import { createDatabase, runSeeds, schema } from "@epilove/db";
 import { runJobQueueSchemaMigrations, runMigrations } from "@epilove/db/migrations";
 import { markPhotoProcessed } from "@epilove/db/repositories/profiles";
+import { createMemoryMailer } from "@epilove/email";
 import { createMemoryStorage } from "@epilove/media/storage";
 import { createMemoryRateLimiter } from "@epilove/rate-limit";
 import { and, eq, sql } from "drizzle-orm";
@@ -37,6 +38,8 @@ describe.skipIf(!url)("onboarding and photos", () => {
       revokeSessions,
       emailHmacSecret: () => "test-only-email-hmac-secret-32-characters",
       keyRing: () => ({ currentKeyId: "test", keys: new Map([["test", new Uint8Array(32).fill(7)]]) }),
+      mailer: () => createMemoryMailer(),
+      appUrl: () => "http://app.test",
       now: () => now,
     },
   });

@@ -11,4 +11,5 @@ export * from "./profiles/photos";
 export * from "./profiles/rules";
 export * from "./safety/moderation";
 export * from "./safety/reports";
+export * from "./safety/sanctions";
 export * from "./time/calendar";

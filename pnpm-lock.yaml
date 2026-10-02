@@ -317,6 +317,97 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  apps/admin:
+    dependencies:
+      '@epilove/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@epilove/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@epilove/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@epilove/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@epilove/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@epilove/email':
+        specifier: workspace:*
+        version: link:../../packages/email
+      '@epilove/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
+      '@epilove/tokens':
+        specifier: workspace:*
+        version: link:../../packages/tokens
+      '@epilove/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      better-auth:
+        specifier: 'catalog:'
+        version: 1.7.7(drizzle-kit@0.31.11)(drizzle-orm@0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)(postgres@3.4.9))(next@16.3.8(@playwright/test@1.63.0)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(pg@8.23.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@5.0.3(@types/node@24.19.0)(happy-dom@20.14.5)(vite@8.3.2(@types/node@24.19.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)))
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)(postgres@3.4.9)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.49.0(@types/react@19.3.0)(react@19.3.0)
+      next:
+        specifier: 'catalog:'
+        version: 16.3.8(@playwright/test@1.63.0)(@types/node@24.19.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.0(react@19.3.0)
+      server-only:
+        specifier: 'catalog:'
+        version: 0.0.1
+    devDependencies:
+      '@axe-core/playwright':
+        specifier: 'catalog:'
+        version: 4.13.0(playwright-core@1.63.0)
+      '@epilove/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@epilove/crypto':
+        specifier: workspace:*
+        version: link:../../packages/crypto
+      '@epilove/media':
+        specifier: workspace:*
+        version: link:../../packages/media
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.63.0
+      '@tailwindcss/postcss':
+        specifier: 'catalog:'
+        version: 4.3.3
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.0
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
+      babel-plugin-react-compiler:
+        specifier: 'catalog:'
+        version: 1.0.0
+      sharp:
+        specifier: 'catalog:'
+        version: 0.35.5(@types/node@24.19.0)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.3
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
   apps/web:
     dependencies:
       '@epilove/api':
@@ -468,6 +559,9 @@ importers:
       '@epilove/db':
         specifier: workspace:*
         version: link:../db
+      '@epilove/email':
+        specifier: workspace:*
+        version: link:../email
       '@epilove/media':
         specifier: workspace:*
         version: link:../media

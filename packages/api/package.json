@@ -16,6 +16,7 @@
     "@epilove/core": "workspace:*",
     "@epilove/crypto": "workspace:*",
     "@epilove/db": "workspace:*",
+    "@epilove/email": "workspace:*",
     "@epilove/media": "workspace:*",
     "@epilove/rate-limit": "workspace:*",
     "@orpc/client": "catalog:",

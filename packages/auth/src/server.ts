@@ -20,6 +20,16 @@ export interface AuthDependencies {
   readonly limiter: RateLimiter;
   /** Key-value store for sessions and rate limits (Valkey); in-memory when absent. */
   readonly secondaryStorage?: SecondaryStorage;
+  readonly options?: AuthOptions;
+}
+
+/** Differences between the member app and the back-office. */
+export interface AuthOptions {
+  /** `false` on the back-office: only existing accounts can sign in. */
+  readonly allowSignUp?: boolean;
+  readonly sessionExpiresInSeconds?: number;
+  /** Distinct per app: cookies are shared by every port of a host. */
+  readonly cookiePrefix?: string;
 }
 
 /** Endpoints that receive an email address in their body. */
@@ -38,7 +48,8 @@ const list = (value: string) =>
  * one-time codes sent only to eligible school addresses, passkeys, admin
  * roles, rate limits, optional Turnstile.
  */
-export function createAuth({ env, db, mailer, limiter, secondaryStorage }: AuthDependencies) {
+export function createAuth({ env, db, mailer, limiter, secondaryStorage, options = {} }: AuthDependencies) {
+  const sessionExpiresIn = options.sessionExpiresInSeconds ?? SESSION_POLICY.expiresInSeconds;
   const trustedOrigins = [
     env.APP_URL,
     ...env.AUTH_TRUSTED_ORIGINS.split(",").map((origin) => origin.trim()),
@@ -70,11 +81,11 @@ export function createAuth({ env, db, mailer, limiter, secondaryStorage }: AuthD
       },
     },
     session: {
-      expiresIn: SESSION_POLICY.expiresInSeconds,
-      updateAge: SESSION_POLICY.updateAgeSeconds,
+      expiresIn: sessionExpiresIn,
+      updateAge: Math.min(SESSION_POLICY.updateAgeSeconds, Math.floor(sessionExpiresIn / 2)),
     },
     advanced: {
-      cookiePrefix: "epilove",
+      cookiePrefix: options.cookiePrefix ?? "epilove",
       useSecureCookies: env.APP_ENV === "production" || env.APP_ENV === "staging",
       database: { generateId: () => uuidv7() },
       ipAddress: {
@@ -166,7 +177,7 @@ export function createAuth({ env, db, mailer, limiter, secondaryStorage }: AuthD
         expiresIn: OTP_POLICY.expiresInSeconds,
         allowedAttempts: OTP_POLICY.allowedAttempts,
         storeOTP: "hashed",
-        disableSignUp: false,
+        disableSignUp: options.allowSignUp === false,
         async sendVerificationOTP({ email, otp }) {
           // Not awaited by the caller's response path to avoid timing differences.
           void mailer.send(email, signInCodeEmail(otp, OTP_POLICY.expiresInSeconds / 60)).catch(() => {

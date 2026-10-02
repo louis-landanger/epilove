@@ -1,5 +1,6 @@
 import type { KeyRing } from "@epilove/crypto";
 import type { Database, Role } from "@epilove/db";
+import type { Mailer } from "@epilove/email";
 import type { ImgproxyConfig } from "@epilove/media";
 import type { Storage } from "@epilove/media/storage";
 import type { RateLimiter } from "@epilove/rate-limit";
@@ -25,6 +26,10 @@ export interface ApiServices {
   readonly emailHmacSecret: () => string;
   /** Keys for application-level encryption (report details, message bodies). */
   readonly keyRing: () => KeyRing;
+  /** Transactional emails (moderation decisions, notifications). */
+  readonly mailer: () => Mailer;
+  /** Public URL of the member app, for links in emails. */
+  readonly appUrl: () => string;
   readonly now: () => Date;
 }
 

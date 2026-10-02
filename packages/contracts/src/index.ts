@@ -1,4 +1,5 @@
 import { accountContract } from "./account";
+import { adminContract } from "./admin";
 import { campusContract } from "./campus";
 import { mediaContract } from "./media";
 import { onboardingContract } from "./onboarding";
@@ -10,6 +11,7 @@ import { systemContract } from "./system";
 /** One entry per module, alphabetical. Each module lives in src/<module>.ts. */
 export const contract = {
   account: accountContract,
+  admin: adminContract,
   campus: campusContract,
   media: mediaContract,
   onboarding: onboardingContract,
@@ -22,6 +24,7 @@ export const contract = {
 export type Contract = typeof contract;
 
 export * from "./account";
+export * from "./admin";
 export * from "./campus";
 export * from "./media";
 export * from "./onboarding";
