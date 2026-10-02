@@ -34,7 +34,8 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "server-only": "catalog:",
-    "serwist": "catalog:"
+    "serwist": "catalog:",
+    "uqr": "catalog:"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",

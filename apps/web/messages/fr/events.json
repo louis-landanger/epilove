@@ -82,5 +82,29 @@
   "matchStatus": {
     "going": "Y va",
     "maybe": "Peut-être"
+  },
+  "flash": {
+    "title": "Flash",
+    "open": "Flash : rencontrer sur place",
+    "lead": "Montre ton code à quelqu'un que tu viens de rencontrer, et scanne le sien. Si vous vous scannez tous les deux, c'est une liaison.",
+    "mine": "Ton code",
+    "qrLabel": "Ton QR code Flash",
+    "codeLabel": "Ton code : {code}",
+    "renewed": "Il change toutes les 30 secondes : une photo de l'écran ne sert à rien.",
+    "typeLabel": "Le code de l'autre personne",
+    "scan": "Valider",
+    "cameraHint": "Ou scanne son QR code avec l'appareil photo de ton téléphone.",
+    "waiting": "C'est noté. Dès que l'autre personne scanne ton code, c'est une liaison.",
+    "showMine": "Montrer mon code",
+    "matched": "Liaison établie avec {name} !",
+    "write": "Écrire à {name}",
+    "closed": "Flash marche pendant l'événement, pour les personnes qui y ont répondu.",
+    "errors": {
+      "invalid_code": "Ce code n'existe pas ou a expiré. Demande le nouveau.",
+      "flash_closed": "Flash n'est pas ouvert pour cet événement.",
+      "rate_limited": "Doucement : attends une minute avant de réessayer.",
+      "expired": "Ce code a expiré. Demande à l'autre personne de te montrer le nouveau.",
+      "generic": "Ça n'a pas marché. Réessaie dans un instant."
+    }
   }
 }

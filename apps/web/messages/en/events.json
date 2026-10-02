@@ -82,5 +82,29 @@
   "matchStatus": {
     "going": "Going",
     "maybe": "Maybe"
+  },
+  "flash": {
+    "title": "Flash",
+    "open": "Flash: meet on the spot",
+    "lead": "Show your code to someone you've just met, and scan theirs. If you both scan each other, it's a bond.",
+    "mine": "Your code",
+    "qrLabel": "Your Flash QR code",
+    "codeLabel": "Your code: {code}",
+    "renewed": "It changes every 30 seconds: a screenshot is useless.",
+    "typeLabel": "The other person's code",
+    "scan": "Confirm",
+    "cameraHint": "Or scan their QR code with your phone's camera.",
+    "waiting": "Noted. As soon as the other person scans your code, it's a bond.",
+    "showMine": "Show my code",
+    "matched": "Bond formed with {name}!",
+    "write": "Message {name}",
+    "closed": "Flash works during the event, for the people who answered it.",
+    "errors": {
+      "invalid_code": "This code doesn't exist or has expired. Ask for the new one.",
+      "flash_closed": "Flash isn't open for this event.",
+      "rate_limited": "Easy: wait a minute before trying again.",
+      "expired": "This code has expired. Ask the other person to show you the new one.",
+      "generic": "That didn't work. Try again in a moment."
+    }
   }
 }

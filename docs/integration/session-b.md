@@ -25,6 +25,7 @@
 | 2 | Événements (IRL-01) | ✅ fait et testé (cœur, API, Playwright à trois navigateurs, axe) ; pas d'image de couverture |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
+| 3 | Flash (IRL-04) | ✅ fait et testé (cœur, API, Playwright à deux navigateurs, axe) |
 | 3 | Mode à l'aveugle (DEC-10) | ✅ fait et testé (cœur, API avec horloge simulée) ; bandeau du jeudi soir non testé en automatique (le serveur décide de la soirée) |
 | 3 | Badges discrets (COM-04), statut « Dispo » (IRL-05) | ✅ fait et testé (cœur, API) ; affichage vérifié à la main |
 | 1 | Pacte (PAC-02, PAC-03) et onglet Campus | ✅ fait et testé (pytest, cœur, API, worker, Playwright à deux navigateurs) ; dry run à 3 000 membres mesuré |
@@ -147,6 +148,12 @@
 - Interface : bouton photo (aperçu, case « Éphémère : une seule ouverture »), bouton micro à la place d'« Envoyer » quand le champ est vide (enregistrement MediaRecorder 64 kbit/s, arrêt automatique à 2 minutes, écoute avant envoi), lecteur avec forme d'onde et vitesses 1×/1,5×/2×, photo floutée avec « Afficher quand même » et « Signaler » quand le classifieur la signale. Sur téléphone, les outils de la zone de saisie se replient derrière « + ».
 - **Non fait** : transcription des vocaux (CHAT-07, accessibilité) ; classifieur réel (SAF-11, aujourd'hui aucun signalement : toutes les photos s'affichent nettes).
 
+### Flash (IRL-04)
+
+- `packages/core/src/events/flash.ts` : pendant un événement (dès 30 minutes avant le début), chaque personne qui y a répondu affiche un code de 8 caractères (base 32 de Crockford, sans I, L, O ni U) renouvelé toutes les 30 secondes, en QR code et en clair ; le code précédent reste accepté 30 secondes de plus.
+- Le code est un HMAC de l'événement, de la personne et de la fenêtre de 30 secondes (`packages/api/src/rencontre/flash.ts`, clé dérivée de `EMAIL_HMAC_SECRET`) : rien n'est stocké, un code scanné est comparé aux codes des participants. Table `flash_scan` ; deux scans réciproques font une liaison `source = flash`, si les politiques l'autorisent (`crushMatchMode`) ; sinon la réponse est la même qu'un scan à sens unique (rien ne trahit un blocage). 20 scans par minute au plus.
+- API `events.flashCode`, `events.flashScan`. Interface `(app)/campus/evenements/[id]/flash` (QR code dessiné en SVG avec `uqr`, code en clair, barre de temps, saisie du code de l'autre) et `.../flash/[code]`, la page qu'ouvre l'appareil photo en scannant un QR code. Bouton « Flash » sur l'événement en cours.
+
 ### Mode à l'aveugle (DEC-10)
 
 - `packages/core/src/discovery/blind.ts` : la soirée à l'aveugle a lieu le jeudi de 19 h à minuit (heure de Lyon) ; une liaison à l'aveugle se dévoile quand les deux ont envoyé 10 messages.
@@ -222,9 +229,9 @@
 | Fichier | Modification |
 |---|---|
 | `package.json` (racine) | scripts `db:seed:dev`, `pact:compute`, `pact:demo`, `drop:run` |
-| `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h), `nodemailer` (10.0.13, types inclus) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
+| `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h), `nodemailer` (10.0.13, types inclus), `uqr` (0.1.3, QR codes sans dépendance) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendances `@epilove/crypto` et `aws4fetch` (stockage des médias de conversation), script `db:seed:dev`, exports `./repositories/*`, `./dev-seed`, `./storage` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
-| `apps/web/package.json` | dépendances `maplibre-gl`, `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
+| `apps/web/package.json` | dépendances `uqr`, `maplibre-gl`, `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `community`, `dateSafety`, `dev`, `discovery`, `events`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
 | `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `events`, `likes`, `matches`, `notifications`, `pact`, `questionnaire`, `spots` (ajouts) |
@@ -257,6 +264,7 @@
 
 ## Migrations
 
+- `0020_*` : table `flash_scan`.
 - `0019_*` : colonnes `like_action.blind` et `match.blind`.
 - `0018_*` : table `availability`.
 - `0017_*` : table `member_badge`.

@@ -1,7 +1,7 @@
 "use client";
 
 import type { AttendingMatch, EventDetail } from "@epilove/contracts";
-import { dateIcs, EVENT_RULES, type RsvpStatus } from "@epilove/core";
+import { dateIcs, EVENT_RULES, flashOpen, type RsvpStatus } from "@epilove/core";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
@@ -244,6 +244,19 @@ export function EventDetailScreen({
             {error}
           </p>
         )}
+        {event.mine &&
+          flashOpen(
+            { status: event.status, startsAt, endsAt: event.endsAt ? endsAt : null },
+            true,
+            new Date(),
+          ) && (
+            <Link
+              href={`/campus/evenements/${event.id}/flash`}
+              className="self-start rounded-full bg-plasma px-5 py-2.5 font-semibold text-ink"
+            >
+              {t("flash.open")}
+            </Link>
+          )}
       </section>
 
       <section aria-labelledby="event-matches" className="flex flex-col gap-3">
