@@ -1,0 +1,93 @@
+{
+  "title": "The Pact",
+  "back": "Back to campus",
+  "edition": "{name} edition",
+  "promise": "One match per mode, computed for the whole campus at once. Better no match than a bad one.",
+  "none": {
+    "title": "No Pact right now",
+    "lead": "Two editions a year: Valentine's Day in February, back to school in October. We'll let you know when it opens."
+  },
+  "phase": {
+    "upcoming": "Opens in",
+    "open": "Sign-ups still open for",
+    "closed": "Reveal in",
+    "revealing": "It's time",
+    "revealed": "The results are in"
+  },
+  "dates": {
+    "opens": "Opens on {date}",
+    "closes": "Sign-ups until {date}",
+    "reveal": "Reveal on {date}"
+  },
+  "countdown": {
+    "days": "d",
+    "hours": "h",
+    "minutes": "min",
+    "seconds": "s",
+    "label": "{days} days, {hours} hours, {minutes} minutes and {seconds} seconds"
+  },
+  "participants": "{count, plural, =0 {Nobody has joined yet} one {# person is taking part} other {# people are taking part}}",
+  "live": "{count, plural, =0 {Nobody live yet} one {# person connected live} other {# people connected live}}",
+  "join": {
+    "title": "Join the Pact",
+    "modes": "You're looking for",
+    "mode": {
+      "love": "Love",
+      "friends": "Friends"
+    },
+    "consent": "By taking part, your profile will be shown to your Pact match, even if you are in incognito mode. You can withdraw while sign-ups are open.",
+    "questionnaire": "You need at least {required} questionnaire answers to take part ({answered}/{required}).",
+    "questionnaireAction": "Complete the questionnaire",
+    "action": "I'm in",
+    "update": "Update",
+    "joined": "You're taking part: {modes}.",
+    "leave": "Withdraw",
+    "notJoined": "You're not taking part in this edition.",
+    "pickOne": "Pick at least one mode."
+  },
+  "errors": {
+    "questionnaire_incomplete": "Complete the questionnaire first.",
+    "pact_closed": "Sign-ups are closed.",
+    "mode_unavailable": "This mode is not enabled on your profile.",
+    "profile_required": "Finish your profile to take part.",
+    "not_revealed": "The results are not out yet.",
+    "generic": "That didn't work. Try again in a moment."
+  },
+  "waiting": {
+    "title": "The campus is holding its breath",
+    "lead": "The reveal goes out to everyone at the same second."
+  },
+  "sequence": {
+    "analysing": "Analysing the samples",
+    "opening": "Opening the sample",
+    "skip": "Skip the animation",
+    "announce": "{count, plural, =0 {No Pact match this time.} one {Your Pact match is here.} other {Your # Pact matches are here.}}"
+  },
+  "result": {
+    "title": "Your Pact match",
+    "mode": {
+      "love": "Love match",
+      "friends": "Friends match"
+    },
+    "score": "{score}% compatible",
+    "radarTitle": "Your compatibility, section by section",
+    "radarValue": "{section}: {score}%",
+    "radarMissing": "{section}: not enough common answers",
+    "agreements": "You agree on",
+    "quirk": "Nobody's perfect",
+    "quirkLine": "You: {mine}. {name}: {theirs}.",
+    "write": "Message {name}",
+    "profile": "See the profile",
+    "replay": "Replay the reveal"
+  },
+  "noMatch": {
+    "title": "No match this time",
+    "lead": "Nobody reached the compatibility threshold with you in this edition. We'd rather not force anything.",
+    "next": "The deck is still open, and so is the next edition.",
+    "discover": "Back to Discover"
+  },
+  "notParticipant": {
+    "title": "You didn't take part in this edition",
+    "lead": "See you at the next one: Valentine's Day in February, back to school in October."
+  }
+}

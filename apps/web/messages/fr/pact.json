@@ -1,0 +1,93 @@
+{
+  "title": "Le Pacte",
+  "back": "Retour au campus",
+  "edition": "Édition {name}",
+  "promise": "Un seul match par mode, calculé pour tout le campus d'un coup. Mieux vaut aucun match qu'un mauvais match.",
+  "none": {
+    "title": "Pas de Pacte en ce moment",
+    "lead": "Deux éditions par an : la Saint-Valentin en février, la rentrée en octobre. On te prévient dès l'ouverture."
+  },
+  "phase": {
+    "upcoming": "Ouverture dans",
+    "open": "Inscriptions encore ouvertes pendant",
+    "closed": "Révélation dans",
+    "revealing": "C'est l'heure",
+    "revealed": "Les résultats sont tombés"
+  },
+  "dates": {
+    "opens": "Ouverture le {date}",
+    "closes": "Inscriptions jusqu'au {date}",
+    "reveal": "Révélation le {date}"
+  },
+  "countdown": {
+    "days": "j",
+    "hours": "h",
+    "minutes": "min",
+    "seconds": "s",
+    "label": "{days} jours, {hours} heures, {minutes} minutes et {seconds} secondes"
+  },
+  "participants": "{count, plural, =0 {Personne n'a encore rejoint} one {# personne participe} other {# personnes participent}}",
+  "live": "{count, plural, =0 {Personne en direct pour l'instant} one {# personne connectée en direct} other {# personnes connectées en direct}}",
+  "join": {
+    "title": "Rejoindre le Pacte",
+    "modes": "Tu cherches",
+    "mode": {
+      "love": "Love",
+      "friends": "Amis"
+    },
+    "consent": "En participant, ton profil sera montré à ton match du Pacte, y compris si tu es en mode incognito. Tu peux te retirer tant que les inscriptions sont ouvertes.",
+    "questionnaire": "Il te faut au moins {required} réponses au questionnaire pour participer ({answered}/{required}).",
+    "questionnaireAction": "Compléter le questionnaire",
+    "action": "Je participe",
+    "update": "Mettre à jour",
+    "joined": "Tu participes : {modes}.",
+    "leave": "Me retirer",
+    "notJoined": "Tu ne participes pas à cette édition.",
+    "pickOne": "Choisis au moins un mode."
+  },
+  "errors": {
+    "questionnaire_incomplete": "Complète d'abord le questionnaire.",
+    "pact_closed": "Les inscriptions sont closes.",
+    "mode_unavailable": "Ce mode n'est pas activé sur ton profil.",
+    "profile_required": "Termine ton profil pour participer.",
+    "not_revealed": "Les résultats ne sont pas encore publiés.",
+    "generic": "Ça n'a pas marché. Réessaie dans un instant."
+  },
+  "waiting": {
+    "title": "Le campus retient son souffle",
+    "lead": "La révélation part pour tout le monde à la même seconde."
+  },
+  "sequence": {
+    "analysing": "Analyse des échantillons",
+    "opening": "Ouverture de l'échantillon",
+    "skip": "Passer l'animation",
+    "announce": "{count, plural, =0 {Pas de match du Pacte cette fois.} one {Ton match du Pacte est arrivé.} other {Tes # matchs du Pacte sont arrivés.}}"
+  },
+  "result": {
+    "title": "Ton match du Pacte",
+    "mode": {
+      "love": "Match Love",
+      "friends": "Match Amis"
+    },
+    "score": "Compatibles à {score} %",
+    "radarTitle": "Votre compatibilité, section par section",
+    "radarValue": "{section} : {score} %",
+    "radarMissing": "{section} : pas assez de réponses communes",
+    "agreements": "Vous êtes d'accord",
+    "quirk": "Personne n'est parfait",
+    "quirkLine": "Toi : {mine}. {name} : {theirs}.",
+    "write": "Écrire à {name}",
+    "profile": "Voir le profil",
+    "replay": "Revoir la révélation"
+  },
+  "noMatch": {
+    "title": "Pas de match cette fois",
+    "lead": "Personne n'atteignait le seuil de compatibilité avec toi pour cette édition. On préfère ne rien forcer.",
+    "next": "Le deck reste ouvert, et la prochaine édition aussi.",
+    "discover": "Retour à Découvrir"
+  },
+  "notParticipant": {
+    "title": "Tu n'as pas participé à cette édition",
+    "lead": "Rendez-vous à la prochaine : la Saint-Valentin en février, la rentrée en octobre."
+  }
+}

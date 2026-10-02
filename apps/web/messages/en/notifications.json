@@ -11,7 +11,7 @@
     "match_created": "New bond! Send the first message.",
     "message_received": "New message in a conversation.",
     "drop_ready": "Your evening Drop is here.",
-    "pact_reveal": "It's time: discover your Pact match."
+    "pact_reveal": "It's time: the Pact results are in."
   },
   "settings": {
     "title": "Notification settings",

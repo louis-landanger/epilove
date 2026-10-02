@@ -6,6 +6,7 @@ import homeEn from "../messages/en/home.json";
 import likesEn from "../messages/en/likes.json";
 import matchesEn from "../messages/en/matches.json";
 import notificationsEn from "../messages/en/notifications.json";
+import pactEn from "../messages/en/pact.json";
 import questionnaireEn from "../messages/en/questionnaire.json";
 import campusFr from "../messages/fr/campus.json";
 import chatFr from "../messages/fr/chat.json";
@@ -15,6 +16,7 @@ import homeFr from "../messages/fr/home.json";
 import likesFr from "../messages/fr/likes.json";
 import matchesFr from "../messages/fr/matches.json";
 import notificationsFr from "../messages/fr/notifications.json";
+import pactFr from "../messages/fr/pact.json";
 import questionnaireFr from "../messages/fr/questionnaire.json";
 
 export const LOCALES = ["fr", "en"] as const;
@@ -35,6 +37,7 @@ const namespaces = {
   likes: { fr: likesFr, en: likesEn },
   matches: { fr: matchesFr, en: matchesEn },
   notifications: { fr: notificationsFr, en: notificationsEn },
+  pact: { fr: pactFr, en: pactEn },
   questionnaire: { fr: questionnaireFr, en: questionnaireEn },
 } as const;
 

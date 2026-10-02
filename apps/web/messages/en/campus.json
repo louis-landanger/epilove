@@ -14,5 +14,25 @@
     "offline": "Connection lost. Your actions will go through once you're back online.",
     "loading": "Loading…",
     "back": "Back"
+  },
+  "hub": {
+    "lead": "What's happening between the five schools.",
+    "pact": {
+      "title": "The Pact",
+      "none": "Next edition on Valentine's Day or back to school.",
+      "upcoming": "Opens on {date}",
+      "open": "Sign-ups open until {date}",
+      "closed": "Reveal on {date}",
+      "revealing": "Reveal in progress",
+      "revealed": "The results are in",
+      "joined": "You're taking part",
+      "action": "Open"
+    },
+    "questionnaire": {
+      "title": "Compatibility questionnaire",
+      "lead": "Forty-five questions that feed the deck's scores and the Pact.",
+      "progress": "{count, plural, =0 {Not started yet} one {# answer} other {# answers}}",
+      "action": "Answer"
+    }
   }
 }

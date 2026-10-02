@@ -86,7 +86,7 @@ test("two members like each other, match and chat in real time", async ({ browse
   expect(results.violations).toEqual([]);
 });
 
-test("the discovery, likes and messages screens have no detectable accessibility violations", async ({
+test("the discovery, likes, messages and campus screens have no detectable accessibility violations", async ({
   browser,
   baseURL,
 }) => {
@@ -96,6 +96,8 @@ test("the discovery, likes and messages screens have no detectable accessibility
     "/decouvrir",
     "/likes",
     "/messages",
+    "/campus",
+    "/campus/pacte",
     "/campus/questionnaire",
     "/notifications",
     "/reglages/notifications",
