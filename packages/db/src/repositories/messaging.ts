@@ -2,6 +2,7 @@ import { and, asc, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, sql
 import type { Database } from "../client";
 import {
   chatPreference,
+  type MESSAGE_KINDS,
   match,
   mediaDeletion,
   message,
@@ -120,7 +121,7 @@ export interface NewMessage {
   readonly id: string;
   readonly matchId: string;
   /** Text by default; other kinds keep their JSON payload in the encrypted body. */
-  readonly kind?: "text" | "sticker" | "gif" | "image" | "voice" | "date_proposal";
+  readonly kind?: "text" | "sticker" | "gif" | "image" | "voice" | "date_proposal" | "game";
   /** Storage key of an attached file (photo, voice message). */
   readonly mediaKey?: string | null;
   readonly senderId: string;
@@ -501,4 +502,42 @@ export async function replaceMessageBody(
     .where(and(eq(message.id, id), isNull(message.deletedAt)))
     .returning(messageColumns);
   return row ?? null;
+}
+
+/**
+ * Rewrites a message's encrypted body under a row lock, so that two members
+ * acting at once (a mini-game, CHAT-11) never overwrite each other. `update`
+ * returns the new body, or null to leave it unchanged.
+ */
+export async function updateMessageBody(
+  db: Database,
+  id: string,
+  update: (current: StoredMessage) => { readonly keyId: string; readonly data: Uint8Array } | null,
+): Promise<StoredMessage | null> {
+  return db.transaction(async (tx) => {
+    const [current] = await tx.select(messageColumns).from(message).where(eq(message.id, id)).for("update");
+    if (!current || current.deletedAt) {
+      return null;
+    }
+    const next = update(current);
+    if (!next) {
+      return current;
+    }
+    const [row] = await tx
+      .update(message)
+      .set({ bodyEncrypted: next.data, keyId: next.keyId })
+      .where(eq(message.id, id))
+      .returning(messageColumns);
+    return row ?? null;
+  });
+}
+
+/** Recent messages of one kind in a conversation (games already played, CHAT-11). */
+export async function messagesOfKind(db: Database, matchId: string, kind: string, limit = 100) {
+  return db
+    .select(messageColumns)
+    .from(message)
+    .where(and(eq(message.matchId, matchId), eq(message.kind, kind as (typeof MESSAGE_KINDS)[number])))
+    .orderBy(desc(message.id))
+    .limit(limit);
 }

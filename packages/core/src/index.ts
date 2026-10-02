@@ -15,6 +15,7 @@ export * from "./matching/compatibility";
 export * from "./matching/explain";
 export * from "./messaging/date-proposal";
 export * from "./messaging/date-safety";
+export * from "./messaging/games";
 export * from "./messaging/icebreakers";
 export * from "./messaging/ids";
 export * from "./messaging/nudge";

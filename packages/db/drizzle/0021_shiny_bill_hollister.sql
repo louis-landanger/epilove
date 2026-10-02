@@ -1,0 +1,2 @@
+ALTER TABLE "message" DROP CONSTRAINT "message_kind_check";--> statement-breakpoint
+ALTER TABLE "message" ADD CONSTRAINT "message_kind_check" CHECK ("message"."kind" in ('text', 'image', 'voice', 'gif', 'sticker', 'date_proposal', 'game', 'system'));

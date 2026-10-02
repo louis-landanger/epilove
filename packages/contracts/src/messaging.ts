@@ -1,4 +1,4 @@
-import { MODES } from "@epilove/core";
+import { GAME_RULES, GAMES, MODES } from "@epilove/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 import { availabilityView } from "./matches";
@@ -33,6 +33,21 @@ export const messageAttachment = z.discriminatedUnion("type", [
     durationMs: z.number().int(),
     /** Up to 64 bars between 0 and 1. */
     waveform: z.array(z.number()),
+  }),
+  z.object({
+    type: z.literal("game"),
+    game: z.enum(GAMES),
+    /** The question (empty for « Deux vérités, un mensonge », whose options are the statements). */
+    prompt: z.string(),
+    options: z.array(z.object({ id: z.string(), label: z.string() })),
+    /** The viewer's choice, and the other's once the viewer played (CHAT-11). */
+    mine: z.string().nullable(),
+    theirs: z.string().nullable(),
+    otherPlayed: z.boolean(),
+    done: z.boolean(),
+    /** « Deux vérités, un mensonge »: the viewer wrote it; the lie once guessed (or to its author). */
+    author: z.boolean(),
+    lie: z.string().nullable(),
   }),
   z.object({
     type: z.literal("date"),
@@ -178,6 +193,38 @@ export const messagingContract = {
         counterTo: z.uuid().nullable().default(null),
       }),
     )
+    .output(z.object({ message: chatMessage })),
+  /** Starts a mini-game (CHAT-11): a prompt from the bank, not played yet in this conversation. */
+  startGame: oc
+    .input(
+      z.object({
+        id: z.string().regex(UUIDV7),
+        matchId: z.uuid(),
+        game: z.enum(["would_you_rather", "nerd_quiz"]),
+        replyTo: z.uuid().nullable().default(null),
+      }),
+    )
+    .output(z.object({ message: chatMessage })),
+  /** « Deux vérités, un mensonge »: three statements, one of them false. */
+  startTwoTruths: oc
+    .input(
+      z.object({
+        id: z.string().regex(UUIDV7),
+        matchId: z.uuid(),
+        statements: z
+          .array(z.string().trim().min(1).max(GAME_RULES.statementMaxLength))
+          .length(GAME_RULES.statements),
+        lie: z
+          .number()
+          .int()
+          .min(0)
+          .max(GAME_RULES.statements - 1),
+      }),
+    )
+    .output(z.object({ message: chatMessage })),
+  /** Plays one's turn: a choice, or a guess of the lie. Once per member and game. */
+  playGame: oc
+    .input(z.object({ matchId: z.uuid(), messageId: z.uuid(), choice: z.string().max(20) }))
     .output(z.object({ message: chatMessage })),
   /** Accepts or declines the other member's proposal (CHAT-10). */
   respondDate: oc

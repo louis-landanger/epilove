@@ -1,3 +1,4 @@
+import type { MessageAttachment } from "@epilove/contracts";
 import { uuidv7 } from "@epilove/core";
 import { createDatabase, schema } from "@epilove/db";
 import { createMemoryObjectStore } from "@epilove/db/storage";
@@ -505,6 +506,83 @@ describe.skipIf(!url)("messaging", () => {
     } finally {
       setChatMediaStore(undefined);
     }
+  });
+
+  it("plays mini-games without showing an answer before the other played (CHAT-11)", async () => {
+    const { a, b, matchId } = await conversation();
+    const game = (m: { attachment: unknown }) => m.attachment as Extract<MessageAttachment, { type: "game" }>;
+    const { message } = await as(a).messaging.startGame({
+      id: newId(),
+      matchId,
+      game: "would_you_rather",
+      replyTo: null,
+    });
+    expect(game(message)).toMatchObject({
+      game: "would_you_rather",
+      prompt: "Tu préfères…",
+      mine: null,
+      otherPlayed: false,
+    });
+    expect(game(message).options).toHaveLength(2);
+    const [first, second] = game(message).options;
+
+    const played = await as(b).messaging.playGame({
+      matchId,
+      messageId: message.id,
+      choice: first?.id ?? "",
+    });
+    expect(game(played.message)).toMatchObject({ mine: first?.id, theirs: null, done: false });
+    const seenByA = (await as(a).messaging.history({ matchId, limit: 10 })).messages.find(
+      (m) => m.id === message.id,
+    );
+    expect(game(seenByA ?? { attachment: null })).toMatchObject({
+      mine: null,
+      theirs: null,
+      otherPlayed: true,
+    });
+
+    const both = await as(a).messaging.playGame({ matchId, messageId: message.id, choice: second?.id ?? "" });
+    expect(game(both.message)).toMatchObject({ mine: second?.id, theirs: first?.id, done: true });
+    // Same answer again: idempotent; another one: refused.
+    await as(a).messaging.playGame({ matchId, messageId: message.id, choice: second?.id ?? "" });
+    await expect(
+      as(a).messaging.playGame({ matchId, messageId: message.id, choice: first?.id ?? "" }),
+    ).rejects.toMatchObject({ message: "already_played" });
+    await expect(
+      as(b).messaging.playGame({ matchId, messageId: message.id, choice: "zzz" }),
+    ).rejects.toMatchObject({
+      message: "invalid_choice",
+    });
+
+    // Two people answering at the same moment: both answers kept.
+    const quiz = await as(a).messaging.startGame({ id: newId(), matchId, game: "nerd_quiz", replyTo: null });
+    const choice = game(quiz.message).options[0]?.id ?? "";
+    await Promise.all([
+      as(a).messaging.playGame({ matchId, messageId: quiz.message.id, choice }),
+      as(b).messaging.playGame({ matchId, messageId: quiz.message.id, choice }),
+    ]);
+    const quizNow = (await as(a).messaging.history({ matchId, limit: 10 })).messages.find(
+      (m) => m.id === quiz.message.id,
+    );
+    expect(game(quizNow ?? { attachment: null })).toMatchObject({ done: true, mine: choice, theirs: choice });
+
+    const truths = await as(a).messaging.startTwoTruths({
+      id: newId(),
+      matchId,
+      statements: ["J'ai vu une aurore boréale", "Je parle japonais", "J'ai sauté en parachute"],
+      lie: 1,
+    });
+    expect(game(truths.message)).toMatchObject({ author: true, lie: "1" });
+    await expect(
+      as(a).messaging.playGame({ matchId, messageId: truths.message.id, choice: "1" }),
+    ).rejects.toMatchObject({ message: "own_game" });
+    const forB = (await as(b).messaging.history({ matchId, limit: 10 })).messages.find(
+      (m) => m.id === truths.message.id,
+    );
+    expect(game(forB ?? { attachment: null })).toMatchObject({ author: false, lie: null, done: false });
+    expect(game(forB ?? { attachment: null }).options.map((o) => o.label)).toContain("Je parle japonais");
+    const guess = await as(b).messaging.playGame({ matchId, messageId: truths.message.id, choice: "2" });
+    expect(game(guess.message)).toMatchObject({ mine: "2", lie: "1", done: true });
   });
 
   it("relays typing to the other member only", async () => {

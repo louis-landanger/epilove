@@ -6,15 +6,20 @@ import {
   checkDateProposal,
   checkDateResponse,
   checkMessageChange,
+  checkPlay,
   cleanMessage,
   DATE_STATUSES,
   explainCompatibility,
+  GAMES,
+  gameView,
   isPotentiallyOffensive,
   isReaction,
   isSilent,
   isSticker,
   MESSAGING_RULES,
   pickIcebreakers,
+  pickPrompt,
+  promptOf,
   screenMessage,
 } from "@epilove/core";
 import { encryptText } from "@epilove/crypto";
@@ -39,6 +44,7 @@ import {
   markRead,
   messagesByIds,
   messagesOf,
+  messagesOfKind,
   messagesSentSince,
   notifyMessageUpdated,
   notifyRead,
@@ -49,6 +55,7 @@ import {
   saveChatSettings,
   scheduleMediaDeletion,
   setReaction,
+  updateMessageBody,
 } from "@epilove/db/repositories/messaging";
 import { answerSheets, listActiveQuestions } from "@epilove/db/repositories/questionnaire";
 import { personalChannel } from "@epilove/realtime";
@@ -112,6 +119,16 @@ const payloads = {
   voice: z.object({
     voice: z.object({ durationMs: z.number(), waveform: z.array(z.number()), contentType: z.string() }),
   }),
+  game: z.object({
+    game: z.object({
+      game: z.enum(GAMES),
+      promptId: z.string().nullable(),
+      authorId: z.string(),
+      statements: z.array(z.string()).optional(),
+      lie: z.number().int().optional(),
+      answers: z.record(z.string(), z.string()),
+    }),
+  }),
   date: z.object({
     date: z.object({
       spotId: z.string().nullable(),
@@ -148,7 +165,28 @@ function attachmentOf(
   body: string,
   spots: ReadonlyMap<string, SpotRow>,
   mediaKey: string | null,
+  viewerId: string,
 ): MessageAttachment | null {
+  if (kind === "game") {
+    const parsed = payloads.game.safeParse(parseJson(body));
+    if (!parsed.success) {
+      return null;
+    }
+    const state = parsed.data.game;
+    const prompt = promptOf(state);
+    // Labels in French for now: history requests carry no locale (as for Spots).
+    const options =
+      state.game === "two_truths"
+        ? (state.statements ?? []).map((label, index) => ({ id: String(index), label }))
+        : (prompt?.options ?? []).map((o) => ({ id: o.id, label: o.fr }));
+    return {
+      type: "game",
+      game: state.game,
+      prompt: prompt?.textFr ?? "",
+      options,
+      ...gameView(state, viewerId),
+    };
+  }
   if (kind === "image") {
     const parsed = payloads.image.safeParse(parseJson(body));
     if (!parsed.success) {
@@ -250,7 +288,7 @@ async function deliverMessage(
   conversation: Conversation,
   input: {
     id: string;
-    kind: "text" | "sticker" | "gif" | "date_proposal" | "image" | "voice";
+    kind: "text" | "sticker" | "gif" | "date_proposal" | "image" | "voice" | "game";
     plaintext: string;
     mediaKey?: string;
     replyTo: string | null;
@@ -279,7 +317,7 @@ async function deliverMessage(
     });
   }
   await touchLastActive(db, viewer.member.id, now);
-  const [message] = await toChatMessages(db, [result.message]);
+  const [message] = await toChatMessages(db, [result.message], viewer.member.id);
   if (!message) {
     throw new ORPCError("INTERNAL_SERVER_ERROR");
   }
@@ -307,7 +345,7 @@ async function alreadySent(
   ) {
     throw new ORPCError("CONFLICT", { message: "id_conflict" });
   }
-  const [message] = await toChatMessages(db, [existing]);
+  const [message] = await toChatMessages(db, [existing], conversation.viewer.member.id);
   if (!message) {
     throw new ORPCError("INTERNAL_SERVER_ERROR");
   }
@@ -381,7 +419,11 @@ async function requireOwnChange(
   return target;
 }
 
-async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Promise<ChatMessage[]> {
+async function toChatMessages(
+  db: Database,
+  rows: readonly StoredMessage[],
+  viewerId: string,
+): Promise<ChatMessage[]> {
   const replyIds = [...new Set(rows.flatMap((m) => (m.replyTo ? [m.replyTo] : [])))];
   const known = new Map(rows.map((m) => [m.id, m]));
   const missing = replyIds.filter((id) => !known.has(id));
@@ -400,7 +442,7 @@ async function toChatMessages(db: Database, rows: readonly StoredMessage[]): Pro
   const attachments = await Promise.all(
     rows.map(async (m) => {
       const attachment =
-        m.deletedAt || m.kind === "text" ? null : attachmentOf(m.kind, body(m), spots, m.mediaKey);
+        m.deletedAt || m.kind === "text" ? null : attachmentOf(m.kind, body(m), spots, m.mediaKey, viewerId);
       if (attachment?.type === "voice" && m.mediaKey) {
         return { ...attachment, url: await chatMediaStore().signedUrl(m.mediaKey, 3600) };
       }
@@ -508,20 +550,20 @@ export const messaging = {
         seed: match.id,
       }).map((i) => ({ key: i.key, params: { ...i.params } })),
       nudge: isSilent(match.lastMessageAt ?? match.createdAt, now),
-      messages: await toChatMessages(db, page.messages),
+      messages: await toChatMessages(db, page.messages, viewer.member.id),
       hasMore: page.hasMore,
     };
   }),
 
   history: os.messaging.history.use(requireViewer).handler(async ({ context, input }) => {
     const db = context.database();
-    const { match } = await requireConversation(db, context.viewer.userId, input.matchId);
+    const { match, viewer } = await requireConversation(db, context.viewer.userId, input.matchId);
     const page = await messagesOf(db, match.id, {
       before: input.before,
       after: input.after,
       limit: input.limit,
     });
-    return { messages: await toChatMessages(db, page.messages), hasMore: page.hasMore };
+    return { messages: await toChatMessages(db, page.messages, viewer.member.id), hasMore: page.hasMore };
   }),
 
   send: os.messaging.send.use(requireViewer).handler(async ({ context, input }) => {
@@ -711,6 +753,104 @@ export const messaging = {
     return { url, expiresAt: new Date(now.getTime() + 60_000).toISOString() };
   }),
 
+  startGame: os.messaging.startGame.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const conversation = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    // A prompt not played yet in this conversation, when there is one left.
+    const played = new Set(
+      (await messagesOfKind(db, conversation.match.id, "game")).flatMap((m) => {
+        const parsed = payloads.game.safeParse(parseJson(decryptBody(m.bodyEncrypted, m.keyId)));
+        return parsed.success && parsed.data.game.promptId ? [parsed.data.game.promptId] : [];
+      }),
+    );
+    const prompt = pickPrompt(input.game, played, Math.random);
+    const message = await deliverMessage(db, conversation, {
+      id: input.id,
+      kind: "game",
+      plaintext: JSON.stringify({
+        game: { game: input.game, promptId: prompt.id, authorId: conversation.viewer.member.id, answers: {} },
+      }),
+      replyTo: input.replyTo,
+      flags: [],
+      now,
+    });
+    return { message };
+  }),
+
+  startTwoTruths: os.messaging.startTwoTruths.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const conversation = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const statements = input.statements.map((statement) => cleanMessage(statement));
+    if (statements.some((statement) => !statement)) {
+      throw new ORPCError("BAD_REQUEST", { message: "empty_statement" });
+    }
+    // Free text: screened like any message (contact handles, insults).
+    const flags = [...new Set(statements.flatMap((statement) => screenMessage(statement)))];
+    const message = await deliverMessage(db, conversation, {
+      id: input.id,
+      kind: "game",
+      plaintext: JSON.stringify({
+        game: {
+          game: "two_truths",
+          promptId: null,
+          authorId: conversation.viewer.member.id,
+          statements,
+          lie: input.lie,
+          answers: {},
+        },
+      }),
+      replyTo: null,
+      flags,
+      now,
+    });
+    return { message };
+  }),
+
+  playGame: os.messaging.playGame.use(requireViewer).handler(async ({ context, input }) => {
+    const db = context.database();
+    const now = new Date();
+    const { match, viewer, other } = await requireConversation(db, context.viewer.userId, input.matchId, now);
+    const [target] = await messagesByIds(db, [input.messageId]);
+    if (!target || target.matchId !== match.id || target.kind !== "game" || target.deletedAt) {
+      throw new ORPCError("NOT_FOUND");
+    }
+    let refused: string | null = null;
+    // Under a row lock: two members playing at once never overwrite each other.
+    const updated = await updateMessageBody(db, target.id, (current) => {
+      const parsed = payloads.game.safeParse(parseJson(decryptBody(current.bodyEncrypted, current.keyId)));
+      if (!parsed.success) {
+        refused = "invalid_game";
+        return null;
+      }
+      const state = parsed.data.game;
+      if (state.answers[viewer.member.id] === input.choice) {
+        // Same answer again: idempotent.
+        return null;
+      }
+      const check = checkPlay(state, viewer.member.id, input.choice);
+      if (!check.ok) {
+        refused = check.reason;
+        return null;
+      }
+      const next = { ...state, answers: { ...state.answers, [viewer.member.id]: input.choice } };
+      return encryptText(messageKeyRing(), JSON.stringify({ game: next }));
+    });
+    if (refused) {
+      throw new ORPCError("BAD_REQUEST", { message: refused });
+    }
+    if (!updated) {
+      throw new ORPCError("NOT_FOUND");
+    }
+    await notifyMessageUpdated(db, [viewer.member.id, other.member.id], match.id, target.id);
+    const [message] = await toChatMessages(db, [updated], viewer.member.id);
+    if (!message) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR");
+    }
+    return { message };
+  }),
+
   proposeDate: os.messaging.proposeDate.use(requireViewer).handler(async ({ context, input }) => {
     const db = context.database();
     const now = new Date();
@@ -776,7 +916,7 @@ export const messaging = {
       now,
     );
     await notifyMessageUpdated(db, [viewer.member.id, other.member.id], match.id, original.message.id);
-    const [message] = await toChatMessages(db, [updated]);
+    const [message] = await toChatMessages(db, [updated], viewer.member.id);
     if (!message) {
       throw new ORPCError("INTERNAL_SERVER_ERROR");
     }
@@ -805,7 +945,7 @@ export const messaging = {
       throw new ORPCError("CONFLICT", { message: "too_late" });
     }
     await notifyMessageUpdated(db, [viewer.member.id, other.member.id], match.id, updated.id);
-    const [message] = await toChatMessages(db, [updated]);
+    const [message] = await toChatMessages(db, [updated], viewer.member.id);
     if (!message) {
       throw new ORPCError("INTERNAL_SERVER_ERROR");
     }
@@ -827,7 +967,7 @@ export const messaging = {
       throw new ORPCError("CONFLICT", { message: "too_late" });
     }
     await notifyMessageUpdated(db, [viewer.member.id, other.member.id], match.id, deleted.id);
-    const [message] = await toChatMessages(db, [deleted]);
+    const [message] = await toChatMessages(db, [deleted], viewer.member.id);
     if (!message) {
       throw new ORPCError("INTERNAL_SERVER_ERROR");
     }
