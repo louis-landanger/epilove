@@ -126,7 +126,8 @@ export function PactScreen({ initial }: { initial: PactCurrent }) {
 
   useBroadcast(PACT_CHANNEL, (signal) => {
     if (signal.type === "pact.reveal" && signal.seasonId === season?.id) {
-      void refresh().catch(() => {});
+      // Spread like the result requests: thousands of screens get the signal at once (infra/load).
+      setTimeout(() => void refresh().catch(() => {}), revealDelayMs(Math.random()));
       if (participant) {
         startReveal(true);
       }
