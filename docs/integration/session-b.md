@@ -25,6 +25,7 @@
 | 2 | Événements (IRL-01) | ✅ fait et testé (cœur, API, Playwright à trois navigateurs, axe) ; pas d'image de couverture |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
 | 2 | Drop du soir (DEC-07) | ✅ fait et testé (cœur, worker, API) ; interface vérifiée à la main |
+| 3 | Mini-jeux (CHAT-11) | ✅ fait et testé (cœur, API dont réponses simultanées, Playwright à deux navigateurs, axe) |
 | 3 | Flash (IRL-04) | ✅ fait et testé (cœur, API, Playwright à deux navigateurs, axe) |
 | 3 | Mode à l'aveugle (DEC-10) | ✅ fait et testé (cœur, API avec horloge simulée) ; bandeau du jeudi soir non testé en automatique (le serveur décide de la soirée) |
 | 3 | Badges discrets (COM-04), statut « Dispo » (IRL-05) | ✅ fait et testé (cœur, API) ; affichage vérifié à la main |
@@ -148,6 +149,14 @@
 - Interface : bouton photo (aperçu, case « Éphémère : une seule ouverture »), bouton micro à la place d'« Envoyer » quand le champ est vide (enregistrement MediaRecorder 64 kbit/s, arrêt automatique à 2 minutes, écoute avant envoi), lecteur avec forme d'onde et vitesses 1×/1,5×/2×, photo floutée avec « Afficher quand même » et « Signaler » quand le classifieur la signale. Sur téléphone, les outils de la zone de saisie se replient derrière « + ».
 - **Non fait** : transcription des vocaux (CHAT-07, accessibilité) ; classifieur réel (SAF-11, aujourd'hui aucun signalement : toutes les photos s'affichent nettes).
 
+### Mini-jeux (CHAT-11)
+
+- `packages/core/src/messaging/games.ts` : « Tu préfères » (12 dilemmes légers), « Quiz nerd » (8 questions de goûts, pas de mauvaise réponse) et « Deux vérités, un mensonge » (trois phrases écrites par le membre). `gameView` : la réponse de l'autre reste cachée tant qu'on n'a pas joué, le mensonge reste caché jusqu'à la réponse (sauf pour son auteur).
+- Nouveau type de message `game` (migration 0021), charge chiffrée comme les autres. La conversion des messages dépend désormais du lecteur (`toChatMessages(db, rows, viewerId)`).
+- API `messaging.startGame` (une question pas encore jouée dans la conversation), `startTwoTruths` (phrases passées au filtre des messages), `playGame` (une fois par membre, sous verrou de ligne : deux réponses simultanées ne s'écrasent pas ; même réponse rejouée = sans effet).
+- Interface : bouton « Jouer à un mini-jeu » dans la zone de saisie, feuille de choix, carte de jeu dans la conversation (mise à jour en temps réel).
+- Libellés des jeux en français pour l'instant (les requêtes d'historique ne portent pas la langue, comme pour les Spots).
+
 ### Flash (IRL-04)
 
 - `packages/core/src/events/flash.ts` : pendant un événement (dès 30 minutes avant le début), chaque personne qui y a répondu affiche un code de 8 caractères (base 32 de Crockford, sans I, L, O ni U) renouvelé toutes les 30 secondes, en QR code et en clair ; le code précédent reste accepté 30 secondes de plus.
@@ -264,6 +273,7 @@
 
 ## Migrations
 
+- `0021_*` : type de message `game`.
 - `0020_*` : table `flash_scan`.
 - `0019_*` : colonnes `like_action.blind` et `match.blind`.
 - `0018_*` : table `availability`.

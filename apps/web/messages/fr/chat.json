@@ -109,7 +109,8 @@
     "image": "Photo",
     "voice": "Message vocal",
     "date_proposal": "Proposition de date",
-    "system": "Message"
+    "system": "Message",
+    "game": "Mini-jeu"
   },
   "nudge": {
     "lead": "Ça fait quelques jours avec {name}. Envie de relancer ?",
@@ -279,5 +280,41 @@
       "generic": "Ça n'a pas marché. Réessaie dans un instant."
     }
   },
-  "blind": "Photos dévoilées à {needed} messages chacun·e : toi {mine}/{needed}, {name} {theirs}/{needed}."
+  "blind": "Photos dévoilées à {needed} messages chacun·e : toi {mine}/{needed}, {name} {theirs}/{needed}.",
+  "games": {
+    "open": "Jouer à un mini-jeu",
+    "title": "Un petit jeu ?",
+    "names": {
+      "would_you_rather": "Tu préfères",
+      "nerd_quiz": "Quiz nerd",
+      "two_truths": "Deux vérités, un mensonge"
+    },
+    "leads": {
+      "would_you_rather": "Un dilemme, vous répondez chacun·e de votre côté.",
+      "nerd_quiz": "Des goûts de geek, pas de mauvaise réponse.",
+      "two_truths": "Trois phrases sur toi, une fausse : à l'autre de la trouver."
+    },
+    "you": "Toi",
+    "yourTurn": "À toi de jouer : ta réponse reste cachée jusqu'à celle de l'autre.",
+    "otherPlayed": "{name} a répondu. À toi !",
+    "waiting": "En attente de {name}…",
+    "same": "Raccord !",
+    "different": "Avis partagés.",
+    "send": "Envoyer",
+    "truths": {
+      "guess": "Laquelle est fausse ?",
+      "waitingGuess": "{name} doit trouver le mensonge.",
+      "write": "Écris trois phrases sur toi et coche celle qui est fausse.",
+      "statement": "Phrase {number}",
+      "markLie": "La phrase {number} est le mensonge",
+      "lieHint": "Le rond coché indique le mensonge. Il reste secret jusqu'à la réponse.",
+      "yourGuess": "Ton choix",
+      "theirGuess": "Choix de {name}",
+      "lie": "Le mensonge",
+      "found": "Bien vu !",
+      "missed": "Raté, c'était bien tenté.",
+      "foundYou": "{name} t'a démasqué·e.",
+      "fooled": "{name} s'est fait avoir."
+    }
+  }
 }

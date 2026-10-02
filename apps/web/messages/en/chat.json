@@ -109,7 +109,8 @@
     "image": "Photo",
     "voice": "Voice message",
     "date_proposal": "Date proposal",
-    "system": "Message"
+    "system": "Message",
+    "game": "Mini-game"
   },
   "nudge": {
     "lead": "It's been a few days with {name}. Feel like restarting?",
@@ -279,5 +280,41 @@
       "generic": "That didn't work. Try again in a moment."
     }
   },
-  "blind": "Photos show at {needed} messages each: you {mine}/{needed}, {name} {theirs}/{needed}."
+  "blind": "Photos show at {needed} messages each: you {mine}/{needed}, {name} {theirs}/{needed}.",
+  "games": {
+    "open": "Play a mini-game",
+    "title": "A little game?",
+    "names": {
+      "would_you_rather": "Would you rather",
+      "nerd_quiz": "Nerd quiz",
+      "two_truths": "Two truths and a lie"
+    },
+    "leads": {
+      "would_you_rather": "A dilemma, you each answer on your own.",
+      "nerd_quiz": "Geek tastes, no wrong answer.",
+      "two_truths": "Three sentences about you, one false: the other has to find it."
+    },
+    "you": "You",
+    "yourTurn": "Your turn: your answer stays hidden until the other's.",
+    "otherPlayed": "{name} answered. Your turn!",
+    "waiting": "Waiting for {name}…",
+    "same": "In sync!",
+    "different": "Different takes.",
+    "send": "Send",
+    "truths": {
+      "guess": "Which one is false?",
+      "waitingGuess": "{name} has to find the lie.",
+      "write": "Write three sentences about yourself and tick the false one.",
+      "statement": "Sentence {number}",
+      "markLie": "Sentence {number} is the lie",
+      "lieHint": "The ticked circle marks the lie. It stays secret until the answer.",
+      "yourGuess": "Your pick",
+      "theirGuess": "{name}'s pick",
+      "lie": "The lie",
+      "found": "Well spotted!",
+      "missed": "Missed, nice try.",
+      "foundYou": "{name} saw through you.",
+      "fooled": "{name} got fooled."
+    }
+  }
 }

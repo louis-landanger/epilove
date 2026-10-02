@@ -17,6 +17,7 @@ import { Avatar } from "./avatar";
 import { DateCard } from "./date-card";
 import { type DateDraft, DateSheet } from "./date-sheet";
 import { useDispoText } from "./dispo";
+import { GameCard, GameSheet } from "./games";
 import {
   ImageBubble,
   MAX_VOICE_MS,
@@ -81,6 +82,8 @@ export function Conversation({ thread }: { thread: ThreadView }) {
   const [warning, setWarning] = useState<string | null>(null);
   /** Date proposal sheet (CHAT-10), possibly answering another proposal. */
   const [dateSheet, setDateSheet] = useState<{ counterTo: string | null } | null>(null);
+  /** Mini-games sheet (CHAT-11). */
+  const [gamesOpen, setGamesOpen] = useState(false);
   /** The accepted date whose safety kit is open (IRL-03). */
   const [kitFor, setKitFor] = useState<string | null>(null);
   /** A photo waiting in its preview (CHAT-06), and the upload in progress. */
@@ -391,6 +394,46 @@ export function Conversation({ thread }: { thread: ThreadView }) {
     }
   };
 
+  const startGame = async (game: "would_you_rather" | "nerd_quiz") => {
+    try {
+      const result = await api.messaging.startGame({
+        id: newMessageId(),
+        matchId: thread.matchId,
+        game,
+        replyTo: null,
+      });
+      nearBottom.current = true;
+      setMessages((current) => mergeMessages(current, [result.message]));
+    } catch (error) {
+      say(mediaError(error));
+    }
+  };
+
+  const startTwoTruths = async (statements: string[], lie: number) => {
+    try {
+      const result = await api.messaging.startTwoTruths({
+        id: newMessageId(),
+        matchId: thread.matchId,
+        statements,
+        lie,
+      });
+      nearBottom.current = true;
+      setMessages((current) => mergeMessages(current, [result.message]));
+    } catch (error) {
+      say(mediaError(error));
+    }
+  };
+
+  const playGame = async (target: ChatMessage, choice: string) => {
+    try {
+      const result = await api.messaging.playGame({ matchId: thread.matchId, messageId: target.id, choice });
+      setMessages((current) => mergeMessages(current, [result.message]));
+    } catch {
+      say(t("errors.generic"));
+      void refreshRecent();
+    }
+  };
+
   const proposeDate = async (draft: DateDraft) => {
     const result = await api.messaging.proposeDate({
       id: newMessageId(),
@@ -669,6 +712,8 @@ export function Conversation({ thread }: { thread: ThreadView }) {
                     onCounterDate={() => setDateSheet({ counterTo: item.message.id })}
                     onOpenMedia={() => openViewOnce(item.message)}
                     onSafetyKit={() => setKitFor(item.message.id)}
+                    otherName={thread.other.firstName}
+                    onPlayGame={(choice) => void playGame(item.message, choice)}
                   />
                 ) : (
                   <PendingBubble
@@ -710,6 +755,13 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           setReporting(null);
           say(t("reported"));
         }}
+      />
+
+      <GameSheet
+        open={gamesOpen}
+        onClose={() => setGamesOpen(false)}
+        onStart={startGame}
+        onTwoTruths={startTwoTruths}
       />
 
       <SafetyKitSheet
@@ -796,6 +848,7 @@ export function Conversation({ thread }: { thread: ThreadView }) {
           onCancelReply={() => setReplyTo(null)}
           onSticker={(sticker) => void sendAttachment({ type: "sticker", sticker })}
           onProposeDate={() => setDateSheet({ counterTo: null })}
+          onGames={() => setGamesOpen(true)}
           onGif={(gif) => void sendAttachment({ type: "gif", gif })}
           onPhoto={(file) => void pickPhoto(file)}
           onVoice={sendVoice}
@@ -875,6 +928,8 @@ function Bubble({
   onCounterDate,
   onOpenMedia,
   onSafetyKit,
+  otherName,
+  onPlayGame,
 }: {
   message: ChatMessage;
   mine: boolean;
@@ -892,6 +947,8 @@ function Bubble({
   onCounterDate: () => void;
   onOpenMedia: () => Promise<string | null>;
   onSafetyKit: () => void;
+  otherName: string;
+  onPlayGame: (choice: string) => void;
 }) {
   const t = useTranslations("chat");
   const format = useFormatter();
@@ -970,6 +1027,8 @@ function Bubble({
               onCounter={onCounterDate}
               onSafetyKit={onSafetyKit}
             />
+          ) : message.attachment?.type === "game" ? (
+            <GameCard game={message.attachment} otherName={otherName} onPlay={onPlayGame} />
           ) : message.attachment?.type === "image" ? (
             <ImageBubble image={message.attachment} mine={mine} onOpen={onOpenMedia} onReport={onReport} />
           ) : message.attachment?.type === "voice" ? (
@@ -1195,6 +1254,7 @@ function Composer({
   onSticker,
   onGif,
   onProposeDate,
+  onGames,
   onPhoto,
   onVoice,
   onVoiceError,
@@ -1217,6 +1277,7 @@ function Composer({
   onSticker: (sticker: StickerId) => void;
   onGif: (gif: PickedGif) => void;
   onProposeDate: () => void;
+  onGames: () => void;
   onPhoto: (file: File) => void;
   onVoice: (voice: RecordedVoice) => Promise<boolean>;
   onVoiceError: (key: "microphone" | "maxDuration") => void;
@@ -1410,6 +1471,29 @@ function Composer({
                   d="M12 13.2c-.9-1-2.6-.6-2.6.8 0 1.3 2.6 2.8 2.6 2.8s2.6-1.5 2.6-2.8c0-1.4-1.7-1.8-2.6-.8Z"
                   fill="currentColor"
                   stroke="none"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={onGames}
+              aria-label={t("games.open")}
+              disabled={editing}
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-paper/15 text-plasma disabled:opacity-40"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                aria-hidden="true"
+              >
+                <rect x="4" y="4" width="16" height="16" rx="4" />
+                <path
+                  d="M9 9h.01M15 9h.01M12 12h.01M9 15h.01M15 15h.01"
+                  strokeLinecap="round"
+                  strokeWidth={2.6}
                 />
               </svg>
             </button>
