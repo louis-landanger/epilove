@@ -111,6 +111,35 @@
     "title": "Ton compte est suspendu.",
     "body": "Une décision de modération a été prise. Tu as reçu par email ses motifs et la façon de la contester.",
     "help": "Besoin d'aide ?",
-    "signOut": "Se déconnecter"
+    "signOut": "Se déconnecter",
+    "appeals": "Voir la décision et la contester"
+  },
+  "appeals": {
+    "metaTitle": "Décisions et recours",
+    "title": "Décisions et recours",
+    "lead": "Les décisions de modération qui te concernent, avec leurs motifs. Tu peux contester chacune une fois dans les six mois : une autre personne de l'équipe la réexamine.",
+    "empty": "Aucune décision ne te concerne.",
+    "rule": "Règle : {rule}",
+    "until": "Jusqu'au {date}",
+    "actions": {
+      "warning": "Avertissement",
+      "content_removal": "Retrait d'un contenu",
+      "restriction": "Restriction",
+      "suspension": "Suspension",
+      "ban": "Fermeture du compte",
+      "no_action": "Sans suite"
+    },
+    "status": {
+      "pending": "Recours en cours d'examen",
+      "upheld": "Recours examiné : décision maintenue",
+      "overturned": "Recours accepté : décision annulée"
+    },
+    "contest": "Contester",
+    "formLabel": "Explique pourquoi la décision te semble injustifiée",
+    "formHelp": "20 caractères minimum. Ajoute tout élément utile.",
+    "send": "Envoyer le recours",
+    "sent": "Recours envoyé. Tu recevras la réponse par email.",
+    "error": "Le recours n'a pas pu être envoyé.",
+    "back": "Retour"
   }
 }

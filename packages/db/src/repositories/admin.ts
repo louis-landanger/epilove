@@ -1,6 +1,7 @@
 import { and, asc, count, countDistinct, desc, eq, inArray, isNotNull, lt, ne, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import {
+  appeal,
   appUser,
   auditLog,
   block,
@@ -250,17 +251,14 @@ export async function insertModerationAction(
 export async function applyAccountSanction(
   db: Db,
   userId: string,
-  effect: { status: "restricted" | "suspended" | "banned" | null; signInBlocked: boolean; reason: string },
+  status: "restricted" | "suspended" | "banned" | null,
 ) {
-  if (!effect.status) {
+  if (!status) {
     return;
   }
   await db
     .update(appUser)
-    .set({
-      status: effect.status,
-      ...(effect.signInBlocked ? { banned: true, banReason: effect.reason, banExpires: null } : {}),
-    })
+    .set({ status })
     .where(and(eq(appUser.id, userId), ne(appUser.status, "deleting")));
 }
 
@@ -334,4 +332,116 @@ export async function saveInterest(
     ? await db.update(interest).set(fields).where(eq(interest.id, id)).returning()
     : await db.insert(interest).values(fields).returning();
   return row ?? null;
+}
+
+// --- Appeals (ADM-04) ----------------------------------------------------------------------------
+
+/** The member's own decisions (statement included), with their appeal if any. */
+export async function listDecisionsFor(db: Db, userId: string) {
+  return db
+    .select({
+      id: moderationAction.id,
+      action: moderationAction.action,
+      rule: moderationAction.rule,
+      statement: moderationAction.statement,
+      createdAt: moderationAction.createdAt,
+      expiresAt: moderationAction.expiresAt,
+      appealStatus: appeal.status,
+    })
+    .from(moderationAction)
+    .leftJoin(appeal, eq(appeal.actionId, moderationAction.id))
+    .where(and(eq(moderationAction.targetUserId, userId), ne(moderationAction.action, "no_action")))
+    .orderBy(desc(moderationAction.createdAt))
+    .limit(50);
+}
+
+export async function findDecision(db: Db, actionId: string) {
+  const [row] = await db
+    .select({
+      id: moderationAction.id,
+      targetUserId: moderationAction.targetUserId,
+      moderatorId: moderationAction.moderatorId,
+      action: moderationAction.action,
+      rule: moderationAction.rule,
+      statement: moderationAction.statement,
+      createdAt: moderationAction.createdAt,
+      expiresAt: moderationAction.expiresAt,
+      reportId: moderationAction.reportId,
+    })
+    .from(moderationAction)
+    .where(eq(moderationAction.id, actionId))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function hasAppeal(db: Db, actionId: string) {
+  const [row] = await db.select({ id: appeal.id }).from(appeal).where(eq(appeal.actionId, actionId)).limit(1);
+  return Boolean(row);
+}
+
+export async function insertAppeal(db: Db, actionId: string, text: string) {
+  const [row] = await db.insert(appeal).values({ actionId, text }).returning({ id: appeal.id });
+  return row?.id ?? null;
+}
+
+export async function listPendingAppeals(db: Db) {
+  return db
+    .select({
+      id: appeal.id,
+      createdAt: appeal.createdAt,
+      action: moderationAction.action,
+      rule: moderationAction.rule,
+      targetUserId: moderationAction.targetUserId,
+    })
+    .from(appeal)
+    .innerJoin(moderationAction, eq(moderationAction.id, appeal.actionId))
+    .where(eq(appeal.status, "pending"))
+    .orderBy(asc(appeal.createdAt))
+    .limit(100);
+}
+
+export async function findAppeal(db: Db, id: string) {
+  const [row] = await db
+    .select({
+      id: appeal.id,
+      text: appeal.text,
+      status: appeal.status,
+      createdAt: appeal.createdAt,
+      actionId: appeal.actionId,
+    })
+    .from(appeal)
+    .where(eq(appeal.id, id))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function setAppealOutcome(
+  db: Db,
+  id: string,
+  status: "upheld" | "overturned",
+  reviewerId: string,
+  at: Date,
+) {
+  const updated = await db
+    .update(appeal)
+    .set({ status, reviewerId, decidedAt: at })
+    .where(and(eq(appeal.id, id), eq(appeal.status, "pending")))
+    .returning({ id: appeal.id });
+  return updated.length > 0;
+}
+
+/** Undoes the status set by an overturned decision, if it is still the current one. */
+export async function revertSanctionStatus(
+  db: Db,
+  userId: string,
+  status: "restricted" | "suspended" | "banned",
+) {
+  await db
+    .update(appUser)
+    .set({ status: "active" })
+    .where(and(eq(appUser.id, userId), eq(appUser.status, status)));
+}
+
+export async function endSanctionNow(db: Db, actionId: string, at: Date) {
+  await db.update(moderationAction).set({ expiresAt: at }).where(eq(moderationAction.id, actionId));
 }

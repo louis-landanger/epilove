@@ -111,6 +111,35 @@
     "title": "Your account is suspended.",
     "body": "A moderation decision was taken. You received its reasons by email, and how to contest it.",
     "help": "Need help?",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "appeals": "See the decision and contest it"
+  },
+  "appeals": {
+    "metaTitle": "Decisions and appeals",
+    "title": "Decisions and appeals",
+    "lead": "Moderation decisions about you, with their reasons. You can contest each one once within six months: someone else on the team reviews it.",
+    "empty": "No decision concerns you.",
+    "rule": "Rule: {rule}",
+    "until": "Until {date}",
+    "actions": {
+      "warning": "Warning",
+      "content_removal": "Content removal",
+      "restriction": "Restriction",
+      "suspension": "Suspension",
+      "ban": "Account closure",
+      "no_action": "No action"
+    },
+    "status": {
+      "pending": "Appeal under review",
+      "upheld": "Appeal reviewed: decision upheld",
+      "overturned": "Appeal accepted: decision overturned"
+    },
+    "contest": "Contest",
+    "formLabel": "Explain why the decision seems unjustified",
+    "formHelp": "20 characters minimum. Add anything useful.",
+    "send": "Send the appeal",
+    "sent": "Appeal sent. You'll get the answer by email.",
+    "error": "The appeal couldn't be sent.",
+    "back": "Back"
   }
 }

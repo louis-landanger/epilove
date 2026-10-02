@@ -1,5 +1,6 @@
 import {
   type AccountStatus,
+  canAppeal,
   canPause,
   canRequestDeletion,
   canResume,
@@ -8,6 +9,7 @@ import {
 } from "@epilove/core";
 import type { Database } from "@epilove/db";
 import { findAccount, requestAccountDeletion, transitionStatus } from "@epilove/db/repositories/accounts";
+import { findDecision, hasAppeal, insertAppeal, listDecisionsFor } from "@epilove/db/repositories/admin";
 import { writeAudit } from "@epilove/db/repositories/safety";
 import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
@@ -48,6 +50,44 @@ export const account = {
       }
     }
     return summary(db, userId);
+  }),
+
+  decisions: os.account.decisions.use(requireViewer).handler(async ({ context }) => {
+    const rows = await listDecisionsFor(context.database(), context.viewer.userId);
+    const now = context.services.now();
+    return {
+      decisions: rows.map((row) => ({
+        id: row.id,
+        action: row.action,
+        rule: row.rule,
+        statement: row.statement,
+        createdAt: row.createdAt.toISOString(),
+        expiresAt: row.expiresAt?.toISOString() ?? null,
+        appeal: row.appealStatus,
+        canAppeal: canAppeal(row, row.appealStatus !== null, now),
+      })),
+    };
+  }),
+
+  appeal: os.account.appeal.use(requireViewer).handler(async ({ context, input, errors }) => {
+    const db = context.database();
+    const decision = await findDecision(db, input.decisionId);
+    if (decision?.targetUserId !== context.viewer.userId) {
+      throw errors.NOT_FOUND();
+    }
+    if (!canAppeal(decision, await hasAppeal(db, decision.id), context.services.now())) {
+      throw errors.NOT_ALLOWED();
+    }
+    await db.transaction(async (tx) => {
+      const appealId = await insertAppeal(tx, decision.id, input.text.trim());
+      await writeAudit(tx, {
+        actorId: context.viewer.userId,
+        action: "appeal.filed",
+        targetType: "appeal",
+        targetId: appealId,
+      });
+    });
+    return { ok: true as const };
   }),
 
   delete: os.account.delete.use(requireViewer).handler(async ({ context, errors }) => {

@@ -30,10 +30,13 @@ export const SANCTION_DURATIONS: Readonly<Record<"restriction" | "suspension", r
 };
 
 export interface SanctionEffect {
-  /** New account status, when the sanction changes it. */
+  /**
+   * New account status, when the sanction changes it. Sign-in is never
+   * blocked: a sanctioned member must still reach the statement of reasons
+   * and the appeal form (DSA art. 17 and 20); the status keeps them out of
+   * the app.
+   */
   readonly status: AccountStatus | null;
-  /** Sign-in blocked (ban). */
-  readonly signInBlocked: boolean;
   /** Sessions ended at once. */
   readonly revokeSessions: boolean;
   /** When the sanction lapses, `null` when it does not (warning, ban) or has no duration. */
@@ -55,7 +58,6 @@ export function sanctionEffect(input: SanctionInput, now: Date): SanctionEffect 
     case "content_removal":
       return {
         status: null,
-        signInBlocked: false,
         revokeSessions: false,
         expiresAt: null,
         releaseHold: true,
@@ -63,7 +65,6 @@ export function sanctionEffect(input: SanctionInput, now: Date): SanctionEffect 
     case "restriction":
       return {
         status: "restricted",
-        signInBlocked: false,
         revokeSessions: false,
         expiresAt: expires(input.durationDays),
         releaseHold: true,
@@ -71,7 +72,6 @@ export function sanctionEffect(input: SanctionInput, now: Date): SanctionEffect 
     case "suspension":
       return {
         status: "suspended",
-        signInBlocked: false,
         revokeSessions: false,
         expiresAt: expires(input.durationDays),
         releaseHold: true,
@@ -79,7 +79,6 @@ export function sanctionEffect(input: SanctionInput, now: Date): SanctionEffect 
     case "ban":
       return {
         status: "banned",
-        signInBlocked: true,
         revokeSessions: true,
         expiresAt: null,
         releaseHold: false,
@@ -92,4 +91,23 @@ export const MIN_STATEMENT_LENGTH = 40;
 
 export function isValidStatement(statement: string): boolean {
   return statement.trim().length >= MIN_STATEMENT_LENGTH;
+}
+
+/** Decisions can be contested for six months (DSA art. 20). */
+export const APPEAL_WINDOW_DAYS = 183;
+
+export function canAppeal(
+  action: { readonly action: Sanction; readonly createdAt: Date },
+  hasAppeal: boolean,
+  now: Date,
+): boolean {
+  if (action.action === "no_action" || hasAppeal) {
+    return false;
+  }
+  return now.getTime() - action.createdAt.getTime() <= APPEAL_WINDOW_DAYS * 86_400_000;
+}
+
+/** An appeal is always reviewed by someone else than the author of the decision (docs/07, A4). */
+export function canReviewAppeal(reviewerId: string, decidedBy: string | null): boolean {
+  return decidedBy === null || reviewerId !== decidedBy;
 }

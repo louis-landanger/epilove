@@ -168,6 +168,56 @@ export const adminContract = {
     .errors({ NOT_FOUND: { status: 404 } })
     .input(z.object({ userId: z.uuid() }))
     .output(memberCard),
+  /** Pending appeals (ADM-04), oldest first. */
+  appeals: oc.output(
+    z.object({
+      appeals: z.array(
+        z.object({
+          id: z.uuid(),
+          createdAt: z.iso.datetime(),
+          action: z.enum(SANCTIONS),
+          rule: z.string(),
+          member: memberPseudonym.nullable(),
+        }),
+      ),
+    }),
+  ),
+  appeal: oc
+    .errors({ NOT_FOUND: { status: 404 } })
+    .input(z.object({ id: z.uuid() }))
+    .output(
+      z.object({
+        id: z.uuid(),
+        text: z.string(),
+        status: z.enum(["pending", "upheld", "overturned"]),
+        createdAt: z.iso.datetime(),
+        decision: z.object({
+          action: z.enum(SANCTIONS),
+          rule: z.string(),
+          statement: z.string(),
+          createdAt: z.iso.datetime(),
+          decidedBy: z.string().nullable(),
+          reportId: z.uuid().nullable(),
+        }),
+        /** False when the viewer took the original decision: someone else must review it. */
+        canReview: z.boolean(),
+        memberCard: memberCard.nullable(),
+      }),
+    ),
+  decideAppeal: oc
+    .errors({
+      NOT_FOUND: { status: 404 },
+      CONFLICT_OF_INTEREST: { status: 403 },
+      ALREADY_DECIDED: { status: 409 },
+    })
+    .input(
+      z.object({
+        id: z.uuid(),
+        outcome: z.enum(["upheld", "overturned"]),
+        statement: z.string().min(20).max(2000),
+      }),
+    )
+    .output(z.object({ ok: z.literal(true) })),
   /** Reveals the first name and address behind a pseudonym; the justification is logged. */
   revealIdentity: oc
     .errors({ NOT_FOUND: { status: 404 } })

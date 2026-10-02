@@ -153,7 +153,8 @@ describe.skipIf(!url)("back-office", () => {
       },
     });
     const [account] = await api.db.select().from(schema.appUser).where(eq(schema.appUser.id, reported));
-    expect(account).toMatchObject({ status: "banned", banned: true });
+    // Sign-in stays possible, to read the statement and appeal (DSA art. 20); the status keeps them out.
+    expect(account).toMatchObject({ status: "banned", banned: false });
     expect(api.revokeSessions).toHaveBeenCalledWith(reported);
   });
 
@@ -189,5 +190,65 @@ describe.skipIf(!url)("back-office", () => {
     await expect(adminClient.admin.savePrompt({ ...created, id: undefined })).rejects.toMatchObject({
       code: "CONFLICT",
     });
+  });
+
+  it("lets the member appeal once, reviewed by another moderator who can overturn", async () => {
+    const reporter = await insertActiveMember(api.db);
+    const reported = await insertActiveMember(api.db);
+    const authorId = await insertActiveMember(api.db);
+    const author = api.clientFor(authorId, "moderator");
+    const reviewer = api.clientFor(await insertActiveMember(api.db), "moderator");
+    const { reportId } = await api.clientFor(reporter).safety.report({
+      reportedId: reported,
+      context: "profile",
+      reason: "impersonation",
+    });
+    await author.admin.decide({
+      reportId,
+      decision: {
+        action: "suspension",
+        rule: "authenticity",
+        statement:
+          "Les photos du profil semblent appartenir à une autre personne, d'après le signalement reçu.",
+        durationDays: 30,
+      },
+    });
+
+    const member = api.clientFor(reported);
+    const { decisions } = await member.account.decisions();
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0]).toMatchObject({ action: "suspension", canAppeal: true, appeal: null });
+    const decisionId = decisions[0]?.id ?? "";
+    await member.account.appeal({ decisionId, text: "Ce sont bien mes photos, je peux le prouver." });
+    await expect(
+      member.account.appeal({ decisionId, text: "Je recommence pour être sûr, merci." }),
+    ).rejects.toMatchObject({ code: "NOT_ALLOWED" });
+    await expect(
+      api.clientFor(reporter).account.appeal({ decisionId, text: "Je ne suis pas concerné mais j'essaie." }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    const { appeals } = await reviewer.admin.appeals();
+    const pending = appeals.find((item) => item.member?.userId === reported);
+    expect(pending).toBeDefined();
+    const appealId = pending?.id ?? "";
+    expect((await author.admin.appeal({ id: appealId })).canReview).toBe(false);
+    await expect(
+      author.admin.decideAppeal({
+        id: appealId,
+        outcome: "upheld",
+        statement: "Je maintiens ma propre décision.",
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT_OF_INTEREST" });
+
+    await reviewer.admin.decideAppeal({
+      id: appealId,
+      outcome: "overturned",
+      statement: "Les justificatifs fournis montrent que les photos sont bien les tiennes.",
+    });
+    const [account] = await api.db.select().from(schema.appUser).where(eq(schema.appUser.id, reported));
+    expect(account?.status).toBe("active");
+    expect((await member.account.decisions()).decisions[0]?.appeal).toBe("overturned");
+    const outcome = api.mailer.sent.find((entry) => entry.email.subject === "Ton recours a été accepté");
+    expect(outcome?.to).toBe(account?.email);
   });
 });

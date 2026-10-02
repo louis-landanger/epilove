@@ -83,3 +83,23 @@ export function photoRejectedEmail(reason: string): RenderedEmail {
     }),
   };
 }
+
+/** Outcome of an appeal, reviewed by another moderator (ADM-04). */
+export function appealOutcomeEmail(options: { overturned: boolean; statement: string }): RenderedEmail {
+  const lines = [
+    options.overturned
+      ? "Ton recours a été accepté : la décision est annulée et ses effets sont levés."
+      : "Ton recours a été examiné par une autre personne de l'équipe, qui a maintenu la décision.",
+    `Explication : ${options.statement}`,
+    "Tu peux aussi saisir un organisme de règlement extrajudiciaire des litiges certifié, ou la justice.",
+  ];
+  return {
+    subject: options.overturned ? "Ton recours a été accepté" : "Réponse à ton recours",
+    text: [...lines, "", FOOTER].join("\n"),
+    html: layout({
+      preheader: options.overturned ? "La décision est annulée." : "La décision est maintenue.",
+      footer: FOOTER,
+      body: `<p style="margin:0 0 16px 0;font-size:22px;font-weight:600;">Réponse à ton recours</p>\n${paragraphs(lines)}`,
+    }),
+  };
+}

@@ -2,6 +2,7 @@ import type { AdminMemberCard } from "@epilove/contracts";
 import {
   type AccountStatus,
   ageOn,
+  canReviewAppeal,
   isValidStatement,
   type Sanction,
   type SanctionInput,
@@ -12,24 +13,35 @@ import type { Database } from "@epilove/db";
 import {
   applyAccountSanction,
   countOpenSeriousReports,
+  endSanctionNow,
+  findAppeal,
+  findDecision,
   findPhotoForModeration,
   findReport,
   identityOf,
   insertModerationAction,
   listAudit,
   listCatalog,
+  listPendingAppeals,
   listPendingPhotos,
   listReports,
   memberForModeration,
   moderationOverview,
   releaseProfileHold,
+  revertSanctionStatus,
   saveInterest,
   savePrompt,
+  setAppealOutcome,
   setPhotoDecision,
   setReportStatus,
 } from "@epilove/db/repositories/admin";
 import { writeAudit } from "@epilove/db/repositories/safety";
-import { moderationDecisionEmail, photoRejectedEmail, reportHandledEmail } from "@epilove/email";
+import {
+  appealOutcomeEmail,
+  moderationDecisionEmail,
+  photoRejectedEmail,
+  reportHandledEmail,
+} from "@epilove/email";
 import { photoUrl } from "@epilove/media";
 import { ORPCError } from "@orpc/server";
 import type { ApiServices } from "../context";
@@ -40,6 +52,13 @@ import { os, requireRole } from "../procedures";
 
 const staff = requireRole("moderator", "admin");
 const adminOnly = requireRole("admin");
+
+/** Account status a decision put in place, to undo when its appeal succeeds. */
+const STATUS_SET_BY: Partial<Record<string, "restricted" | "suspended" | "banned">> = {
+  restriction: "restricted",
+  suspension: "suspended",
+  ban: "banned",
+};
 
 const PHOTO_REVIEW_SIZE = { width: 600, height: 750, ttlSeconds: 900 } as const;
 
@@ -290,11 +309,7 @@ export const admin = {
       );
       if (targetId) {
         if (effect.status) {
-          await applyAccountSanction(tx, targetId, {
-            status: effect.status as "restricted" | "suspended" | "banned",
-            signInBlocked: effect.signInBlocked,
-            reason: rule,
-          });
+          await applyAccountSanction(tx, targetId, effect.status as "restricted" | "suspended" | "banned");
         }
         if (decision.action === "content_removal" && row.context === "photo" && row.contextRef) {
           const photo = await findPhotoForModeration(tx, row.contextRef);
@@ -352,6 +367,91 @@ export const admin = {
       throw errors.NOT_FOUND();
     }
     return card;
+  }),
+
+  appeals: os.admin.appeals.use(staff).handler(async ({ context }) => {
+    const rows = await listPendingAppeals(context.database());
+    return {
+      appeals: rows.map((row) => ({
+        id: row.id,
+        createdAt: row.createdAt.toISOString(),
+        action: row.action as Sanction,
+        rule: row.rule,
+        member: pseudonym(context.services, row.targetUserId),
+      })),
+    };
+  }),
+
+  appeal: os.admin.appeal.use(staff).handler(async ({ context, input, errors }) => {
+    const db = context.database();
+    const row = await findAppeal(db, input.id);
+    const decision = row ? await findDecision(db, row.actionId) : null;
+    if (!row || !decision) {
+      throw errors.NOT_FOUND();
+    }
+    return {
+      id: row.id,
+      text: row.text,
+      status: row.status,
+      createdAt: row.createdAt.toISOString(),
+      decision: {
+        action: decision.action as Sanction,
+        rule: decision.rule,
+        statement: decision.statement,
+        createdAt: decision.createdAt.toISOString(),
+        decidedBy: decision.moderatorId
+          ? pseudonymOf(context.services.emailHmacSecret(), decision.moderatorId)
+          : null,
+        reportId: decision.reportId,
+      },
+      canReview: canReviewAppeal(context.viewer.userId, decision.moderatorId),
+      memberCard: decision.targetUserId
+        ? await memberCard(db, context.services, decision.targetUserId)
+        : null,
+    };
+  }),
+
+  decideAppeal: os.admin.decideAppeal.use(staff).handler(async ({ context, input, errors }) => {
+    const db = context.database();
+    const reviewerId = context.viewer.userId;
+    const now = context.services.now();
+    const row = await findAppeal(db, input.id);
+    const decision = row ? await findDecision(db, row.actionId) : null;
+    if (!row || !decision) {
+      throw errors.NOT_FOUND();
+    }
+    if (!canReviewAppeal(reviewerId, decision.moderatorId)) {
+      throw errors.CONFLICT_OF_INTEREST();
+    }
+    const overturned = input.outcome === "overturned";
+    await db.transaction(async (tx) => {
+      if (!(await setAppealOutcome(tx, row.id, input.outcome, reviewerId, now))) {
+        throw errors.ALREADY_DECIDED();
+      }
+      if (overturned && decision.targetUserId) {
+        const status = STATUS_SET_BY[decision.action];
+        if (status) {
+          await revertSanctionStatus(tx, decision.targetUserId, status);
+        }
+        await endSanctionNow(tx, decision.id, now);
+      }
+      await writeAudit(tx, {
+        actorId: reviewerId,
+        action: `appeal.${input.outcome}`,
+        targetType: "appeal",
+        targetId: row.id,
+        metadata: { decision: decision.id },
+      });
+    });
+    if (decision.targetUserId) {
+      const identity = await identityOf(db, decision.targetUserId);
+      await notify(
+        context.services,
+        identity?.email ?? null,
+        appealOutcomeEmail({ overturned, statement: input.statement.trim() }),
+      );
+    }
+    return { ok: true as const };
   }),
 
   revealIdentity: os.admin.revealIdentity.use(staff).handler(async ({ context, input, errors }) => {

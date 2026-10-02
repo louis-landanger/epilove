@@ -1,4 +1,6 @@
-import type { Metadata } from "next";
+import { buttonVariants } from "@epilove/ui";
+import type { Metadata, Route } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { SignOutButton } from "@/components/acces/auth/sign-out-button";
@@ -18,7 +20,12 @@ export default async function SuspendedPage() {
       <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-16">
         <h1 className="text-balance font-display font-semibold text-4xl tracking-tight">{t("title")}</h1>
         <p className="text-lg text-paper/75">{t("body")}</p>
-        <SignOutButton label={t("signOut")} />
+        <div className="flex flex-wrap gap-3">
+          <Link href={"/compte/recours" as Route} className={buttonVariants({ className: "w-fit" })}>
+            {t("appeals")}
+          </Link>
+          <SignOutButton label={t("signOut")} />
+        </div>
         <h2 className="mt-6 font-semibold text-xl">{t("help")}</h2>
       </div>
       <HelpResources embedded />
