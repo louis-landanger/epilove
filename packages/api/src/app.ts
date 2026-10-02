@@ -1,5 +1,6 @@
 import { type KeyRing, keyRingFromEnv } from "@epilove/crypto";
 import { findExport } from "@epilove/db/repositories/exports";
+import { findPromptAnswerById } from "@epilove/db/repositories/profiles";
 import { writeAudit } from "@epilove/db/repositories/safety";
 import { createMailer, type Mailer, mailerConfigFromEnv } from "@epilove/email";
 import { imgproxyConfigFromEnv } from "@epilove/media";
@@ -12,6 +13,7 @@ import type { ApiContext, ApiServices, Viewer, ViewerResolver } from "./context"
 import { recordActivity } from "./lib/activity";
 import { clientIp } from "./lib/client-ip";
 import { createItunesCatalog, type MusicCatalog } from "./lib/music";
+import { isValidVoiceSignature, parseRange } from "./lib/voice-url";
 import { router } from "./router";
 
 export const API_BASE_PATH = "/api";
@@ -155,6 +157,35 @@ export function createApp(dependencies: AppDependencies) {
       "Content-Disposition": `attachment; filename="epilove-export-${row.createdAt.toISOString().slice(0, 10)}.zip"`,
       "Cache-Control": "no-store",
     });
+  });
+
+  // Voice answers (PRO-06): the signed URL is the capability, handed out after the access checks.
+  app.get("/voice/:id", async (c) => {
+    const id = c.req.param("id");
+    if (
+      !/^[0-9a-f-]{36}$/.test(id) ||
+      !isValidVoiceSignature(services, id, c.req.query("exp"), c.req.query("sig"))
+    ) {
+      return c.json({ error: "not_found" }, 404);
+    }
+    const answer = await findPromptAnswerById(dependencies.database(), id);
+    if (answer?.voiceStage !== "ready" || !answer.voiceKey || !answer.voiceContentType) {
+      return c.json({ error: "not_found" }, 404);
+    }
+    const body = await services.storage().read(answer.voiceKey);
+    const headers = {
+      "Content-Type": answer.voiceContentType,
+      "Accept-Ranges": "bytes",
+      "Cache-Control": "private, max-age=600",
+    };
+    const range = parseRange(c.req.header("range"), body.length);
+    if (range) {
+      return c.body(body.slice(range.start, range.end + 1) as Uint8Array<ArrayBuffer>, 206, {
+        ...headers,
+        "Content-Range": `bytes ${range.start}-${range.end}/${body.length}`,
+      });
+    }
+    return c.body(body as Uint8Array<ArrayBuffer>, 200, headers);
   });
 
   app.notFound((c) => c.json({ error: "not_found" }, 404));

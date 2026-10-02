@@ -82,7 +82,7 @@
   "share": {
     "open": "Partager ma carte",
     "title": "Ta carte holographique",
-    "lead": "Une image à partager où tu veux. Tu choisis ce qu'elle montre ; elle n'est enregistrée nulle part en ligne.",
+    "lead": "Une image à partager où tu veux. Tu choisis ce qu'elle montre ; elle n'est enregistrée nulle part en ligne.",
     "name": "Mon prénom",
     "school": "Mon école",
     "interests": "Mes centres d'intérêt",
@@ -149,7 +149,7 @@
       },
       "rejected": {
         "title": "Pas validée cette fois",
-        "body": "{reason}. Ton selfie a été supprimé : retente avec un nouveau geste."
+        "body": "{reason}. Ton selfie a été supprimé : retente avec un nouveau geste."
       },
       "failed": {
         "title": "Photo illisible",
@@ -163,11 +163,34 @@
       "not_live": "La photo ne semblait pas prise sur le moment"
     },
     "blockers": {
-      "no_photo": "Ajoute d'abord au moins une photo de toi : c'est à elle que ton selfie sera comparé.",
+      "no_photo": "Ajoute d'abord au moins une photo de toi : c'est à elle que ton selfie sera comparé.",
       "quota": "Trois essais par jour au maximum. Reviens demain."
     },
-    "expired": "Le délai est passé : tire un nouveau geste.",
+    "expired": "Le délai est passé : tire un nouveau geste.",
     "error": "Ça n'a pas marché. Réessaie dans un instant.",
     "retry": "Tirer un nouveau geste"
+  },
+  "voice": {
+    "add": "Ajouter un vocal",
+    "addHelp": "30 secondes max. Ta réponse écrite sert de transcription.",
+    "saveFirst": "Enregistre ta réponse écrite pour pouvoir y ajouter un vocal.",
+    "title": "Ta réponse en vocal",
+    "lead": "Parle naturellement, 30 secondes au maximum. Ta réponse écrite reste affichée : c'est la transcription lue par celles et ceux qui ne peuvent pas écouter.",
+    "record": "Enregistrer",
+    "stop": "Arrêter",
+    "recording": "Enregistrement : {seconds} s sur 30",
+    "rerecord": "Recommencer",
+    "use": "Utiliser ce vocal",
+    "uploading": "Envoi…",
+    "micDenied": "Le micro n'est pas accessible. Autorise-le dans ton navigateur.",
+    "unsupported": "Ton navigateur ne permet pas d'enregistrer de l'audio.",
+    "processing": "Vocal en cours de vérification…",
+    "failed": "Ce vocal n'a pas pu être lu. Réessaie.",
+    "remove": "Supprimer le vocal",
+    "replace": "Réenregistrer",
+    "play": "Écouter la réponse vocale",
+    "pause": "Mettre en pause",
+    "error": "L'envoi n'a pas marché. Réessaie.",
+    "transcript": "Transcription"
   }
 }

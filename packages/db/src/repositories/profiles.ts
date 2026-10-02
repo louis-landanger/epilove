@@ -1,4 +1,5 @@
-import { and, asc, count, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
+import type { VoiceContentType } from "@epilove/core";
+import { and, asc, count, eq, inArray, isNotNull, lt, ne, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { appUser, interest, photo, profile, profileInterest, prompt, promptAnswer, school } from "../schema";
 import type { PhotoStage } from "../schema/profiles";
@@ -60,26 +61,151 @@ export async function countInterests(db: Db, ids: readonly string[]) {
 
 // --- Prompt answers and interests -------------------------------------------
 
+const answerColumns = {
+  id: promptAnswer.id,
+  userId: promptAnswer.userId,
+  promptId: promptAnswer.promptId,
+  text: promptAnswer.text,
+  position: promptAnswer.position,
+  voiceKey: promptAnswer.voiceKey,
+  voiceStage: promptAnswer.voiceStage,
+  voiceContentType: promptAnswer.voiceContentType,
+  voiceDurationMs: promptAnswer.voiceDurationMs,
+  voicePeaks: promptAnswer.voicePeaks,
+};
+
 export async function listPromptAnswers(db: Db, userId: string) {
   return db
-    .select({ promptId: promptAnswer.promptId, text: promptAnswer.text, position: promptAnswer.position })
+    .select(answerColumns)
     .from(promptAnswer)
     .where(eq(promptAnswer.userId, userId))
     .orderBy(asc(promptAnswer.position));
 }
 
-/** Replaces all the member's text answers, in the given order. */
+export type PromptAnswerRow = Awaited<ReturnType<typeof listPromptAnswers>>[number];
+
+/**
+ * Sets the member's answers, in the given order. An answer kept on the same
+ * prompt keeps its voice recording; the recordings of removed answers are
+ * returned so that the caller deletes them from storage.
+ */
 export async function replacePromptAnswers(
   db: Db,
   userId: string,
   answers: readonly { promptId: string; text: string }[],
-) {
-  await db.delete(promptAnswer).where(eq(promptAnswer.userId, userId));
-  if (answers.length > 0) {
+): Promise<string[]> {
+  const existing = await db
+    .select({ id: promptAnswer.id, promptId: promptAnswer.promptId, voiceKey: promptAnswer.voiceKey })
+    .from(promptAnswer)
+    .where(eq(promptAnswer.userId, userId));
+  const kept = new Set(answers.map((answer) => answer.promptId));
+  const removed = existing.filter((row) => !kept.has(row.promptId));
+  if (removed.length > 0) {
+    await db.delete(promptAnswer).where(
+      inArray(
+        promptAnswer.id,
+        removed.map((row) => row.id),
+      ),
+    );
+  }
+  for (const [position, answer] of answers.entries()) {
     await db
       .insert(promptAnswer)
-      .values(answers.map((answer, position) => ({ userId, ...answer, position })));
+      .values({ userId, ...answer, position })
+      .onConflictDoUpdate({
+        target: [promptAnswer.userId, promptAnswer.promptId],
+        set: { text: answer.text, position },
+      });
   }
+  return removed.flatMap((row) => (row.voiceKey ? [row.voiceKey] : []));
+}
+
+// --- Voice answers (PRO-06) ----------------------------------------------------
+
+export async function findPromptAnswer(db: Db, userId: string, promptId: string) {
+  const [row] = await db
+    .select(answerColumns)
+    .from(promptAnswer)
+    .where(and(eq(promptAnswer.userId, userId), eq(promptAnswer.promptId, promptId)))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function findPromptAnswerById(db: Db, id: string) {
+  const [row] = await db.select(answerColumns).from(promptAnswer).where(eq(promptAnswer.id, id)).limit(1);
+  return row ?? null;
+}
+
+/** Starts a voice upload on an answer; returns the previous recording, if any. */
+export async function startVoiceUpload(
+  db: Db,
+  answerId: string,
+  voice: { key: string; contentType: VoiceContentType; durationMs: number; peaks: number[] },
+) {
+  const [before] = await db
+    .select({ voiceKey: promptAnswer.voiceKey })
+    .from(promptAnswer)
+    .where(eq(promptAnswer.id, answerId));
+  await db
+    .update(promptAnswer)
+    .set({
+      voiceKey: voice.key,
+      voiceStage: "uploading",
+      voiceContentType: voice.contentType,
+      voiceDurationMs: voice.durationMs,
+      voicePeaks: voice.peaks,
+    })
+    .where(eq(promptAnswer.id, answerId));
+  return before?.voiceKey ?? null;
+}
+
+/** Moves a voice upload forward only from the expected stage (idempotent jobs). */
+export async function advanceVoice(
+  db: Db,
+  answerId: string,
+  from: PhotoStage,
+  to: PhotoStage,
+  key?: string | null,
+) {
+  const rows = await db
+    .update(promptAnswer)
+    .set({ voiceStage: to, ...(key === undefined ? {} : { voiceKey: key }) })
+    .where(and(eq(promptAnswer.id, answerId), eq(promptAnswer.voiceStage, from)))
+    .returning({ id: promptAnswer.id });
+  return rows.length > 0;
+}
+
+/** Removes the recording from an answer; returns its key for deletion. */
+export async function clearVoice(db: Db, answerId: string) {
+  const [before] = await db
+    .select({ voiceKey: promptAnswer.voiceKey })
+    .from(promptAnswer)
+    .where(eq(promptAnswer.id, answerId));
+  await db
+    .update(promptAnswer)
+    .set({
+      voiceKey: null,
+      voiceStage: null,
+      voiceContentType: null,
+      voiceDurationMs: null,
+      voicePeaks: null,
+    })
+    .where(eq(promptAnswer.id, answerId));
+  return before?.voiceKey ?? null;
+}
+
+/** Voice uploads never completed, or failed, before `before`. */
+export async function listAbandonedVoices(db: Db, before: Date) {
+  return db
+    .select({ id: promptAnswer.id, voiceKey: promptAnswer.voiceKey })
+    .from(promptAnswer)
+    .where(
+      and(
+        inArray(promptAnswer.voiceStage, ["uploading", "processing", "failed"]),
+        lt(promptAnswer.updatedAt, before),
+      ),
+    )
+    .limit(500);
 }
 
 export async function listInterestIds(db: Db, userId: string) {

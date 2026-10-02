@@ -9,6 +9,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
+import { VOICE_CONTENT_TYPES } from "@epilove/core";
 import { MAX_UPLOAD_BYTES, UPLOAD_CONTENT_TYPES } from "./policy";
 
 /**
@@ -43,7 +44,8 @@ export interface StoredObject {
 
 export interface Storage {
   readonly bucket: string;
-  presignUpload(key: string, contentType: string, now?: Date): Promise<PresignedUpload>;
+  /** `maxBytes` defaults to the photo ceiling; voice answers use a smaller one. */
+  presignUpload(key: string, contentType: string, now?: Date, maxBytes?: number): Promise<PresignedUpload>;
   head(key: string): Promise<StoredObject | null>;
   read(key: string): Promise<Uint8Array>;
   write(key: string, body: Uint8Array, contentType: string): Promise<void>;
@@ -89,8 +91,8 @@ export function createStorage(config: StorageConfig, options: StorageOptions = {
   const storage: Storage = {
     bucket: Bucket,
 
-    async presignUpload(key, contentType, now = new Date()) {
-      if (!(UPLOAD_CONTENT_TYPES as readonly string[]).includes(contentType)) {
+    async presignUpload(key, contentType, now = new Date(), maxBytes = MAX_UPLOAD_BYTES) {
+      if (![...UPLOAD_CONTENT_TYPES, ...VOICE_CONTENT_TYPES].includes(contentType as never)) {
         throw new Error("Unsupported content type.");
       }
       if (options.autoCreateBucketFor) {
@@ -106,14 +108,14 @@ export function createStorage(config: StorageConfig, options: StorageOptions = {
         Expires: UPLOAD_TTL_SECONDS,
         Fields: { "Content-Type": contentType },
         Conditions: [
-          ["content-length-range", 1, MAX_UPLOAD_BYTES],
+          ["content-length-range", 1, maxBytes],
           ["eq", "$Content-Type", contentType],
         ],
       });
       return {
         url,
         fields,
-        maxBytes: MAX_UPLOAD_BYTES,
+        maxBytes,
         expiresAt: new Date(now.getTime() + UPLOAD_TTL_SECONDS * 1000).toISOString(),
       };
     },
@@ -200,14 +202,14 @@ export function createMemoryStorage(bucket = "test-bucket"): Storage & { objects
   return {
     bucket,
     objects,
-    async presignUpload(key, contentType, now = new Date()) {
-      if (!(UPLOAD_CONTENT_TYPES as readonly string[]).includes(contentType)) {
+    async presignUpload(key, contentType, now = new Date(), maxBytes = MAX_UPLOAD_BYTES) {
+      if (![...UPLOAD_CONTENT_TYPES, ...VOICE_CONTENT_TYPES].includes(contentType as never)) {
         throw new Error("Unsupported content type.");
       }
       return {
         url: `http://storage.test/${bucket}`,
         fields: { key, "Content-Type": contentType },
-        maxBytes: MAX_UPLOAD_BYTES,
+        maxBytes,
         expiresAt: new Date(now.getTime() + UPLOAD_TTL_SECONDS * 1000).toISOString(),
       };
     },

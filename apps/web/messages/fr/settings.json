@@ -17,7 +17,7 @@
     "hideYear": "Me masquer de ma promo",
     "hideYearHelp": "Les personnes de ton école et de ta promo ne te verront pas, et inversement.",
     "partials": "Mode partiels",
-    "partialsHelp": "Une pause programmée : tes notifications se taisent et ton profil revient tout seul à la date choisie.",
+    "partialsHelp": "Une pause programmée : tes notifications se taisent et ton profil revient tout seul à la date choisie.",
     "partialsUntil": "Jusqu'au",
     "partialsStart": "Programmer la pause",
     "pausedUntil": "En pause jusqu'au {date}. Tu reviendras automatiquement.",
@@ -35,7 +35,7 @@
     "dialogTitle": "Ce que tu cherches",
     "consentState": {
       "granted": "Consentement aux données sensibles donné",
-      "none": "Sans consentement aux données sensibles : mode Amis uniquement"
+      "none": "Sans consentement aux données sensibles : mode Amis uniquement"
     },
     "withdraw": "Retirer mon consentement",
     "withdrawHelp": "Le mode Love se désactive et les genres que tu recherches sont effacés.",
@@ -44,7 +44,7 @@
   },
   "hidden": {
     "title": "Personnes masquées",
-    "lead": "Ex, colocataire, frère ou sœur, chargé·e de TD : ajoute son email d'école, vous ne vous verrez jamais. La personne n'est pas prévenue et on ne garde qu'une empreinte de l'adresse.",
+    "lead": "Ex, colocataire, frère ou sœur, chargé·e de TD : ajoute son email d'école, vous ne vous verrez jamais. La personne n'est pas prévenue et on ne garde qu'une empreinte de l'adresse.",
     "label": "Email d'école à masquer",
     "placeholder": "prenom.nom@ecole.fr",
     "add": "Masquer",
@@ -66,7 +66,7 @@
   "notifications": {
     "title": "Notifications",
     "discreet": "Notifications discrètes",
-    "discreetHelp": "Aucun prénom ni contenu dans les notifications : juste « Nouveau message ».",
+    "discreetHelp": "Aucun prénom ni contenu dans les notifications : juste « Nouveau message ».",
     "more": "Toutes les notifications"
   },
   "language": {
@@ -96,8 +96,8 @@
   "data": {
     "title": "Mes données",
     "delete": "Supprimer mon compte",
-    "deleteHelp": "Immédiat et définitif : ton profil disparaît tout de suite et tes données sont effacées sous 30 jours.",
-    "dialogTitle": "Supprimer ton compte ?",
+    "deleteHelp": "Immédiat et définitif : ton profil disparaît tout de suite et tes données sont effacées sous 30 jours.",
+    "dialogTitle": "Supprimer ton compte ?",
     "dialogBody": "Ton profil, tes photos, tes likes et tes conversations disparaissent. Seule ton identité déclarée (email, prénom, date de naissance) est conservée à part pendant la durée légale, puis effacée.",
     "confirmLabel": "Écris SUPPRIMER pour confirmer",
     "confirmWord": "SUPPRIMER",
@@ -105,7 +105,7 @@
     "cancel": "Annuler",
     "export": "Télécharger mes données",
     "exportHelp": "Un fichier zip avec ton profil, tes photos, tes consentements et l'historique qui te concerne. On t'envoie un email quand il est prêt.",
-    "exportRequested": "C'est parti : tu recevras un email d'ici quelques minutes.",
+    "exportRequested": "C'est parti : tu recevras un email d'ici quelques minutes.",
     "exportRateLimited": "Tu as déjà demandé deux exports aujourd'hui.",
     "exportPending": "En préparation…",
     "exportReady": "Prêt, disponible jusqu'au {date}",
@@ -129,16 +129,16 @@
     "metaTitle": "Compte suspendu",
     "title": "Ton compte est suspendu.",
     "body": "Une décision de modération a été prise. Tu as reçu par email ses motifs et la façon de la contester.",
-    "help": "Besoin d'aide ?",
+    "help": "Besoin d'aide ?",
     "signOut": "Se déconnecter",
     "appeals": "Voir la décision et la contester"
   },
   "appeals": {
     "metaTitle": "Décisions et recours",
     "title": "Décisions et recours",
-    "lead": "Les décisions de modération qui te concernent, avec leurs motifs. Tu peux contester chacune une fois dans les six mois : une autre personne de l'équipe la réexamine.",
+    "lead": "Les décisions de modération qui te concernent, avec leurs motifs. Tu peux contester chacune une fois dans les six mois : une autre personne de l'équipe la réexamine.",
     "empty": "Aucune décision ne te concerne.",
-    "rule": "Règle : {rule}",
+    "rule": "Règle : {rule}",
     "until": "Jusqu'au {date}",
     "actions": {
       "warning": "Avertissement",
@@ -150,8 +150,8 @@
     },
     "status": {
       "pending": "Recours en cours d'examen",
-      "upheld": "Recours examiné : décision maintenue",
-      "overturned": "Recours accepté : décision annulée"
+      "upheld": "Recours examiné : décision maintenue",
+      "overturned": "Recours accepté : décision annulée"
     },
     "contest": "Contester",
     "formLabel": "Explique pourquoi la décision te semble injustifiée",
@@ -162,16 +162,16 @@
     "back": "Retour"
   },
   "reverify": {
-    "banner": "Nouvelle année : confirme ton adresse d'école avant le {date}.",
-    "paused": "Ton profil est en pause : confirme ton adresse d'école pour réapparaître.",
+    "banner": "Nouvelle année : confirme ton adresse d'école avant le {date}.",
+    "paused": "Ton profil est en pause : confirme ton adresse d'école pour réapparaître.",
     "action": "Confirmer",
     "metaTitle": "Confirmer mon adresse",
-    "title": "Toujours sur le campus ?",
+    "title": "Toujours sur le campus ?",
     "lead": "Chaque rentrée, on vérifie que tu as toujours accès à ton adresse d'école. On t'envoie un code à {email}.",
     "send": "Recevoir le code",
     "code": "Code à 6 chiffres",
     "verify": "Confirmer",
-    "done": "C'est confirmé, merci ! À l'année prochaine.",
+    "done": "C'est confirmé, merci ! À l'année prochaine.",
     "error": "Code incorrect ou expiré. Redemande un code."
   }
 }

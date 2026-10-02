@@ -37,6 +37,7 @@
 | Tableaux de bord | ADM-09 | `/tableaux-de-bord` du back-office (7, 30 ou 90 jours) : couverture du campus, activation, rétention à 30 jours, actifs sur 7 jours, inscriptions par jour, écoles ; indicateurs de rencontre (North Star, taux de match, match → conversation, brassage) ; délais de traitement des signalements par priorité (médiane, 90ᵉ centile, part dans la cible de docs/07), files photos et recours, décisions ; santé technique (file de tâches, photos bloquées, exports, taille de la base). Agrégats uniquement. Dernière activité des membres (`app_user.last_active_at`) enregistrée au plus toutes les 15 minutes | `packages/api/src/modules/admin.test.ts`, `safety.test.ts`, `apps/admin/e2e` |
 | Guide d'installation | PLT-01 | `/aide/installer` : onglets iPhone, Android et Ordinateur (détection automatique), illustration animée synchronisée avec les étapes (pause, choix d'une étape, mouvement réduit respecté), bouton « Installer » quand le navigateur expose `beforeinstallprompt`, rappel que les notifications iOS exigent l'app installée ; bandeau discret sur téléphone dans l'app (masquable, mémorisé dans le navigateur), liens depuis l'aide et les réglages | `components/acces/install/platform.test.ts`, e2e `install.spec.ts` |
 | Vérification photo par geste | ONB-08 | `/profil/verification` : geste tiré au hasard (8 gestes, jamais deux fois le même), valable 15 minutes, selfie pris avec la caméra (aperçu en direct) ou l'appareil photo du téléphone, envoi présigné, ré-encodage par le worker (`media/process-selfie`, EXIF supprimé), file `/verifications` du back-office (selfie à côté des photos du profil, A / R au clavier, 4 motifs), badge « Photo vérifiée » (`app_user.photo_verified_at`), email de résultat. Comparaison à l'œil uniquement, sans reconnaissance faciale ; le selfie est supprimé dès la décision ; 3 essais par jour | `packages/core/src/profiles/verification.test.ts`, `packages/api/src/modules/verification.test.ts`, `apps/worker/src/tasks/media/process-selfie.test.ts`, e2e `verification.spec.ts` (fausse caméra Chromium) et `apps/admin/e2e` |
+| Prompts vocaux | PRO-06 | Sur une réponse enregistrée : enregistrement de 30 s max (MediaRecorder, WebM/Opus ou MP4/AAC selon le navigateur), niveaux en direct, forme d'onde de 48 barres, réécoute, envoi présigné (1 Mo max), contrôle du vrai format par le worker (`media/process-voice`), lecture via `/api/voice/:id` signée HMAC et expirante (1 h, `Range` géré pour Safari), réenregistrement, suppression. La réponse écrite sert de transcription (accessibilité, modération) ; la colonne `transcript` reste réservée à une transcription automatique future. Modifier le texte garde le vocal ; changer de prompt le supprime | `packages/core`, `packages/media/src/audio.test.ts`, `packages/api/src/lib/voice-url.test.ts`, `profile.test.ts`, `apps/worker/src/tasks/media/process-voice.test.ts`, e2e `voice.spec.ts` (faux micro Chromium) |
 
 ## Pas encore fait
 
@@ -72,6 +73,8 @@
 | `apps/web/app/layout.tsx` | `<html lang>` selon la langue, métadonnées traduites, `metadataBase` (`SITE_URL`) ; toutes les pages sont désormais rendues à la demande |
 | `apps/web/next.config.ts` | `Permissions-Policy` : `camera=(self)` (selfie de vérification) et `microphone=(self)` (prompts vocaux), au lieu de `()` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | Ajout : `verification` |
+| `packages/media/package.json` | Export `./audio`, dépendance `@epilove/core` |
+| `packages/media/src/storage.ts` | `presignUpload(…, maxBytes)` : plafond par appel (1 Mo pour les vocaux) |
 | `apps/web/i18n/paths.ts` (nouveau) | `publicHref(locale, chemin)` et `publicAlternates` pour les liens vers les pages publiques |
 
 ## Variables d'environnement (section `# Session A`)
@@ -88,7 +91,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 
 ## Migrations
 
-`0003_a_auth_and_identity_vault` à `0011_a_photo_verification` (jetables, à régénérer à la fusion) : tables Better Auth, `identity_vault`, `onboarding_draft`, `signup_block`, `data_export`, colonne `photo.stage`, `profile.hidden_at`, `hidden_contact` (identifiant, indice), colonnes `app_user.deletion_requested_at`, `paused_until`, `email_proven_at`, `reverify_reminded_at`, `paused_for_reverification`, `campus_verified_at`, `locale`, `photo_verified_at`, table `photo_verification`.
+`0003_a_auth_and_identity_vault` à `0012_a_voice_prompts` (jetables, à régénérer à la fusion) : tables Better Auth, `identity_vault`, `onboarding_draft`, `signup_block`, `data_export`, colonne `photo.stage`, `profile.hidden_at`, `hidden_contact` (identifiant, indice), colonnes `app_user.deletion_requested_at`, `paused_until`, `email_proven_at`, `reverify_reminded_at`, `paused_for_reverification`, `campus_verified_at`, `locale`, `photo_verified_at`, table `photo_verification`, colonnes vocales de `prompt_answer` (`voice_stage`, `voice_content_type`, `voice_duration_ms`, `voice_peaks`).
 
 ## Pour la session B (coutures)
 
@@ -105,6 +108,7 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 - **Quotas** : `withinQuota(services, nom, userId, limite, fenêtre)` (`packages/api/src/lib/quota.ts`).
 - **Jobs** : `enqueueJob(tx, "tache", payload, { jobKey })` dans la transaction métier.
 - **Badge « Campus vérifié »** : `app_user.campus_verified_at` non nul (connexion Forge ID) ; à afficher sur les cartes de découverte si souhaité.
+- **Prompts vocaux** : `prompt_answer.text` reste toujours rempli (réponse écrite ou transcription du vocal), donc un affichage texte seul reste correct. Pour lire le vocal d'un autre membre : après `canViewProfile`, `signVoiceUrl(services, answerId)` (`packages/api/src/lib/voice-url.ts`) et le composant `VoicePlayer` (`apps/web/components/acces/profile/voice/voice-player.tsx`), uniquement si `voice_stage = 'ready'`. `replacePromptAnswers` conserve désormais les vocaux et renvoie les clés à supprimer.
 - **Badge « Photo vérifiée »** : `app_user.photo_verified_at` non nul (ONB-08) ; à afficher sur les cartes et profils des autres. Un filtre « profils vérifiés seulement » est envisageable côté découverte.
 - **Re-vérification** : un compte en pause pour re-vérification (`paused_for_reverification`) a le statut `paused` : il suit les mêmes règles de découvrabilité.
 - **Activité** : `app_user.last_active_at` est mis à jour (au plus toutes les 15 minutes) par chaque appel de l'API depuis l'application membre (`trackActivity` dans `apps/web/lib/server/api-app.ts`). B peut s'en servir pour le classement ; l'afficher aux autres membres demanderait un réglage de confidentialité.
@@ -112,6 +116,10 @@ En développement et en test (`APP_ENV`), le bucket `S3_BUCKET` et sa règle COR
 - **PWA (B)** : le guide suppose un manifeste installable. À prévoir côté B : `start_url` vers `HOME_PATH` (`/decouvrir`) plutôt que `/`, un `id` stable, des icônes PNG 192 et 512 px (dont une `maskable`) et une `apple-touch-icon` 180 px, sans quoi l'icône iOS est une capture de la page. `listenForInstallPrompt` (`components/acces/install/install-prompt.ts`) appelle `preventDefault()` sur `beforeinstallprompt` : le bandeau de l'app remplace la mini-barre de Chrome.
 - **Langue** : les pages de B reçoivent la langue sans rien faire (`useLocale`, `getTranslations`) ; chaque namespace de B doit exister en `fr` et en `en` (test `messages.test.ts`). Les emails et notifications de B s'écrivent dans `app_user.locale`. Les liens vers les pages publiques passent par `publicHref`.
 - **Débit** : toutes les procédures passent déjà par le plafond générique ; les quotas métier de B (likes, messages) restent à poser avec `withinQuota`.
+
+## Conventions ajoutées
+
+- Textes français de l'interface : espace insécable avant `:`, `;`, `?`, `!` et à l'intérieur des guillemets « ». Dans les tests e2e, les expressions régulières utilisent `\s` à ces endroits (le texte avec chaîne simple est normalisé par Playwright).
 
 ## Mises à jour souhaitées (CLAUDE.md, README, docs)
 

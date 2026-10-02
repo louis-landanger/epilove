@@ -13,6 +13,7 @@ import {
   photoVerification,
   preferences,
   profile,
+  promptAnswer,
   school,
   signupBlock,
 } from "../schema";
@@ -297,17 +298,18 @@ export async function listAccountsToPurge(db: Db, requestedBefore: Date) {
     .limit(200);
 }
 
-/** Every stored object of a member: photos, verification selfies, data exports. */
+/** Every stored object of a member: photos, voice answers, verification selfies, data exports. */
 export async function listStorageKeys(db: Db, userId: string) {
-  const [photos, selfies, exports] = await Promise.all([
+  const [photos, voices, selfies, exports] = await Promise.all([
     db.select({ key: photo.storageKey }).from(photo).where(eq(photo.userId, userId)),
+    db.select({ key: promptAnswer.voiceKey }).from(promptAnswer).where(eq(promptAnswer.userId, userId)),
     db
       .select({ key: photoVerification.storageKey })
       .from(photoVerification)
       .where(eq(photoVerification.userId, userId)),
     db.select({ key: dataExport.storageKey }).from(dataExport).where(eq(dataExport.userId, userId)),
   ]);
-  return [...photos, ...selfies, ...exports].flatMap((row) => (row.key ? [row.key] : []));
+  return [...photos, ...voices, ...selfies, ...exports].flatMap((row) => (row.key ? [row.key] : []));
 }
 
 /** Final erasure: every row referencing the account cascades or is set to null (reports). */

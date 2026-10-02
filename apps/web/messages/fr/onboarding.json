@@ -8,7 +8,7 @@
   "errors": {
     "generic": "Quelque chose a coincé. Réessaie.",
     "network": "Connexion perdue. Vérifie ton réseau et réessaie.",
-    "rateLimited": "Doucement ! Réessaie dans quelques minutes."
+    "rateLimited": "Doucement ! Réessaie dans quelques minutes."
   },
   "charter": {
     "eyebrow": "La charte",
@@ -19,11 +19,11 @@
       },
       "consent": {
         "title": "Le consentement d'abord.",
-        "body": "Un « non », un silence ou un blocage se respectent. Aucune image sexuelle, jamais. Si quelqu'un te met mal à l'aise, signale : c'est anonyme."
+        "body": "Un « non », un silence ou un blocage se respectent. Aucune image sexuelle, jamais. Si quelqu'un te met mal à l'aise, signale : c'est anonyme."
       },
       "discretion": {
         "title": "Ce qui se passe ici reste ici.",
-        "body": "Pas de capture d'écran partagée, pas d'outing. Tu es toi-même : tes photos, ton prénom, ton âge réel."
+        "body": "Pas de capture d'écran partagée, pas d'outing. Tu es toi-même : tes photos, ton prénom, ton âge réel."
       }
     },
     "next": "Suivant",
@@ -31,7 +31,7 @@
     "legal": "En acceptant, tu acceptes aussi les <terms>conditions d'utilisation</terms> et tu reconnais avoir lu la <privacy>politique de confidentialité</privacy>."
   },
   "name": {
-    "title": "Comment tu t'appelles ?",
+    "title": "Comment tu t'appelles ?",
     "lead": "Ton prénom, tel que tes amis l'utilisent. Pas de nom de famille ici.",
     "label": "Prénom",
     "invalid": "Juste des lettres, des espaces, des tirets ou des apostrophes (40 caractères maximum)."
@@ -41,7 +41,7 @@
     "lead": "Epilove est réservé aux personnes majeures. On affiche ton âge, jamais ta date de naissance.",
     "label": "Date de naissance",
     "invalid": "Cette date n'est pas valide.",
-    "confirmTitle": "Tu as {age} ans ?",
+    "confirmTitle": "Tu as {age} ans ?",
     "confirmBody": "Ta date de naissance ne pourra plus être modifiée ensuite.",
     "confirm": "Oui, c'est ça",
     "edit": "Corriger"
@@ -62,7 +62,7 @@
     "required": "Choisis une option pour continuer."
   },
   "seeking": {
-    "title": "Tu cherches quoi ?",
+    "title": "Tu cherches quoi ?",
     "lead": "Tu pourras changer d'avis à tout moment dans les réglages.",
     "label": "Mode",
     "options": {
@@ -88,11 +88,11 @@
     "required": "Choisis au moins un mode."
   },
   "audience": {
-    "title": "Qui veux-tu voir ?",
+    "title": "Qui veux-tu voir ?",
     "consentTitle": "Une donnée sensible",
-    "consentBody": "Le genre des personnes que tu veux rencontrer peut révéler ton orientation sexuelle. C'est une donnée sensible au sens du RGPD : on ne l'utilise que pour te proposer des profils, elle n'est jamais affichée, jamais partagée et jamais exportée.",
+    "consentBody": "Le genre des personnes que tu veux rencontrer peut révéler ton orientation sexuelle. C'est une donnée sensible au sens du RGPD : on ne l'utilise que pour te proposer des profils, elle n'est jamais affichée, jamais partagée et jamais exportée.",
     "consentLabel": "J'accepte qu'Epilove utilise les genres que je recherche, une donnée sensible, pour me proposer des profils en mode Love.",
-    "consentHelp": "Tu peux retirer ce consentement à tout moment dans les réglages : le mode Love se désactive alors, le mode Amis reste disponible.",
+    "consentHelp": "Tu peux retirer ce consentement à tout moment dans les réglages : le mode Love se désactive alors, le mode Amis reste disponible.",
     "withoutConsent": "Continuer en mode Amis uniquement",
     "withoutConsentNote": "Sans ce consentement, tu utilises Epilove en mode Amis.",
     "interestedInLabel": "En Love, tu veux voir",
@@ -137,7 +137,7 @@
     "cancel": "Annuler",
     "altText": "Texte alternatif",
     "altTextTitle": "Décris cette photo",
-    "altTextHelp": "Lu par les lecteurs d'écran. Exemple : « Moi en randonnée au-dessus du lac d'Annecy ».",
+    "altTextHelp": "Lu par les lecteurs d'écran. Exemple : « Moi en randonnée au-dessus du lac d'Annecy ».",
     "altTextLabel": "Description",
     "altTextSave": "Enregistrer",
     "altTextSaved": "Description enregistrée.",
@@ -145,7 +145,7 @@
   },
   "prompts": {
     "title": "Trois prompts",
-    "lead": "Des questions pour lancer la conversation. 200 caractères chacune, c'est court : vise juste.",
+    "lead": "Des questions pour lancer la conversation. 200 caractères chacune, c'est court : vise juste.",
     "choose": "Choisir un prompt",
     "change": "Changer de prompt",
     "slot": "Prompt {position}",
@@ -170,7 +170,7 @@
     "search": "Rechercher",
     "counter": "{count} sur 10",
     "minimum": "Encore {count, plural, one {# centre d'intérêt} other {# centres d'intérêt}} pour continuer.",
-    "noResults": "Aucun résultat pour « {query} ».",
+    "noResults": "Aucun résultat pour « {query} ».",
     "categories": {
       "sport": "Sport",
       "music": "Musique",
@@ -208,7 +208,7 @@
     "photosPending": "{count, plural, one {# photo en vérification} other {# photos en vérification}}",
     "finish": "Activer mon profil",
     "incomplete": "Il manque encore une étape.",
-    "passkeyTitle": "Connexion plus rapide ?",
+    "passkeyTitle": "Connexion plus rapide ?",
     "passkeyBody": "Enregistre une passkey (Face ID, empreinte, Windows Hello) pour te reconnecter sans attendre un code.",
     "passkeyAdd": "Enregistrer une passkey",
     "passkeySkip": "Plus tard",

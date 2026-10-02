@@ -14,7 +14,7 @@ test.describe("easter eggs", () => {
     await page.keyboard.down("ArrowLeft");
     await page.waitForTimeout(300);
     await page.keyboard.up("ArrowLeft");
-    await expect(page.getByText(/Score : \d+/)).toBeVisible();
+    await expect(page.getByText(/Score\s:\s\d+/)).toBeVisible();
   });
 
   test("the hidden terminal answers", async ({ page }) => {
@@ -23,7 +23,7 @@ test.describe("easter eggs", () => {
     await expect(prompt).toBeFocused();
     await prompt.fill("help");
     await prompt.press("Enter");
-    await expect(page.getByText(/^Commandes :/)).toBeVisible();
+    await expect(page.getByText(/^Commandes\s:/)).toBeVisible();
     await prompt.fill("cat charte.txt");
     await prompt.press("Enter");
     await expect(page.getByText("2. Le consentement d'abord.")).toBeVisible();

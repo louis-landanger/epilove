@@ -1,7 +1,7 @@
 {
   "block": {
     "action": "Bloquer",
-    "title": "Bloquer {name} ?",
+    "title": "Bloquer {name} ?",
     "body": "Vous ne vous verrez plus, nulle part. {name} n'est pas prévenu·e. Tu pourras débloquer depuis les réglages.",
     "confirm": "Bloquer",
     "done": "{name} est bloqué·e."
@@ -10,7 +10,7 @@
     "action": "Signaler",
     "title": "Signaler {name}",
     "lead": "C'est anonyme pour la personne signalée. Notre équipe lit chaque signalement.",
-    "reasonLabel": "Que se passe-t-il ?",
+    "reasonLabel": "Que se passe-t-il ?",
     "reasons": {
       "harassment": "Harcèlement ou insultes",
       "threat": "Menaces ou violence",

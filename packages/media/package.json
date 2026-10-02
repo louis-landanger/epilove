@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./audio": "./src/audio.ts",
     "./policy": "./src/policy.ts",
     "./processing": "./src/processing.ts",
     "./storage": "./src/storage.ts"
@@ -15,6 +16,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@epilove/core": "workspace:*",
     "@aws-sdk/client-s3": "catalog:",
     "@aws-sdk/s3-presigned-post": "catalog:",
     "sharp": "catalog:",

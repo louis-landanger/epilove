@@ -30,6 +30,7 @@ import { ProfilePreview, type ProfilePreviewData } from "./profile-preview";
 import { invalidSlots, PromptAnswersEditor, type PromptSlot, promptSlots } from "./prompt-answers-editor";
 import { ShareCard } from "./share-card";
 import { VERIFICATION_PATH } from "./verification/paths";
+import { VoiceAnswerControls } from "./voice/voice-answer";
 
 export interface ProfileScreenProps {
   readonly initialProfile: OwnProfile;
@@ -83,6 +84,10 @@ export function ProfileScreen({ initialProfile, initialPhotos, catalog }: Profil
       prompts: profile.promptAnswers.map((answer) => ({
         question: prompts.get(answer.promptId) ?? "",
         answer: answer.text,
+        voice:
+          answer.voice?.stage === "ready" && answer.voice.url
+            ? { ...answer.voice, url: answer.voice.url }
+            : null,
       })),
       interests: profile.interestIds.flatMap((id) => interests.get(id) ?? []),
       anthem: profile.anthem,
@@ -356,6 +361,7 @@ function PromptsForm({
   catalog: Catalog;
   onSaved: (profile: OwnProfile) => void;
 }) {
+  const tVoice = useTranslations("profile.voice");
   const initial = useMemo(() => promptSlots(profile.promptAnswers), [profile.promptAnswers]);
   const [slots, setSlots] = useState<PromptSlot[]>(initial);
   const [invalid, setInvalid] = useState<Set<number>>(new Set());
@@ -387,6 +393,13 @@ function PromptsForm({
           setInvalid(new Set());
         }}
         invalid={shownInvalid}
+        renderExtra={(slot, index) => {
+          const saved = profile.promptAnswers.find((answer) => answer.promptId === slot.promptId);
+          if (!saved || initial[index]?.promptId !== slot.promptId) {
+            return slot.promptId ? <p className="text-paper/50 text-xs">{tVoice("saveFirst")}</p> : null;
+          }
+          return <VoiceAnswerControls promptId={saved.promptId} voice={saved.voice} onSaved={onSaved} />;
+        }}
       />
       <SaveBar dirty={dirty} pending={pending} />
     </form>

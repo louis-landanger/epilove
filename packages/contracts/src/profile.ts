@@ -8,6 +8,10 @@ import {
   MIN_INTERESTS,
   MODES,
   PROMPT_ANSWER_COUNT,
+  VOICE_CONTENT_TYPES,
+  VOICE_MAX_BYTES,
+  VOICE_MAX_DURATION_MS,
+  VOICE_PEAK_COUNT,
 } from "@epilove/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
@@ -31,6 +35,16 @@ export const song = z.object({
 });
 export type SongInfo = z.infer<typeof song>;
 
+/** A voice answer (PRO-06); the answer's text is its transcript. */
+export const voiceAnswer = z.object({
+  stage: z.enum(["uploading", "processing", "ready", "failed"]),
+  durationMs: z.int(),
+  peaks: z.array(z.int().min(0).max(100)),
+  /** Signed, expiring, same-origin URL; only once `ready`. */
+  url: z.string().nullable(),
+});
+export type VoiceAnswer = z.infer<typeof voiceAnswer>;
+
 /** The member's own profile, as they edit it. */
 export const ownProfile = z.object({
   firstName: z.string(),
@@ -48,7 +62,7 @@ export const ownProfile = z.object({
   languages: z.array(z.enum(LANGUAGES)),
   intentions: z.array(z.enum(INTENTIONS)),
   modes: z.array(z.enum(MODES)),
-  promptAnswers: z.array(z.object({ promptId: z.uuid(), text: z.string() })),
+  promptAnswers: z.array(z.object({ promptId: z.uuid(), text: z.string(), voice: voiceAnswer.nullable() })),
   interestIds: z.array(z.uuid()),
   /** "Mon son du moment" (PRO-07). */
   anthem: song.nullable(),
@@ -104,6 +118,38 @@ export const profileContract = {
           .nullable(),
       }),
     )
+    .output(ownProfile),
+  /** Attaches a recording (30 s max) to one of the member's answers: returns the presigned upload form. */
+  requestVoiceUpload: oc
+    .errors({ ...profileErrors, NOT_FOUND: { status: 404 }, RATE_LIMITED: { status: 429 } })
+    .input(
+      z.object({
+        promptId: z.uuid(),
+        contentType: z.enum(VOICE_CONTENT_TYPES),
+        size: z.int().min(1).max(VOICE_MAX_BYTES),
+        durationMs: z
+          .int()
+          .min(500)
+          .max(VOICE_MAX_DURATION_MS + 500),
+        peaks: z.array(z.int().min(0).max(100)).length(VOICE_PEAK_COUNT),
+      }),
+    )
+    .output(
+      z.object({
+        url: z.url(),
+        fields: z.record(z.string(), z.string()),
+        maxBytes: z.int(),
+        expiresAt: z.iso.datetime(),
+      }),
+    ),
+  /** The browser upload succeeded: the recording is checked in the background. */
+  confirmVoiceUpload: oc
+    .errors({ ...profileErrors, NOT_FOUND: { status: 404 }, UPLOAD_MISSING: { status: 409 } })
+    .input(z.object({ promptId: z.uuid() }))
+    .output(ownProfile),
+  removeVoice: oc
+    .errors({ ...profileErrors, NOT_FOUND: { status: 404 } })
+    .input(z.object({ promptId: z.uuid() }))
     .output(ownProfile),
   setInterests: oc
     .errors(profileErrors)

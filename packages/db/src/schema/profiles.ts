@@ -8,6 +8,8 @@ import {
   VERIFICATION_GESTURES,
   VERIFICATION_REJECTIONS,
   VERIFICATION_STATUSES,
+  VOICE_CONTENT_TYPES,
+  VOICE_MAX_DURATION_MS,
 } from "@epilove/core";
 import { sql } from "drizzle-orm";
 import {
@@ -154,14 +156,28 @@ export const promptAnswer = pgTable(
     promptId: uuid()
       .notNull()
       .references(() => prompt.id, { onDelete: "restrict" }),
+    /** The written answer; for a voice answer, its transcript (accessibility, moderation). */
     text: text(),
+    /** Voice answer (PRO-06): quarantine key while uploading, then the published recording. */
     voiceKey: text(),
+    voiceStage: text({ enum: PHOTO_STAGES }),
+    voiceContentType: text({ enum: VOICE_CONTENT_TYPES }),
+    voiceDurationMs: integer(),
+    /** Waveform bars from 0 to 100, measured by the recorder. */
+    voicePeaks: smallint().array(),
+    /** Reserved for automatic transcription (planned): `text` holds the member's own. */
     transcript: text(),
     position: smallint().notNull(),
     ...timestamps,
   },
   (t) => [
     unique().on(t.userId, t.promptId),
+    check("prompt_answer_voice_stage_check", oneOf(t.voiceStage, PHOTO_STAGES)),
+    check("prompt_answer_voice_type_check", oneOf(t.voiceContentType, VOICE_CONTENT_TYPES)),
+    check(
+      "prompt_answer_voice_duration",
+      sql`${t.voiceDurationMs} is null or ${t.voiceDurationMs} between 1 and ${sql.raw(String(VOICE_MAX_DURATION_MS + 500))}`,
+    ),
     check(
       "prompt_answer_text_length",
       sql`${t.text} is null or char_length(${t.text}) <= ${sql.raw(String(PROMPT_ANSWER_MAX_LENGTH))}`,

@@ -1,5 +1,5 @@
 import { schema } from "@epilove/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi, insertActiveMember, insertMember } from "../test-support";
 
@@ -74,7 +74,7 @@ describe.skipIf(!url)("own profile", () => {
     const prompts = catalog.prompts.slice(3, 6);
     const answers = prompts.map((prompt, index) => ({ promptId: prompt.id, text: `Réponse ${index}` }));
     const withPrompts = await client.profile.setPrompts({ answers });
-    expect(withPrompts.promptAnswers).toEqual(answers);
+    expect(withPrompts.promptAnswers).toEqual(answers.map((answer) => ({ ...answer, voice: null })));
     expect(withPrompts.completeness.score).toBe(25);
 
     await expect(
@@ -124,4 +124,96 @@ describe.skipIf(!url)("own profile", () => {
     await expect(client.profile.setAnthem({ trackId: "999" })).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect((await client.profile.setAnthem({ trackId: null })).anthem).toBeNull();
   });
+
+  it("attaches a voice recording to an answer, served through expiring signed URLs (PRO-06)", async () => {
+    const me = await insertActiveMember(api.db);
+    const client = api.clientFor(me);
+    const catalog = await client.profile.catalog();
+    const [first, second, third, fourth] = catalog.prompts;
+    if (!first || !second || !third || !fourth) throw new Error("catalogue not seeded");
+    const answers = [first, second, third].map((prompt, index) => ({
+      promptId: prompt.id,
+      text: `Réponse ${index}.`,
+    }));
+    await client.profile.setPrompts({ answers });
+
+    const peaks = Array.from({ length: 48 }, (_, index) => index * 2);
+    const request = {
+      promptId: first.id,
+      contentType: "audio/webm" as const,
+      size: 9,
+      durationMs: 4200,
+      peaks,
+    };
+    await expect(
+      client.profile.requestVoiceUpload({ ...request, promptId: fourth.id }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    const upload = await client.profile.requestVoiceUpload(request);
+    expect(upload.maxBytes).toBe(1024 * 1024);
+    const quarantined = upload.fields.key ?? "";
+    expect(quarantined).toMatch(new RegExp(`^quarantine/${me}/`));
+    await expect(client.profile.confirmVoiceUpload({ promptId: first.id })).rejects.toMatchObject({
+      code: "UPLOAD_MISSING",
+    });
+    await api.storage.write(quarantined, new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]), "audio/webm");
+    const pending = await client.profile.confirmVoiceUpload({ promptId: first.id });
+    expect(pending.promptAnswers[0]?.voice).toMatchObject({
+      stage: "processing",
+      durationMs: 4200,
+      url: null,
+    });
+
+    // What the worker does (tested in apps/worker).
+    await api.db.execute(sql`select graphile_worker.remove_job(${`voice:${await answerId(me, first.id)}`})`);
+    const published = `voices/${me}/${quarantined.split("/").at(-1)}.webm`;
+    const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4, 5, 6]);
+    await api.storage.write(published, audio, "audio/webm");
+    await api.db
+      .update(schema.promptAnswer)
+      .set({ voiceStage: "ready", voiceKey: published })
+      .where(eq(schema.promptAnswer.userId, me));
+
+    const ready = await client.profile.me();
+    const voice = ready.promptAnswers[0]?.voice;
+    expect(voice?.peaks).toEqual(peaks);
+    expect(voice?.url).toMatch(/^\/api\/voice\/[0-9a-f-]{36}\?exp=\d+&sig=/);
+    const full = await api.app.fetch(new Request(`http://localhost${voice?.url}`));
+    expect(full.status).toBe(200);
+    expect(full.headers.get("content-type")).toBe("audio/webm");
+    expect(new Uint8Array(await full.arrayBuffer())).toEqual(audio);
+    const partial = await api.app.fetch(
+      new Request(`http://localhost${voice?.url}`, { headers: { range: "bytes=2-5" } }),
+    );
+    expect(partial.status).toBe(206);
+    expect(partial.headers.get("content-range")).toBe("bytes 2-5/10");
+    const forged = await api.app.fetch(
+      new Request(`http://localhost${voice?.url?.replace(/sig=./, "sig=x")}`),
+    );
+    expect(forged.status).toBe(404);
+
+    // Editing the text keeps the recording; replacing the prompt deletes it.
+    const edited = await client.profile.setPrompts({
+      answers: answers.map((answer) => ({ ...answer, text: `${answer.text} Modifiée.` })),
+    });
+    expect(edited.promptAnswers[0]?.voice?.stage).toBe("ready");
+    await client.profile.setPrompts({
+      answers: [{ promptId: fourth.id, text: "Autre." }, ...answers.slice(1)],
+    });
+    expect(api.storage.objects.has(published)).toBe(false);
+
+    await client.profile.setPrompts({ answers });
+    await client.profile.requestVoiceUpload(request);
+    const removed = await client.profile.removeVoice({ promptId: first.id });
+    expect(removed.promptAnswers[0]?.voice).toBeNull();
+  });
+
+  async function answerId(userId: string, promptId: string) {
+    const [row] = await api.db
+      .select({ id: schema.promptAnswer.id })
+      .from(schema.promptAnswer)
+      .where(eq(schema.promptAnswer.userId, userId));
+    return row && promptId ? row.id : "";
+  }
 });

@@ -1,36 +1,49 @@
-import type { OwnProfile, SongInfo } from "@epilove/contracts";
+import type { OwnProfile, SongInfo, VoiceAnswer } from "@epilove/contracts";
 import { song as songSchema } from "@epilove/contracts";
 import {
   ageOn,
   type Gender,
   graduationYearRange,
   type Intention,
+  isValidPeaks,
   type Language,
   type Mode,
   normalizeFirstName,
   normalizePronouns,
+  uuidv7,
+  VOICE_MAX_BYTES,
+  VOICE_MAX_DURATION_MS,
 } from "@epilove/core";
-import type { Database } from "@epilove/db";
+import { type Database, enqueueJob } from "@epilove/db";
 import { findAccount, readPreferences } from "@epilove/db/repositories/accounts";
 import {
+  advanceVoice,
+  clearVoice,
   findOwnProfile,
+  findPromptAnswer,
   listActivePrompts,
   listInterestIds,
   listInterests,
   listPromptAnswers,
   type ProfilePatch,
+  type PromptAnswerRow,
   replaceInterests,
   replacePromptAnswers,
+  startVoiceUpload,
   updateProfile,
 } from "@epilove/db/repositories/profiles";
+import { quarantineKey } from "@epilove/media";
 import { ORPCError } from "@orpc/server";
+import type { ApiServices } from "../context";
 import { refreshCompleteness } from "../lib/completeness";
 import { checkedInterests, checkedProgram, checkedPromptAnswers, InvalidValue } from "../lib/profile-content";
 import { withinQuota } from "../lib/quota";
 import { campusToday } from "../lib/time";
+import { signVoiceUrl } from "../lib/voice-url";
 import { os, requireViewer } from "../procedures";
 
-async function loadOwnProfile(db: Database, userId: string, now: Date): Promise<OwnProfile> {
+async function loadOwnProfile(db: Database, userId: string, services: ApiServices): Promise<OwnProfile> {
+  const now = services.now();
   const [profile, prefs, answers, interestIds, completeness, account] = await Promise.all([
     findOwnProfile(db, userId),
     readPreferences(db, userId),
@@ -57,10 +70,39 @@ async function loadOwnProfile(db: Database, userId: string, now: Date): Promise<
     languages: profile.languages as Language[],
     intentions: profile.intentions as Intention[],
     modes: (prefs?.modes ?? []) as Mode[],
-    promptAnswers: answers.map((answer) => ({ promptId: answer.promptId, text: answer.text ?? "" })),
+    promptAnswers: answers.map((answer) => ({
+      promptId: answer.promptId,
+      text: answer.text ?? "",
+      voice: voiceOf(answer, services),
+    })),
     interestIds,
     anthem: parseAnthem(profile.anthem),
     completeness: { score: completeness.score, tips: [...completeness.tips] },
+  };
+}
+
+export const PROCESS_VOICE_TASK = "media/process-voice";
+
+/** Deletes recordings that no answer points to any more; a failure leaves them to the purge. */
+async function removeStored(services: ApiServices, keys: readonly string[]) {
+  for (const key of keys) {
+    await services
+      .storage()
+      .remove(key)
+      .catch(() => console.error("[profile] a voice recording could not be deleted"));
+  }
+}
+
+/** The voice answer as its owner sees it: a signed URL once ready. */
+function voiceOf(answer: PromptAnswerRow, services: ApiServices): VoiceAnswer | null {
+  if (!answer.voiceStage || answer.voiceDurationMs === null) {
+    return null;
+  }
+  return {
+    stage: answer.voiceStage,
+    durationMs: answer.voiceDurationMs,
+    peaks: answer.voicePeaks ?? [],
+    url: answer.voiceStage === "ready" ? signVoiceUrl(services, answer.id) : null,
   };
 }
 
@@ -116,7 +158,7 @@ export const profile = {
   }),
 
   me: os.profile.me.use(requireViewer).handler(async ({ context }) => {
-    return loadOwnProfile(context.database(), context.viewer.userId, context.services.now());
+    return loadOwnProfile(context.database(), context.viewer.userId, context.services);
   }),
 
   update: os.profile.update
@@ -162,7 +204,7 @@ export const profile = {
         }
         await updateProfile(db, userId, patch);
       });
-      return loadOwnProfile(db, userId, now);
+      return loadOwnProfile(db, userId, context.services);
     }),
 
   setPrompts: os.profile.setPrompts
@@ -171,15 +213,16 @@ export const profile = {
     .handler(async ({ context, input, errors }) => {
       const { userId } = context.viewer;
       const db = context.database();
-      await write(errors, () =>
+      const orphans = await write(errors, () =>
         db.transaction(async (tx) => {
           if (!(await findOwnProfile(tx, userId))) {
             throw errors.NO_PROFILE();
           }
-          await replacePromptAnswers(tx, userId, await checkedPromptAnswers(tx, input.answers));
+          return replacePromptAnswers(tx, userId, await checkedPromptAnswers(tx, input.answers));
         }),
       );
-      return loadOwnProfile(db, userId, context.services.now());
+      await removeStored(context.services, orphans);
+      return loadOwnProfile(db, userId, context.services);
     }),
 
   searchSongs: os.profile.searchSongs.use(requireViewer).handler(async ({ context, input, errors }) => {
@@ -214,8 +257,75 @@ export const profile = {
         }
       }
       await updateProfile(db, userId, { anthem: anthem ? { ...anthem } : null });
-      return loadOwnProfile(db, userId, context.services.now());
+      return loadOwnProfile(db, userId, context.services);
     }),
+
+  requestVoiceUpload: os.profile.requestVoiceUpload
+    .use(requireViewer)
+    .handler(async ({ context, input, errors }) => {
+      const { userId } = context.viewer;
+      if (!isValidPeaks(input.peaks)) {
+        throw errors.INVALID_VALUE({ data: { field: "peaks" } });
+      }
+      if (!(await withinQuota(context.services, "voice-upload", userId, 20, 3600))) {
+        throw errors.RATE_LIMITED();
+      }
+      const db = context.database();
+      const answer = await findPromptAnswer(db, userId, input.promptId);
+      if (!answer) {
+        throw errors.NOT_FOUND();
+      }
+      const key = quarantineKey(userId, uuidv7());
+      const previous = await startVoiceUpload(db, answer.id, {
+        key,
+        contentType: input.contentType,
+        durationMs: Math.min(input.durationMs, VOICE_MAX_DURATION_MS),
+        peaks: input.peaks,
+      });
+      await removeStored(context.services, previous ? [previous] : []);
+      return context.services
+        .storage()
+        .presignUpload(key, input.contentType, context.services.now(), VOICE_MAX_BYTES);
+    }),
+
+  confirmVoiceUpload: os.profile.confirmVoiceUpload
+    .use(requireViewer)
+    .handler(async ({ context, input, errors }) => {
+      const { userId } = context.viewer;
+      const db = context.database();
+      const answer = await findPromptAnswer(db, userId, input.promptId);
+      if (!answer?.voiceStage) {
+        throw errors.NOT_FOUND();
+      }
+      if (answer.voiceStage === "uploading") {
+        if (!answer.voiceKey || !(await context.services.storage().head(answer.voiceKey))) {
+          throw errors.UPLOAD_MISSING();
+        }
+        await db.transaction(async (tx) => {
+          if (await advanceVoice(tx, answer.id, "uploading", "processing")) {
+            await enqueueJob(
+              tx,
+              PROCESS_VOICE_TASK,
+              { answerId: answer.id },
+              { jobKey: `voice:${answer.id}` },
+            );
+          }
+        });
+      }
+      return loadOwnProfile(db, userId, context.services);
+    }),
+
+  removeVoice: os.profile.removeVoice.use(requireViewer).handler(async ({ context, input, errors }) => {
+    const { userId } = context.viewer;
+    const db = context.database();
+    const answer = await findPromptAnswer(db, userId, input.promptId);
+    if (!answer) {
+      throw errors.NOT_FOUND();
+    }
+    const key = await clearVoice(db, answer.id);
+    await removeStored(context.services, key ? [key] : []);
+    return loadOwnProfile(db, userId, context.services);
+  }),
 
   setInterests: os.profile.setInterests
     .use(requireViewer)
@@ -231,6 +341,6 @@ export const profile = {
           await replaceInterests(tx, userId, await checkedInterests(tx, input.interestIds));
         }),
       );
-      return loadOwnProfile(db, userId, context.services.now());
+      return loadOwnProfile(db, userId, context.services);
     }),
 };

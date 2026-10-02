@@ -1,4 +1,9 @@
-import { deletePhoto, listAbandonedUploads } from "@epilove/db/repositories/profiles";
+import {
+  clearVoice,
+  deletePhoto,
+  listAbandonedUploads,
+  listAbandonedVoices,
+} from "@epilove/db/repositories/profiles";
 import {
   deleteVerification,
   listAbandonedVerifications,
@@ -28,10 +33,17 @@ export function purgeUploadsTask({ database, storage }: MediaDependencies): Task
       await store.remove(quarantineKey(attempt.userId, attempt.id));
       await deleteVerification(db, attempt.id);
     }
-    if (abandoned.length + attempts.length > 0) {
-      helpers.logger.info(
-        `purged ${abandoned.length} abandoned uploads and ${attempts.length} verification attempts`,
-      );
+    // Voice answers never confirmed, or refused by the check: the written answer stays.
+    const voices = await listAbandonedVoices(db, new Date(Date.now() - ABANDONED_AFTER_MS));
+    for (const voice of voices) {
+      if (voice.voiceKey) {
+        await store.remove(voice.voiceKey);
+      }
+      await clearVoice(db, voice.id);
+    }
+    const total = abandoned.length + attempts.length + voices.length;
+    if (total > 0) {
+      helpers.logger.info(`purged ${total} abandoned uploads`);
     }
   };
 }

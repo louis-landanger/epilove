@@ -7,6 +7,7 @@ import { BadgeCheck, ImageOff, ScanFace } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Fragment, type ReactNode } from "react";
 import { AnthemCard } from "./anthem";
+import { VoicePlayer } from "./voice/voice-player";
 
 export interface ProfilePreviewData {
   readonly firstName: string;
@@ -19,7 +20,15 @@ export interface ProfilePreviewData {
   readonly pronouns: string | null;
   readonly modes: readonly string[];
   readonly languages: readonly string[];
-  readonly prompts: readonly { readonly question: string; readonly answer: string }[];
+  readonly prompts: readonly {
+    readonly question: string;
+    readonly answer: string;
+    readonly voice?: {
+      readonly url: string;
+      readonly peaks: readonly number[];
+      readonly durationMs: number;
+    } | null;
+  }[];
   readonly interests: readonly string[];
   readonly anthem: SongInfo | null;
   readonly photos: readonly OwnPhoto[];
@@ -42,7 +51,9 @@ export function ProfilePreview({ data }: { data: ProfilePreviewData }) {
     const photo = rest[index];
     blocks.push(
       <Fragment key={`block-${index}`}>
-        {prompt ? <PromptCard question={prompt.question} answer={prompt.answer} /> : null}
+        {prompt ? (
+          <PromptCard question={prompt.question} answer={prompt.answer} voice={prompt.voice ?? null} />
+        ) : null}
         {index === 1 && data.interests.length > 0 ? <Interests labels={data.interests} /> : null}
         {photo ? <PhotoBlock photo={photo} /> : null}
       </Fragment>,
@@ -106,13 +117,30 @@ export function ProfilePreview({ data }: { data: ProfilePreviewData }) {
   );
 }
 
-function PromptCard({ question, answer }: { question: string; answer: string }) {
+function PromptCard({
+  question,
+  answer,
+  voice,
+}: {
+  question: string;
+  answer: string;
+  voice: { url: string; peaks: readonly number[]; durationMs: number } | null;
+}) {
+  const t = useTranslations("profile.voice");
   return (
     <figure className="flex flex-col gap-3 rounded-[2rem] border border-paper/10 bg-paper/[0.03] p-6">
       <figcaption className="text-paper/60 text-sm">{question}</figcaption>
-      <blockquote className="whitespace-pre-line text-balance font-display font-semibold text-2xl leading-snug tracking-tight">
-        {answer}
-      </blockquote>
+      {voice ? (
+        <>
+          <VoicePlayer src={voice.url} peaks={voice.peaks} durationMs={voice.durationMs} />
+          <p className="text-paper/50 text-xs uppercase tracking-[0.14em]">{t("transcript")}</p>
+          <blockquote className="whitespace-pre-line text-paper/85">{answer}</blockquote>
+        </>
+      ) : (
+        <blockquote className="whitespace-pre-line text-balance font-display font-semibold text-2xl leading-snug tracking-tight">
+          {answer}
+        </blockquote>
+      )}
     </figure>
   );
 }

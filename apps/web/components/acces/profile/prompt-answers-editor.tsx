@@ -5,7 +5,7 @@ import { normalizePromptAnswer, PROMPT_ANSWER_COUNT, PROMPT_ANSWER_MAX_LENGTH } 
 import { Button, Dialog, TextAreaField, TextField } from "@epilove/ui";
 import { Plus, RefreshCw, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 
 type Prompt = Catalog["prompts"][number];
 
@@ -35,10 +35,18 @@ export interface PromptAnswersEditorProps {
   readonly slots: readonly PromptSlot[];
   readonly onChange: (slots: PromptSlot[]) => void;
   readonly invalid: ReadonlySet<number>;
+  /** Extra controls under an answer (voice notes on the profile page). */
+  readonly renderExtra?: (slot: PromptSlot, index: number) => ReactNode;
 }
 
 /** Three prompts picked from the catalogue, answered in 200 characters (PRO-02). */
-export function PromptAnswersEditor({ catalog, slots, onChange, invalid }: PromptAnswersEditorProps) {
+export function PromptAnswersEditor({
+  catalog,
+  slots,
+  onChange,
+  invalid,
+  renderExtra,
+}: PromptAnswersEditorProps) {
   const t = useTranslations("onboarding.prompts");
   const locale = useLocale() as "fr" | "en";
   const [picking, setPicking] = useState<number | null>(null);
@@ -94,6 +102,7 @@ export function PromptAnswersEditor({ catalog, slots, onChange, invalid }: Promp
                   {t("choose")}
                 </Button>
               )}
+              {prompt && renderExtra ? renderExtra(slot, index) : null}
             </li>
           );
         })}

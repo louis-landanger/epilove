@@ -169,5 +169,28 @@
     "expired": "Time is up: draw a new gesture.",
     "error": "That didn't work. Try again in a moment.",
     "retry": "Draw a new gesture"
+  },
+  "voice": {
+    "add": "Add a voice note",
+    "addHelp": "30 seconds max. Your written answer is used as the transcript.",
+    "saveFirst": "Save your written answer to add a voice note to it.",
+    "title": "Your answer, out loud",
+    "lead": "Speak naturally, 30 seconds at most. Your written answer stays visible: it is the transcript read to those who cannot listen.",
+    "record": "Record",
+    "stop": "Stop",
+    "recording": "Recording: {seconds} s of 30",
+    "rerecord": "Start over",
+    "use": "Use this voice note",
+    "uploading": "Sending…",
+    "micDenied": "The microphone is not available. Allow it in your browser.",
+    "unsupported": "Your browser cannot record audio.",
+    "processing": "Voice note being checked…",
+    "failed": "This voice note could not be read. Try again.",
+    "remove": "Delete the voice note",
+    "replace": "Record again",
+    "play": "Listen to the voice answer",
+    "pause": "Pause",
+    "error": "Sending failed. Try again.",
+    "transcript": "Transcript"
   }
 }
