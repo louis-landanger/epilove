@@ -23,6 +23,7 @@ import { admin, captcha, emailOTP, genericOAuth } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { type AuthEnv, OTP_POLICY, SESSION_POLICY } from "./config";
 import { checkForgeIdProfile, FORGE_ID_PROVIDER, type ForgeIdConfig } from "./forge-id";
+import { checkMicrosoftProfile, MICROSOFT_PROVIDER, type MicrosoftConfig } from "./microsoft";
 
 export interface AuthDependencies {
   readonly env: AuthEnv;
@@ -34,6 +35,8 @@ export interface AuthDependencies {
   readonly options?: AuthOptions;
   /** ONB-11: Forge ID sign-in, only when configured. */
   readonly forgeId?: ForgeIdConfig | null;
+  /** ONB-10: Microsoft sign-in restricted to the schools' tenants, only when configured. */
+  readonly microsoft?: MicrosoftConfig | null;
 }
 
 /** Differences between the member app and the back-office. */
@@ -69,6 +72,7 @@ export function createAuth({
   secondaryStorage,
   options = {},
   forgeId = null,
+  microsoft = null,
 }: AuthDependencies) {
   const sessionExpiresIn = options.sessionExpiresInSeconds ?? SESSION_POLICY.expiresInSeconds;
   const trustedOrigins = [
@@ -94,6 +98,33 @@ export function createAuth({
     }),
     secondaryStorage,
     emailAndPassword: { enabled: false },
+    socialProviders: microsoft
+      ? {
+          microsoft: {
+            clientId: microsoft.clientId,
+            clientSecret: microsoft.clientSecret,
+            // Work and school accounts only; the tenant list below narrows it to the five schools.
+            tenantId: "organizations",
+            // OpenID Connect claims only: no Microsoft Graph access, no profile photo.
+            disableDefaultScope: true,
+            scope: ["openid", "email", "profile"],
+            disableProfilePhoto: true,
+            disableSignUp: options.allowSignUp === false,
+            mapProfileToUser: (profile) => {
+              const check = checkMicrosoftProfile(profile, microsoft);
+              if (!check.ok) {
+                throw new APIError("FORBIDDEN", {
+                  code:
+                    check.reason === "tenant_not_allowed"
+                      ? "MICROSOFT_TENANT_NOT_ALLOWED"
+                      : "SCHOOL_EMAIL_REQUIRED",
+                });
+              }
+              return { email: check.email, name: "", emailVerified: true };
+            },
+          },
+        }
+      : undefined,
     user: {
       additionalFields: {
         schoolId: { type: "string", input: false, required: false },
@@ -152,10 +183,11 @@ export function createAuth({
             });
           }
         }
-        if (ctx.path !== "/sign-in/email-otp" || !ctx.context.newSession) {
+        const microsoftCallback = ctx.path.startsWith("/callback/") && ctx.params?.id === MICROSOFT_PROVIDER;
+        if ((ctx.path !== "/sign-in/email-otp" && !microsoftCallback) || !ctx.context.newSession) {
           return;
         }
-        // Every sign-in with a code proves the school mailbox again (ONB-09).
+        // Every sign-in with a code, or with the school's Microsoft account, proves the mailbox again (ONB-09).
         const now = new Date();
         const nextDue = new Date(
           `${nextReverificationDue(calendarDateIn(LYON_CAMPUS.timeZone, now))}T00:00:00Z`,

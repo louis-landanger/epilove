@@ -3,7 +3,7 @@
 import { authClient } from "@epilove/auth/client";
 import { parseSchoolEmail } from "@epilove/core";
 import { Button, OtpInput, TextField, useToast } from "@epilove/ui";
-import { ArrowLeft, Fingerprint, KeyRound, Mail } from "lucide-react";
+import { ArrowLeft, Building2, Fingerprint, KeyRound, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { type FormEvent, useEffect, useState } from "react";
@@ -23,6 +23,7 @@ type ErrorKey =
 const RESEND_DELAY_SECONDS = 30;
 /** ONB-11: shown only when the server is configured for Forge ID. */
 const FORGE_ID_ENABLED = process.env.NEXT_PUBLIC_FORGE_ID_ENABLED === "1";
+const MICROSOFT_ENABLED = process.env.NEXT_PUBLIC_MICROSOFT_ENABLED === "1";
 
 function errorKeyFor(error: { code?: string | undefined; status?: number | undefined } | null): ErrorKey {
   switch (error?.code) {
@@ -237,6 +238,24 @@ export function SignInForm({ next }: { next: string | null }) {
               {t("forgeId")}
             </Button>
             <p className="text-center text-paper/55 text-sm">{t("forgeIdHelp")}</p>
+          </>
+        ) : null}
+        {MICROSOFT_ENABLED ? (
+          <>
+            <Button
+              variant="outline"
+              block
+              onClick={() =>
+                void authClient.signIn.social({
+                  provider: "microsoft",
+                  callbackURL: safeNextPath(next) ?? ONBOARDING_PATH,
+                })
+              }
+              leadingIcon={<Building2 className="size-5" aria-hidden="true" />}
+            >
+              {t("microsoft")}
+            </Button>
+            <p className="text-center text-paper/55 text-sm">{t("microsoftHelp")}</p>
           </>
         ) : null}
         {error === "passkey_failed" ? (

@@ -4,6 +4,7 @@ import {
   authEnvFromProcess,
   createAuth,
   forgeIdConfigFromEnv,
+  microsoftConfigFromEnv,
   valkeySecondaryStorage,
 } from "@epilove/auth";
 import { createMailer, mailerConfigFromEnv } from "@epilove/email";
@@ -24,6 +25,7 @@ export function getAuth(): Auth {
       limiter: valkey ? createValkeyRateLimiter(valkey) : createMemoryRateLimiter(),
       secondaryStorage: valkey ? valkeySecondaryStorage(valkey) : undefined,
       forgeId: forgeIdConfigFromEnv(),
+      microsoft: microsoftConfigFromEnv(),
     });
   }
   return auth;

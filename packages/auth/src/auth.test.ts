@@ -178,6 +178,33 @@ describe.skipIf(!url)("authentication", () => {
   });
 });
 
+/** ONB-10: no network needed to check what the authorisation request asks for. */
+describe.skipIf(!url)("Microsoft sign-in", () => {
+  const { db, close } = createDatabase(url ?? "", { maxConnections: 1 });
+  afterAll(close);
+
+  it("asks work and school accounts for OpenID Connect claims only", async () => {
+    const auth = createAuth({
+      env,
+      db,
+      mailer: createMemoryMailer(),
+      limiter: createMemoryRateLimiter(),
+      microsoft: {
+        clientId: "client-id",
+        clientSecret: "client-secret",
+        allowedTenants: ["11111111-2222-3333-4444-555555555555"],
+      },
+    });
+    const result = await auth.api.signInSocial({
+      body: { provider: "microsoft", callbackURL: "/onboarding" },
+    });
+    const target = new URL(result.url ?? "");
+    expect(target.origin).toBe("https://login.microsoftonline.com");
+    expect(target.pathname).toContain("/organizations/");
+    expect(target.searchParams.get("scope")?.split(" ").sort()).toEqual(["email", "openid", "profile"]);
+  });
+});
+
 const valkeyUrl = process.env.VALKEY_URL;
 
 /** Sessions live in Valkey: deleting rows is not enough to sign someone out. */

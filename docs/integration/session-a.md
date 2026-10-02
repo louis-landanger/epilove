@@ -42,11 +42,12 @@
 | Filigrane dynamique | SAF-12 | Code propre au lecteur (« 7KQ2-XA9M », HMAC avec un contexte dédié, ni l'identifiant ni le pseudonyme de modération) répété en motif discret clair et sombre sur les photos : composants `WatermarkProvider` / `ViewerWatermark` / `Watermark` dans `@epilove/ui`, fournisseur dans la coquille de l'app (`account.watermark`) et dans le back-office (photos vues par le staff, avec le code du staff). Page `/filigrane` du back-office : retrouver le compte à l'origine d'une capture, avec justification journalisée | `packages/api/src/lib/watermark.test.ts`, `admin.test.ts`, `packages/ui/src/ui.test.tsx`, `apps/admin/e2e` |
 | Lighthouse CI | — | `pnpm lighthouse` (`apps/web/lighthouserc.cjs`, workflow `.github/workflows/lighthouse.yml`) : 4 pages (`/`, `/en`, `/legal/confidentialite`, `/connexion`), 3 passages, émulation mobile ; budgets bloquants : accessibilité 100, bonnes pratiques ≥ 95, CLS ≤ 0,05 partout ; performance, LCP, TBT et poids (script, polices, total) par page. Corrections faites pour les tenir : champ d'ions désactivé sur rendu logiciel et arrêté si l'appareil ne suit pas, moniteur d'images en temps réel, polices allégées (Bricolage 131 → 41 Ko hors vitrine ; instances titre et serif chargées sur la vitrine seulement) | `apps/web/lighthouserc.cjs`, `packages/three/src/ion-field/quality.test.ts` |
 | Design sonore de la vitrine | — | Interrupteur « Son d'ambiance » dans l'en-tête de la page d'accueil, désactivé par défaut, mémorisé dans le navigateur ; tout est synthétisé en Web Audio (aucun fichier) : nappe d'ambiance lente, tic au survol des liens et boutons (souris), cloche pentatonique au toucher du champ d'ions, souffle à l'entrée des sections ; silencieux en arrière-plan, limiteur en sortie. En-tête compacté sous 420 px (symbole seul) et sous 360 px (sans l'interrupteur) | `components/acces/marketing/sound/notes.test.ts`, e2e `sound.spec.ts` |
+| Connexion Microsoft (exploration) | ONB-10 | Fournisseur `microsoft` de Better Auth sur `organizations`, portées OIDC seules, sans photo ; refus hors des tenants listés (`MICROSOFT_ALLOWED_TENANTS`) ou sans adresse d'école ; éteint sans configuration ; bouton derrière `NEXT_PUBLIC_MICROSOFT_ENABLED` ; une connexion vaut preuve d'adresse (ONB-09). Prérequis d'activation dans l'ADR 0013 (vérification d'éditeur, consentement des DSI) | `packages/auth/src/microsoft.test.ts`, `auth.test.ts` |
 
 ## Pas encore fait
 
 - Vitrine : performance Lighthouse mobile ~70 (cible 90) : LCP ~4–5 s, limité par les polices d'affichage (~250 Ko) et l'hydratation (TBT ~400 ms) ; connexion et pages légales ~85–90 (LCP ~3,5 s). Pistes : sous-ensemble de la police du titre, moins de JavaScript initial (196 Ko gzip, budget 180 Ko), relever les budgets de `lighthouserc.cjs` à mesure. WebGPU non vérifié sur un vrai GPU (en CI, rendu logiciel : le poster reste) ; effectifs par école estimés (à confirmer) ; pas de préchargeur.
-- Palier 3 : Storybook, connexion Microsoft (ONB-10).
+- Palier 3 : Storybook.
 
 ## Fichiers partagés modifiés
 
@@ -90,7 +91,7 @@
 
 ## Variables d'environnement (section `# Session A`)
 
-`EMAIL_FROM`, `APP_URL`, `AUTH_TRUSTED_ORIGINS`, `BETTER_AUTH_SECRET`, `PASSKEY_RP_ID`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `AUTH_IP_HEADERS`, `AUTH_TRUSTED_PROXIES`, `S3_PUBLIC_ENDPOINT`, `S3_REGION`, `ADMIN_URL`, `SITE_URL`, `FORGE_ID_DISCOVERY_URL`, `FORGE_ID_CLIENT_ID`, `FORGE_ID_CLIENT_SECRET`, `FORGE_ID_CAMPUS_CLAIM`, `FORGE_ID_CAMPUS_VALUE`, `FORGE_ID_GRADUATION_CLAIM`, `NEXT_PUBLIC_FORGE_ID_ENABLED`, `API_IP_HEADERS`.
+`EMAIL_FROM`, `APP_URL`, `AUTH_TRUSTED_ORIGINS`, `BETTER_AUTH_SECRET`, `PASSKEY_RP_ID`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `AUTH_IP_HEADERS`, `AUTH_TRUSTED_PROXIES`, `S3_PUBLIC_ENDPOINT`, `S3_REGION`, `ADMIN_URL`, `SITE_URL`, `FORGE_ID_DISCOVERY_URL`, `FORGE_ID_CLIENT_ID`, `FORGE_ID_CLIENT_SECRET`, `FORGE_ID_CAMPUS_CLAIM`, `FORGE_ID_CAMPUS_VALUE`, `FORGE_ID_GRADUATION_CLAIM`, `NEXT_PUBLIC_FORGE_ID_ENABLED`, `API_IP_HEADERS`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_ALLOWED_TENANTS`, `NEXT_PUBLIC_MICROSOFT_ENABLED`.
 
 Optionnelles (valeurs par défaut dans le code) : `API_RATE_LIMIT_MEMBER` (600), `API_RATE_LIMIT_ANONYMOUS` (120).
 
