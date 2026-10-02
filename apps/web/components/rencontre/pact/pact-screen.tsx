@@ -12,6 +12,7 @@ import { useBroadcast } from "@/lib/rencontre/realtime";
 import { schoolColor } from "../discovery/school";
 import { Countdown } from "./countdown";
 import { NoMatch, NotParticipant, PactMatchCard } from "./pact-result";
+import { PactStats } from "./pact-stats";
 import { RevealSequence } from "./reveal-sequence";
 
 /** A reveal seen within this delay plays again on the first visit; later, the result shows directly. */
@@ -318,6 +319,7 @@ export function PactScreen({ initial }: { initial: PactCurrent }) {
           ) : null}
         </>
       )}
+      {season?.phase === "revealed" && <PactStats />}
     </main>
   );
 }

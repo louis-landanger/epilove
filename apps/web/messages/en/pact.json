@@ -89,5 +89,13 @@
   "notParticipant": {
     "title": "You didn't take part in this edition",
     "lead": "See you at the next one: Valentine's Day in February, back to school in October."
+  },
+  "stats": {
+    "title": "The Pact in numbers",
+    "participants": "{count} participants",
+    "matches": "{count} bonds formed",
+    "crossSchool": "{percent}% between two schools",
+    "fact": "{percent}% answered \"{option}\"",
+    "threshold": "Anonymous figures: nothing is shown below 10 people."
   }
 }

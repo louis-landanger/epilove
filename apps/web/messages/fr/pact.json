@@ -89,5 +89,13 @@
   "notParticipant": {
     "title": "Tu n'as pas participé à cette édition",
     "lead": "Rendez-vous à la prochaine : la Saint-Valentin en février, la rentrée en octobre."
+  },
+  "stats": {
+    "title": "Le Pacte en chiffres",
+    "participants": "{count} participants",
+    "matches": "{count} liaisons formées",
+    "crossSchool": "{percent} % entre deux écoles",
+    "fact": "{percent} % ont répondu « {option} »",
+    "threshold": "Chiffres anonymes : rien n'est affiché en dessous de 10 personnes."
   }
 }

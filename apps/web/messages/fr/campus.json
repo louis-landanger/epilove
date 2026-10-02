@@ -43,6 +43,43 @@
       "title": "Événements",
       "lead": "Soirées, tournois, sorties : ce que les assos organisent, et qui de tes liaisons y va.",
       "action": "Voir le programme"
+    },
+    "weekly": {
+      "title": "Question de la semaine",
+      "lead": "Une question, cinq écoles, les résultats par école.",
+      "action": "Répondre"
+    },
+    "index": {
+      "title": "Indice inter-écoles",
+      "lead": "Quelles écoles se rencontrent le plus cette semaine ?",
+      "action": "Voir l'indice"
     }
+  },
+  "weekly": {
+    "title": "Question de la semaine",
+    "lead": "Une question par semaine pour tout le campus. Ta réponse compte aussi un peu dans les profils qu'on te propose.",
+    "back": "Campus",
+    "until": "Jusqu'au {date}",
+    "none": "Pas de question cette semaine. Reviens lundi !",
+    "yourAnswer": "Ta réponse :",
+    "change": "Changer ma réponse",
+    "resultsTitle": "Ce que répond le campus",
+    "campus": "Tout le campus",
+    "bySchool": "Par école",
+    "answers": "{count, plural, one {# réponse} other {# réponses}}",
+    "notEnough": "Pas encore assez de réponses pour afficher des résultats.",
+    "threshold": "Une école n'apparaît qu'à partir de 10 réponses, pour que personne ne soit reconnaissable.",
+    "percent": "{percent} %",
+    "error": "Ça n'a pas marché. Réessaie dans un instant.",
+    "closed": "La semaine a changé : voici la nouvelle question."
+  },
+  "crossSchool": {
+    "title": "Indice inter-écoles",
+    "lead": "Les nouvelles liaisons des sept derniers jours entre deux écoles.",
+    "back": "Campus",
+    "pair": "{a} × {b}",
+    "count": "{count} liaisons",
+    "empty": "Pas encore de paire d'écoles à afficher cette semaine.",
+    "threshold": "Une paire d'écoles n'apparaît qu'à partir de 10 liaisons, et aucun total n'est donné : impossible d'en déduire un petit nombre."
   }
 }

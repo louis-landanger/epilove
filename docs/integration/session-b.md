@@ -19,6 +19,7 @@
 | 2 | Stickers maison et GIF (CHAT-05) | ✅ fait et testé (API avec GIPHY simulé) ; GIPHY désactivé sans clé |
 | 2 | Modifier / supprimer (CHAT-08), avertissement avant envoi (SAF-09), « Ce message te dérange ? » (SAF-10) | ✅ fait et testé (cœur, API, Playwright) |
 | 2 | Photos, photo éphémère, flou explicite (CHAT-06) ; messages vocaux (CHAT-07) | ✅ fait et testé (API, worker, Playwright à deux navigateurs avec micro simulé) ; transcription non faite, classifieur d'images à brancher (SAF-11) |
+| 2 | Question de la semaine (COM-01), indice inter-écoles (COM-02), statistiques du Pacte (PAC-04) | ✅ fait et testé (cœur dont propriété d'anonymat, API, Playwright, axe) |
 | 2 | Kit sécurité date (IRL-03) | ✅ fait et testé (cœur, API, Playwright avec une personne de confiance sans compte, axe) |
 | 2 | Événements (IRL-01) | ✅ fait et testé (cœur, API, Playwright à trois navigateurs, axe) ; pas d'image de couverture |
 | 2 | Crush secret (DEC-08), seconde chance (DEC-09) | ✅ fait et testé (cœur, API, Playwright pour le crush réciproque) |
@@ -143,6 +144,14 @@
 - Interface : bouton photo (aperçu, case « Éphémère : une seule ouverture »), bouton micro à la place d'« Envoyer » quand le champ est vide (enregistrement MediaRecorder 64 kbit/s, arrêt automatique à 2 minutes, écoute avant envoi), lecteur avec forme d'onde et vitesses 1×/1,5×/2×, photo floutée avec « Afficher quand même » et « Signaler » quand le classifieur la signale. Sur téléphone, les outils de la zone de saisie se replient derrière « + ».
 - **Non fait** : transcription des vocaux (CHAT-07, accessibilité) ; classifieur réel (SAF-11, aujourd'hui aucun signalement : toutes les photos s'affichent nettes).
 
+### Question de la semaine (COM-01), indice inter-écoles (COM-02), statistiques du Pacte (PAC-04)
+
+- `packages/core/src/community/community.ts` : semaine ISO à l'heure du campus (`isoWeek`, `weekEndsAt`), rotation de la banque (`questionForWeek`), accord sur les questions récentes (`weeklyAgreement`), et les règles d'anonymat communes : `ANONYMITY_THRESHOLD = 10`, `anonymousResults` (une école n'apparaît qu'à partir de 10 réponses, et le total du campus n'est affiché que si ce qui est caché est nul ou d'au moins 10 : pas de déduction par soustraction ; testé par propriété), `crossSchoolIndex` (paires d'écoles différentes d'au moins 10 liaisons, sans total).
+- Tables `weekly_question` (banque de 16 questions légères, seed `packages/db/src/seeds/weekly-questions.ts`, jamais de religion, politique, santé ou origine) et `weekly_answer` (une réponse par membre et par semaine, modifiable jusqu'au lundi). Dépôt `packages/db/src/repositories/campus-community.ts` (comptes par école, sans les comptes bannis, suspendus ou supprimés).
+- La réponse « alimente la compatibilité » : signal `weeklyAgreement` dans le classement du deck (part de réponses identiques sur les 8 dernières semaines, au moins 2 en commun, poids léger centré sur 0,5 : neutre sans données).
+- API `community.weekly`, `answerWeekly` (résultats seulement après avoir répondu), `crossSchool` (7 derniers jours, les deux modes ensemble), `pactStats` (dernière saison révélée : participants, liaisons, part inter-écoles à partir de 10 liaisons, et jusqu'à 5 « faits » sur les sections `campus`, `nerd` et `lifestyle` du questionnaire, jamais `values` ni `plans`).
+- Interface : `(app)/campus/question` (réponse, barres pour le campus et par école aux couleurs de l'app), `(app)/campus/indice`, section « Le Pacte en chiffres » sous les résultats du Pacte, deux cartes dans l'onglet Campus. Données de développement : réponses des membres fictifs sur 8 semaines (Inès n'a pas répondu à celle de la semaine).
+
 ### Kit sécurité date (IRL-03)
 
 - `packages/core/src/messaging/date-safety.ts` : règles (question 3 heures après le début, lien valable 24 heures après le début, 3 liens actifs par date, 10 par jour), état d'un lien, numéros d'urgence (112, 17, 114 par SMS, 3919, d'après SAF-15).
@@ -193,12 +202,12 @@
 | `pnpm-workspace.yaml` | catalogue : `maplibre-gl` (6.11.2), `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendances `@epilove/crypto` et `aws4fetch` (stockage des médias de conversation), script `db:seed:dev`, exports `./repositories/*`, `./dev-seed`, `./storage` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `maplibre-gl`, `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
-| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `dateSafety`, `dev`, `discovery`, `events`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
+| `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `campusLife`, `community`, `dateSafety`, `dev`, `discovery`, `events`, `matches`, `messaging`, `notifications`, `pact`, `questionnaire`, `realtime` (ajouts) |
 | `packages/api/src/app.ts` | intercepteur `onError` qui journalise la classe des erreurs inattendues (jamais le message, qui peut contenir des paramètres SQL) : sans lui, oRPC masquait silencieusement les 500 |
 | `apps/web/i18n/messages.ts` | namespaces `campus`, `chat`, `discovery`, `events`, `likes`, `matches`, `notifications`, `pact`, `questionnaire`, `spots` (ajouts) |
-| `packages/core/src/index.ts` | `discovery/crush`, `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/second-chance`, `discovery/rules`, `events/events`, `matching/explain`, `messaging/date-safety`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
-| `packages/db/src/seeds/index.ts` | seeds `questions`, `spots` (ajouts) |
-| `packages/db/src/schema/index.ts` | `date-safety`, `events`, `spots` (ajouts) |
+| `packages/core/src/index.ts` | `community/community`, `discovery/crush`, `discovery/drop`, `discovery/filter`, `discovery/ranking`, `discovery/second-chance`, `discovery/rules`, `events/events`, `matching/explain`, `messaging/date-safety`, `messaging/ids`, `pact/*`, `policies/profile-access` (ajouts) ; `sharedModes` exporté de `can-see.ts` |
+| `packages/db/src/seeds/index.ts` | seeds `questions`, `spots`, `weekly-questions` (ajouts) |
+| `packages/db/src/schema/index.ts` | `community`, `date-safety`, `events`, `spots` (ajouts) |
 | `infra/centrifugo/config.json` | `presence: true` sur l'espace `personal` (statut en ligne entre matchs) ; origines `127.0.0.1:3000` et `localhost/127.0.0.1:3100` (Playwright) |
 | `.env.example` | section `# Session B` |
 | `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâches `outbox_purge`, `pact_reveal`, `pact_reveal_due`, `drop_tick`, `message_purge`, `media_purge`, `date_check_in`, `chat_nudge` (ajouts) |
@@ -224,6 +233,7 @@
 
 ## Migrations
 
+- `0015_*` : tables `weekly_question` et `weekly_answer`.
 - `0014_*` : table `date_share`.
 - `0013_*` : tables `event` et `event_rsvp`.
 - `0012_*` : table `media_deletion`.

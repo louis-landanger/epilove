@@ -223,7 +223,7 @@ test("proposes a date at a Spot, accepted by the other member (CHAT-10)", async 
   await sheet.getByLabel("Quand ?").fill(`${local}18:30`);
   await sheet.getByLabel("Un mot (facultatif)").fill("Un café ?");
   await sheet.getByRole("button", { name: "Proposer" }).click();
-  await expect(noaPage.getByText("Proposition de date")).toBeVisible();
+  await expect(noaPage.getByText("Proposition de date", { exact: true })).toBeVisible();
   await expect(noaPage.getByText("En attente")).toBeVisible();
 
   await expect(sachaPage.getByText("Place Valmy")).toBeVisible({ timeout: 10_000 });

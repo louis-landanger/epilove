@@ -43,6 +43,43 @@
       "title": "Events",
       "lead": "Parties, tournaments, outings: what the societies put on, and which of your bonds are going.",
       "action": "See what's on"
+    },
+    "weekly": {
+      "title": "Question of the week",
+      "lead": "One question, five schools, results by school.",
+      "action": "Answer"
+    },
+    "index": {
+      "title": "Cross-school index",
+      "lead": "Which schools are meeting the most this week?",
+      "action": "See the index"
     }
+  },
+  "weekly": {
+    "title": "Question of the week",
+    "lead": "One question a week for the whole campus. Your answer also counts a little in the profiles we suggest.",
+    "back": "Campus",
+    "until": "Until {date}",
+    "none": "No question this week. Come back on Monday!",
+    "yourAnswer": "Your answer:",
+    "change": "Change my answer",
+    "resultsTitle": "What the campus says",
+    "campus": "Whole campus",
+    "bySchool": "By school",
+    "answers": "{count, plural, one {# answer} other {# answers}}",
+    "notEnough": "Not enough answers yet to show results.",
+    "threshold": "A school only shows from 10 answers, so that nobody can be recognised.",
+    "percent": "{percent}%",
+    "error": "That didn't work. Try again in a moment.",
+    "closed": "The week has changed: here is the new question."
+  },
+  "crossSchool": {
+    "title": "Cross-school index",
+    "lead": "New bonds over the last seven days between two schools.",
+    "back": "Campus",
+    "pair": "{a} × {b}",
+    "count": "{count} bonds",
+    "empty": "No pair of schools to show this week yet.",
+    "threshold": "A pair of schools only shows from 10 bonds, and no total is given: a small number can't be worked out."
   }
 }
