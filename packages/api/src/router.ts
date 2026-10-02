@@ -3,6 +3,7 @@ import { dev } from "./modules/dev";
 import { discovery } from "./modules/discovery";
 import { matches } from "./modules/matches";
 import { messaging } from "./modules/messaging";
+import { notifications } from "./modules/notifications";
 import { questionnaire } from "./modules/questionnaire";
 import { realtime } from "./modules/realtime";
 import { safety } from "./modules/safety";
@@ -19,6 +20,7 @@ export const router = os.router({
   discovery,
   matches,
   messaging,
+  notifications,
   questionnaire,
   realtime,
   safety,

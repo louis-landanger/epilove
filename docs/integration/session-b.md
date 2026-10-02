@@ -12,7 +12,7 @@
 | 1 | Découverte (DEC-01 à DEC-06, DEC-11) | ✅ fait et testé (API, dont concurrence) ; interface vérifiée à la main |
 | 1 | Matchs (CHAT-01, CHAT-13) | ✅ création, écran « Liaison établie », unmatch ; bloquer et signaler câblés sur le contrat `safety` (NOT_IMPLEMENTED côté A) |
 | 1 | Messagerie temps réel (CHAT-02, CHAT-03) | ✅ fait et testé (API, relais, Playwright à deux navigateurs) |
-| 1 | Notifications | ⏳ |
+| 1 | Notifications (NOT-01 à NOT-03) | ✅ fait et testé (API, worker, Playwright pour le service worker) ; push réel non testé en automatique (pas de service de push dans la session) |
 | 1 | Pacte | ⏳ |
 
 ## Ce qui est fait
@@ -68,6 +68,15 @@
 - `RealtimeProvider` (`lib/rencontre/realtime.tsx`) : une connexion Centrifugo par onglet, canal personnel, signal `resync` après reconnexion ; monté dans `RencontreProviders`.
 - Playwright (`apps/web/e2e/rencontre.spec.ts`) : deux membres créés en base, like avec commentaire depuis le profil, like retour depuis « Likes », écran de match, conversation en direct dans les deux sens, « Vu », axe sans violation sur les écrans de B. Le worker est démarré par Playwright (second `webServer`, santé sur `WORKER_HEALTH_PORT=3101`).
 
+### Notifications (NOT-01 à NOT-03)
+
+- `packages/notifications` : types et groupes de préférences (likes, matchs, messages, Drop, Pacte), contenu push discret par défaut (ni prénom ni contenu ; même non discret, jamais le texte d'un message), étiquette par conversation pour regrouper sur l'appareil, envoi Web Push VAPID (`web-push`), abonnements expirés (404/410) supprimés.
+- Centre de notifications (`notifications.list` paginé sur (created_at, id), `unreadCount`, `markRead`), préférences par groupe et canal (table `notification_preference`, défauts : push oui, e-mail non), abonnements push (`subscribe` / `unsubscribe`, un endpoint appartient à un seul membre), clé publique VAPID (`pushConfig`).
+- Envoi : le worker traite les notifications non poussées juste après chaque vidage de l'outbox (`afterDrain`), ignore celles de plus d'une heure, ne pousse pas si le membre est connecté (présence Centrifugo) et respecte ses préférences ; colonne `notification.pushed_at`. Le réglage « notifications discrètes » est lu dans `preferences.discreet_notifications` (table de A, SAF-06).
+- PWA : service worker Serwist (`apps/web/service-worker/sw.ts`, servi par `app/serwist/[path]/route.ts`), qui ne met en cache que la coquille et les ressources statiques (jamais une page ni une réponse d'API : appareils prêtés), page `/hors-ligne`, gestion de `push` et `notificationclick` (chemins internes uniquement). Enregistré par `RencontreProviders` (`SerwistProvider`).
+- Interface : `(app)/notifications` (historique, non-lus, tout marqué lu à l'ouverture, mise à jour en direct), `(app)/reglages/notifications` (activation du push sur l'appareil, demande de permission uniquement au clic, consigne iPhone « écran d'accueil », préférences par groupe et canal, réglages de conversation : accusés de lecture et statut en ligne).
+- Le seed de développement crée aussi des notifications (likes reçus, matchs).
+
 ### Divers
 
 - `packages/core/src/messaging/ids.ts` : génération et lecture d'UUIDv7 (messages envoyés par le client).
@@ -78,7 +87,7 @@
 | Fichier | Modification |
 |---|---|
 | `package.json` (racine) | script `db:seed:dev` |
-| `pnpm-workspace.yaml` | catalogue : `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
+| `pnpm-workspace.yaml` | catalogue : `@serwist/turbopack`, `serwist`, `esbuild` (0.28.2, pair de Serwist), `web-push`, `@types/web-push`, `@orpc/tanstack-query`, `@tanstack/react-query` (5.104.0, la 5.104.1 a moins de 24 h), `aws4fetch`, `centrifuge`, `motion` (13.5.0, la 14.0.0 a moins de 24 h) ; `allowBuilds` : `protobufjs: false` (script d'information seulement, tiré par `centrifuge`) |
 | `packages/db/package.json` | dépendance `@epilove/crypto`, devDependency `aws4fetch`, script `db:seed:dev`, exports `./repositories/*`, `./dev-seed` et `./testing` (fabriques de membres pour les tests d'intégration, identifiants aléatoires) |
 | `apps/web/package.json` | dépendances `@epilove/contracts`, `@epilove/crypto`, `@epilove/media`, `@orpc/tanstack-query`, `@tanstack/react-query`, `centrifuge`, `motion` |
 | `packages/contracts/src/index.ts`, `packages/api/src/router.ts` | modules `dev`, `discovery`, `matches`, `messaging`, `questionnaire`, `realtime` (ajouts) |
@@ -90,20 +99,26 @@
 | `.env.example` | section `# Session B` |
 | `apps/worker/src/index.ts`, `apps/worker/src/env.ts`, `apps/worker/src/tasks/index.ts` | démarrage du relais de l'outbox, variables Centrifugo facultatives, point de santé facultatif (`WORKER_HEALTH_PORT`), tâche `outbox_purge` (ajouts) |
 | `apps/web/playwright.config.ts` | chargement de `../../.env` (les scénarios de B créent leurs membres en base) et second `webServer` pour le worker |
-| `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media`, `@epilove/realtime` |
+| `apps/web/next.config.ts` | `transpilePackages` : `@epilove/crypto`, `@epilove/media`, `@epilove/realtime` ; `serverExternalPackages` : `esbuild`, `esbuild-wasm` (Serwist) |
+| `apps/web/tsconfig.json`, `apps/web/package.json` | `service-worker/` exclu du tsconfig principal et vérifié par son propre tsconfig (lib WebWorker) dans `typecheck` |
 | `infra/scripts/cloud-docker.sh` | repli sur l'image Docker Hub `darthsim/imgproxy` (même version) quand le proxy de la session cloud bloque les téléchargements de ghcr.io |
 
 ## Variables d'environnement
 
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (section « Session B » de `.env.example`, paire de développement) : Web Push. Facultatives pour le worker et l'API (sans elles : centre de notifications seulement).
 - `CENTRIFUGO_WS_URL` (facultative, section « Session B » de `.env.example`) : URL WebSocket de Centrifugo vue par les navigateurs ; déduite de `CENTRIFUGO_URL` si absente.
 - Le worker lit désormais `CENTRIFUGO_URL` et `CENTRIFUGO_HTTP_API_KEY` (facultatives : sans elles, le relais de l'outbox ne démarre pas).
 
 ## Migrations
 
+- `0005_*` : colonne `notification.pushed_at` (+ index partiel), table `notification_preference`.
 - `0004_*` : table `chat_preference`, index `message (sender_id, created_at)` (quota anti-spam).
 - `0003_*` : tables `impression`, `discovery_filter`, `discovery_undo` (jetable, à régénérer à la fusion).
 
 ## Mises à jour souhaitées dans CLAUDE.md / README / docs
+
+- docs/03 (PWA) : le service worker ne met en cache ni pages ni réponses d'API, par choix de confidentialité (appareils partagés).
+- Les réglages « accusés de lecture » et « statut en ligne » sont dans `(app)/reglages/notifications` (périmètre de B) ; A peut préférer les déplacer dans la confidentialité.
 
 - `CLAUDE.md`, section Commandes : ajouter `pnpm db:seed:dev` (membres fictifs, photos de synthèse, page `/dev`).
 
@@ -117,6 +132,7 @@
 - Les pages `/dev` et les clients API lisent le cookie de développement ; une fois Better Auth branché par A, `serverApi()` transmet déjà les cookies de la requête : rien à changer côté B.
 - Remplacer les prompts et intérêts `dev-` par le catalogue de A (le seed de développement les réutilisera s'ils existent, ou on adaptera `content.ts`).
 - Harmoniser la règle « profil complet » avec la complétude de A (PRO-05).
+- `RencontreProviders` enregistre le service worker (PWA, push) : à remonter dans le layout racine à l'intégration pour couvrir toute l'app.
 - `RencontreProviders` monte une connexion temps réel par section ; à l'intégration, le remonter dans `(app)/layout.tsx` pour garder une seule connexion entre les onglets.
 - Le menu de sécurité d'une conversation et le signalement d'un message appellent `safety.block` / `safety.report` (contexte `message`, `contextRef` = id du message) : à vérifier avec l'implémentation de A (copie chiffrée des messages précédents comme preuve).
 

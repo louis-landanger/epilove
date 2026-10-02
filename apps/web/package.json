@@ -8,7 +8,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "next typegen && tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p service-worker",
     "test:e2e": "playwright test",
     "test": "vitest run"
   },
@@ -23,14 +23,17 @@
     "@epilove/tokens": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/tanstack-query": "catalog:",
+    "@serwist/turbopack": "catalog:",
     "@tanstack/react-query": "catalog:",
     "centrifuge": "catalog:",
+    "esbuild": "catalog:",
     "motion": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "server-only": "catalog:"
+    "server-only": "catalog:",
+    "serwist": "catalog:"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",

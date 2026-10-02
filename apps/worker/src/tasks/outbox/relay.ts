@@ -9,6 +9,8 @@ export interface OutboxRelayOptions {
   /** Safety net when a notification is missed (connection loss, restart). */
   readonly pollIntervalMs?: number;
   readonly log?: (line: string) => void;
+  /** Runs after each drain (push notifications of the events just committed). */
+  readonly afterDrain?: () => Promise<unknown>;
 }
 
 /** Publishes a batch: one personal-channel event each, deduplicated by Centrifugo on retries. */
@@ -45,6 +47,7 @@ export async function startOutboxRelay(options: OutboxRelayOptions) {
           // Keep going until the outbox is empty.
         }
       } while (again && !stopped);
+      await options.afterDrain?.();
     } catch (error) {
       // Events stay pending and are retried on the next notification or poll.
       log(`outbox relay failed: ${error instanceof Error ? error.name : "unknown"}`);

@@ -1,0 +1,25 @@
+{
+  "name": "@epilove/notifications",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Notification types, discreet rendering and Web Push delivery.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "web-push": "catalog:"
+  },
+  "devDependencies": {
+    "@epilove/config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/web-push": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

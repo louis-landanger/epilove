@@ -12,6 +12,7 @@ import {
   match,
   message,
   messageRead,
+  notification,
   photo,
   preferences,
   profile,
@@ -364,6 +365,34 @@ export async function runDevSeed(options: DevSeedOptions): Promise<DevSeedSummar
       await db.insert(messageRead).values(reads);
     }
   }
+
+  // Notification centre (NOT-02): one entry per like received and per match, already pushed.
+  const matchedPairs = new Set(activity.matches.map((m) => [m.userA, m.userB].sort().join("|")));
+  const notificationRows = [
+    ...activity.likes
+      .filter(
+        (like) => like.kind !== "pass" && !matchedPairs.has([like.actorId, like.targetId].sort().join("|")),
+      )
+      .map((like) => ({
+        userId: like.targetId,
+        type: like.kind === "superlike" ? "superlike_received" : "like_received",
+        payload: {},
+        createdAt: new Date(now.getTime() - like.hoursAgo * HOUR),
+        readAt: like.hoursAgo > 48 ? new Date(now.getTime() - (like.hoursAgo - 2) * HOUR) : null,
+        pushedAt: new Date(now.getTime() - like.hoursAgo * HOUR),
+      })),
+    ...activity.matches.flatMap((m) =>
+      [m.userA, m.userB].map((userId) => ({
+        userId,
+        type: "match_created",
+        payload: {},
+        createdAt: new Date(now.getTime() - m.hoursAgo * HOUR),
+        readAt: m.hoursAgo > 24 ? new Date(now.getTime() - (m.hoursAgo - 1) * HOUR) : null,
+        pushedAt: new Date(now.getTime() - m.hoursAgo * HOUR),
+      })),
+    ),
+  ];
+  await insertInChunks(notificationRows, (chunk) => db.insert(notification).values(chunk));
 
   if (storage) {
     await storage.ensureBucket();

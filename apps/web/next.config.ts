@@ -32,7 +32,8 @@ const nextConfig: NextConfig = {
     "@epilove/realtime",
     "@epilove/tokens",
   ],
-  serverExternalPackages: ["postgres"],
+  // esbuild bundles the service worker at build time (@serwist/turbopack).
+  serverExternalPackages: ["postgres", "esbuild", "esbuild-wasm"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@epilove/db": "workspace:*",
+    "@epilove/notifications": "workspace:*",
     "@epilove/realtime": "workspace:*",
     "graphile-worker": "catalog:",
     "tsx": "catalog:",

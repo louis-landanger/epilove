@@ -92,7 +92,14 @@ test("the discovery, likes and messages screens have no detectable accessibility
 }) => {
   const member = await createTestMember(db, { firstName: "Cyan", graduationYear: 2039 });
   const page = await signIn(browser, member, baseURL);
-  for (const path of ["/decouvrir", "/likes", "/messages", "/campus/questionnaire"]) {
+  for (const path of [
+    "/decouvrir",
+    "/likes",
+    "/messages",
+    "/campus/questionnaire",
+    "/notifications",
+    "/reglages/notifications",
+  ]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
     const results = await new AxeBuilder({ page }).withTags(WCAG).analyze();
@@ -103,4 +110,11 @@ test("the discovery, likes and messages screens have no detectable accessibility
 test("pages ask to sign in without a member", async ({ page }) => {
   await page.goto("/decouvrir");
   await expect(page.getByRole("heading", { name: "Connecte-toi pour continuer" })).toBeVisible();
+});
+
+test("serves the service worker with push handling", async ({ request }) => {
+  const response = await request.get("/serwist/sw.js");
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["content-type"]).toContain("javascript");
+  expect(await response.text()).toContain("showNotification");
 });
