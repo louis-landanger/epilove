@@ -152,7 +152,13 @@ function requireEnv(name: string): string {
 
 export const waitlist = createWaitlistProcedures({
   hmacSecret: () => requireEnv("EMAIL_HMAC_SECRET"),
-  siteUrl: () => process.env.SITE_URL ?? "http://localhost:3000",
+  siteUrl: () => {
+    const appEnv = process.env.APP_ENV;
+    // Never send a localhost referral link from production: fail loudly instead.
+    return appEnv === "development" || appEnv === "test"
+      ? (process.env.SITE_URL ?? "http://localhost:3000")
+      : requireEnv("SITE_URL");
+  },
   mailer: () => {
     sharedMailer ??= createMailer(mailerConfigFromEnv());
     return sharedMailer;
