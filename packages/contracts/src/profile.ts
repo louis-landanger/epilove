@@ -20,6 +20,17 @@ export const catalog = z.object({
 });
 export type Catalog = z.infer<typeof catalog>;
 
+export const song = z.object({
+  provider: z.literal("itunes"),
+  trackId: z.string(),
+  title: z.string(),
+  artist: z.string(),
+  artworkUrl: z.url(),
+  previewUrl: z.url(),
+  trackViewUrl: z.url(),
+});
+export type SongInfo = z.infer<typeof song>;
+
 /** The member's own profile, as they edit it. */
 export const ownProfile = z.object({
   firstName: z.string(),
@@ -35,6 +46,8 @@ export const ownProfile = z.object({
   modes: z.array(z.enum(MODES)),
   promptAnswers: z.array(z.object({ promptId: z.uuid(), text: z.string() })),
   interestIds: z.array(z.uuid()),
+  /** "Mon son du moment" (PRO-07). */
+  anthem: song.nullable(),
   completeness: z.object({ score: z.int().min(0).max(100), tips: z.array(z.enum(COMPLETENESS_TIPS)) }),
 });
 export type OwnProfile = z.infer<typeof ownProfile>;
@@ -68,6 +81,23 @@ export const profileContract = {
         answers: z
           .array(z.object({ promptId: z.uuid(), text: z.string().max(400) }))
           .length(PROMPT_ANSWER_COUNT),
+      }),
+    )
+    .output(ownProfile),
+  /** Song search through the server (no direct call from browsers to Apple). */
+  searchSongs: oc
+    .errors({ RATE_LIMITED: { status: 429 }, UNAVAILABLE: { status: 503 } })
+    .input(z.object({ query: z.string().min(2).max(100) }))
+    .output(z.object({ songs: z.array(song) })),
+  /** Picks a song by its catalogue id (looked up again on the server), or removes it with `null`. */
+  setAnthem: oc
+    .errors({ ...profileErrors, NOT_FOUND: { status: 404 }, UNAVAILABLE: { status: 503 } })
+    .input(
+      z.object({
+        trackId: z
+          .string()
+          .regex(/^\d{1,15}$/)
+          .nullable(),
       }),
     )
     .output(ownProfile),

@@ -23,6 +23,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { api, errorCode, errorData } from "../api-client";
 import { PhotoManager } from "../media/photo-manager";
+import { AnthemPicker } from "./anthem";
 import { CompletenessGauge } from "./completeness-gauge";
 import { InterestsPicker } from "./interests-picker";
 import { ProfilePreview, type ProfilePreviewData } from "./profile-preview";
@@ -80,6 +81,7 @@ export function ProfileScreen({ initialProfile, initialPhotos, catalog }: Profil
         answer: answer.text,
       })),
       interests: profile.interestIds.flatMap((id) => interests.get(id) ?? []),
+      anthem: profile.anthem,
       photos,
     };
   }, [profile, photos, catalog, locale]);
@@ -132,6 +134,9 @@ export function ProfileScreen({ initialProfile, initialPhotos, catalog }: Profil
                 </Section>
                 <Section title={t("sections.interests")}>
                   <InterestsForm profile={profile} catalog={catalog} onSaved={setProfile} />
+                </Section>
+                <Section title={t("sections.anthem")}>
+                  <AnthemPicker current={profile.anthem} onSaved={setProfile} />
                 </Section>
               </div>
             ),

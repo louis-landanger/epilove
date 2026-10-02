@@ -4,6 +4,7 @@ import type { Mailer } from "@epilove/email";
 import type { ImgproxyConfig } from "@epilove/media";
 import type { Storage } from "@epilove/media/storage";
 import type { RateLimiter } from "@epilove/rate-limit";
+import type { MusicCatalog } from "./lib/music";
 
 /** The authenticated member behind a request. */
 export interface Viewer {
@@ -28,6 +29,8 @@ export interface ApiServices {
   readonly keyRing: () => KeyRing;
   /** Transactional emails (moderation decisions, notifications). */
   readonly mailer: () => Mailer;
+  /** Song search for "Mon son du moment" (PRO-07). */
+  readonly music: () => MusicCatalog;
   /** Public URL of the member app, for links in emails. */
   readonly appUrl: () => string;
   readonly now: () => Date;

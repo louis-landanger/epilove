@@ -39,7 +39,8 @@
     "photos": "Photos",
     "basics": "Infos",
     "prompts": "Prompts",
-    "interests": "Centres d'intérêt"
+    "interests": "Centres d'intérêt",
+    "anthem": "Son du moment"
   },
   "fields": {
     "firstName": "Prénom",
@@ -64,5 +65,18 @@
   "links": {
     "settings": "Réglages",
     "help": "Aide et sécurité"
+  },
+  "anthem": {
+    "title": "Mon son du moment",
+    "search": "Chercher un titre ou un artiste",
+    "empty": "Aucun titre trouvé.",
+    "unavailable": "La recherche musicale ne répond pas. Réessaie plus tard.",
+    "choose": "Choisir",
+    "remove": "Retirer",
+    "play": "Écouter un extrait de {title}",
+    "pause": "Mettre en pause",
+    "attribution": "Extrait fourni par Apple Music",
+    "open": "Ouvrir dans Apple Music",
+    "saved": "Ton son du moment est sur ton profil."
   }
 }

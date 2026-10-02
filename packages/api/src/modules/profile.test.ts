@@ -112,4 +112,16 @@ describe.skipIf(!url)("own profile", () => {
       code: "NOT_FOUND",
     });
   });
+
+  it("searches songs through the server and stores the one looked up again", async () => {
+    const client = api.clientFor(await insertActiveMember(api.db));
+    const { songs } = await client.profile.searchSongs({ query: "angele" });
+    expect(songs[0]?.title).toBe("Une seule vie");
+    const before = (await client.profile.me()).completeness.score;
+    const withSong = await client.profile.setAnthem({ trackId: "42" });
+    expect(withSong.anthem).toMatchObject({ trackId: "42", artist: "Angèle" });
+    expect(withSong.completeness.score).toBe(before + 5);
+    await expect(client.profile.setAnthem({ trackId: "999" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect((await client.profile.setAnthem({ trackId: null })).anthem).toBeNull();
+  });
 });

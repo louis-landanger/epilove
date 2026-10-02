@@ -40,6 +40,7 @@ describe.skipIf(!url)("onboarding and photos", () => {
       keyRing: () => ({ currentKeyId: "test", keys: new Map([["test", new Uint8Array(32).fill(7)]]) }),
       mailer: () => createMemoryMailer(),
       appUrl: () => "http://app.test",
+      music: () => ({ search: async () => [], lookup: async () => null }),
       now: () => now,
     },
   });

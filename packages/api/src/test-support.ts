@@ -15,6 +15,21 @@ export const TEST_KEY_RING: KeyRing = {
   keys: new Map([["test", new Uint8Array(32).fill(7)]]),
 };
 
+export const TEST_SONG = {
+  provider: "itunes" as const,
+  trackId: "42",
+  title: "Une seule vie",
+  artist: "Angèle",
+  artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/x/300x300bb.jpg",
+  previewUrl: "https://audio-ssl.itunes.apple.com/preview.m4a",
+  trackViewUrl: "https://music.apple.com/fr/album/x?i=42",
+};
+
+const TEST_MUSIC = {
+  search: async () => [TEST_SONG],
+  lookup: async (trackId: string) => (trackId === TEST_SONG.trackId ? TEST_SONG : null),
+};
+
 /** API wired to a real database and in-memory services, for integration tests. */
 export function createTestApi(url: string, now = new Date("2026-10-02T10:00:00Z")) {
   const { db, close } = createDatabase(url, { maxConnections: 4 });
@@ -43,6 +58,7 @@ export function createTestApi(url: string, now = new Date("2026-10-02T10:00:00Z"
       keyRing: () => TEST_KEY_RING,
       mailer: () => mailer,
       appUrl: () => "http://app.test",
+      music: () => TEST_MUSIC,
       now: () => now,
     },
   });

@@ -39,7 +39,8 @@
     "photos": "Photos",
     "basics": "Basics",
     "prompts": "Prompts",
-    "interests": "Interests"
+    "interests": "Interests",
+    "anthem": "Current song"
   },
   "fields": {
     "firstName": "First name",
@@ -64,5 +65,18 @@
   "links": {
     "settings": "Settings",
     "help": "Help and safety"
+  },
+  "anthem": {
+    "title": "My current song",
+    "search": "Search a song or an artist",
+    "empty": "No song found.",
+    "unavailable": "Music search isn't answering. Try again later.",
+    "choose": "Pick",
+    "remove": "Remove",
+    "play": "Play a preview of {title}",
+    "pause": "Pause",
+    "attribution": "Preview provided by Apple Music",
+    "open": "Open in Apple Music",
+    "saved": "Your current song is on your profile."
   }
 }

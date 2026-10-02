@@ -1,4 +1,5 @@
-import type { OwnProfile } from "@epilove/contracts";
+import type { OwnProfile, SongInfo } from "@epilove/contracts";
+import { song as songSchema } from "@epilove/contracts";
 import {
   ageOn,
   type Gender,
@@ -55,8 +56,14 @@ async function loadOwnProfile(db: Database, userId: string, now: Date): Promise<
     modes: (prefs?.modes ?? []) as Mode[],
     promptAnswers: answers.map((answer) => ({ promptId: answer.promptId, text: answer.text ?? "" })),
     interestIds,
+    anthem: parseAnthem(profile.anthem),
     completeness: { score: completeness.score, tips: [...completeness.tips] },
   };
+}
+
+function parseAnthem(value: unknown): SongInfo | null {
+  const parsed = songSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /** Runs a profile write and turns validation failures into `INVALID_VALUE`. */
@@ -169,6 +176,41 @@ export const profile = {
           await replacePromptAnswers(tx, userId, await checkedPromptAnswers(tx, input.answers));
         }),
       );
+      return loadOwnProfile(db, userId, context.services.now());
+    }),
+
+  searchSongs: os.profile.searchSongs.use(requireViewer).handler(async ({ context, input, errors }) => {
+    if (!(await withinQuota(context.services, "song-search", context.viewer.userId, 60, 600))) {
+      throw errors.RATE_LIMITED();
+    }
+    try {
+      return { songs: await context.services.music().search(input.query) };
+    } catch {
+      throw errors.UNAVAILABLE();
+    }
+  }),
+
+  setAnthem: os.profile.setAnthem
+    .use(requireViewer)
+    .use(editQuota)
+    .handler(async ({ context, input, errors }) => {
+      const { userId } = context.viewer;
+      const db = context.database();
+      if (!(await findOwnProfile(db, userId))) {
+        throw errors.NO_PROFILE();
+      }
+      let anthem: SongInfo | null = null;
+      if (input.trackId) {
+        try {
+          anthem = await context.services.music().lookup(input.trackId);
+        } catch {
+          throw errors.UNAVAILABLE();
+        }
+        if (!anthem) {
+          throw errors.NOT_FOUND();
+        }
+      }
+      await updateProfile(db, userId, { anthem: anthem ? { ...anthem } : null });
       return loadOwnProfile(db, userId, context.services.now());
     }),
 

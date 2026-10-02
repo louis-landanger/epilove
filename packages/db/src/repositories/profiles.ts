@@ -248,6 +248,7 @@ export type ProfilePatch = Partial<{
   languages: string[];
   intentions: string[];
   completeness: number;
+  anthem: Record<string, string> | null;
 }>;
 
 export async function updateProfile(db: Db, userId: string, patch: ProfilePatch) {

@@ -44,8 +44,9 @@ function contentSecurityPolicy(nonce: string) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' blob: data: ${media}`.trim(),
-    `media-src 'self' blob: ${media}`.trim(),
+    // Apple: artwork and 30-second previews of "Mon son du moment" (PRO-07).
+    `img-src 'self' blob: data: ${media} https://*.mzstatic.com`.replaceAll(/\s+/g, " "),
+    `media-src 'self' blob: ${media} https://*.apple.com`.replaceAll(/\s+/g, " "),
     "font-src 'self'",
     `connect-src 'self' ${realtime} ${uploads}${development ? " ws: wss:" : ""}`
       .replaceAll(/\s+/g, " ")

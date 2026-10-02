@@ -9,6 +9,7 @@ import { createRouterClient } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Hono } from "hono";
 import type { ApiContext, ApiServices, Viewer, ViewerResolver } from "./context";
+import { createItunesCatalog, type MusicCatalog } from "./lib/music";
 import { router } from "./router";
 
 export const API_BASE_PATH = "/api";
@@ -27,6 +28,7 @@ export function defaultServices(env: Record<string, string | undefined> = proces
   let storage: Storage | undefined;
   let keyRing: KeyRing | undefined;
   let mailer: Mailer | undefined;
+  let music: MusicCatalog | undefined;
   return {
     storage: () => {
       const local = env.APP_ENV === "development" || env.APP_ENV === "test";
@@ -54,6 +56,10 @@ export function defaultServices(env: Record<string, string | undefined> = proces
     mailer: () => {
       mailer ??= createMailer(mailerConfigFromEnv(env));
       return mailer;
+    },
+    music: () => {
+      music ??= createItunesCatalog();
+      return music;
     },
     appUrl: () => env.APP_URL ?? "http://localhost:3000",
     now: () => new Date(),

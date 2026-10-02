@@ -1,11 +1,12 @@
 "use client";
 
-import type { OwnPhoto } from "@epilove/contracts";
+import type { OwnPhoto, SongInfo } from "@epilove/contracts";
 import { SCHOOLS, type SchoolSlug } from "@epilove/core";
 import { Badge, SchoolChip } from "@epilove/ui";
 import { ImageOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Fragment, type ReactNode } from "react";
+import { AnthemCard } from "./anthem";
 
 export interface ProfilePreviewData {
   readonly firstName: string;
@@ -18,6 +19,7 @@ export interface ProfilePreviewData {
   readonly languages: readonly string[];
   readonly prompts: readonly { readonly question: string; readonly answer: string }[];
   readonly interests: readonly string[];
+  readonly anthem: SongInfo | null;
   readonly photos: readonly OwnPhoto[];
 }
 
@@ -71,6 +73,7 @@ export function ProfilePreview({ data }: { data: ProfilePreviewData }) {
         </div>
         {hero ? <StatusFlag photo={hero} /> : null}
       </div>
+      {data.anthem ? <AnthemCard song={data.anthem} /> : null}
       {blocks}
       {data.prompts.length < 2 && data.interests.length > 0 ? <Interests labels={data.interests} /> : null}
       <dl className="grid gap-3 rounded-[2rem] border border-paper/10 bg-paper/[0.03] p-5 text-sm sm:grid-cols-2">

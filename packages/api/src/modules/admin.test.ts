@@ -50,9 +50,17 @@ describe.skipIf(!url)("back-office", () => {
     const second = await readyPhoto(owner);
     const moderator = api.clientFor(await insertActiveMember(api.db), "moderator");
 
-    const queue = await moderator.admin.photoQueue({ limit: 100 });
-    expect(queue.photos.map((photo) => photo.id)).toEqual(expect.arrayContaining([first, second]));
-    const queued = queue.photos.find((photo) => photo.id === first);
+    // The shared test database may hold other pending photos: page through the queue.
+    const seen: Awaited<ReturnType<typeof moderator.admin.photoQueue>>["photos"] = [];
+    let cursor: string | undefined;
+    for (let page = 0; page < 50; page += 1) {
+      const queue = await moderator.admin.photoQueue({ limit: 100, cursor });
+      seen.push(...queue.photos);
+      if (queue.photos.length < 100) break;
+      cursor = queue.photos.at(-1)?.uploadedAt;
+    }
+    expect(seen.map((photo) => photo.id)).toEqual(expect.arrayContaining([first, second]));
+    const queued = seen.find((photo) => photo.id === first);
     expect(queued?.member.pseudonym).toMatch(/^M-/);
     expect(JSON.stringify(queued)).not.toContain("Alex");
 
