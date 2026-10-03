@@ -1,4 +1,7 @@
 {
+  "more": "Plus d'options",
+  "cancel": "Annuler",
+  "error": "Ça n'est pas passé. Réessaie.",
   "block": {
     "action": "Bloquer",
     "title": "Bloquer {name} ?",
@@ -31,5 +34,11 @@
     "urgent": "Si tu es en danger, appelle le 17 ou le 112.",
     "error": "Le signalement n'a pas pu être envoyé. Réessaie.",
     "rateLimited": "Tu as envoyé beaucoup de signalements aujourd'hui. Réessaie demain ou écris-nous depuis la page d'aide."
+  },
+  "unmatch": {
+    "action": "Annuler le match",
+    "title": "Annuler le match avec {name} ?",
+    "body": "La conversation sera fermée pour vous deux.",
+    "confirm": "Annuler le match"
   }
 }

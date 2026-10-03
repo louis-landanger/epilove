@@ -73,7 +73,6 @@
   },
   "offline": "Connexion perdue. Tes messages partiront dès le retour du réseau.",
   "reconnecting": "Reconnexion…",
-  "reported": "Merci, ton signalement a bien été reçu.",
   "warning": {
     "title": "Tu es sûr·e de vouloir envoyer ça ?",
     "lead": "Ce message pourrait blesser. Tu peux le reformuler, ou l'envoyer quand même.",

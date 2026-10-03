@@ -6,8 +6,8 @@ import { ORPCError } from "@orpc/client";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { ReportDialog } from "@/components/acces/safety/safety-dialogs";
 import { api } from "@/lib/rencontre/api.client";
-import { ReportSheet } from "../safety/safety-menu";
 import { Sheet } from "../ui/sheet";
 
 const CAMPUS_TIME_ZONE = "Europe/Paris";
@@ -329,13 +329,12 @@ export function KitScreen({ initial }: { initial: DateKit }) {
       <KitLinks kit={kit} onChange={setKit} />
       <EmergencyNumbers />
 
-      <ReportSheet
-        open={reporting}
-        userId={kit.otherUserId}
-        name={kit.otherFirstName}
+      <ReportDialog
+        target={{ userId: kit.otherUserId, firstName: kit.otherFirstName }}
         context="profile"
-        onClose={() => setReporting(false)}
-        onDone={() => {
+        open={reporting}
+        onOpenChange={setReporting}
+        onReported={() => {
           setReporting(false);
           setReported(true);
         }}

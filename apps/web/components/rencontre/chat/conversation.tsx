@@ -7,11 +7,12 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ReportDialog } from "@/components/acces/safety/safety-dialogs";
+import { SafetyMenu } from "@/components/acces/safety/safety-menu";
 import { api } from "@/lib/rencontre/api.client";
 import { useConnectionState, useRealtime } from "@/lib/rencontre/realtime";
 import { dequeueMessage, queuedMessages, queueMessage } from "@/lib/rencontre/send-queue";
 import { useOnline } from "@/lib/rencontre/use-online";
-import { ReportSheet, SafetyMenu } from "../safety/safety-menu";
 import { Sheet } from "../ui/sheet";
 import { AiIcebreakers } from "./ai-icebreakers";
 import { Avatar } from "./avatar";
@@ -617,10 +618,9 @@ export function Conversation({ thread }: { thread: ThreadView }) {
         </a>
         <div className="ml-auto">
           <SafetyMenu
-            userId={thread.other.userId}
-            name={thread.other.firstName}
+            target={{ userId: thread.other.userId, firstName: thread.other.firstName }}
             matchId={thread.matchId}
-            context="profile"
+            className="size-11 border border-paper/20 bg-ink/60 backdrop-blur-md"
             onDone={(action) => {
               if (action !== "reported") {
                 router.replace("/messages");
@@ -745,16 +745,17 @@ export function Conversation({ thread }: { thread: ThreadView }) {
         {notice && <p className="mb-2 rounded-2xl bg-paper/10 px-4 py-2 text-sm">{notice}</p>}
       </div>
 
-      <ReportSheet
-        open={reporting !== null}
-        userId={thread.other.userId}
-        name={thread.other.firstName}
+      <ReportDialog
+        target={{ userId: thread.other.userId, firstName: thread.other.firstName }}
         context="message"
         contextRef={reporting ?? undefined}
-        onClose={() => setReporting(null)}
-        onDone={() => {
+        open={reporting !== null}
+        onOpenChange={(open) => {
+          if (!open) setReporting(null);
+        }}
+        onReported={({ blocked }) => {
           setReporting(null);
-          say(t("reported"));
+          if (blocked) router.replace("/messages");
         }}
       />
 

@@ -22,7 +22,7 @@ export interface BlockDialogProps {
 /** SAF-01: confirmation, then an immediate, mutual and silent block. */
 export function BlockDialog({ target, open, onOpenChange, onBlocked }: BlockDialogProps) {
   const t = useTranslations("safety.block");
-  const tSettings = useTranslations("settings");
+  const common = useTranslations("safety");
   const toast = useToast();
   const [pending, setPending] = useState(false);
 
@@ -34,7 +34,7 @@ export function BlockDialog({ target, open, onOpenChange, onBlocked }: BlockDial
       onOpenChange(false);
       onBlocked?.();
     } catch {
-      toast.error(tSettings("error"));
+      toast.error(common("error"));
     } finally {
       setPending(false);
     }
@@ -49,7 +49,7 @@ export function BlockDialog({ target, open, onOpenChange, onBlocked }: BlockDial
       footer={
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {tSettings("data.cancel")}
+            {common("cancel")}
           </Button>
           <Button variant="danger" loading={pending} onClick={() => void confirm()}>
             {t("confirm")}
@@ -146,5 +146,53 @@ export function ReportDialog({
         <CheckboxField label={t("alsoBlock")} checked={alsoBlock} onCheckedChange={setAlsoBlock} />
       </div>
     </Dialog>
+  );
+}
+
+export interface UnmatchDialogProps {
+  readonly target: SafetyTarget;
+  readonly matchId: string;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly onUnmatched?: () => void;
+}
+
+/** CHAT-13: ends the match for both, after a confirmation. */
+export function UnmatchDialog({ target, matchId, open, onOpenChange, onUnmatched }: UnmatchDialogProps) {
+  const t = useTranslations("safety.unmatch");
+  const common = useTranslations("safety");
+  const toast = useToast();
+  const [pending, setPending] = useState(false);
+
+  async function confirm() {
+    setPending(true);
+    try {
+      await api().matches.unmatch({ matchId });
+      onOpenChange(false);
+      onUnmatched?.();
+    } catch {
+      toast.error(common("error"));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t("title", { name: target.firstName })}
+      description={t("body")}
+      footer={
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            {common("cancel")}
+          </Button>
+          <Button variant="danger" loading={pending} onClick={() => void confirm()}>
+            {t("confirm")}
+          </Button>
+        </div>
+      }
+    />
   );
 }

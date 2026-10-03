@@ -5,9 +5,9 @@ import { ORPCError } from "@orpc/client";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createContext, type ReactNode, use, useState } from "react";
+import { SafetyMenu } from "@/components/acces/safety/safety-menu";
 import { api } from "@/lib/rencontre/api.client";
 import { Liaison } from "../matches/liaison";
-import { SafetyMenu } from "../safety/safety-menu";
 import { type LikeRequest, LikeSheet } from "./like-sheet";
 import { HeartButton, type LikedContent } from "./member-card";
 
@@ -178,10 +178,9 @@ export function ProfileHeaderActions({
         </svg>
       </button>
       <SafetyMenu
-        userId={userId}
-        name={name}
+        target={{ userId, firstName: name }}
         matchId={currentMatch ?? matchId}
-        context="profile"
+        className="size-11 border border-paper/20 bg-ink/60 backdrop-blur-md"
         onDone={(action) => {
           if (action === "reported") {
             return;

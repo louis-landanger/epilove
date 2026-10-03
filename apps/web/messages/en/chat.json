@@ -73,7 +73,6 @@
   },
   "offline": "Connection lost. Your messages will be sent once you're back online.",
   "reconnecting": "Reconnecting…",
-  "reported": "Thank you, your report was received.",
   "warning": {
     "title": "Are you sure you want to send this?",
     "lead": "This message could hurt. You can rephrase it, or send it anyway.",

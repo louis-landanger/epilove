@@ -1,4 +1,7 @@
 {
+  "more": "More options",
+  "cancel": "Cancel",
+  "error": "That didn't go through. Try again.",
   "block": {
     "action": "Block",
     "title": "Block {name}?",
@@ -31,5 +34,11 @@
     "urgent": "If you're in danger, call 17 or 112.",
     "error": "The report couldn't be sent. Try again.",
     "rateLimited": "You've sent many reports today. Try again tomorrow or write to us from the help page."
+  },
+  "unmatch": {
+    "action": "Unmatch",
+    "title": "Unmatch {name}?",
+    "body": "The conversation will close for both of you.",
+    "confirm": "Unmatch"
   }
 }
