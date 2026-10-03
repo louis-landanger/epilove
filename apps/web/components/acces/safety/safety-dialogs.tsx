@@ -4,7 +4,7 @@ import { REPORT_REASONS, type ReportContext, type ReportReason } from "@epilove/
 import { Button, CheckboxField, Dialog, RadioGroupField, TextAreaField, useToast } from "@epilove/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { api, errorCode } from "../api-client";
+import { api, errorCode } from "@/lib/api-client";
 
 export interface SafetyTarget {
   readonly userId: string;
@@ -29,7 +29,7 @@ export function BlockDialog({ target, open, onOpenChange, onBlocked }: BlockDial
   async function confirm() {
     setPending(true);
     try {
-      await api().safety.block({ userId: target.userId });
+      await api.safety.block({ userId: target.userId });
       toast.success(t("done", { name: target.firstName }));
       onOpenChange(false);
       onBlocked?.();
@@ -92,7 +92,7 @@ export function ReportDialog({
     }
     setPending(true);
     try {
-      const { reportId } = await api().safety.report({
+      const { reportId } = await api.safety.report({
         reportedId: target.userId,
         context,
         contextRef,
@@ -167,7 +167,7 @@ export function UnmatchDialog({ target, matchId, open, onOpenChange, onUnmatched
   async function confirm() {
     setPending(true);
     try {
-      await api().matches.unmatch({ matchId });
+      await api.matches.unmatch({ matchId });
       onOpenChange(false);
       onUnmatched?.();
     } catch {

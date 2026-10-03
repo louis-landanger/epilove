@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createContext, type ReactNode, use, useState } from "react";
 import { SafetyMenu } from "@/components/acces/safety/safety-menu";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 import { Liaison } from "../matches/liaison";
 import { type LikeRequest, LikeSheet } from "./like-sheet";
 import { HeartButton, type LikedContent } from "./member-card";

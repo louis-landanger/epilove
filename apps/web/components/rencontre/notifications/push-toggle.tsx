@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 
 type Status = "loading" | "unsupported" | "ios-install" | "not-configured" | "denied" | "off" | "on";
 

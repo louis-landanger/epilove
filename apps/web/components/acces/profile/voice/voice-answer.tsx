@@ -5,7 +5,7 @@ import { Button } from "@epilove/ui";
 import { Mic, RotateCcw, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { api } from "../../api-client";
+import { api } from "@/lib/api-client";
 import { VoicePlayer } from "./voice-player";
 import { VoiceRecorder } from "./voice-recorder";
 
@@ -28,8 +28,8 @@ export function VoiceAnswerControls({
   useEffect(() => {
     if (!checking) return;
     const timer = window.setInterval(() => {
-      void api()
-        .profile.me()
+      void api.profile
+        .me()
         .then((profile) => {
           const next = profile.promptAnswers.find((answer) => answer.promptId === promptId)?.voice;
           if (next?.stage !== voice?.stage) onSaved(profile);
@@ -42,7 +42,7 @@ export function VoiceAnswerControls({
   async function remove() {
     setRemoving(true);
     try {
-      onSaved(await api().profile.removeVoice({ promptId }));
+      onSaved(await api.profile.removeVoice({ promptId }));
     } finally {
       setRemoving(false);
     }

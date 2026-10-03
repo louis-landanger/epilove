@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { orpc } from "@/lib/rencontre/api.client";
+import { orpc } from "@/lib/api-client";
 import { contentLocale } from "@/lib/rencontre/locale";
 import { useRealtime } from "@/lib/rencontre/realtime";
 import { SchoolGlyph, schoolColor } from "./school";

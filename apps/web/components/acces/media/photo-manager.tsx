@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Captions, ImagePlus, Star, Trash2 } from "lucide
 import { useTranslations } from "next-intl";
 import { type ChangeEvent, type DragEvent, useCallback, useEffect, useRef, useState } from "react";
 import { thumbHashToDataURL } from "thumbhash";
-import { api, errorCode } from "../api-client";
+import { api, errorCode } from "@/lib/api-client";
 import { PhotoCropDialog } from "./photo-crop-dialog";
 import { decodeImage, postPresignedForm } from "./prepare-image";
 
@@ -72,7 +72,7 @@ export function PhotoManager({
   const input = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
-    const result = await api().media.list();
+    const result = await api.media.list();
     setPhotos(result.photos);
     return result.photos;
   }, []);
@@ -135,14 +135,14 @@ export function PhotoManager({
         current.map((item) => (item.localId === localId ? { ...item, ...patch } : item)),
       );
     try {
-      const { photoId, upload: form } = await api().media.requestUpload({
+      const { photoId, upload: form } = await api.media.requestUpload({
         contentType: "image/jpeg",
         size: blob.size,
       });
       update({ photoId });
       await refresh();
       await postPresignedForm(form.url, form.fields, blob, (progress) => update({ progress }));
-      await api().media.confirmUpload({ photoId });
+      await api.media.confirmUpload({ photoId });
       setPreviews((current) => new Map(current).set(photoId, previewUrl));
       await refresh();
     } catch (error) {
@@ -161,7 +161,7 @@ export function PhotoManager({
     const byId = new Map(photos.map((photo) => [photo.id, photo]));
     setPhotos(ids.map((id, position) => ({ ...(byId.get(id) as OwnPhoto), position })));
     try {
-      setPhotos((await api().media.reorder({ photoIds: ids })).photos);
+      setPhotos((await api.media.reorder({ photoIds: ids })).photos);
     } catch {
       toast.error(t("uploadFailed"));
       await refresh();
@@ -179,7 +179,7 @@ export function PhotoManager({
 
   async function remove(id: string) {
     try {
-      setPhotos((await api().media.remove({ photoId: id })).photos);
+      setPhotos((await api.media.remove({ photoId: id })).photos);
     } catch {
       toast.error(t("uploadFailed"));
     }
@@ -402,7 +402,7 @@ function AltTextDialog({
   async function save() {
     setPending(true);
     try {
-      onSaved(await api().media.setAltText({ photoId: photo.id, altText: value.trim() || null }));
+      onSaved(await api.media.setAltText({ photoId: photo.id, altText: value.trim() || null }));
     } catch {
       toast.error(t("uploadFailed"));
     } finally {

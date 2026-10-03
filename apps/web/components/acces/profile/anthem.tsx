@@ -5,7 +5,7 @@ import { Button, Spinner, TextField, useToast } from "@epilove/ui";
 import { Music2, Pause, Play, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { api, errorCode } from "../api-client";
+import { api, errorCode } from "@/lib/api-client";
 
 /** Plays one preview at a time across the page. */
 let playing: HTMLAudioElement | null = null;
@@ -101,7 +101,7 @@ export function AnthemPicker({
     const timer = setTimeout(async () => {
       setSearching(true);
       try {
-        setSongs((await api().profile.searchSongs({ query: term })).songs);
+        setSongs((await api.profile.searchSongs({ query: term })).songs);
         setError(null);
       } catch (caught) {
         setError(errorCode(caught) === "RATE_LIMITED" ? t("unavailable") : t("unavailable"));
@@ -114,7 +114,7 @@ export function AnthemPicker({
 
   async function choose(trackId: string | null) {
     try {
-      onSaved(await api().profile.setAnthem({ trackId }));
+      onSaved(await api.profile.setAnthem({ trackId }));
       if (trackId) {
         toast.success(t("saved"));
         setQuery("");

@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 
 type Draft = { answer: string | null; acceptable: string[]; importance: Importance };
 

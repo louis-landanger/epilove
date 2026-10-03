@@ -6,7 +6,7 @@ import { Sheet } from "@epilove/ui";
 import { ORPCError } from "@orpc/client";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 import { contentLocale } from "@/lib/rencontre/locale";
 
 export interface DateDraft {

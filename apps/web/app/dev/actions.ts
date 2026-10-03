@@ -15,7 +15,7 @@ export async function chooseDevMember(formData: FormData) {
     jar.set(DEV_MEMBER_COOKIE, id, {
       path: "/",
       sameSite: "lax",
-      httpOnly: false,
+      httpOnly: true,
       maxAge: 60 * 60 * 24 * 30,
     });
   } else {

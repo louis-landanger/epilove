@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { publicHref } from "@/i18n/paths";
-import { api, errorCode } from "../api-client";
+import { api, errorCode } from "@/lib/api-client";
 import { LocaleSwitcher } from "../locale/locale-switcher";
 import { LockSettings } from "../lock/lock-settings";
 import { DataExport } from "./data-export";
@@ -56,11 +56,11 @@ export function SettingsScreen({
   const [status, setStatus] = useState(account.status);
   const [pausedUntil, setPausedUntil] = useState(account.pausedUntil);
 
-  async function update(patch: Parameters<ReturnType<typeof api>["preferences"]["update"]>[0]) {
+  async function update(patch: Parameters<(typeof api)["preferences"]["update"]>[0]) {
     const previous = settings;
     setSettings({ ...settings, ...patch });
     try {
-      setSettings(await api().preferences.update(patch));
+      setSettings(await api.preferences.update(patch));
     } catch {
       setSettings(previous);
       toast.error(t("error"));
@@ -69,7 +69,7 @@ export function SettingsScreen({
 
   async function togglePause(paused: boolean, until: string | null = null) {
     try {
-      const next = paused ? await api().account.pause({ until }) : await api().account.resume();
+      const next = paused ? await api.account.pause({ until }) : await api.account.resume();
       setStatus(next.status);
       setPausedUntil(next.pausedUntil);
       toast.success(paused ? t("visibility.paused") : t("visibility.resumed"));
@@ -266,7 +266,7 @@ function ModesEditor({
     setPending(true);
     try {
       const modes: Mode[] = choice === "both" ? ["love", "friends"] : [choice];
-      const next = await api().preferences.setModes({
+      const next = await api.preferences.setModes({
         modes,
         sensitiveConsent: love && withConsent,
         interestedIn: love && withConsent ? interestedIn : [],
@@ -423,7 +423,7 @@ function HiddenContacts({ initial }: { initial: readonly HiddenContact[] }) {
     }
     setPending(true);
     try {
-      setContacts((await api().preferences.hideContact({ email: parsed.canonicalEmail })).contacts);
+      setContacts((await api.preferences.hideContact({ email: parsed.canonicalEmail })).contacts);
       setEmail("");
       setError(null);
       toast.success(t("added"));
@@ -436,7 +436,7 @@ function HiddenContacts({ initial }: { initial: readonly HiddenContact[] }) {
 
   async function remove(id: string) {
     try {
-      setContacts((await api().preferences.unhideContact({ id })).contacts);
+      setContacts((await api.preferences.unhideContact({ id })).contacts);
     } catch {
       toast.error(t("invalid"));
     }
@@ -504,7 +504,7 @@ function BlockedPeople({ initial }: { initial: readonly Blocked[] }) {
 
   async function unblock(userId: string) {
     try {
-      await api().safety.unblock({ userId });
+      await api.safety.unblock({ userId });
       setPeople((current) => current.filter((person) => person.userId !== userId));
       toast.success(t("unblocked"));
     } catch {

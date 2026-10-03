@@ -6,7 +6,7 @@ import { AnimatePresence, animate, motion, type PanInfo, useMotionValue, useTran
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 import { contentLocale } from "@/lib/rencontre/locale";
 import { useOnline } from "@/lib/rencontre/use-online";
 import { Liaison } from "../matches/liaison";

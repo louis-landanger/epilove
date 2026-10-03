@@ -6,7 +6,7 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { api } from "../api-client";
+import { api } from "@/lib/api-client";
 
 /** Self-service, immediate deletion (SAF-14), confirmed by typing a word. */
 export function DeleteAccount() {
@@ -22,7 +22,7 @@ export function DeleteAccount() {
   async function remove() {
     setPending(true);
     try {
-      await api().account.delete({ confirm: true });
+      await api.account.delete({ confirm: true });
       await authClient.signOut().catch(() => undefined);
       router.replace("/compte/supprime" as Route);
     } catch {

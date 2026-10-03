@@ -1,14 +1,18 @@
 "use client";
 
 import { type ApiClient, createApiClient } from "@epilove/contracts/client";
+import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 
-let client: ApiClient | undefined;
+/**
+ * Typed client of the same-origin API, for the browser. The session cookie
+ * (or, in development, the cookie of the member chosen on /dev) goes along.
+ */
+export const api: ApiClient = createApiClient({
+  url: typeof window === "undefined" ? "http://localhost/api/rpc" : `${window.location.origin}/api/rpc`,
+});
 
-/** Typed client for the same-origin API, created on first use in the browser. */
-export function api(): ApiClient {
-  client ??= createApiClient({ url: new URL("/api/rpc", window.location.origin).toString() });
-  return client;
-}
+/** TanStack Query helpers: `orpc.discovery.deck.queryOptions({ input })`… */
+export const orpc = createTanstackQueryUtils(api);
 
 /** The typed error code of an API error (`INVALID_VALUE`, `UNDERAGE`…), if any. */
 export function errorCode(error: unknown): string | null {

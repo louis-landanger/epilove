@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { ReportDialog } from "@/components/acces/safety/safety-dialogs";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 
 const CAMPUS_TIME_ZONE = "Europe/Paris";
 const SHARE_ERRORS = ["not_accepted", "over", "too_many", "rate_limited"] as const;

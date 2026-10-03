@@ -21,7 +21,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, type ReactNode, useCallback, useMemo, useRef, useState } from "react";
-import { api, errorCode, errorData } from "../api-client";
+import { api, errorCode, errorData } from "@/lib/api-client";
 import { PhotoManager } from "../media/photo-manager";
 import { AnthemPicker } from "./anthem";
 import { CompletenessGauge } from "./completeness-gauge";
@@ -60,8 +60,8 @@ export function ProfileScreen({ initialProfile, initialPhotos, catalog }: Profil
     const signature = signatureOf(next);
     if (signature !== photoSignature.current) {
       photoSignature.current = signature;
-      void api()
-        .profile.me()
+      void api.profile
+        .me()
         .then(setProfile)
         .catch(() => undefined);
     }
@@ -272,7 +272,7 @@ function BasicsForm({ profile, onSaved }: { profile: OwnProfile; onSaved: (profi
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await run(() =>
-      api().profile.update({
+      api.profile.update({
         firstName: values.firstName,
         gender: values.gender,
         pronouns: values.pronouns.trim() || null,
@@ -377,7 +377,7 @@ function PromptsForm({
       return;
     }
     await run(() =>
-      api().profile.setPrompts({
+      api.profile.setPrompts({
         answers: slots.map((slot) => ({ promptId: slot.promptId ?? "", text: slot.text })),
       }),
     );
@@ -426,7 +426,7 @@ function InterestsForm({
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        if (valid) void run(() => api().profile.setInterests({ interestIds: selected }));
+        if (valid) void run(() => api.profile.setInterests({ interestIds: selected }));
       }}
       className="flex flex-col gap-6"
       noValidate

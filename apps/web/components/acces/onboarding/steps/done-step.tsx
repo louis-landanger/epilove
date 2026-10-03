@@ -7,8 +7,8 @@ import { Fingerprint, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { api, errorCode } from "@/lib/api-client";
 import { HOME_PATH } from "@/lib/routes";
-import { api, errorCode } from "../../api-client";
 import { StepShell } from "../step-shell";
 import type { StepProps } from "../types";
 
@@ -35,7 +35,7 @@ export function DoneStep({ state, focusTitle }: StepProps) {
   async function activate() {
     setPending(true);
     try {
-      await api().onboarding.complete();
+      await api.onboarding.complete();
       if (passkeySupported) {
         setPhase("passkey");
       } else {

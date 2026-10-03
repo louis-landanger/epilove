@@ -3,7 +3,7 @@
 import type { NotificationItem } from "@epilove/contracts";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 import { useRealtime } from "@/lib/rencontre/realtime";
 
 const KNOWN = [

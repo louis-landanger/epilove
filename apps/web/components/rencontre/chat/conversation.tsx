@@ -11,7 +11,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReportDialog } from "@/components/acces/safety/safety-dialogs";
 import { SafetyMenu } from "@/components/acces/safety/safety-menu";
-import { api, orpc } from "@/lib/rencontre/api.client";
+import { api, orpc } from "@/lib/api-client";
 import { useConnectionState, useRealtime } from "@/lib/rencontre/realtime";
 import { dequeueMessage, queuedMessages, queueMessage } from "@/lib/rencontre/send-queue";
 import { useOnline } from "@/lib/rencontre/use-online";

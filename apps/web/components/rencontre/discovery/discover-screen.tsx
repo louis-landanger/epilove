@@ -3,7 +3,7 @@
 import type { DeckFilterView, MemberCard } from "@epilove/contracts";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 import { contentLocale } from "@/lib/rencontre/locale";
 import { Deck, type DeckInitial } from "./deck";
 import { DropHeader } from "./drop-header";

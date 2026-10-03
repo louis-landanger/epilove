@@ -10,8 +10,8 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { type ComponentType, useCallback, useEffect, useState } from "react";
+import { api, errorCode, errorData } from "@/lib/api-client";
 import { HOME_PATH } from "@/lib/routes";
-import { api, errorCode, errorData } from "../api-client";
 import { AudienceStep } from "./steps/audience-step";
 import { BirthStep } from "./steps/birth-step";
 import { CampusStep } from "./steps/campus-step";
@@ -61,7 +61,7 @@ export function OnboardingFlow() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([api().onboarding.state(), api().profile.catalog()])
+    Promise.all([api.onboarding.state(), api.profile.catalog()])
       .then(([loaded, loadedCatalog]) => {
         if (cancelled) return;
         setState(loaded);
@@ -98,7 +98,7 @@ export function OnboardingFlow() {
     async (input: OnboardingSaveInput): Promise<SaveResult> => {
       setPending(true);
       try {
-        setState(await api().onboarding.save(input));
+        setState(await api.onboarding.save(input));
         next();
         return { ok: true };
       } catch (error) {

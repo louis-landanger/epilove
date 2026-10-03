@@ -3,7 +3,7 @@
 import { type BroadcastChannel, parseRealtimeEvent, type RealtimeEvent } from "@epilove/realtime/events";
 import type { Centrifuge, Subscription } from "centrifuge";
 import { createContext, type ReactNode, use, useCallback, useEffect, useRef, useState } from "react";
-import { api } from "./api.client";
+import { api } from "@/lib/api-client";
 
 /**
  * Realtime connection (Centrifugo) for the signed-in member: one WebSocket per

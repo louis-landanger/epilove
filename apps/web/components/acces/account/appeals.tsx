@@ -3,9 +3,9 @@
 import { Badge, Button, TextAreaField, useToast } from "@epilove/ui";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
-import { api } from "../api-client";
+import { api } from "@/lib/api-client";
 
-type Decision = Awaited<ReturnType<ReturnType<typeof api>["account"]["decisions"]>>["decisions"][number];
+type Decision = Awaited<ReturnType<(typeof api)["account"]["decisions"]>>["decisions"][number];
 
 /** The member's decisions and their appeal (ADM-04, DSA art. 17 and 20). */
 export function Appeals({ initial }: { initial: readonly Decision[] }) {
@@ -75,7 +75,7 @@ function AppealForm({ decisionId, onSent }: { decisionId: string; onSent: () => 
         event.preventDefault();
         setPending(true);
         try {
-          await api().account.appeal({ decisionId, text });
+          await api.account.appeal({ decisionId, text });
           toast.success(t("sent"));
           onSent();
         } catch {

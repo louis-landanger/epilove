@@ -3,7 +3,7 @@
 import type { AiIcebreakersState, NotificationPreferencesView, QuietHoursView } from "@epilove/contracts";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 
 const GROUPS = ["likes", "matches", "messages", "drop", "pact", "events"] as const;
 type Group = (typeof GROUPS)[number];

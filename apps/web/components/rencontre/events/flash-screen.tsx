@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { encode } from "uqr";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 
 type ScanResult = { outcome: "waiting" | "matched"; match: { matchId: string; firstName: string } | null };
 

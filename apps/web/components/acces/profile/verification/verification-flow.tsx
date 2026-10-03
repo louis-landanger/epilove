@@ -8,7 +8,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
-import { api, errorCode } from "../../api-client";
+import { api, errorCode } from "@/lib/api-client";
 import { decodeImage, postPresignedForm, renderCrop } from "../../media/prepare-image";
 
 const GESTURE_GLYPHS: Record<VerificationGesture, string> = {
@@ -144,16 +144,16 @@ function SelfieCapture({
     setSending(true);
     setError(null);
     try {
-      const upload = await api().verification.requestUpload({
+      const upload = await api.verification.requestUpload({
         id: attempt.id,
         contentType: "image/jpeg",
         size: selfie.blob.size,
       });
       await postPresignedForm(upload.url, upload.fields, selfie.blob, () => {});
-      onSent(await api().verification.submit({ id: attempt.id }));
+      onSent(await api.verification.submit({ id: attempt.id }));
     } catch (failure) {
       if (errorCode(failure) === "EXPIRED") {
-        onSent(await api().verification.state());
+        onSent(await api.verification.state());
         setError(t("expired"));
       } else {
         setError(t("error"));
@@ -247,14 +247,10 @@ export function VerificationFlow({ initial }: { initial: VerificationState }) {
     setStarting(true);
     setError(null);
     try {
-      await api().verification.start();
-      setState(await api().verification.state());
+      await api.verification.start();
+      setState(await api.verification.state());
     } catch {
-      setState(
-        await api()
-          .verification.state()
-          .catch(() => state),
-      );
+      setState(await api.verification.state().catch(() => state));
       setError(t("error"));
     } finally {
       setStarting(false);

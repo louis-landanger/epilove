@@ -4,9 +4,9 @@ import { Button, useToast } from "@epilove/ui";
 import { Download } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-import { api, errorCode } from "../api-client";
+import { api, errorCode } from "@/lib/api-client";
 
-type Export = Awaited<ReturnType<ReturnType<typeof api>["account"]["exports"]>>["exports"][number];
+type Export = Awaited<ReturnType<(typeof api)["account"]["exports"]>>["exports"][number];
 
 /** Self-service export (SAF-14): built in the background, downloadable for 7 days. */
 export function DataExport() {
@@ -17,7 +17,7 @@ export function DataExport() {
   const [pending, setPending] = useState(false);
 
   const load = useCallback(async () => {
-    setExports((await api().account.exports()).exports);
+    setExports((await api.account.exports()).exports);
   }, []);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function DataExport() {
   async function request() {
     setPending(true);
     try {
-      await api().account.requestExport();
+      await api.account.requestExport();
       toast.success(t("exportRequested"));
       await load();
     } catch (error) {

@@ -6,7 +6,7 @@ import { ORPCError } from "@orpc/client";
 import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 import { contentLocale } from "@/lib/rencontre/locale";
 import { schoolColor } from "../discovery/school";
 

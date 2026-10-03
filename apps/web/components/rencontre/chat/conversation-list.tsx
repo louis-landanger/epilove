@@ -3,7 +3,7 @@
 import type { MatchSummary } from "@epilove/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFormatter, useLocale, useNow, useTranslations } from "next-intl";
-import { orpc } from "@/lib/rencontre/api.client";
+import { orpc } from "@/lib/api-client";
 import { contentLocale } from "@/lib/rencontre/locale";
 import { useRealtime } from "@/lib/rencontre/realtime";
 import { Avatar } from "./avatar";

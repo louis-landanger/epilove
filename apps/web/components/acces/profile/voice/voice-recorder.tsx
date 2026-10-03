@@ -6,7 +6,7 @@ import { Button, Dialog } from "@epilove/ui";
 import { Mic, RotateCcw, Square } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { api } from "../../api-client";
+import { api } from "@/lib/api-client";
 import { postPresignedForm } from "../../media/prepare-image";
 import { VoicePlayer } from "./voice-player";
 import { Waveform } from "./waveform";
@@ -141,7 +141,7 @@ export function VoiceRecorder({
     }
     setState("uploading");
     try {
-      const form = await api().profile.requestVoiceUpload({
+      const form = await api.profile.requestVoiceUpload({
         promptId,
         contentType,
         size: recording.blob.size,
@@ -149,7 +149,7 @@ export function VoiceRecorder({
         peaks: recording.peaks,
       });
       await postPresignedForm(form.url, form.fields, recording.blob, () => {});
-      onSaved(await api().profile.confirmVoiceUpload({ promptId }));
+      onSaved(await api.profile.confirmVoiceUpload({ promptId }));
       reset();
       onOpenChange(false);
     } catch {

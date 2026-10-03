@@ -3,7 +3,7 @@
 import type { PactStatsView } from "@epilove/contracts";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 import { contentLocale } from "@/lib/rencontre/locale";
 
 /** "Le Pacte en chiffres" (PAC-04), after the reveal: anonymous aggregates of ten people or more. */

@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useTransition, ViewTransition } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 import { SchoolBadge, schoolFoil } from "../discovery/school";
 import { Liaison } from "../matches/liaison";
 

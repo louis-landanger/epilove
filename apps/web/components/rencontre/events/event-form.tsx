@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { api } from "@/lib/rencontre/api.client";
+import { api } from "@/lib/api-client";
 
 /** `datetime-local` works in the browser's time zone, like the members reading the event. */
 const toLocalInput = (iso: string | null) => {
