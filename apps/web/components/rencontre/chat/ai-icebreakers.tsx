@@ -1,10 +1,10 @@
 "use client";
 
+import { Sheet } from "@epilove/ui";
 import { ORPCError } from "@orpc/client";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
-import { Sheet } from "../ui/sheet";
 
 type State =
   | { readonly kind: "idle" }

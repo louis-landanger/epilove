@@ -105,7 +105,7 @@ export function Questionnaire({
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-4 pt-6 pb-8 sm:px-6">
+    <main data-immersive className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-4 pt-6 pb-8 sm:px-6">
       <Header questions={questions} index={index} answers={answers} onExit={() => go(-1)} />
       <div className="relative mt-6 flex-1">
         <AnimatePresence mode="wait" custom={direction} initial={false}>

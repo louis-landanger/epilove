@@ -1,9 +1,9 @@
 "use client";
 
 import type { MessageAttachment } from "@epilove/contracts";
+import { Sheet } from "@epilove/ui";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
-import { Sheet } from "../ui/sheet";
 
 type ImageAttachment = Extract<MessageAttachment, { type: "image" }>;
 type VoiceAttachment = Extract<MessageAttachment, { type: "voice" }>;

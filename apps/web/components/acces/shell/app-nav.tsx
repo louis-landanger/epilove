@@ -23,8 +23,8 @@ function isActive(pathname: string, href: string) {
 
 /**
  * Bottom tab bar on mobile, side rail on desktop (docs/02-design.md, section 6).
- * Routes of session B (`/decouvrir`, `/likes`, `/messages`, `/campus`) are linked
- * before they exist in this branch, hence the `Route` casts.
+ * The tab bar hides on full-screen flows marked with `data-immersive` (see the
+ * app layout), which bring their own way back.
  */
 export function AppNav({ counts = {} }: { counts?: NavCounts }) {
   const pathname = usePathname();
@@ -34,7 +34,7 @@ export function AppNav({ counts = {} }: { counts?: NavCounts }) {
     <>
       <nav
         aria-label={t("label")}
-        className="fixed inset-x-0 bottom-0 z-40 border-paper/10 border-t bg-ink/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-paper/10 border-t bg-ink/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl group-has-[[data-immersive]]/app:hidden lg:hidden"
       >
         <ul className="mx-auto grid max-w-lg grid-cols-5">
           {TABS.map(({ href, key, icon: Icon }) => {

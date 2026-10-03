@@ -2,9 +2,9 @@
 
 import type { MessageAttachment } from "@epilove/contracts";
 import { GAME_RULES } from "@epilove/core";
+import { Sheet } from "@epilove/ui";
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
-import { Sheet } from "../ui/sheet";
 
 type GameAttachment = Extract<MessageAttachment, { type: "game" }>;
 

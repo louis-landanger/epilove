@@ -2,6 +2,7 @@
 
 import type { ChatMessage, IcebreakerView, ThreadView } from "@epilove/contracts";
 import { MESSAGING_RULES, needsSendWarning, type StickerId, screenMessage, uuidv7 } from "@epilove/core";
+import { Sheet } from "@epilove/ui";
 import { ORPCError } from "@orpc/client";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -13,7 +14,6 @@ import { api } from "@/lib/rencontre/api.client";
 import { useConnectionState, useRealtime } from "@/lib/rencontre/realtime";
 import { dequeueMessage, queuedMessages, queueMessage } from "@/lib/rencontre/send-queue";
 import { useOnline } from "@/lib/rencontre/use-online";
-import { Sheet } from "../ui/sheet";
 import { AiIcebreakers } from "./ai-icebreakers";
 import { Avatar } from "./avatar";
 import { DateCard } from "./date-card";
@@ -580,7 +580,11 @@ export function Conversation({ thread }: { thread: ThreadView }) {
   const lastMine = [...messages].reverse().find((m) => m.senderId === me);
 
   return (
-    <section aria-labelledby="conversation-title" className="flex h-dvh min-w-0 flex-1 flex-col">
+    <section
+      data-immersive
+      aria-labelledby="conversation-title"
+      className="flex h-dvh min-w-0 flex-1 flex-col"
+    >
       <header className="flex items-center gap-3 border-paper/10 border-b px-4 py-3">
         <a href="/messages" className="grid size-10 place-items-center rounded-full lg:hidden">
           <span className="sr-only">{t("back")}</span>

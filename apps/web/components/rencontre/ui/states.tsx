@@ -1,3 +1,4 @@
+import { buttonVariants, EmptyState } from "@epilove/ui";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { isDevEnvironment } from "@/lib/rencontre/dev-member";
@@ -6,19 +7,29 @@ import { ReloadButton } from "./reload-button";
 
 /** Full-page states shared by the dating screens: sign-in or profile required, server error. */
 
-function StateCard({ title, lead, children }: { title: string; lead: string; children?: ReactNode }) {
+function Orbit() {
   return (
-    <section className="mx-auto flex min-h-[60dvh] max-w-md flex-col items-center justify-center gap-4 px-4 text-center">
-      <span aria-hidden="true" className="relative block size-16">
-        <span className="absolute inset-0 rounded-full border border-paper/20" />
-        <span className="absolute top-0 left-1/2 size-3 -translate-x-1/2 rounded-full bg-plasma shadow-[0_0_20px_var(--color-plasma)]" />
-      </span>
-      <h1 className="font-display font-semibold text-2xl">{title}</h1>
-      <p className="text-paper/70">{lead}</p>
-      {children}
-    </section>
+    <span aria-hidden="true" className="relative block size-10">
+      <span className="absolute inset-0 rounded-full border border-paper/20" />
+      <span className="absolute top-0 left-1/2 size-2.5 -translate-x-1/2 rounded-full bg-plasma shadow-[0_0_20px_var(--color-plasma)]" />
+    </span>
   );
 }
+
+function StateCard({ title, lead, children }: { title: string; lead: string; children?: ReactNode }) {
+  return (
+    <EmptyState
+      icon={<Orbit />}
+      title={title}
+      titleAs="h1"
+      description={lead}
+      action={children}
+      className="flex min-h-[60dvh] max-w-md justify-center"
+    />
+  );
+}
+
+const ACTION = buttonVariants({ variant: "secondary" });
 
 export async function GateScreen({ gate }: { gate: Gate }) {
   const t = await getTranslations("campus.states");
@@ -28,7 +39,7 @@ export async function GateScreen({ gate }: { gate: Gate }) {
   if (gate === "profile") {
     return (
       <StateCard title={t("profileTitle")} lead={t("profileLead")}>
-        <a href="/onboarding" className="rounded-full bg-paper px-5 py-2.5 font-semibold text-ink">
+        <a href="/onboarding" className={ACTION}>
           {t("profileAction")}
         </a>
       </StateCard>
@@ -43,10 +54,7 @@ export async function GateScreen({ gate }: { gate: Gate }) {
   }
   return (
     <StateCard title={t("signInTitle")} lead={t("signInLead")}>
-      <a
-        href={isDevEnvironment() ? "/dev" : "/connexion"}
-        className="rounded-full bg-paper px-5 py-2.5 font-semibold text-ink"
-      >
+      <a href={isDevEnvironment() ? "/dev" : "/connexion"} className={ACTION}>
         {isDevEnvironment() ? t("devSignIn") : t("signInAction")}
       </a>
     </StateCard>
@@ -58,7 +66,7 @@ export async function NotFoundScreen() {
   const states = await getTranslations("campus.states");
   return (
     <StateCard title={t("notFound")} lead={t("notFoundLead")}>
-      <a href="/decouvrir" className="rounded-full bg-paper px-5 py-2.5 font-semibold text-ink">
+      <a href="/decouvrir" className={ACTION}>
         {states("back")}
       </a>
     </StateCard>

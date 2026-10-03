@@ -2,11 +2,11 @@
 
 import type { AvailabilityView } from "@epilove/contracts";
 import { AVAILABILITY_ACTIVITIES, AVAILABILITY_AREAS } from "@epilove/core";
+import { Sheet } from "@epilove/ui";
 import { ORPCError } from "@orpc/client";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
-import { Sheet } from "../ui/sheet";
 
 const CAMPUS_TIME_ZONE = "Europe/Paris";
 const DURATIONS = [30, 60, 120, 180, 300] as const;

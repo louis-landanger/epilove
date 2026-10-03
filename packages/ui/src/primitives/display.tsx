@@ -47,12 +47,15 @@ export function Skeleton({ className, ...props }: ComponentProps<"div">) {
 export function EmptyState({
   icon,
   title,
+  titleAs: Title = "p",
   description,
   action,
   className,
 }: {
   icon?: ReactNode;
   title: ReactNode;
+  /** `h1` when the state replaces the whole page. */
+  titleAs?: "p" | "h1" | "h2";
   description?: ReactNode;
   action?: ReactNode;
   className?: string;
@@ -66,7 +69,7 @@ export function EmptyState({
           {icon}
         </div>
       ) : null}
-      <p className="font-display font-semibold text-2xl tracking-tight">{title}</p>
+      <Title className="font-display font-semibold text-2xl tracking-tight">{title}</Title>
       {description ? <p className="text-paper/65">{description}</p> : null}
       {action ? <div className="mt-3">{action}</div> : null}
     </div>

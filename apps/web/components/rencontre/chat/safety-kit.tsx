@@ -2,13 +2,13 @@
 
 import type { DateKit } from "@epilove/contracts";
 import { type CheckInAnswer, EMERGENCY_NUMBERS, uuidv7 } from "@epilove/core";
+import { Sheet } from "@epilove/ui";
 import { ORPCError } from "@orpc/client";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { ReportDialog } from "@/components/acces/safety/safety-dialogs";
 import { api } from "@/lib/rencontre/api.client";
-import { Sheet } from "../ui/sheet";
 
 const CAMPUS_TIME_ZONE = "Europe/Paris";
 const SHARE_ERRORS = ["not_accepted", "over", "too_many", "rate_limited"] as const;

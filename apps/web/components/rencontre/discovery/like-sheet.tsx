@@ -1,9 +1,9 @@
 "use client";
 
 import { DISCOVERY_RULES } from "@epilove/core";
+import { Sheet } from "@epilove/ui";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
-import { Sheet } from "../ui/sheet";
 import type { LikedContent } from "./member-card";
 
 export interface LikeRequest {

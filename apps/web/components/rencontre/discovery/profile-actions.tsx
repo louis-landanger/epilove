@@ -203,7 +203,7 @@ export function ProfileActions({ profile }: { profile: ProfileView }) {
     return null;
   }
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t from-ink via-ink/95 to-transparent px-4 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <div className="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t lg:left-60 from-ink via-ink/95 to-transparent px-4 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto flex max-w-xl items-center justify-center gap-3">
         {matchId ? (
           <a

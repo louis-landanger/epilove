@@ -39,17 +39,21 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         >
           {t("skipToContent")}
         </a>
-        <div className="contents in-data-locked:invisible">
-          <AppNav />
-        </div>
-        <EasterEggs />
-        <div
-          id="contenu"
-          className="in-data-locked:invisible min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0 lg:pl-60"
-        >
-          <ReverifyBanner due={member.reverifyDueAt} paused={member.pausedForReverification} />
-          <InstallBanner />
-          {children}
+        {/* Full-screen flows (a profile, a conversation…) mark themselves with
+            `data-immersive`: the bottom tab bar then makes way on phones. */}
+        <div className="group/app contents">
+          <div className="contents in-data-locked:invisible">
+            <AppNav />
+          </div>
+          <EasterEggs />
+          <div
+            id="contenu"
+            className="in-data-locked:invisible min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))] group-has-[[data-immersive]]/app:pb-0 lg:pb-0 lg:pl-60"
+          >
+            <ReverifyBanner due={member.reverifyDueAt} paused={member.pausedForReverification} />
+            <InstallBanner />
+            {children}
+          </div>
         </div>
       </ToastProvider>
     </WatermarkProvider>

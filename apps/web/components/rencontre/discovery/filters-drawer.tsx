@@ -1,10 +1,10 @@
 "use client";
 
 import type { DeckFilterView } from "@epilove/contracts";
+import { Sheet } from "@epilove/ui";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
-import { Sheet } from "../ui/sheet";
 import { SchoolGlyph } from "./school";
 
 const INTENTIONS = ["relationship", "see_what_happens", "friendship"] as const;

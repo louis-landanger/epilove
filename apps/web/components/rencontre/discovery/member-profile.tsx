@@ -51,7 +51,7 @@ export async function MemberProfile({ profile, me }: { profile: ProfileView; me:
 
   return (
     <ProfileInteractions profile={profile} me={me}>
-      <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col pb-32">
+      <main data-immersive className="mx-auto flex min-h-dvh w-full max-w-xl flex-col pb-32">
         <div className="relative aspect-[4/5] w-full overflow-hidden sm:mt-6 sm:rounded-[28px]">
           {firstPhoto && (
             <ViewTransition name={`member-photo-${card.userId}`} share="member-photo" default="none">

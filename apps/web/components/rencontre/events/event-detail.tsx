@@ -2,12 +2,12 @@
 
 import type { AttendingMatch, EventDetail } from "@epilove/contracts";
 import { dateIcs, EVENT_RULES, flashOpen, type RsvpStatus } from "@epilove/core";
+import { Sheet } from "@epilove/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
-import { Sheet } from "../ui/sheet";
 
 const CAMPUS_TIME_ZONE = "Europe/Paris";
 
