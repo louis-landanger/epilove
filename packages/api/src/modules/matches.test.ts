@@ -1,3 +1,4 @@
+import { uuidv7 } from "@epilove/core";
 import { createDatabase, schema } from "@epilove/db";
 import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { eq } from "drizzle-orm";
@@ -40,6 +41,19 @@ describe.skipIf(!url)("matches", () => {
       lastMessage: null,
       unread: 0,
     });
+  });
+
+  it("counts the messages not read yet, until they are read", async () => {
+    const { a, b, matchId } = await matched();
+    await as(b).messaging.send({ id: uuidv7(), matchId, text: "Coucou", replyTo: null });
+    const last = uuidv7();
+    await as(b).messaging.send({ id: last, matchId, text: "Tu es là ?", replyTo: null });
+    const unreadOf = async (member: string) =>
+      (await as(member).matches.list({ locale: "fr" })).matches.find((m) => m.matchId === matchId)?.unread;
+    expect(await unreadOf(a)).toBe(2);
+    expect(await unreadOf(b)).toBe(0);
+    await as(a).messaging.read({ matchId, messageId: last });
+    expect(await unreadOf(a)).toBe(0);
   });
 
   it("hides a match once one member blocked the other", async () => {

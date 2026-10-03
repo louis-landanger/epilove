@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { appUser, match, message, messageRead, notification } from "../schema";
 import { enqueue } from "./outbox";
@@ -26,20 +26,15 @@ export async function activeMatchesOf(db: Database, userId: string): Promise<Mat
       source: match.source,
       createdAt: match.createdAt,
       lastMessageAt: match.lastMessageAt,
-      unread: sql<number>`(
-        select count(*)::int from ${message}
-        where ${message.matchId} = ${match.id}
-          and ${message.senderId} is distinct from ${userId}
-          and ${message.deletedAt} is null
-          and ${message.id} > coalesce(
-            (select ${messageRead.lastReadMessageId} from ${messageRead}
-             where ${messageRead.matchId} = ${match.id} and ${messageRead.userId} = ${userId}),
-            '00000000-0000-0000-0000-000000000000'::uuid)
-      )`,
     })
     .from(match)
     .where(and(eq(match.status, "active"), or(eq(match.userLow, userId), eq(match.userHigh, userId))))
     .orderBy(desc(sql`coalesce(${match.lastMessageAt}, ${match.createdAt})`));
+  const unread = await unreadCounts(
+    db,
+    userId,
+    rows.map((r) => r.id),
+  );
   return rows.map((r) => ({
     id: r.id,
     otherId: r.userLow === userId ? r.userHigh : r.userLow,
@@ -47,8 +42,33 @@ export async function activeMatchesOf(db: Database, userId: string): Promise<Mat
     source: r.source,
     createdAt: r.createdAt,
     lastMessageAt: r.lastMessageAt,
-    unread: r.unread,
+    unread: unread.get(r.id) ?? 0,
   }));
+}
+
+/**
+ * Messages from the other member after the last one this member read, per
+ * match. A join, not a correlated subquery: in a single-table select, Drizzle
+ * leaves column names unqualified, and `"id"` would point at the message.
+ */
+async function unreadCounts(db: Database, userId: string, matchIds: readonly string[]) {
+  if (matchIds.length === 0) {
+    return new Map<string, number>();
+  }
+  const rows = await db
+    .select({ matchId: message.matchId, unread: sql<number>`count(*)::int` })
+    .from(message)
+    .leftJoin(messageRead, and(eq(messageRead.matchId, message.matchId), eq(messageRead.userId, userId)))
+    .where(
+      and(
+        inArray(message.matchId, [...matchIds]),
+        sql`${message.senderId} is distinct from ${userId}`,
+        isNull(message.deletedAt),
+        sql`${message.id} > coalesce(${messageRead.lastReadMessageId}, '00000000-0000-0000-0000-000000000000'::uuid)`,
+      ),
+    )
+    .groupBy(message.matchId);
+  return new Map(rows.map((r) => [r.matchId, r.unread]));
 }
 
 /** A match the member takes part in (active or not), or null. */
