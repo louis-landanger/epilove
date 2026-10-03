@@ -70,3 +70,35 @@ test("profile, conversation and questionnaire actions stay reachable", async ({ 
   await page.getByRole("button", { name: "Passer", exact: true }).click();
   await page.getByRole("button", { name: "Précédent" }).click();
 });
+
+test("the Messages tab counts unread conversations, live", async ({ browser, baseURL }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "Two-browser scenario runs once.");
+  const ines = await createTestMember(db, { firstName: "Inès", graduationYear: 2039 });
+  const malo = await createTestMember(db, { firstName: "Malo", graduationYear: 2039 });
+  const [userLow, userHigh] = ines < malo ? [ines, malo] : [malo, ines];
+  const [created] = await db
+    .insert(schema.match)
+    .values({ userLow, userHigh, mode: "friends", source: "like" })
+    .returning({ id: schema.match.id });
+  const inesPage = await signIn(browser, ines, baseURL);
+  const maloPage = await signIn(browser, malo, baseURL);
+  await inesPage.goto("/decouvrir");
+  const messagesTab = inesPage
+    .getByRole("navigation", { name: "Navigation principale" })
+    .getByRole("link", { name: /^Messages/ })
+    .filter({ visible: true });
+  await expect(messagesTab).not.toContainText("non lu");
+
+  await maloPage.goto(`/messages/${created?.id}`);
+  await maloPage.getByRole("textbox", { name: "Écrire à Inès" }).fill("Tu passes au foyer ?");
+  await maloPage.keyboard.press("Enter");
+  await expect(messagesTab).toContainText("1 non lu", { timeout: 10_000 });
+
+  // Reading the conversation clears the badge.
+  await messagesTab.click();
+  await inesPage.getByRole("link", { name: /Malo/ }).first().click();
+  await expect(
+    inesPage.getByRole("list", { name: "Messages" }).getByText("Tu passes au foyer ?"),
+  ).toBeVisible();
+  await expect(messagesTab).not.toContainText("non lu", { timeout: 10_000 });
+});

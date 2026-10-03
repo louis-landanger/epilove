@@ -7,9 +7,10 @@ import { type ReactNode, useState } from "react";
 import { RealtimeProvider } from "@/lib/rencontre/realtime";
 
 /**
- * Client providers of the dating features: service worker registration (PWA,
- * push), one query cache per tab, animations that follow the system "reduce
- * motion" setting, and the realtime connection.
+ * Client providers of the signed-in app, mounted once by the app layout:
+ * service worker registration (PWA, push), one query cache per browser tab,
+ * animations that follow the system "reduce motion" setting, and the
+ * realtime connection.
  */
 export function RencontreProviders({ children }: { children: ReactNode }) {
   const [client] = useState(

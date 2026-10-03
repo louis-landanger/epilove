@@ -4,13 +4,14 @@ import type { ChatMessage, IcebreakerView, ThreadView } from "@epilove/contracts
 import { MESSAGING_RULES, needsSendWarning, type StickerId, screenMessage, uuidv7 } from "@epilove/core";
 import { Sheet } from "@epilove/ui";
 import { ORPCError } from "@orpc/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReportDialog } from "@/components/acces/safety/safety-dialogs";
 import { SafetyMenu } from "@/components/acces/safety/safety-menu";
-import { api } from "@/lib/rencontre/api.client";
+import { api, orpc } from "@/lib/rencontre/api.client";
 import { useConnectionState, useRealtime } from "@/lib/rencontre/realtime";
 import { dequeueMessage, queuedMessages, queueMessage } from "@/lib/rencontre/send-queue";
 import { useOnline } from "@/lib/rencontre/use-online";
@@ -66,6 +67,7 @@ export function Conversation({ thread }: { thread: ThreadView }) {
   const t = useTranslations("chat");
   const dispoText = useDispoText();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const online = useOnline();
   const connection = useConnectionState();
   const [messages, setMessages] = useState(thread.messages);
@@ -505,8 +507,12 @@ export function Conversation({ thread }: { thread: ThreadView }) {
       return;
     }
     lastMarked.current = latestFromOther;
-    void api.messaging.read({ matchId: thread.matchId, messageId: latestFromOther }).catch(() => undefined);
-  }, [messages, me, thread.matchId]);
+    void api.messaging
+      .read({ matchId: thread.matchId, messageId: latestFromOther })
+      // The read event goes to the other member: refresh the unread counts (Messages tab) here.
+      .then(() => queryClient.invalidateQueries({ queryKey: orpc.matches.list.key() }))
+      .catch(() => undefined);
+  }, [messages, me, thread.matchId, queryClient]);
 
   const onDraftChange = (value: string) => {
     setDraft(value);

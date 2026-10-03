@@ -7,9 +7,11 @@ import { EasterEggs } from "@/components/acces/fun/easter-eggs";
 import { InstallBanner } from "@/components/acces/install/install-banner";
 import { AppLock } from "@/components/acces/lock/app-lock";
 import { earlyLockScript } from "@/components/acces/lock/lock-config";
-import { AppNav } from "@/components/acces/shell/app-nav";
+import { LiveAppNav } from "@/components/acces/shell/live-app-nav";
+import { RencontreProviders } from "@/components/rencontre/providers";
 import { serverApi } from "@/lib/server/api-app";
 import { requireAppMember } from "@/lib/server/session";
+import "@/components/rencontre/rencontre.css";
 
 /**
  * Shell of the signed-in app: session guard (onboarding, suspension and
@@ -41,20 +43,23 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </a>
         {/* Full-screen flows (a profile, a conversation…) mark themselves with
             `data-immersive`: the bottom tab bar then makes way on phones. */}
-        <div className="group/app contents">
-          <div className="contents in-data-locked:invisible">
-            <AppNav />
+        {/* One query cache and one realtime connection for the whole app, kept across tabs. */}
+        <RencontreProviders>
+          <div className="group/app contents">
+            <div className="contents in-data-locked:invisible">
+              <LiveAppNav />
+            </div>
+            <EasterEggs />
+            <div
+              id="contenu"
+              className="in-data-locked:invisible min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))] group-has-[[data-immersive]]/app:pb-0 lg:pb-0 lg:pl-60"
+            >
+              <ReverifyBanner due={member.reverifyDueAt} paused={member.pausedForReverification} />
+              <InstallBanner />
+              {children}
+            </div>
           </div>
-          <EasterEggs />
-          <div
-            id="contenu"
-            className="in-data-locked:invisible min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))] group-has-[[data-immersive]]/app:pb-0 lg:pb-0 lg:pl-60"
-          >
-            <ReverifyBanner due={member.reverifyDueAt} paused={member.pausedForReverification} />
-            <InstallBanner />
-            {children}
-          </div>
-        </div>
+        </RencontreProviders>
       </ToastProvider>
     </WatermarkProvider>
   );
