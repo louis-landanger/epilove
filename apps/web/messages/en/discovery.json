@@ -1,0 +1,119 @@
+{
+  "title": "Discover",
+  "quota": "{count, plural, =0 {No likes left today} one {# like left} other {# likes left}}",
+  "quotaHelp": "Likes are limited so that they keep their value. The counter resets at midnight.",
+  "filters": "Filters",
+  "filtersActive": "Filters on",
+  "actions": {
+    "pass": "Pass",
+    "like": "Like",
+    "superlike": "Crush",
+    "undo": "Undo the last pass",
+    "open": "Open {name}'s profile",
+    "likeThis": "Like this"
+  },
+  "stamps": {
+    "like": "Like",
+    "pass": "Pass",
+    "superlike": "Crush"
+  },
+  "card": {
+    "age": "{age}",
+    "compatibility": "{percent}% compatible",
+    "compatibilityUnknown": "Compatibility to discover",
+    "modeFriends": "Friends",
+    "modeLove": "Love",
+    "photo": "Photo {current} of {total}",
+    "previousPhoto": "Previous photo",
+    "nextPhoto": "Next photo",
+    "noPhoto": "No photo yet",
+    "secondChance": "Second chance",
+    "secondChanceHelp": "Their profile changed since last time."
+  },
+  "keyboard": "Keyboard: ← pass, → like, ↑ crush, Enter to open the profile.",
+  "likeSheet": {
+    "title": "Like {name}",
+    "superTitle": "Crush on {name}",
+    "photo": "Their photo",
+    "prompt": "Their answer",
+    "commentLabel": "A word to start the conversation",
+    "commentOptional": "Optional, 150 characters max.",
+    "commentRequired": "Required for a crush, 150 characters max.",
+    "placeholder": "Your answer made me laugh…",
+    "superToggle": "Make it a crush (1 per day)",
+    "send": "Send the like",
+    "sendSuper": "Send the crush",
+    "cancel": "Cancel",
+    "remaining": "{count} / 150"
+  },
+  "errors": {
+    "quota_exceeded": "No likes left today. Come back tomorrow, they'll be all the more precious.",
+    "superlike_quota_exceeded": "You already gave today's crush.",
+    "comment_required": "A crush always comes with a word.",
+    "cannot_like": "Your account cannot send likes right now.",
+    "no_shared_mode": "You're not looking for the same thing: you can't like this profile.",
+    "undo_quota_exceeded": "Only one undo per day.",
+    "nothing_to_undo": "Nothing to undo right now.",
+    "generic": "That didn't go through. Try again?"
+  },
+  "empty": {
+    "exhausted": "You've seen everyone for today.",
+    "exhaustedLead": "Next Drop at 9 pm. Meanwhile, have a look at your likes.",
+    "widen": "Widen my filters",
+    "seeLikes": "See my likes",
+    "paused": "Your profile is paused.",
+    "pausedLead": "Nobody sees you right now, and you see nobody. Your conversations stay available.",
+    "profile_incomplete": "Your profile isn't visible yet.",
+    "profile_incompleteLead": "You need at least one approved photo to discover others.",
+    "restricted": "Your account is restricted.",
+    "restrictedLead": "You can keep chatting, but you can't send likes for now."
+  },
+  "loading": "Computing affinities…",
+  "offline": "Connection lost. We'll pick up when you're back online.",
+  "undone": "{name} is back.",
+  "filtersDrawer": {
+    "title": "Filters",
+    "mode": "Looking for",
+    "modeAll": "Everything",
+    "modeLove": "Love",
+    "modeFriends": "Friends",
+    "schools": "Schools",
+    "schoolsAll": "All schools",
+    "years": "Class years",
+    "intentions": "Intentions",
+    "intention": {
+      "relationship": "A relationship",
+      "see_what_happens": "See what happens",
+      "friendship": "Friendship"
+    },
+    "age": "Age",
+    "ageMin": "From",
+    "ageMax": "to",
+    "ageHint": "Within your profile preferences.",
+    "reset": "Reset all",
+    "apply": "Apply",
+    "close": "Close"
+  },
+  "drop": {
+    "title": "The Drop",
+    "duration": "{hours} h {minutes} min",
+    "next": "Next Drop in {duration}",
+    "expires": "{duration} left",
+    "empty": "Every evening at 9 pm, five profiles picked for you, for 24 hours.",
+    "done": "You've seen your whole Drop. The next one arrives at 9 pm."
+  },
+  "badges": {
+    "label": "Badges",
+    "founder": "Founder",
+    "photo_verified": "Verified photo",
+    "ambassador": "Ambassador"
+  },
+  "blind": {
+    "title": "Blind evening",
+    "lead": "Tonight, a deck without photos: just words. Photos show after 10 messages each.",
+    "on": "No photos tonight: read, and like what speaks to you.",
+    "enter": "Try it",
+    "leave": "Back to the deck",
+    "cardLead": "Tonight, reading comes first. Photos come after 10 messages each."
+  }
+}

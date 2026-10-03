@@ -1,0 +1,8 @@
+{
+  "extends": "@epilove/config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "WebWorker"],
+    "types": []
+  },
+  "include": ["sw.ts"]
+}

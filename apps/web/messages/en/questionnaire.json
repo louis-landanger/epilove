@@ -1,0 +1,58 @@
+{
+  "title": "Compatibility questionnaire",
+  "back": "Back to campus",
+  "intro": {
+    "eyebrow": "The Pact · compatibility",
+    "title": "Forty-five questions to find your chemistry",
+    "lead": "Values, lifestyle, campus, humour and plans. About ten minutes, saved as you go: stop and come back whenever you like.",
+    "howTitle": "How it works",
+    "how1": "Your answer: what sounds like you.",
+    "how2": "What you accept from the other person: one or more answers.",
+    "how3": "Importance: the higher it is, the more the question weighs in the score.",
+    "privacy": "Your answers are never shown as such. Only what you have in common appears, and only to people who can see your profile.",
+    "start": "Start",
+    "resume": "Resume ({answered}/{total})"
+  },
+  "progress": "Question {current} of {total}",
+  "sections": {
+    "values": "Values",
+    "lifestyle": "Lifestyle",
+    "campus": "Campus",
+    "nerd": "Humour and geekery",
+    "plans": "Plans"
+  },
+  "yourAnswer": "Your answer",
+  "acceptable": "What you accept from the other person",
+  "acceptableHint": "Tick every answer that works for you.",
+  "acceptAll": "Anything goes",
+  "importance": "Importance",
+  "importanceLevels": {
+    "irrelevant": "Doesn't matter",
+    "little": "A little",
+    "somewhat": "Somewhat",
+    "very": "A lot",
+    "mandatory": "Essential"
+  },
+  "importanceHelp": {
+    "irrelevant": "This question does not count in your score.",
+    "little": "It counts, but barely.",
+    "somewhat": "It counts ten times more than \"a little\".",
+    "very": "It counts fifty times more than \"a little\".",
+    "mandatory": "Dealbreaker: people who don't match will not be suggested to you. Keep it for what really matters."
+  },
+  "previous": "Previous",
+  "next": "Next",
+  "finish": "Finish",
+  "skip": "Skip",
+  "saving": "Saving…",
+  "saved": "Saved",
+  "saveError": "Couldn't save. Try again?",
+  "retry": "Retry",
+  "keyboardHint": "Tip: keys 1 to 4 to answer, Enter to continue.",
+  "done": {
+    "title": "All done",
+    "lead": "Your answers are saved. Compatibility percentages now show on profiles, along with what you have in common.",
+    "discover": "Discover profiles",
+    "review": "Review my answers"
+  }
+}

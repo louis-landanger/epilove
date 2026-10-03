@@ -1,0 +1,343 @@
+{
+  "title": "Messages",
+  "newMatches": "Nouvelles liaisons",
+  "newMatchesEmpty": "Pas encore de liaison. Les meilleures réactions prennent du temps.",
+  "conversations": "Conversations",
+  "conversationsEmpty": "Aucune conversation pour l'instant. Écris le premier message à une nouvelle liaison !",
+  "you": "Toi : {text}",
+  "unread": "{count, plural, one {# message non lu} other {# messages non lus}}",
+  "friendsMode": "Amis",
+  "selectConversation": "Choisis une conversation.",
+  "back": "Retour aux messages",
+  "openProfile": "Voir le profil de {name}",
+  "online": "En ligne",
+  "matchedOn": "Liaison établie le {date}",
+  "composer": {
+    "label": "Écrire à {name}",
+    "placeholder": "Ton message…",
+    "send": "Envoyer",
+    "replyingTo": "Réponse à {name}",
+    "cancelReply": "Annuler la réponse",
+    "closed": "Cette conversation est fermée.",
+    "replyingToSelf": "Réponse à ton message",
+    "editing": "Modification du message",
+    "cancelEdit": "Annuler",
+    "save": "Enregistrer la modification",
+    "tools": "Ouvrir les outils"
+  },
+  "icebreakers": {
+    "title": "Besoin d'un brise-glace ?",
+    "sharedInterest": "Vous aimez tous les deux « {interest} » : c'est quoi ton meilleur souvenir avec ça ?",
+    "theirPrompt": "Ta réponse à « {question} » m'intrigue : raconte !",
+    "sharedAnswer": "On a tous les deux répondu « {answer} » à « {question} ». Ça promet !",
+    "campus": {
+      "0": "Ton spot préféré pour bosser au calme sur le campus ?",
+      "1": "Le meilleur plat du coin pour un midi entre deux cours ?",
+      "2": "Tu es plutôt premier rang ou dernier rang en amphi ?",
+      "3": "Ton plan idéal pour un dimanche à Lyon ?",
+      "4": "La matière qui t'a le plus surpris·e cette année ?",
+      "5": "Raconte-moi ta meilleure soirée BDE (version publiable).",
+      "6": "Si tu pouvais ajouter une salle au campus, ce serait quoi ?",
+      "7": "Ton projet de groupe le plus mémorable, en un mot ?"
+    }
+  },
+  "status": {
+    "sending": "Envoi…",
+    "failed": "Pas envoyé. Toucher pour réessayer.",
+    "queued": "En attente du réseau",
+    "seen": "Vu",
+    "edited": "modifié",
+    "deleted": "Message supprimé"
+  },
+  "actions": {
+    "reply": "Répondre",
+    "react": "Réagir",
+    "report": "Signaler ce message",
+    "reactionLabel": "Réagir avec {emoji}",
+    "menu": "Actions sur le message",
+    "edit": "Modifier",
+    "delete": "Supprimer pour tout le monde"
+  },
+  "typing": "{name} écrit…",
+  "loadOlder": "Messages précédents",
+  "today": "Aujourd'hui",
+  "yesterday": "Hier",
+  "errors": {
+    "rate_limited": "Doucement ! Attends quelques secondes avant d'envoyer la suite.",
+    "notFound": "Cette conversation n'est plus disponible.",
+    "generic": "Ça n'est pas passé. On réessaie ?",
+    "too_late": "Trop tard : un message se modifie ou se supprime dans les 10 minutes."
+  },
+  "flags": {
+    "contact_handle": "Petit rappel : prends le temps de faire connaissance ici avant d'échanger d'autres contacts."
+  },
+  "offline": "Connexion perdue. Tes messages partiront dès le retour du réseau.",
+  "reconnecting": "Reconnexion…",
+  "reported": "Merci, ton signalement a bien été reçu.",
+  "warning": {
+    "title": "Tu es sûr·e de vouloir envoyer ça ?",
+    "lead": "Ce message pourrait blesser. Tu peux le reformuler, ou l'envoyer quand même.",
+    "edit": "Le reformuler",
+    "sendAnyway": "Envoyer quand même"
+  },
+  "flagged": "Ce message te dérange ? Signaler",
+  "stickers": {
+    "title": "Stickers et GIF",
+    "stickers": "Stickers",
+    "gifs": "GIF",
+    "search": "Chercher un GIF",
+    "giphy": "Propulsé par GIPHY",
+    "names": {
+      "atom-heart": "Atome amoureux",
+      "bond": "Liaison",
+      "spark": "Étincelle",
+      "coffee": "Un café ?",
+      "laugh": "Mort de rire",
+      "blush": "Rougissant",
+      "wow": "Waouh",
+      "cheers": "Santé !",
+      "school-epita": "Team EPITA",
+      "school-esme": "Team ESME",
+      "school-supbiotech": "Team Sup'Biotech",
+      "school-isg": "Team ISG",
+      "school-ipsa": "Team IPSA"
+    }
+  },
+  "previewKinds": {
+    "sticker": "Sticker",
+    "gif": "GIF",
+    "image": "Photo",
+    "voice": "Message vocal",
+    "date_proposal": "Proposition de date",
+    "system": "Message",
+    "game": "Mini-jeu"
+  },
+  "nudge": {
+    "lead": "Ça fait quelques jours avec {name}. Envie de relancer ?",
+    "action": "Des idées"
+  },
+  "date": {
+    "open": "Proposer un date",
+    "title": "Proposer un date",
+    "counterTitle": "Proposer autre chose",
+    "spot": "Où ?",
+    "otherPlace": "Un autre lieu…",
+    "place": "Lieu",
+    "placePlaceholder": "Un lieu public, facile à trouver",
+    "when": "Quand ?",
+    "note": "Un mot (facultatif)",
+    "notePlaceholder": "Un café après les cours ?",
+    "safety": "Pour un premier date, choisis un lieu public et préviens quelqu'un de confiance.",
+    "send": "Proposer",
+    "cancel": "Annuler",
+    "cardTitle": "Proposition de date",
+    "status": {
+      "proposed": "En attente",
+      "accepted": "Accepté",
+      "declined": "Décliné",
+      "countered": "Autre chose proposé"
+    },
+    "accept": "Accepter",
+    "counter": "Autre chose",
+    "decline": "Décliner",
+    "calendar": "Ajouter au calendrier",
+    "icsTitle": "Date (Epilove)",
+    "errors": {
+      "no_place": "Choisis un lieu.",
+      "too_soon": "Laisse au moins une heure avant le date.",
+      "too_far": "Pas plus de 60 jours à l'avance.",
+      "unknown_spot": "Ce lieu n'est plus disponible.",
+      "generic": "Ça n'est pas passé. On réessaie ?"
+    }
+  },
+  "media": {
+    "photo": "Envoyer une photo",
+    "photoAlt": "Photo envoyée dans la conversation",
+    "preview": "Aperçu de la photo",
+    "viewOnce": "Éphémère : une seule ouverture",
+    "viewOnceHint": "{name} pourra l'ouvrir une fois, puis elle disparaît.",
+    "send": "Envoyer",
+    "cancel": "Annuler",
+    "sending": "Envoi…",
+    "ephemeral": "Photo éphémère",
+    "open": "Ouvrir",
+    "opened": "Ouverte",
+    "notOpened": "Pas encore ouverte",
+    "close": "Fermer",
+    "explicit": "Cette photo pourrait être explicite.",
+    "showAnyway": "Afficher quand même",
+    "report": "Signaler",
+    "record": "Enregistrer un message vocal",
+    "recording": "Enregistrement en cours",
+    "stop": "Arrêter l'enregistrement",
+    "discard": "Supprimer l'enregistrement",
+    "sendVoice": "Envoyer le message vocal",
+    "play": "Écouter",
+    "pause": "Pause",
+    "speed": "Vitesse de lecture : {speed}",
+    "voiceLabel": "Message vocal de {duration}",
+    "maxDuration": "2 minutes maximum : l'enregistrement s'est arrêté.",
+    "errors": {
+      "unsupported_media": "Ce format n'est pas pris en charge.",
+      "too_large": "Fichier trop lourd.",
+      "microphone": "Impossible d'accéder au micro. Vérifie l'autorisation dans ton navigateur.",
+      "already_viewed": "Cette photo a déjà été ouverte."
+    },
+    "once": "Une seule ouverture possible"
+  },
+  "safetyKit": {
+    "open": "Kit sécurité",
+    "title": "Kit sécurité",
+    "lead": "Avant de partir, envoie les détails de ton date à une personne de confiance. Le lien s'arrête 24 heures après le début, ou dès que tu l'arrêtes.",
+    "whatShared": "Ce qui est partagé : le prénom de {name}, le lieu et l'heure. Rien d'autre.",
+    "create": "Créer un lien à partager",
+    "another": "Créer un autre lien",
+    "links": "Tes liens",
+    "copy": "Copier le lien",
+    "copied": "Lien copié.",
+    "share": "Partager…",
+    "shareText": "Je te partage les détails de mon date, au cas où.",
+    "revoke": "Arrêter ce lien",
+    "states": {
+      "active": "Actif",
+      "revoked": "Arrêté",
+      "expired": "Expiré"
+    },
+    "createdAt": "Créé à {time}",
+    "errors": {
+      "not_accepted": "Le kit sert aux dates acceptés.",
+      "over": "Ce date est passé.",
+      "too_many": "Trois liens actifs au plus pour un même date.",
+      "rate_limited": "Tu as créé beaucoup de liens aujourd'hui. Réessaie demain.",
+      "generic": "Ça n'a pas marché. Réessaie dans un instant."
+    },
+    "pageTitle": "Ton kit sécurité",
+    "back": "Revenir à la conversation",
+    "summary": "Avec {name} · {place} · {date}",
+    "checkInTitle": "Tout s'est bien passé ?",
+    "checkInLead": "Ta réponse s'affiche pour les personnes à qui tu as envoyé le lien.",
+    "ok": "Oui, tout va bien",
+    "help": "Pas vraiment",
+    "okDone": "Noté. Tes personnes de confiance voient que tout va bien.",
+    "helpDone": "On est là. Tu peux appeler les secours, signaler ou bloquer {name}, ou en parler à la cellule d'écoute de ton école. Tes personnes de confiance voient que ça ne s'est pas bien passé.",
+    "report": "Signaler {name}",
+    "reported": "Signalement envoyé. L'équipe de modération s'en occupe.",
+    "changeAnswer": "Changer ma réponse",
+    "emergencyTitle": "En cas de besoin",
+    "numbers": {
+      "112": "112 : urgences",
+      "17": "17 : police",
+      "114": "114 : urgences par SMS",
+      "3919": "3919 : violences femmes info (gratuit, anonyme)"
+    },
+    "schoolHelp": "Cellules d'écoute et référents de ton école",
+    "public": {
+      "metaTitle": "Détails d'un date",
+      "title": "Détails d'un date",
+      "lead": "{sharer} t'a envoyé les détails de son date, au cas où.",
+      "with": "Avec",
+      "where": "Où",
+      "when": "Quand",
+      "map": "Voir sur une carte",
+      "newsTitle": "Nouvelles",
+      "pending": "Pas encore de nouvelles. {sharer} recevra une petite question après le date.",
+      "ok": "{sharer} a indiqué que tout s'est bien passé ({time}).",
+      "help": "{sharer} a indiqué que ça ne s'est pas bien passé ({time}). Prends de ses nouvelles. En cas de danger, appelle le 17 ou le 112.",
+      "expires": "Ce lien s'arrête le {date}.",
+      "refresh": "Actualiser",
+      "goneTitle": "Lien inactif",
+      "goneLead": "Ce lien a expiré ou a été arrêté par la personne qui l'a créé.",
+      "about": "Epilove est une app de rencontre réservée aux étudiants du campus. Pas besoin de compte pour voir cette page."
+    },
+    "linkLabel": "Lien à envoyer"
+  },
+  "dispo": {
+    "set": "Je suis dispo…",
+    "title": "Dispo pour…",
+    "lead": "Tes liaisons voient que tu es dispo, jusqu'à l'heure choisie. Personne d'autre.",
+    "what": "Quoi ?",
+    "where": "Où ?",
+    "forHowLong": "Pendant",
+    "duration": "{minutes, plural, =30 {30 minutes} =60 {1 heure} =120 {2 heures} =180 {3 heures} other {5 heures}}",
+    "activities": {
+      "coffee": "un café",
+      "lunch": "déjeuner",
+      "study": "réviser ensemble",
+      "walk": "une balade",
+      "sport": "du sport",
+      "drink": "un verre"
+    },
+    "areas": {
+      "campus": "au campus",
+      "city": "en ville"
+    },
+    "status": "Dispo pour {activity} {area} jusqu'à {time}",
+    "chip": "Dispo",
+    "clear": "Plus dispo",
+    "save": "C'est parti",
+    "errors": {
+      "duration": "Entre un quart d'heure et douze heures.",
+      "generic": "Ça n'a pas marché. Réessaie dans un instant."
+    }
+  },
+  "blind": "Photos dévoilées à {needed} messages chacun·e : toi {mine}/{needed}, {name} {theirs}/{needed}.",
+  "games": {
+    "open": "Jouer à un mini-jeu",
+    "title": "Un petit jeu ?",
+    "names": {
+      "would_you_rather": "Tu préfères",
+      "nerd_quiz": "Quiz nerd",
+      "two_truths": "Deux vérités, un mensonge"
+    },
+    "leads": {
+      "would_you_rather": "Un dilemme, vous répondez chacun·e de votre côté.",
+      "nerd_quiz": "Des goûts de geek, pas de mauvaise réponse.",
+      "two_truths": "Trois phrases sur toi, une fausse : à l'autre de la trouver."
+    },
+    "you": "Toi",
+    "yourTurn": "À toi de jouer : ta réponse reste cachée jusqu'à celle de l'autre.",
+    "otherPlayed": "{name} a répondu. À toi !",
+    "waiting": "En attente de {name}…",
+    "same": "Raccord !",
+    "different": "Avis partagés.",
+    "send": "Envoyer",
+    "truths": {
+      "guess": "Laquelle est fausse ?",
+      "waitingGuess": "{name} doit trouver le mensonge.",
+      "write": "Écris trois phrases sur toi et coche celle qui est fausse.",
+      "statement": "Phrase {number}",
+      "markLie": "La phrase {number} est le mensonge",
+      "lieHint": "Le rond coché indique le mensonge. Il reste secret jusqu'à la réponse.",
+      "yourGuess": "Ton choix",
+      "theirGuess": "Choix de {name}",
+      "lie": "Le mensonge",
+      "found": "Bien vu !",
+      "missed": "Raté, c'était bien tenté.",
+      "foundYou": "{name} t'a démasqué·e.",
+      "fooled": "{name} s'est fait avoir."
+    }
+  },
+  "ai": {
+    "button": "Des idées par IA",
+    "again": "D'autres idées",
+    "hint": "Facultatif",
+    "loading": "L'IA cherche des idées…",
+    "label": "Suggestions de l'IA : relis-les et adapte-les avant d'envoyer.",
+    "notices": {
+      "nothing": "Pas d'idée cette fois. Les suggestions au-dessus sont toujours là.",
+      "quota": "Tu as utilisé tes idées par IA pour aujourd'hui. Reviens demain !",
+      "unavailable": "L'IA ne répond pas pour l'instant. Réessaie plus tard.",
+      "error": "Ça n'a pas marché. Réessaie dans un instant."
+    },
+    "consent": {
+      "title": "Des idées de début de conversation par IA ?",
+      "what": "Pour te proposer des idées, on envoie un extrait de tes réponses aux prompts et de tes centres d'intérêt, sans ton prénom, ni tes coordonnées, ni tes photos.",
+      "other": "Les réponses de l'autre personne ne sont envoyées que si elle a aussi activé cette option.",
+      "where": "L'extrait part chez Anthropic (IA Claude), aux États-Unis. Ni l'extrait ni les idées ne sont conservés par Epilove.",
+      "never": "Rien n'est jamais envoyé à ta place : tu choisis une idée, tu la modifies, tu l'envoies.",
+      "withdraw": "Tu peux retirer ton accord à tout moment dans Réglages des notifications, rubrique « Dans les conversations ».",
+      "accept": "Activer",
+      "decline": "Non merci"
+    }
+  }
+}

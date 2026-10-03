@@ -1,0 +1,343 @@
+{
+  "title": "Messages",
+  "newMatches": "New bonds",
+  "newMatchesEmpty": "No bond yet. The best reactions take time.",
+  "conversations": "Conversations",
+  "conversationsEmpty": "No conversation yet. Send the first message to a new bond!",
+  "you": "You: {text}",
+  "unread": "{count, plural, one {# unread message} other {# unread messages}}",
+  "friendsMode": "Friends",
+  "selectConversation": "Pick a conversation.",
+  "back": "Back to messages",
+  "openProfile": "Open {name}'s profile",
+  "online": "Online",
+  "matchedOn": "Bond formed on {date}",
+  "composer": {
+    "label": "Write to {name}",
+    "placeholder": "Your message…",
+    "send": "Send",
+    "replyingTo": "Replying to {name}",
+    "cancelReply": "Cancel reply",
+    "closed": "This conversation is closed.",
+    "replyingToSelf": "Replying to your message",
+    "editing": "Editing your message",
+    "cancelEdit": "Cancel",
+    "save": "Save the change",
+    "tools": "Open tools"
+  },
+  "icebreakers": {
+    "title": "Need an icebreaker?",
+    "sharedInterest": "You both like \"{interest}\": what's your best memory with it?",
+    "theirPrompt": "Your answer to \"{question}\" intrigues me: tell me more!",
+    "sharedAnswer": "We both answered \"{answer}\" to \"{question}\". Promising!",
+    "campus": {
+      "0": "Your favourite quiet spot to study on campus?",
+      "1": "Best lunch place around for a quick break between classes?",
+      "2": "Front row or back row in lectures?",
+      "3": "Your ideal Sunday plan in Lyon?",
+      "4": "The subject that surprised you the most this year?",
+      "5": "Tell me about your best student party (the publishable version).",
+      "6": "If you could add one room to the campus, what would it be?",
+      "7": "Your most memorable group project, in one word?"
+    }
+  },
+  "status": {
+    "sending": "Sending…",
+    "failed": "Not sent. Tap to retry.",
+    "queued": "Waiting for network",
+    "seen": "Seen",
+    "edited": "edited",
+    "deleted": "Message deleted"
+  },
+  "actions": {
+    "reply": "Reply",
+    "react": "React",
+    "report": "Report this message",
+    "reactionLabel": "React with {emoji}",
+    "menu": "Message actions",
+    "edit": "Edit",
+    "delete": "Delete for everyone"
+  },
+  "typing": "{name} is typing…",
+  "loadOlder": "Earlier messages",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "errors": {
+    "rate_limited": "Easy! Wait a few seconds before sending more.",
+    "notFound": "This conversation is no longer available.",
+    "generic": "That didn't go through. Try again?",
+    "too_late": "Too late: a message can be edited or deleted within 10 minutes."
+  },
+  "flags": {
+    "contact_handle": "A quick reminder: take the time to get to know each other here before sharing other contacts."
+  },
+  "offline": "Connection lost. Your messages will be sent once you're back online.",
+  "reconnecting": "Reconnecting…",
+  "reported": "Thank you, your report was received.",
+  "warning": {
+    "title": "Are you sure you want to send this?",
+    "lead": "This message could hurt. You can rephrase it, or send it anyway.",
+    "edit": "Rephrase it",
+    "sendAnyway": "Send anyway"
+  },
+  "flagged": "Does this message bother you? Report",
+  "stickers": {
+    "title": "Stickers and GIFs",
+    "stickers": "Stickers",
+    "gifs": "GIFs",
+    "search": "Search a GIF",
+    "giphy": "Powered by GIPHY",
+    "names": {
+      "atom-heart": "Atom in love",
+      "bond": "Bond",
+      "spark": "Spark",
+      "coffee": "Coffee?",
+      "laugh": "Laughing",
+      "blush": "Blushing",
+      "wow": "Wow",
+      "cheers": "Cheers!",
+      "school-epita": "Team EPITA",
+      "school-esme": "Team ESME",
+      "school-supbiotech": "Team Sup'Biotech",
+      "school-isg": "Team ISG",
+      "school-ipsa": "Team IPSA"
+    }
+  },
+  "previewKinds": {
+    "sticker": "Sticker",
+    "gif": "GIF",
+    "image": "Photo",
+    "voice": "Voice message",
+    "date_proposal": "Date proposal",
+    "system": "Message",
+    "game": "Mini-game"
+  },
+  "nudge": {
+    "lead": "It's been a few days with {name}. Feel like restarting?",
+    "action": "Some ideas"
+  },
+  "date": {
+    "open": "Propose a date",
+    "title": "Propose a date",
+    "counterTitle": "Propose something else",
+    "spot": "Where?",
+    "otherPlace": "Another place…",
+    "place": "Place",
+    "placePlaceholder": "A public place, easy to find",
+    "when": "When?",
+    "note": "A word (optional)",
+    "notePlaceholder": "Coffee after class?",
+    "safety": "For a first date, pick a public place and tell someone you trust.",
+    "send": "Propose",
+    "cancel": "Cancel",
+    "cardTitle": "Date proposal",
+    "status": {
+      "proposed": "Pending",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "countered": "Something else proposed"
+    },
+    "accept": "Accept",
+    "counter": "Something else",
+    "decline": "Decline",
+    "calendar": "Add to calendar",
+    "icsTitle": "Date (Epilove)",
+    "errors": {
+      "no_place": "Pick a place.",
+      "too_soon": "Leave at least an hour before the date.",
+      "too_far": "No more than 60 days ahead.",
+      "unknown_spot": "This place is no longer available.",
+      "generic": "That didn't go through. Try again?"
+    }
+  },
+  "media": {
+    "photo": "Send a photo",
+    "photoAlt": "Photo sent in the conversation",
+    "preview": "Photo preview",
+    "viewOnce": "View once",
+    "viewOnceHint": "{name} can open it once, then it's gone.",
+    "send": "Send",
+    "cancel": "Cancel",
+    "sending": "Sending…",
+    "ephemeral": "View-once photo",
+    "open": "Open",
+    "opened": "Opened",
+    "notOpened": "Not opened yet",
+    "close": "Close",
+    "explicit": "This photo might be explicit.",
+    "showAnyway": "Show anyway",
+    "report": "Report",
+    "record": "Record a voice message",
+    "recording": "Recording",
+    "stop": "Stop recording",
+    "discard": "Delete the recording",
+    "sendVoice": "Send the voice message",
+    "play": "Play",
+    "pause": "Pause",
+    "speed": "Playback speed: {speed}",
+    "voiceLabel": "Voice message, {duration}",
+    "maxDuration": "2 minutes max: recording stopped.",
+    "errors": {
+      "unsupported_media": "This format isn't supported.",
+      "too_large": "File too large.",
+      "microphone": "Can't access the microphone. Check your browser's permission.",
+      "already_viewed": "This photo has already been opened."
+    },
+    "once": "Can be opened once"
+  },
+  "safetyKit": {
+    "open": "Safety kit",
+    "title": "Safety kit",
+    "lead": "Before you go, send your date's details to someone you trust. The link stops 24 hours after the start, or as soon as you stop it.",
+    "whatShared": "What's shared: {name}'s first name, the place and the time. Nothing else.",
+    "create": "Create a link to share",
+    "another": "Create another link",
+    "links": "Your links",
+    "copy": "Copy the link",
+    "copied": "Link copied.",
+    "share": "Share…",
+    "shareText": "Here are the details of my date, just in case.",
+    "revoke": "Stop this link",
+    "states": {
+      "active": "Active",
+      "revoked": "Stopped",
+      "expired": "Expired"
+    },
+    "createdAt": "Created at {time}",
+    "errors": {
+      "not_accepted": "The kit is for accepted dates.",
+      "over": "This date is over.",
+      "too_many": "Three active links at most for one date.",
+      "rate_limited": "You've created a lot of links today. Try again tomorrow.",
+      "generic": "That didn't work. Try again in a moment."
+    },
+    "pageTitle": "Your safety kit",
+    "back": "Back to the conversation",
+    "summary": "With {name} · {place} · {date}",
+    "checkInTitle": "Did everything go well?",
+    "checkInLead": "Your answer shows for the people you sent the link to.",
+    "ok": "Yes, all good",
+    "help": "Not really",
+    "okDone": "Noted. The people you trust can see everything's fine.",
+    "helpDone": "We're here. You can call emergency services, report or block {name}, or talk to your school's support service. The people you trust can see it didn't go well.",
+    "report": "Report {name}",
+    "reported": "Report sent. The moderation team is on it.",
+    "changeAnswer": "Change my answer",
+    "emergencyTitle": "If you need help",
+    "numbers": {
+      "112": "112: emergencies",
+      "17": "17: police",
+      "114": "114: emergencies by text",
+      "3919": "3919: violence against women helpline (free, anonymous)"
+    },
+    "schoolHelp": "Support services and contacts at your school",
+    "public": {
+      "metaTitle": "Date details",
+      "title": "Date details",
+      "lead": "{sharer} sent you the details of their date, just in case.",
+      "with": "With",
+      "where": "Where",
+      "when": "When",
+      "map": "See on a map",
+      "newsTitle": "News",
+      "pending": "No news yet. {sharer} will get a quick question after the date.",
+      "ok": "{sharer} said everything went well ({time}).",
+      "help": "{sharer} said it didn't go well ({time}). Check in on them. If they're in danger, call 17 or 112.",
+      "expires": "This link stops on {date}.",
+      "refresh": "Refresh",
+      "goneTitle": "Inactive link",
+      "goneLead": "This link has expired or was stopped by the person who created it.",
+      "about": "Epilove is a dating app for students on the campus. No account needed to see this page."
+    },
+    "linkLabel": "Link to send"
+  },
+  "dispo": {
+    "set": "I'm free…",
+    "title": "Free for…",
+    "lead": "Your bonds see you're free, until the time you choose. Nobody else.",
+    "what": "What?",
+    "where": "Where?",
+    "forHowLong": "For",
+    "duration": "{minutes, plural, =30 {30 minutes} =60 {1 hour} =120 {2 hours} =180 {3 hours} other {5 hours}}",
+    "activities": {
+      "coffee": "a coffee",
+      "lunch": "lunch",
+      "study": "studying together",
+      "walk": "a walk",
+      "sport": "some sport",
+      "drink": "a drink"
+    },
+    "areas": {
+      "campus": "on campus",
+      "city": "in town"
+    },
+    "status": "Free for {activity} {area} until {time}",
+    "chip": "Free",
+    "clear": "Not free any more",
+    "save": "Let's go",
+    "errors": {
+      "duration": "Between a quarter of an hour and twelve hours.",
+      "generic": "That didn't work. Try again in a moment."
+    }
+  },
+  "blind": "Photos show at {needed} messages each: you {mine}/{needed}, {name} {theirs}/{needed}.",
+  "games": {
+    "open": "Play a mini-game",
+    "title": "A little game?",
+    "names": {
+      "would_you_rather": "Would you rather",
+      "nerd_quiz": "Nerd quiz",
+      "two_truths": "Two truths and a lie"
+    },
+    "leads": {
+      "would_you_rather": "A dilemma, you each answer on your own.",
+      "nerd_quiz": "Geek tastes, no wrong answer.",
+      "two_truths": "Three sentences about you, one false: the other has to find it."
+    },
+    "you": "You",
+    "yourTurn": "Your turn: your answer stays hidden until the other's.",
+    "otherPlayed": "{name} answered. Your turn!",
+    "waiting": "Waiting for {name}…",
+    "same": "In sync!",
+    "different": "Different takes.",
+    "send": "Send",
+    "truths": {
+      "guess": "Which one is false?",
+      "waitingGuess": "{name} has to find the lie.",
+      "write": "Write three sentences about yourself and tick the false one.",
+      "statement": "Sentence {number}",
+      "markLie": "Sentence {number} is the lie",
+      "lieHint": "The ticked circle marks the lie. It stays secret until the answer.",
+      "yourGuess": "Your pick",
+      "theirGuess": "{name}'s pick",
+      "lie": "The lie",
+      "found": "Well spotted!",
+      "missed": "Missed, nice try.",
+      "foundYou": "{name} saw through you.",
+      "fooled": "{name} got fooled."
+    }
+  },
+  "ai": {
+    "button": "AI ideas",
+    "again": "More ideas",
+    "hint": "Optional",
+    "loading": "The AI is looking for ideas…",
+    "label": "AI suggestions: read and adapt them before sending.",
+    "notices": {
+      "nothing": "No idea this time. The suggestions above are still there.",
+      "quota": "You've used your AI ideas for today. Come back tomorrow!",
+      "unavailable": "The AI isn't answering right now. Try again later.",
+      "error": "That didn't work. Try again in a moment."
+    },
+    "consent": {
+      "title": "AI ideas to start the conversation?",
+      "what": "To suggest ideas, we send an excerpt of your prompt answers and interests, without your first name, contact details or photos.",
+      "other": "The other person's answers are only sent if they turned this option on too.",
+      "where": "The excerpt goes to Anthropic (Claude AI), in the United States. Epilove keeps neither the excerpt nor the ideas.",
+      "never": "Nothing is ever sent on your behalf: you pick an idea, edit it, and send it.",
+      "withdraw": "You can withdraw your consent at any time in Notification settings, under “In conversations”.",
+      "accept": "Turn on",
+      "decline": "No thanks"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+[project]
+name = "epilove-pact-solver"
+version = "0.0.0"
+description = "Global matching of the Pact (PAC-02): maximum weight matching on a general graph."
+requires-python = ">=3.11"
+dependencies = [
+  "networkx==3.5",
+]
+
+[project.optional-dependencies]
+cpsat = ["ortools==9.14.6206"]
+
+[dependency-groups]
+dev = [
+  "pytest==8.4.2",
+  "ruff==0.13.3",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

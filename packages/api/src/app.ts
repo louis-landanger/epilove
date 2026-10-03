@@ -6,7 +6,7 @@ import { createMailer, type Mailer, mailerConfigFromEnv } from "@epilove/email";
 import { imgproxyConfigFromEnv } from "@epilove/media";
 import { createStorage, type Storage, storageConfigFromEnv } from "@epilove/media/storage";
 import { createMemoryRateLimiter } from "@epilove/rate-limit";
-import { createRouterClient } from "@orpc/server";
+import { createRouterClient, ORPCError, onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Hono } from "hono";
 import type { ApiContext, ApiServices, Viewer, ViewerResolver } from "./context";
@@ -84,7 +84,19 @@ export function defaultServices(env: Record<string, string | undefined> = proces
  * and runnable on its own if it ever needs to become a separate service.
  */
 export function createApp(dependencies: AppDependencies) {
-  const rpc = new RPCHandler(router);
+  const rpc = new RPCHandler(router, {
+    interceptors: [
+      onError((error) => {
+        // Unexpected failures only, and only their class: messages can embed SQL parameters
+        // or user data (docs/07-confiance-securite.md).
+        if (!(error instanceof ORPCError) || error.code === "INTERNAL_SERVER_ERROR") {
+          const cause =
+            error instanceof Error && error.cause instanceof Error ? ` (cause: ${error.cause.name})` : "";
+          console.error(`[api] procedure failed: ${error instanceof Error ? error.name : "unknown"}${cause}`);
+        }
+      }),
+    ],
+  });
   const services: ApiServices = { ...defaultServices(), ...dependencies.services };
   const app = new Hono().basePath(API_BASE_PATH);
 

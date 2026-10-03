@@ -4,9 +4,20 @@
  * browser (Web Crypto). Message ids are generated client-side with it, which
  * makes sending idempotent.
  */
-export function uuidv7(now: number = Date.now()): string {
+export function uuidv7(now: number = Date.now(), random?: Uint8Array): string {
   const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
+  if (random) {
+    // Given random bytes (seeded data, tests): the id is then deterministic.
+    if (random.length < 10) {
+      throw new RangeError("uuidv7 needs at least 10 random bytes.");
+    }
+    bytes.set(random.subarray(0, 10), 6);
+  } else {
+    crypto.getRandomValues(bytes);
+  }
+  if (!Number.isFinite(now) || now < 0 || now >= 2 ** 48) {
+    throw new RangeError("uuidv7 needs a 48-bit millisecond timestamp.");
+  }
   let timestamp = Math.floor(now);
   for (let index = 5; index >= 0; index -= 1) {
     bytes[index] = timestamp & 0xff;

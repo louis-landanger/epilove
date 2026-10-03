@@ -3,6 +3,15 @@ import { z } from "zod";
 const envSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(4),
+  // Session B: realtime relay. Without them the outbox is not relayed (development without Centrifugo).
+  CENTRIFUGO_URL: z.url().optional(),
+  CENTRIFUGO_HTTP_API_KEY: z.string().min(1).optional(),
+  // Web Push (session B). Without them, notifications stay in the in-app centre only.
+  VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  VAPID_SUBJECT: z.string().min(1).optional(),
+  // Optional health endpoint (deployment checks, Playwright).
+  WORKER_HEALTH_PORT: z.coerce.number().int().min(1).max(65535).optional(),
 });
 
 export type WorkerEnv = z.infer<typeof envSchema>;

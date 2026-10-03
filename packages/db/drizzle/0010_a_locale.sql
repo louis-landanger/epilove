@@ -1,2 +1,0 @@
-ALTER TABLE "app_user" ADD COLUMN "locale" text DEFAULT 'fr' NOT NULL;--> statement-breakpoint
-ALTER TABLE "app_user" ADD CONSTRAINT "app_user_locale_check" CHECK ("app_user"."locale" in ('fr', 'en'));

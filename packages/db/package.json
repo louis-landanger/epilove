@@ -7,7 +7,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./migrations": "./src/migrations.ts",
-    "./repositories/*": "./src/repositories/*.ts"
+    "./repositories/*": "./src/repositories/*.ts",
+    "./dev-seed": "./src/dev-seed/seed.ts",
+    "./testing": "./src/testing/fixtures.ts",
+    "./storage": "./src/storage/object-store.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
@@ -15,10 +18,14 @@
     "db:seed": "tsx --env-file-if-exists=../../.env src/seed.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "db:promote": "tsx --env-file-if-exists=../../.env src/promote.ts"
+    "db:promote": "tsx --env-file-if-exists=../../.env src/promote.ts",
+    "db:seed:dev": "tsx --env-file-if-exists=../../.env src/dev-seed/index.ts"
   },
   "dependencies": {
     "@epilove/core": "workspace:*",
+    "@epilove/crypto": "workspace:*",
+    "@epilove/realtime": "workspace:*",
+    "aws4fetch": "catalog:",
     "drizzle-orm": "catalog:",
     "graphile-worker": "catalog:",
     "postgres": "catalog:"

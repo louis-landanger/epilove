@@ -1,0 +1,63 @@
+{
+  "liaison": {
+    "title": "<em>Bond</em> formed.",
+    "announce": "It's a match with {name}!",
+    "lead": "You and {name} liked each other.",
+    "write": "Write to {name}",
+    "continue": "Keep discovering"
+  },
+  "profile": {
+    "back": "Back",
+    "about": "About",
+    "compatibility": "Compatibility",
+    "compatibilityLead": "Computed from your questionnaire answers, both ways.",
+    "agreement": "You both answered \"{answer}\" to: {question}",
+    "quirk": "You disagree on \"{question}\": {mine} versus {theirs}. Nobody's perfect.",
+    "notEnough": "Not enough questions in common for a reliable score.",
+    "fillQuestionnaire": "Answer the questionnaire to see your affinities",
+    "interests": "Interests",
+    "sharedInterest": "shared",
+    "languages": "Languages",
+    "intentions": "Looking for",
+    "program": "Programme",
+    "year": "Class of {year}",
+    "likedYou": "{name} liked you",
+    "alreadyLiked": "Like sent",
+    "message": "Write",
+    "more": "More options",
+    "unmatch": "Unmatch",
+    "unmatchConfirm": "Unmatch {name}? The conversation will close for both of you.",
+    "block": "Block",
+    "blockConfirm": "Block {name}? You won't see each other anywhere any more. {name} won't be told.",
+    "report": "Report",
+    "notFound": "This profile isn't available.",
+    "notFoundLead": "It may have been paused or deleted."
+  },
+  "safety": {
+    "error": "That didn't go through. Try again?",
+    "notAvailable": "This action isn't available yet. Please try again a bit later.",
+    "blocked": "{name} is blocked.",
+    "reported": "Thank you, your report was received. The moderation team handles it quickly.",
+    "reportTitle": "Report {name}",
+    "reportLead": "Your report is confidential: the person won't know who made it.",
+    "reason": "Reason",
+    "reasons": {
+      "harassment": "Harassment or insistent messages",
+      "threat": "Threat or violence",
+      "explicit_content": "Unsolicited sexual content",
+      "hate": "Hate speech",
+      "minor": "Under 18",
+      "impersonation": "Impersonation",
+      "outing": "Revealing my orientation or that I'm here",
+      "spam": "Spam or promotion",
+      "not_on_campus": "Not part of the campus",
+      "other": "Something else"
+    },
+    "details": "Details (optional)",
+    "alsoBlock": "Also block this person",
+    "send": "Send the report",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "help": "In danger? Call 17 or 112."
+  }
+}

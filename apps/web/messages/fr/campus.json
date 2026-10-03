@@ -1,0 +1,110 @@
+{
+  "title": "Campus",
+  "states": {
+    "signInTitle": "Connecte-toi pour continuer",
+    "signInLead": "Cette partie de l'app est réservée aux membres vérifiés du campus.",
+    "signInAction": "Se connecter",
+    "devSignIn": "Choisir un membre fictif",
+    "profileTitle": "Termine ton profil d'abord",
+    "profileLead": "Encore quelques étapes et tu pourras découvrir les autres membres.",
+    "profileAction": "Continuer mon profil",
+    "errorTitle": "Quelque chose a planté de notre côté",
+    "errorLead": "Ce n'est pas toi, c'est nous. On relance ?",
+    "retry": "Réessayer",
+    "offline": "Connexion perdue. Tes actions partiront dès le retour du réseau.",
+    "loading": "Chargement…",
+    "back": "Retour"
+  },
+  "hub": {
+    "lead": "Ce qui se passe entre les cinq écoles.",
+    "pact": {
+      "title": "Le Pacte",
+      "none": "Prochaine édition à la Saint-Valentin ou à la rentrée.",
+      "upcoming": "Ouverture le {date}",
+      "open": "Inscriptions ouvertes jusqu'au {date}",
+      "closed": "Révélation le {date}",
+      "revealing": "Révélation en cours",
+      "revealed": "Les résultats sont tombés",
+      "joined": "Tu participes",
+      "action": "Ouvrir"
+    },
+    "questionnaire": {
+      "title": "Questionnaire de compatibilité",
+      "lead": "Quarante-cinq questions qui nourrissent les scores du deck et le Pacte.",
+      "progress": "{count, plural, =0 {Pas encore commencé} one {# réponse} other {# réponses}}",
+      "action": "Répondre"
+    },
+    "spots": {
+      "title": "Spots",
+      "lead": "Parcs, places et berges autour du campus pour un premier date.",
+      "action": "Explorer"
+    },
+    "events": {
+      "title": "Événements",
+      "lead": "Soirées, tournois, sorties : ce que les assos organisent, et qui de tes liaisons y va.",
+      "action": "Voir le programme"
+    },
+    "weekly": {
+      "title": "Question de la semaine",
+      "lead": "Une question, cinq écoles, les résultats par école.",
+      "action": "Répondre"
+    },
+    "index": {
+      "title": "Indice inter-écoles",
+      "lead": "Quelles écoles se rencontrent le plus cette semaine ?",
+      "action": "Voir l'indice"
+    },
+    "wrapped": {
+      "title": "Ton Wrapped",
+      "lead": "Ton année sur l'app, en quelques chiffres rien qu'à toi.",
+      "action": "Voir"
+    }
+  },
+  "weekly": {
+    "title": "Question de la semaine",
+    "lead": "Une question par semaine pour tout le campus. Ta réponse compte aussi un peu dans les profils qu'on te propose.",
+    "back": "Campus",
+    "until": "Jusqu'au {date}",
+    "none": "Pas de question cette semaine. Reviens lundi !",
+    "yourAnswer": "Ta réponse :",
+    "change": "Changer ma réponse",
+    "resultsTitle": "Ce que répond le campus",
+    "campus": "Tout le campus",
+    "bySchool": "Par école",
+    "answers": "{count, plural, one {# réponse} other {# réponses}}",
+    "notEnough": "Pas encore assez de réponses pour afficher des résultats.",
+    "threshold": "Une école n'apparaît qu'à partir de 10 réponses, pour que personne ne soit reconnaissable.",
+    "percent": "{percent} %",
+    "error": "Ça n'a pas marché. Réessaie dans un instant.",
+    "closed": "La semaine a changé : voici la nouvelle question."
+  },
+  "crossSchool": {
+    "title": "Indice inter-écoles",
+    "lead": "Les nouvelles liaisons des sept derniers jours entre deux écoles.",
+    "back": "Campus",
+    "pair": "{a} × {b}",
+    "count": "{count} liaisons",
+    "empty": "Pas encore de paire d'écoles à afficher cette semaine.",
+    "threshold": "Une paire d'écoles n'apparaît qu'à partir de 10 liaisons, et aucun total n'est donné : impossible d'en déduire un petit nombre."
+  },
+  "wrapped": {
+    "title": "Ton Wrapped",
+    "lead": "Ton année {label} sur Epilove. Rien que pour toi : personne d'autre ne le voit.",
+    "back": "Campus",
+    "matches": "{count, plural, =0 {Pas encore de liaison : l'année ne fait que commencer.} one {liaison cette année} other {liaisons cette année}}",
+    "messages": "{count, plural, =0 {Pas encore de message envoyé.} one {message envoyé} other {messages envoyés}}",
+    "conversations": "{count, plural, =0 {} one {dans # conversation} other {dans # conversations}}",
+    "likes": "{count, plural, =0 {Pas encore de like donné.} one {like donné} other {likes donnés}}",
+    "reaction": "Ta réaction préférée",
+    "peak": "Ton heure de pointe",
+    "hour": "{hour} h",
+    "events": "{count, plural, =0 {Pas encore d'événement.} one {événement du campus} other {événements du campus}}",
+    "pacts": "{count, plural, =0 {Pas encore de Pacte.} one {Pacte joué} other {Pactes joués}}",
+    "download": "Télécharger en image",
+    "privacy": "L'image ne contient que tes chiffres : ni prénom, ni photo, ni message. À toi de voir si tu la partages.",
+    "imageTitle": "Mon année sur Epilove",
+    "imageFooter": "Rien que mes chiffres.",
+    "reactionWord": "Réaction préférée : {word}",
+    "peakWord": "Heure de pointe : {hour} h"
+  }
+}

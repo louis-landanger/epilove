@@ -49,17 +49,27 @@ function contentSecurityPolicy(nonce: string) {
   const development = process.env.NODE_ENV !== "production";
   const media = originOf(process.env.IMGPROXY_URL);
   const realtime = process.env.NEXT_PUBLIC_CENTRIFUGO_URL ?? "";
-  // Photos are posted straight to object storage with a presigned form.
+  // The chat's WebSocket, as `realtime.token` hands it out (CENTRIFUGO_WS_URL, or derived from CENTRIFUGO_URL).
+  const websocket = originOf(
+    process.env.CENTRIFUGO_WS_URL ?? process.env.CENTRIFUGO_URL?.replace(/^http/, "ws"),
+  );
+  // Photos are posted straight to object storage with a presigned form; voice messages play from it.
   const uploads = originOf(process.env.S3_PUBLIC_ENDPOINT || process.env.S3_ENDPOINT);
+  // Base map of the Spots (IRL-02): style, tiles and glyphs from the same host.
+  const maps = originOf(process.env.NEXT_PUBLIC_MAP_STYLE_URL);
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     // Apple: artwork and 30-second previews of "Mon son du moment" (PRO-07).
-    `img-src 'self' blob: data: ${media} https://*.mzstatic.com`.replaceAll(/\s+/g, " "),
-    `media-src 'self' blob: ${media} https://*.apple.com`.replaceAll(/\s+/g, " "),
+    // GIPHY: GIFs in conversations (CHAT-05), only when a key is set.
+    `img-src 'self' blob: data: ${media} ${maps} https://*.mzstatic.com https://*.giphy.com`.replaceAll(
+      /\s+/g,
+      " ",
+    ),
+    `media-src 'self' blob: ${media} ${uploads} https://*.apple.com`.replaceAll(/\s+/g, " "),
     "font-src 'self'",
-    `connect-src 'self' ${realtime} ${uploads}${development ? " ws: wss:" : ""}`
+    `connect-src 'self' ${realtime} ${websocket} ${uploads} ${maps}${development ? " ws: wss:" : ""}`
       .replaceAll(/\s+/g, " ")
       .trim(),
     "frame-src https://challenges.cloudflare.com",

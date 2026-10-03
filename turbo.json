@@ -14,7 +14,15 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
-      "passThroughEnv": ["DATABASE_URL", "MAILPIT_URL", "SMTP_URL", "VALKEY_URL"]
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "EMAIL_HMAC_SECRET",
+        "ENCRYPTION_CURRENT_KEY_ID",
+        "ENCRYPTION_KEYS",
+        "MAILPIT_URL",
+        "SMTP_URL",
+        "VALKEY_URL"
+      ]
     },
     "test:e2e": {
       "dependsOn": ["build"],

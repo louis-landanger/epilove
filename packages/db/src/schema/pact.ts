@@ -1,10 +1,20 @@
-import { MODES } from "@epilove/core";
+import { MODES, PACT_STATUSES } from "@epilove/core";
 import { sql } from "drizzle-orm";
-import { check, jsonb, pgTable, primaryKey, real, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  jsonb,
+  pgTable,
+  primaryKey,
+  real,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createdAt, id, oneOf, subsetOf } from "./columns";
+import { match } from "./discovery";
 import { appUser } from "./users";
-
-export const PACT_STATUSES = ["draft", "open", "closed", "computed", "revealed"] as const;
 
 /** A Pact edition (PAC-05): Valentine's, back-to-school… */
 export const pactSeason = pgTable(
@@ -18,6 +28,10 @@ export const pactSeason = pgTable(
     revealAt: timestamp({ withTimezone: true }).notNull(),
     status: text({ enum: PACT_STATUSES }).notNull().default("draft"),
     threshold: real().notNull().default(0.6),
+    /** Quality report of the last computation (aggregates only, no identifiers). */
+    report: jsonb(),
+    computedAt: timestamp({ withTimezone: true }),
+    revealedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
@@ -62,10 +76,13 @@ export const pactResult = pgTable(
       .references(() => appUser.id, { onDelete: "cascade" }),
     score: real().notNull(),
     explanation: jsonb(),
+    /** The conversation opened at the reveal (PAC-03). */
+    matchId: uuid().references(() => match.id, { onDelete: "set null" }),
     createdAt: createdAt(),
   },
   (t) => [
     unique().on(t.seasonId, t.mode, t.userLow, t.userHigh),
+    index().on(t.seasonId, t.userHigh),
     check("pact_result_ordered_pair", sql`${t.userLow} < ${t.userHigh}`),
     check("pact_result_mode_check", oneOf(t.mode, MODES)),
   ],

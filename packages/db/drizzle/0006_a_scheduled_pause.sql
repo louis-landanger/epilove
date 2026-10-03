@@ -1,1 +1,0 @@
-ALTER TABLE "app_user" ADD COLUMN "paused_until" timestamp with time zone;

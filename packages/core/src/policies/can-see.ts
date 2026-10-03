@@ -15,6 +15,15 @@ function isWithinAgeRange(age: number, range: Member["ageRange"]): boolean {
   return age >= range.min && age <= range.max;
 }
 
+/**
+ * Modes two members share: friends when both chose it, love when both chose
+ * it and each is attracted to the other's gender. Used for discovery and to
+ * decide the mode of a new match.
+ */
+export function sharedModes(viewer: Member, target: Member): Mode[] {
+  return compatibleModes(viewer, target);
+}
+
 function compatibleModes(viewer: Member, target: Member): Mode[] {
   return viewer.modes.filter((mode) => {
     if (!target.modes.includes(mode)) {
@@ -56,6 +65,9 @@ export function canSee(viewer: Member, target: Member, context: PolicyContext): 
   const { relations } = context;
   if (relations.hasBlocked(viewer.id, target.id) || relations.hasBlocked(target.id, viewer.id)) {
     return hidden("blocked");
+  }
+  if (relations.hasEndedMatch(viewer.id, target.id)) {
+    return hidden("unmatched");
   }
 
   if (viewer.hiddenEmailHmacs.has(target.emailHmac) || target.hiddenEmailHmacs.has(viewer.emailHmac)) {

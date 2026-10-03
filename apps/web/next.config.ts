@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
     "@epilove/email",
     "@epilove/media",
     "@epilove/rate-limit",
+    "@epilove/realtime",
     "@epilove/tokens",
     "@epilove/ui",
   ],
@@ -42,6 +43,9 @@ const nextConfig: NextConfig = {
     "nodemailer",
     "@aws-sdk/client-s3",
     "@aws-sdk/s3-presigned-post",
+    // esbuild bundles the service worker at build time (@serwist/turbopack).
+    "esbuild",
+    "esbuild-wasm",
   ],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

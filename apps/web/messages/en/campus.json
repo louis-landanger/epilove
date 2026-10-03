@@ -1,0 +1,110 @@
+{
+  "title": "Campus",
+  "states": {
+    "signInTitle": "Sign in to continue",
+    "signInLead": "This part of the app is for verified campus members only.",
+    "signInAction": "Sign in",
+    "devSignIn": "Pick a fictional member",
+    "profileTitle": "Finish your profile first",
+    "profileLead": "A few more steps and you can discover other members.",
+    "profileAction": "Continue my profile",
+    "errorTitle": "Something broke on our side",
+    "errorLead": "It's not you, it's us. Shall we retry?",
+    "retry": "Retry",
+    "offline": "Connection lost. Your actions will go through once you're back online.",
+    "loading": "Loading…",
+    "back": "Back"
+  },
+  "hub": {
+    "lead": "What's happening between the five schools.",
+    "pact": {
+      "title": "The Pact",
+      "none": "Next edition on Valentine's Day or back to school.",
+      "upcoming": "Opens on {date}",
+      "open": "Sign-ups open until {date}",
+      "closed": "Reveal on {date}",
+      "revealing": "Reveal in progress",
+      "revealed": "The results are in",
+      "joined": "You're taking part",
+      "action": "Open"
+    },
+    "questionnaire": {
+      "title": "Compatibility questionnaire",
+      "lead": "Forty-five questions that feed the deck's scores and the Pact.",
+      "progress": "{count, plural, =0 {Not started yet} one {# answer} other {# answers}}",
+      "action": "Answer"
+    },
+    "spots": {
+      "title": "Spots",
+      "lead": "Parks, squares and riverbanks around campus for a first date.",
+      "action": "Explore"
+    },
+    "events": {
+      "title": "Events",
+      "lead": "Parties, tournaments, outings: what the societies put on, and which of your bonds are going.",
+      "action": "See what's on"
+    },
+    "weekly": {
+      "title": "Question of the week",
+      "lead": "One question, five schools, results by school.",
+      "action": "Answer"
+    },
+    "index": {
+      "title": "Cross-school index",
+      "lead": "Which schools are meeting the most this week?",
+      "action": "See the index"
+    },
+    "wrapped": {
+      "title": "Your Wrapped",
+      "lead": "Your year on the app, in a few figures just for you.",
+      "action": "See"
+    }
+  },
+  "weekly": {
+    "title": "Question of the week",
+    "lead": "One question a week for the whole campus. Your answer also counts a little in the profiles we suggest.",
+    "back": "Campus",
+    "until": "Until {date}",
+    "none": "No question this week. Come back on Monday!",
+    "yourAnswer": "Your answer:",
+    "change": "Change my answer",
+    "resultsTitle": "What the campus says",
+    "campus": "Whole campus",
+    "bySchool": "By school",
+    "answers": "{count, plural, one {# answer} other {# answers}}",
+    "notEnough": "Not enough answers yet to show results.",
+    "threshold": "A school only shows from 10 answers, so that nobody can be recognised.",
+    "percent": "{percent}%",
+    "error": "That didn't work. Try again in a moment.",
+    "closed": "The week has changed: here is the new question."
+  },
+  "crossSchool": {
+    "title": "Cross-school index",
+    "lead": "New bonds over the last seven days between two schools.",
+    "back": "Campus",
+    "pair": "{a} × {b}",
+    "count": "{count} bonds",
+    "empty": "No pair of schools to show this week yet.",
+    "threshold": "A pair of schools only shows from 10 bonds, and no total is given: a small number can't be worked out."
+  },
+  "wrapped": {
+    "title": "Your Wrapped",
+    "lead": "Your {label} year on Epilove. Just for you: nobody else sees it.",
+    "back": "Campus",
+    "matches": "{count, plural, =0 {No bond yet: the year has only just begun.} one {bond this year} other {bonds this year}}",
+    "messages": "{count, plural, =0 {No message sent yet.} one {message sent} other {messages sent}}",
+    "conversations": "{count, plural, =0 {} one {in # conversation} other {in # conversations}}",
+    "likes": "{count, plural, =0 {No like given yet.} one {like given} other {likes given}}",
+    "reaction": "Your favourite reaction",
+    "peak": "Your peak hour",
+    "hour": "{hour}:00",
+    "events": "{count, plural, =0 {No event yet.} one {campus event} other {campus events}}",
+    "pacts": "{count, plural, =0 {No Pact yet.} one {Pact played} other {Pacts played}}",
+    "download": "Download as an image",
+    "privacy": "The image only holds your figures: no first name, no photo, no message. Up to you whether you share it.",
+    "imageTitle": "My year on Epilove",
+    "imageFooter": "Just my figures.",
+    "reactionWord": "Favourite reaction: {word}",
+    "peakWord": "Peak hour: {hour}:00"
+  }
+}

@@ -44,7 +44,12 @@ export interface Member {
 /** Relations between members, loaded by the caller (database, cache…). */
 export interface Relations {
   hasBlocked(blockerId: string, blockedId: string): boolean;
+  /** A like or a super like (not a pass) from `actorId` to `targetId`. */
   hasLiked(actorId: string, targetId: string): boolean;
+  /** An active (not unmatched) match between the two members, in either order. */
+  hasActiveMatch(a: string, b: string): boolean;
+  /** A match that one of the two ended (unmatch): the pair stays apart for good, like a block. */
+  hasEndedMatch(a: string, b: string): boolean;
 }
 
 export interface PolicyContext {
@@ -63,6 +68,7 @@ export type HiddenReason =
   | "viewer_not_eligible"
   | "target_unavailable"
   | "blocked"
+  | "unmatched"
   | "hidden_contact"
   | "hidden_school"
   | "hidden_year"

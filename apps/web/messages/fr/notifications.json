@@ -1,0 +1,68 @@
+{
+  "title": "Notifications",
+  "empty": "Rien de neuf pour l'instant.",
+  "emptyLead": "Les likes, les liaisons et les messages apparaîtront ici.",
+  "markAllRead": "Tout marquer comme lu",
+  "unread": "Non lue",
+  "loadMore": "Plus anciennes",
+  "types": {
+    "like_received": "Quelqu'un t'a liké. Va voir qui !",
+    "superlike_received": "Tu as reçu un coup de cœur.",
+    "match_created": "Nouvelle liaison ! Écris le premier message.",
+    "message_received": "Nouveau message dans une conversation.",
+    "drop_ready": "Ton Drop du soir est arrivé.",
+    "pact_reveal": "C'est l'heure : les résultats du Pacte sont là.",
+    "chat_nudge": "Une conversation attend une relance. Une idée pour repartir ?",
+    "event_cancelled": "Un événement auquel tu as répondu est annulé.",
+    "date_check_in": "Ton date est passé : tout s'est bien passé ?"
+  },
+  "settings": {
+    "title": "Réglages des notifications",
+    "back": "Retour",
+    "push": "Notifications push",
+    "pushLead": "Sur ce téléphone ou cet ordinateur, même quand l'app est fermée. Elles restent discrètes : ni prénom ni contenu sur l'écran verrouillé.",
+    "enable": "Activer sur cet appareil",
+    "disable": "Désactiver sur cet appareil",
+    "enabled": "Activées sur cet appareil.",
+    "denied": "Les notifications sont bloquées dans les réglages du navigateur. Autorise-les pour ce site, puis reviens ici.",
+    "unsupported": "Ce navigateur ne gère pas les notifications push.",
+    "ios": "Sur iPhone, ajoute d'abord l'app à ton écran d'accueil (Partager, puis « Sur l'écran d'accueil »), puis ouvre-la depuis là pour activer les notifications.",
+    "notConfigured": "Les notifications push ne sont pas encore disponibles.",
+    "error": "Ça n'a pas marché. Réessaie dans un instant.",
+    "groupsTitle": "Ce que tu veux recevoir",
+    "channelPush": "Push",
+    "channelEmail": "E-mail",
+    "emailHint": "L'e-mail sert au résumé hebdomadaire facultatif.",
+    "groups": {
+      "likes": "Likes et coups de cœur",
+      "matches": "Nouvelles liaisons",
+      "messages": "Messages",
+      "drop": "Drop du soir",
+      "pact": "Le Pacte",
+      "events": "Événements"
+    },
+    "saved": "Enregistré.",
+    "chatTitle": "Dans les conversations",
+    "readReceipts": "Accusés de lecture",
+    "readReceiptsHint": "Si tu les désactives, tu ne vois plus ceux des autres non plus.",
+    "onlineStatus": "Statut « En ligne »",
+    "onlineStatusHint": "Visible uniquement par tes liaisons, et seulement si vous le partagez tous les deux.",
+    "discreet": "Les notifications sont discrètes par défaut : ce réglage se trouve dans la confidentialité.",
+    "quiet": {
+      "title": "Heures calmes",
+      "hint": "Pas de notification push pendant ces heures (heure de Lyon). Tout reste dans le centre de notifications.",
+      "startHour": "De",
+      "endHour": "à",
+      "hour": "{hour} h",
+      "allowMessages": "Laisser passer les messages",
+      "allowMessagesHint": "Les nouveaux messages de tes liaisons sonnent quand même. La vérification après un date passe toujours."
+    },
+    "aiIcebreakers": "Idées de conversation par IA",
+    "aiIcebreakersHint": "Quand tu demandes des idées, un extrait de tes réponses aux prompts, sans prénom ni coordonnées, part chez Anthropic (États-Unis). Rien n'est envoyé à ta place."
+  },
+  "offline": {
+    "title": "Pas de réseau",
+    "lead": "La page n'a pas pu se charger. Elle reviendra dès que la connexion sera rétablie."
+  },
+  "settingsShort": "Réglages"
+}

@@ -1,6 +1,9 @@
 export * from "./auth";
 export * from "./campus";
+export * from "./community";
+export * from "./date-safety";
 export * from "./discovery";
+export * from "./events";
 export * from "./messaging";
 export * from "./notifications";
 export * from "./outbox";
@@ -8,4 +11,5 @@ export * from "./pact";
 export * from "./profiles";
 export * from "./questionnaire";
 export * from "./safety";
+export * from "./spots";
 export * from "./users";

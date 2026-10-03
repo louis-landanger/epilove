@@ -1,0 +1,68 @@
+{
+  "title": "Notifications",
+  "empty": "Nothing new for now.",
+  "emptyLead": "Likes, bonds and messages will show up here.",
+  "markAllRead": "Mark all as read",
+  "unread": "Unread",
+  "loadMore": "Older",
+  "types": {
+    "like_received": "Someone liked you. Go see who!",
+    "superlike_received": "You got a crush.",
+    "match_created": "New bond! Send the first message.",
+    "message_received": "New message in a conversation.",
+    "drop_ready": "Your evening Drop is here.",
+    "pact_reveal": "It's time: the Pact results are in.",
+    "chat_nudge": "A conversation is waiting for a nudge. An idea to restart?",
+    "event_cancelled": "An event you answered has been cancelled.",
+    "date_check_in": "Your date is over: did everything go well?"
+  },
+  "settings": {
+    "title": "Notification settings",
+    "back": "Back",
+    "push": "Push notifications",
+    "pushLead": "On this phone or computer, even when the app is closed. They stay discreet: no first name and no content on the lock screen.",
+    "enable": "Turn on for this device",
+    "disable": "Turn off for this device",
+    "enabled": "On for this device.",
+    "denied": "Notifications are blocked in your browser settings. Allow them for this site, then come back here.",
+    "unsupported": "This browser does not support push notifications.",
+    "ios": "On iPhone, first add the app to your home screen (Share, then \"Add to Home Screen\"), then open it from there to turn notifications on.",
+    "notConfigured": "Push notifications are not available yet.",
+    "error": "That didn't work. Try again in a moment.",
+    "groupsTitle": "What you want to receive",
+    "channelPush": "Push",
+    "channelEmail": "Email",
+    "emailHint": "Email is used for the optional weekly digest.",
+    "groups": {
+      "likes": "Likes and crushes",
+      "matches": "New bonds",
+      "messages": "Messages",
+      "drop": "Evening Drop",
+      "pact": "The Pact",
+      "events": "Events"
+    },
+    "saved": "Saved.",
+    "chatTitle": "In conversations",
+    "readReceipts": "Read receipts",
+    "readReceiptsHint": "If you turn them off, you no longer see other people's either.",
+    "onlineStatus": "\"Online\" status",
+    "onlineStatusHint": "Only visible to your bonds, and only if you both share it.",
+    "discreet": "Notifications are discreet by default: this setting is in privacy.",
+    "quiet": {
+      "title": "Quiet hours",
+      "hint": "No push notifications during these hours (Lyon time). Everything stays in the notification centre.",
+      "startHour": "From",
+      "endHour": "to",
+      "hour": "{hour}:00",
+      "allowMessages": "Let messages through",
+      "allowMessagesHint": "New messages from your bonds still ring. The check after a date always gets through."
+    },
+    "aiIcebreakers": "AI conversation ideas",
+    "aiIcebreakersHint": "When you ask for ideas, an excerpt of your prompt answers, without your first name or contact details, goes to Anthropic (United States). Nothing is sent on your behalf."
+  },
+  "offline": {
+    "title": "No network",
+    "lead": "The page couldn't load. It will come back as soon as the connection does."
+  },
+  "settingsShort": "Settings"
+}

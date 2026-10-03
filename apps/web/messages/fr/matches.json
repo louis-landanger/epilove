@@ -1,0 +1,63 @@
+{
+  "liaison": {
+    "title": "<em>Liaison</em> établie.",
+    "announce": "C'est un match avec {name} !",
+    "lead": "{name} et toi vous êtes likés mutuellement.",
+    "write": "Écrire à {name}",
+    "continue": "Continuer à découvrir"
+  },
+  "profile": {
+    "back": "Retour",
+    "about": "À propos",
+    "compatibility": "Compatibilité",
+    "compatibilityLead": "Calculée à partir de vos réponses au questionnaire, dans les deux sens.",
+    "agreement": "Vous avez tous les deux répondu « {answer} » à : {question}",
+    "quirk": "Vous n'êtes pas d'accord sur « {question} » : {mine} contre {theirs}. Personne n'est parfait.",
+    "notEnough": "Pas assez de questions en commun pour un score fiable.",
+    "fillQuestionnaire": "Réponds au questionnaire pour voir vos affinités",
+    "interests": "Centres d'intérêt",
+    "sharedInterest": "en commun",
+    "languages": "Langues",
+    "intentions": "Cherche",
+    "program": "Cursus",
+    "year": "Promo {year}",
+    "likedYou": "{name} t'a liké",
+    "alreadyLiked": "Like envoyé",
+    "message": "Écrire",
+    "more": "Plus d'options",
+    "unmatch": "Annuler le match",
+    "unmatchConfirm": "Annuler le match avec {name} ? La conversation sera fermée pour vous deux.",
+    "block": "Bloquer",
+    "blockConfirm": "Bloquer {name} ? Vous ne vous verrez plus, nulle part. {name} n'en sera pas informé·e.",
+    "report": "Signaler",
+    "notFound": "Ce profil n'est pas disponible.",
+    "notFoundLead": "Il a peut-être été mis en pause ou supprimé."
+  },
+  "safety": {
+    "error": "Ça n'est pas passé. On réessaie ?",
+    "notAvailable": "Cette action n'est pas encore disponible. Réessaie un peu plus tard.",
+    "blocked": "{name} est bloqué·e.",
+    "reported": "Merci, ton signalement a bien été reçu. L'équipe de modération le traite rapidement.",
+    "reportTitle": "Signaler {name}",
+    "reportLead": "Ton signalement est confidentiel : la personne ne saura pas qui l'a fait.",
+    "reason": "Motif",
+    "reasons": {
+      "harassment": "Harcèlement ou messages insistants",
+      "threat": "Menace ou violence",
+      "explicit_content": "Contenu sexuel non sollicité",
+      "hate": "Propos haineux",
+      "minor": "Personne mineure",
+      "impersonation": "Usurpation d'identité",
+      "outing": "Révélation de mon orientation ou de ma présence ici",
+      "spam": "Spam ou promotion",
+      "not_on_campus": "Ne fait pas partie du campus",
+      "other": "Autre chose"
+    },
+    "details": "Précisions (facultatif)",
+    "alsoBlock": "Bloquer aussi cette personne",
+    "send": "Envoyer le signalement",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "help": "En danger ? Appelle le 17 ou le 112."
+  }
+}

@@ -15,10 +15,13 @@ allowBuilds:
   '@parcel/watcher': false
   '@swc/core': false
   esbuild: true
+  # Reviewed and refused: its postinstall only prints a version notice (pulled in by centrifuge).
+  protobufjs: false
   lefthook: true
 
 # Shared dependency versions, referenced as "catalog:" in package.json files.
 catalog:
+  '@anthropic-ai/sdk': 0.131.0
   '@aws-sdk/client-s3': 3.1144.0
   '@aws-sdk/s3-presigned-post': 3.1144.0
   '@axe-core/playwright': 4.13.0
@@ -27,8 +30,11 @@ catalog:
   '@orpc/client': 1.15.4
   '@orpc/contract': 1.15.4
   '@orpc/server': 1.15.4
+  '@orpc/tanstack-query': 1.15.4
   '@playwright/test': 1.63.0
+  '@serwist/turbopack': 9.5.12
   '@tailwindcss/postcss': 4.3.3
+  '@tanstack/react-query': 5.104.0
   '@testing-library/react': 16.3.3
   '@testing-library/user-event': 14.6.7
   '@types/node': 24.19.0
@@ -36,12 +42,16 @@ catalog:
   '@types/react': 19.3.0
   '@types/react-dom': 19.3.0
   '@types/three': 0.186.0
+  '@types/web-push': 3.6.4
   '@vitejs/plugin-react': 6.1.1
+  aws4fetch: 1.0.20
   babel-plugin-react-compiler: 1.0.0
   better-auth: 1.7.7
+  centrifuge: 5.7.4
   clsx: 2.1.1
   drizzle-kit: 0.31.11
   drizzle-orm: 0.45.3
+  esbuild: 0.28.2
   fast-check: 4.10.2
   fflate: 0.8.3
   graphile-worker: 0.18.0
@@ -51,6 +61,7 @@ catalog:
   ioredis: 6.0.0
   lenis: 1.3.26
   lucide-react: 1.49.0
+  maplibre-gl: 6.11.2
   motion: 13.5.0
   next-intl: 4.14.8
   next: 16.3.8
@@ -59,6 +70,7 @@ catalog:
   react-dom: 19.3.0
   react: 19.3.0
   server-only: 0.0.1
+  serwist: 9.5.12
   sharp: 0.35.5
   tailwind-merge: 3.7.0
   tailwind-variants: 3.3.1
@@ -67,7 +79,9 @@ catalog:
   thumbhash: 0.1.1
   tsx: 4.23.15
   typescript: 7.0.2
+  uqr: 0.1.3
   vitest: 5.0.3
+  web-push: 3.6.7
   zod: 4.6.5
   '@lhci/cli': 0.15.1
   '@storybook/addon-a11y': 10.6.1

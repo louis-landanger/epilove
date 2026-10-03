@@ -1,0 +1,23 @@
+{
+  "title": "Spots",
+  "back": "Retour au campus",
+  "lead": "Des lieux publics autour du campus de Vaise et de la Presqu'île, parfaits pour un premier rendez-vous : parcs, places, berges.",
+  "mapLabel": "Carte des spots",
+  "filter": "Filtrer par type",
+  "all": "Tous",
+  "kinds": {
+    "park": "Parc",
+    "square": "Place",
+    "riverbank": "Berges",
+    "viewpoint": "Point de vue"
+  },
+  "areas": {
+    "presquile": "Presqu'île",
+    "vieux-lyon": "Vieux-Lyon",
+    "rive-gauche": "Rive gauche",
+    "confluence": "Confluence",
+    "vaise": "Vaise",
+    "nord": "Nord de Lyon"
+  },
+  "publicOnly": "Uniquement des lieux publics, fréquentés et faciles à rejoindre : pour un premier date, c'est la base."
+}

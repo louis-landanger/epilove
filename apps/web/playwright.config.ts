@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
-// Some tests adjust data directly in the database (dates that cannot be waited for).
+// Some tests adjust data directly in the database; the dating scenarios create their own members.
 if (existsSync("../../.env")) {
   process.loadEnvFile("../../.env");
 }
@@ -36,15 +36,31 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       // The auth server checks request origins against APP_URL.
       // Every test comes from 127.0.0.1: the per-address API ceiling would add up across tests.
-      env: { APP_URL: baseURL, PASSKEY_RP_ID: "127.0.0.1", API_RATE_LIMIT_ANONYMOUS: "100000" },
+      // AI conversation starters (CHAT-04) on, against the local stand-in below.
+      env: {
+        APP_URL: baseURL,
+        PASSKEY_RP_ID: "127.0.0.1",
+        API_RATE_LIMIT_ANONYMOUS: "100000",
+        AI_ICEBREAKERS_ENABLED: "1",
+        ANTHROPIC_API_KEY: "e2e",
+        ANTHROPIC_BASE_URL: "http://127.0.0.1:3102",
+      },
       timeout: 120_000,
     },
     {
-      // Background jobs (photo processing), so uploads are really processed.
+      // Background jobs (photo processing) and the outbox relay to Centrifugo (realtime chat).
       command: "cd ../worker && ./node_modules/.bin/tsx --env-file-if-exists=../../.env src/index.ts",
+      env: { WORKER_HEALTH_PORT: "3101" },
       wait: { stdout: /Worker connected/ },
       reuseExistingServer: !process.env.CI,
       gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
+    },
+    {
+      // Stand-in for the Claude API: the scenarios never call the real one.
+      command: "node e2e/support/anthropic-mock.mjs",
+      url: "http://127.0.0.1:3102/health",
+      reuseExistingServer: !process.env.CI,
+      timeout: 10_000,
     },
   ],
 });
