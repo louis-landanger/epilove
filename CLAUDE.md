@@ -35,6 +35,7 @@ Prérequis : Node 24 (`.node-version`), Corepack activé (`corepack enable`), Do
 | `pnpm --filter @epilove/tokens generate` | Régénère `theme.gen.css` après modification des jetons |
 | `pnpm pact:compute` / `pnpm pact:demo --reveal-in 60` | Calcule une saison du Pacte (solveur Python) / prépare une saison de démonstration révélée dans 60 s (le worker doit tourner) |
 | `pnpm drop:run` | Lance le Drop du soir sans attendre 21 h |
+| `sudo bash infra/dev-host/setup.sh` / `update.sh` | Serveur de développement partagé : toute la stack sur une VM Ubuntu, derrière HTTPS et un mot de passe d'équipe (voir `infra/dev-host/README.md`, ADR 0014) |
 | `infra/load/run.sh 3000 180` | Test de charge k6 de la révélation du Pacte (app compilée, worker et services lancés ; voir `infra/load/README.md`) |
 
 Nouvelles dépendances : `pnpm --filter <paquet> add --save-catalog <dépendance>` (versions partagées dans le catalogue de `pnpm-workspace.yaml`) ; les paquets internes s'ajoutent en `workspace:*`. Une dépendance qui exécute un script d'installation doit être revue puis ajoutée à `allowBuilds`.

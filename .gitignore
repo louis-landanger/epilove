@@ -33,3 +33,6 @@ __pycache__/
 .claude/worktrees/
 .lighthouseci/
 storybook-static/
+
+# Shared development server: generated secrets (infra/dev-host/setup.sh)
+infra/dev-host/generated/
