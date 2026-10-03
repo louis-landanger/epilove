@@ -1,4 +1,5 @@
 import type { MemberCard, ProfileView } from "@epilove/contracts";
+import { ViewerWatermark } from "@epilove/ui";
 import { getTranslations } from "next-intl/server";
 import { Fragment, ViewTransition } from "react";
 import { MemberBadges } from "./badges";
@@ -65,6 +66,8 @@ export async function MemberProfile({ profile, me }: { profile: ProfileView; me:
               />
             </ViewTransition>
           )}
+          {/* SAF-12: the viewer's code over every photo of someone else. */}
+          {firstPhoto && profile.via !== "self" && <ViewerWatermark />}
           <span aria-hidden="true" className="foil" data-foil={schoolFoil(card.school.slug)} />
           <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
             <ProfileHeaderActions
@@ -156,6 +159,7 @@ export async function MemberProfile({ profile, me }: { profile: ProfileView; me:
                     height={photo.height ?? 800}
                     className="size-full object-cover"
                   />
+                  {profile.via !== "self" && <ViewerWatermark />}
                   {profile.canLike && (
                     <div className="absolute right-3 bottom-3">
                       <ProfileLikeButton

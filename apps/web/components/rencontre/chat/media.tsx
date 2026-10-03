@@ -1,7 +1,7 @@
 "use client";
 
 import type { MessageAttachment } from "@epilove/contracts";
-import { Sheet } from "@epilove/ui";
+import { Sheet, ViewerWatermark } from "@epilove/ui";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -429,14 +429,17 @@ export function ImageBubble({
               onReveal={() => setRevealed(true)}
               onReport={onReport}
             >
-              {/* biome-ignore lint/performance/noImgElement: a short-lived signed imgproxy URL. */}
-              <img
-                src={opened}
-                alt={t("photoAlt")}
-                width={image.width}
-                height={image.height}
-                className="max-h-[70dvh] w-auto self-center rounded-3xl object-contain"
-              />
+              <span className="relative self-center overflow-hidden rounded-3xl">
+                {/* biome-ignore lint/performance/noImgElement: a short-lived signed imgproxy URL. */}
+                <img
+                  src={opened}
+                  alt={t("photoAlt")}
+                  width={image.width}
+                  height={image.height}
+                  className="block max-h-[70dvh] w-auto object-contain"
+                />
+                <ViewerWatermark />
+              </span>
             </ExplicitGuard>
           )}
           <button
@@ -456,16 +459,19 @@ export function ImageBubble({
   }
   return (
     <ExplicitGuard explicit={!revealed} onReveal={() => setRevealed(true)} onReport={onReport}>
-      {/* biome-ignore lint/performance/noImgElement: a signed imgproxy URL, already resized. */}
-      <img
-        src={image.url}
-        alt={t("photoAlt")}
-        width={image.width}
-        height={image.height}
-        loading="lazy"
-        style={{ aspectRatio: `${image.width} / ${image.height}` }}
-        className="h-auto max-h-80 w-60 max-w-full rounded-3xl object-cover"
-      />
+      <span className="relative block w-fit overflow-hidden rounded-3xl">
+        {/* biome-ignore lint/performance/noImgElement: a signed imgproxy URL, already resized. */}
+        <img
+          src={image.url}
+          alt={t("photoAlt")}
+          width={image.width}
+          height={image.height}
+          loading="lazy"
+          style={{ aspectRatio: `${image.width} / ${image.height}` }}
+          className="block h-auto max-h-80 w-60 max-w-full object-cover"
+        />
+        {!mine && <ViewerWatermark />}
+      </span>
     </ExplicitGuard>
   );
 }

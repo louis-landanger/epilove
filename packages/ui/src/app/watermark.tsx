@@ -17,7 +17,8 @@ export function useWatermarkCode(): string | null {
 /**
  * A discreet pattern repeating the viewer's code over a photo, in light and
  * dark so it shows on any image: a shared screenshot says whose screen it
- * came from. Put it inside the photo's positioned container.
+ * came from. Each copy fits inside the tile, so a code is never cut off.
+ * Put it inside the photo's positioned container.
  */
 export function Watermark({ code, className }: { code: string; className?: string }) {
   const id = `wm${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -28,7 +29,7 @@ export function Watermark({ code, className }: { code: string; className?: strin
       className={cn("pointer-events-none absolute inset-0 size-full select-none", className)}
     >
       <defs>
-        <pattern id={id} width="150" height="96" patternUnits="userSpaceOnUse" patternTransform="rotate(-24)">
+        <pattern id={id} width="240" height="96" patternUnits="userSpaceOnUse" patternTransform="rotate(-24)">
           <text
             x="4"
             y="22"
@@ -41,7 +42,7 @@ export function Watermark({ code, className }: { code: string; className?: strin
             {code}
           </text>
           <text
-            x="79"
+            x="124"
             y="70"
             fontFamily="ui-monospace, monospace"
             fontSize="11"

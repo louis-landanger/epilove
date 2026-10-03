@@ -2,6 +2,7 @@
 
 import type { PactMatchView } from "@epilove/contracts";
 import { springs } from "@epilove/tokens";
+import { ViewerWatermark } from "@epilove/ui";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -68,6 +69,7 @@ export function PactMatchCard({
               className="size-full object-cover"
             />
           ) : null}
+          {photo ? <ViewerWatermark /> : null}
           <span aria-hidden="true" className="foil" data-foil={schoolFoil(card.school.slug)} />
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">

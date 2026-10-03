@@ -1,6 +1,7 @@
 "use client";
 
 import type { MemberCard as MemberCardData } from "@epilove/contracts";
+import { ViewerWatermark } from "@epilove/ui";
 import { useTranslations } from "next-intl";
 import { useRef, useState, ViewTransition } from "react";
 import { MemberBadges } from "./badges";
@@ -75,6 +76,8 @@ export function MemberCard({
           {t("card.noPhoto")}
         </div>
       )}
+      {/* SAF-12: the viewer's code over the photo. */}
+      {photo ? <ViewerWatermark /> : null}
       <span aria-hidden="true" className="foil" data-foil={schoolFoil(card.school.slug)} />
       <span aria-hidden="true" className="foil foil-frame" data-foil={schoolFoil(card.school.slug)} />
 

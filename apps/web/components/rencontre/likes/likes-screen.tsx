@@ -1,6 +1,7 @@
 "use client";
 
 import type { LikeReceived, MemberCard, QuotaView } from "@epilove/contracts";
+import { ViewerWatermark } from "@epilove/ui";
 import { ORPCError } from "@orpc/client";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -107,6 +108,7 @@ export function LikesScreen({
                       <img src={like.card.photos[0].url} alt="" className="size-full object-cover" />
                     </ViewTransition>
                   )}
+                  {like.card.photos[0] && <ViewerWatermark />}
                   <span aria-hidden="true" className="foil" data-foil={schoolFoil(like.card.school.slug)} />
                   <span className="absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-gradient-to-t from-ink to-transparent p-4 pt-16">
                     <span className="flex items-center gap-2">
