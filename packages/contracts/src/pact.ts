@@ -21,6 +21,8 @@ export const pactCurrent = z.object({
   participation: z.object({ modes: z.array(z.enum(MODES)) }).nullable(),
   /** Number of participants (an aggregate, never a list). */
   participants: z.number().int(),
+  /** Clients ask for their result at a random moment of this window after the reveal signal. */
+  revealWindowMs: z.number().int(),
   /** Modes the member can join with (their profile's modes). */
   availableModes: z.array(z.enum(MODES)),
   questionnaire: z.object({ answered: z.number().int(), required: z.number().int() }),

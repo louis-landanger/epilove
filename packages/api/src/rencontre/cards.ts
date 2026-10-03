@@ -12,6 +12,25 @@ import { hiddenPhotos } from "./blind";
 import { type ContentLocale, compatibilityView } from "./compatibility";
 import { signedPhotoUrl } from "./media";
 
+/** Active questions change only with the seeds: each process keeps them a few minutes. */
+const QUESTIONS_TTL_MS = 5 * 60_000;
+const questionsCache = new WeakMap<
+  Database,
+  { at: number; questions: ReturnType<typeof listActiveQuestions> }
+>();
+
+function activeQuestions(db: Database) {
+  const cached = questionsCache.get(db);
+  if (cached && Date.now() - cached.at < QUESTIONS_TTL_MS) {
+    return cached.questions;
+  }
+  const questions = listActiveQuestions(db);
+  questionsCache.set(db, { at: Date.now(), questions });
+  // A failed read is not kept.
+  questions.catch(() => questionsCache.delete(db));
+  return questions;
+}
+
 /**
  * Builds member cards for the viewer. Callers must only pass members the
  * viewer is allowed to see (`canSee` / `canViewProfile`): the cards carry
@@ -32,7 +51,7 @@ export async function buildCards(
   const ids = targets.map((t) => t.row.member.id);
   const [content, questions, sheets, viewerInterests, granted, blind] = await Promise.all([
     loadProfileContent(db, ids),
-    listActiveQuestions(db),
+    activeQuestions(db),
     answerSheets(db, [viewer.member.id, ...ids]),
     interestIdsOf(db, [viewer.member.id]),
     grantedBadgesOf(db, ids),

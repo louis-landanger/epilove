@@ -24,4 +24,5 @@ docker run --rm --network host --user "$(id -u):$(id -g)" \
   -v "$PWD/infra/load:/scripts" \
   -e MEMBERS="$members" -e REVEAL_AT="$reveal_at" \
   -e API_URL -e SOCKETS_PER_VU -e RAMP_SECONDS -e MESSAGES_PER_PAIR -e REVEAL_JITTER_MS -e BURST_DELAY_SECONDS \
+  -e PACT_REVEAL_RESULTS_PER_SECOND \
   "$image" run --summary-export "/scripts/results/summary.json" /scripts/pact-reveal.js

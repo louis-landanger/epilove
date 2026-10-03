@@ -46,4 +46,5 @@ Bogues trouvés en branchant les deux côtés, corrigés avec un test qui les re
 
 ## Reste à faire
 
-- Capacité de la révélation du Pacte à 3 000 et performance mobile de la vitrine : voir les questions ouvertes des deux notes.
+- Révélation du Pacte à 3 000 : `pact.result` allégé, fenêtre de révélation à la taille de la saison, plus de rappel de `pact.current` au signal, nouvelles tentatives côté écran. Mesuré à 4 processus dans un seul conteneur : 100 % des résultats, aucun échec, p95 19 s (29 s avant). L'objectif de 8 s demande des processus de l'API sur des vCPU dédiés : à valider en préproduction avec `infra/load` (détails dans `infra/load/README.md`).
+- Performance mobile de la vitrine : voir la question ouverte de `session-a.md`.

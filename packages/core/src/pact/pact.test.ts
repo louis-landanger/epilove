@@ -9,7 +9,7 @@ import {
 } from "../matching/compatibility";
 import { TEST_TODAY, testMember, testRelations } from "../policies/testing";
 import type { PolicyContext } from "../policies/types";
-import { clockOffsetMs, countdown, revealDelayMs } from "./clock";
+import { clockOffsetMs, countdown, revealDelayMs, revealWindowMs } from "./clock";
 import {
   BestNeighbours,
   buildPactEdges,
@@ -19,7 +19,7 @@ import {
   pactEligibleModes,
 } from "./edges";
 import { MIN_GROUP_SIZE, pactModeReport } from "./report";
-import { canComputePact, canJoinPact, canViewPactResult, pactPhase } from "./rules";
+import { canComputePact, canJoinPact, canViewPactResult, PACT_RULES, pactPhase } from "./rules";
 import { sectionScores } from "./sections";
 
 const OPTIONS = ["a", "b", "c", "d"] as const;
@@ -288,6 +288,24 @@ describe("countdown clock", () => {
         expect(delay).toBeGreaterThanOrEqual(0);
         expect(delay).toBeLessThan(3000);
       }),
+    );
+  });
+
+  it("widens the window so that requests arrive no faster than the API serves them", () => {
+    // A small season keeps the window of the animation.
+    expect(revealWindowMs(40, 400)).toBe(PACT_RULES.revealJitterMs);
+    // 3,000 participants and an API sized for 400 results per second: 7.5 s.
+    expect(revealWindowMs(3000, 400)).toBe(7500);
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 20_000 }),
+        fc.integer({ min: 1, max: 5000 }),
+        (participants, rate) => {
+          const window = revealWindowMs(participants, rate);
+          expect(window).toBeGreaterThanOrEqual(PACT_RULES.revealJitterMs);
+          expect(participants / (window / 1000)).toBeLessThanOrEqual(rate + 1e-9);
+        },
+      ),
     );
   });
 });

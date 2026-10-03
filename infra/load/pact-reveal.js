@@ -19,7 +19,11 @@ const MEMBERS = Number(__ENV.MEMBERS || 3000);
 const PER_VU = Number(__ENV.SOCKETS_PER_VU || 30);
 const RAMP_SECONDS = Number(__ENV.RAMP_SECONDS || 60);
 const MESSAGES_PER_PAIR = Number(__ENV.MESSAGES_PER_PAIR || 3);
-const REVEAL_JITTER_MS = Number(__ENV.REVEAL_JITTER_MS || 3000);
+/** Results the API serves per second: the reveal window follows it (`revealWindowMs` in @epilove/core). */
+const RESULTS_PER_SECOND = Number(__ENV.PACT_REVEAL_RESULTS_PER_SECOND || 400);
+const REVEAL_JITTER_MS = Number(
+  __ENV.REVEAL_JITTER_MS || Math.max(3000, Math.ceil((MEMBERS / RESULTS_PER_SECOND) * 1000)),
+);
 /** The burst starts this long after the reveal, once the result requests are over. */
 const BURST_DELAY_MS = Number(__ENV.BURST_DELAY_SECONDS || 45) * 1000;
 const REVEAL_AT = Date.parse(__ENV.REVEAL_AT || "");
@@ -207,8 +211,9 @@ export default async function () {
       if (channel === "broadcast:pact" && data?.type === "pact.reveal" && !member.revealed) {
         member.revealed = true;
         revealDelay.add(Date.now() - REVEAL_AT);
-        // What the reveal screen does: refresh the season and ask for the result, each after a random delay.
-        wait(Math.random() * REVEAL_JITTER_MS).then(() => rpc("pact.current", member.id));
+        // What the reveal screen does: ask for the result after a random delay within the window that
+        // `pact.current` gives for this season's size, and resync the season within the next minute.
+        wait(REVEAL_JITTER_MS + Math.random() * 60_000).then(() => rpc("pact.current", member.id));
         wait(Math.random() * REVEAL_JITTER_MS)
           .then(() => rpc("pact.result", member.id, { locale: "fr" }))
           .then((result) => {

@@ -48,6 +48,8 @@ describe.skipIf(!url)("pact", () => {
     expect(current.questionnaire).toEqual({ answered: 0, required: 30 });
     expect(current.availableModes).toEqual(["love", "friends"]);
     expect(Math.abs(Date.parse(current.serverNow) - Date.now())).toBeLessThan(10_000);
+    // A small season: the clients spread their result requests over the animation only.
+    expect(current.revealWindowMs).toBe(3000);
   });
 
   it("asks for the questionnaire before joining", async () => {

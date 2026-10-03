@@ -36,3 +36,18 @@ export function countdown(remainingMs: number): Countdown {
 export function revealDelayMs(random: number, windowMs: number = PACT_RULES.revealJitterMs): number {
   return Math.floor(Math.min(Math.max(random, 0), 0.999_999) * windowMs);
 }
+
+/**
+ * Window over which clients spread their result requests: the animation's
+ * window for a small season, longer for a big one, so that requests reach the
+ * API no faster than it serves results (`resultsPerSecond`, the capacity of
+ * the deployment, measured with infra/load). An overloaded API would make
+ * everyone wait longer, messages included.
+ */
+export function revealWindowMs(
+  participants: number,
+  resultsPerSecond: number = PACT_RULES.revealResultsPerSecond,
+): number {
+  const needed = Math.ceil((Math.max(participants, 0) / Math.max(resultsPerSecond, 1)) * 1000);
+  return Math.max(PACT_RULES.revealJitterMs, needed);
+}

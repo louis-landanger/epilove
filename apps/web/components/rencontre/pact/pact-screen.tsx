@@ -16,6 +16,9 @@ import { NoMatch, NotParticipant, PactMatchCard } from "./pact-result";
 import { PactStats } from "./pact-stats";
 import { RevealSequence } from "./reveal-sequence";
 
+/** After the reveal, screens resync with the server at a random moment of this window. */
+const RESYNC_SPREAD_MS = 60_000;
+
 /** A reveal seen within this delay plays again on the first visit; later, the result shows directly. */
 const REPLAY_WINDOW_MS = 15 * 60_000;
 const CAMPUS_TIME_ZONE = "Europe/Paris";
@@ -26,6 +29,14 @@ type Reveal =
   | { readonly status: "done"; readonly matches: PactMatchView[] };
 
 /** Waits for the first photos (at most `timeoutMs`), so that the card never appears empty. */
+/** Errors worth another try: the network, a busy or failing server, a rate limit. */
+function isTransient(cause: unknown): boolean {
+  if (!(cause instanceof ORPCError)) {
+    return true;
+  }
+  return cause.status >= 500 || cause.status === 429 || cause.code === "TOO_MANY_REQUESTS";
+}
+
 function preload(matches: readonly PactMatchView[], timeoutMs = 2000) {
   const urls = matches.flatMap((m) => (m.card.photos[0] ? [m.card.photos[0].url] : []));
   const loads = urls.map(
@@ -61,6 +72,7 @@ export function PactScreen({ initial }: { initial: PactCurrent }) {
 
   const season = data.season;
   const participant = data.participation !== null;
+  const revealWindow = data.revealWindowMs;
   const now = clientNow + offset;
 
   const refresh = useCallback(async () => {
@@ -90,6 +102,11 @@ export function PactScreen({ initial }: { initial: PactCurrent }) {
           await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1500));
           return loadResult(attempt + 1);
         }
+        // A busy API or a dropped connection during the reveal wave: wait longer each time, never all together.
+        if (attempt < 6 && isTransient(cause)) {
+          await new Promise((resolve) => setTimeout(resolve, 2000 * 2 ** attempt * (0.5 + Math.random())));
+          return loadResult(attempt + 1);
+        }
         throw cause;
       }
     },
@@ -103,8 +120,9 @@ export function PactScreen({ initial }: { initial: PactCurrent }) {
       }
       started.current = true;
       setReveal(animated ? { status: "sequence", matches: null } : { status: "idle" });
-      // Thousands of screens get the signal at once: each waits a random moment before asking.
-      const delay = animated ? revealDelayMs(Math.random()) : 0;
+      // Thousands of screens get the signal at once: each waits a random moment before asking,
+      // within a window sized by the server to what the API can serve.
+      const delay = animated ? revealDelayMs(Math.random(), revealWindow) : 0;
       setTimeout(() => {
         loadResult()
           .then((matches) =>
@@ -119,7 +137,7 @@ export function PactScreen({ initial }: { initial: PactCurrent }) {
           });
       }, delay);
     },
-    [loadResult],
+    [loadResult, revealWindow],
   );
 
   // Already revealed when the page opens: replay the sequence if it just happened.
@@ -131,8 +149,15 @@ export function PactScreen({ initial }: { initial: PactCurrent }) {
 
   useBroadcast(PACT_CHANNEL, (signal) => {
     if (signal.type === "pact.reveal" && signal.seasonId === season?.id) {
-      // Spread like the result requests: thousands of screens get the signal at once (infra/load).
-      setTimeout(() => void refresh().catch(() => {}), revealDelayMs(Math.random()));
+      // The signal says it all: the phase changes here, without thousands of screens asking the
+      // server at once (infra/load). A refresh spread over the minute after the results resyncs.
+      setData((current) =>
+        current.season ? { ...current, season: { ...current.season, phase: "revealed" } } : current,
+      );
+      setTimeout(
+        () => void refresh().catch(() => {}),
+        revealWindow + revealDelayMs(Math.random(), RESYNC_SPREAD_MS),
+      );
       if (participant) {
         startReveal(true);
       }

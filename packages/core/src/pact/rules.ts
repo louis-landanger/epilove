@@ -13,8 +13,14 @@ export const PACT_RULES = {
   defaultThreshold: 0.6,
   /** Sparsification: each participant keeps their best edges only. */
   neighbours: 50,
-  /** Clients spread their result requests over this window after the reveal signal. */
+  /** Clients spread their result requests over at least this window after the reveal signal. */
   revealJitterMs: 3000,
+  /**
+   * Results the API serves per second during the reveal, by default: about
+   * four API processes (infra/load/README.md). Set per deployment with
+   * PACT_REVEAL_RESULTS_PER_SECOND.
+   */
+  revealResultsPerSecond: 400,
 } as const;
 
 /**

@@ -1,6 +1,13 @@
 import type { PactMatchView } from "@epilove/contracts";
-import { canViewPactResult, MODES, PACT_RULES, pactPhase } from "@epilove/core";
-import { campusDate } from "@epilove/db/repositories/members";
+import {
+  canViewPactResult,
+  canViewProfile,
+  MODES,
+  PACT_RULES,
+  pactPhase,
+  revealWindowMs,
+} from "@epilove/core";
+import { campusDate, loadMembers, loadRelations } from "@epilove/db/repositories/members";
 import {
   currentSeason,
   joinSeason,
@@ -14,7 +21,7 @@ import { centrifugoConfigFromEnv, PACT_CHANNEL } from "@epilove/realtime";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { os, requireViewer } from "../procedures";
-import { loadPairAccess, requireMemberRow } from "../rencontre/access";
+import { requireMemberRow } from "../rencontre/access";
 import { buildCards } from "../rencontre/cards";
 import { realtimePublisher } from "../rencontre/realtime";
 
@@ -46,6 +53,12 @@ export function resetLiveCountCache() {
   liveCountCache = null;
 }
 
+/** Results this deployment serves per second during a reveal (infra/load measures it). */
+function revealResultsPerSecond(env: Record<string, string | undefined> = process.env): number {
+  const value = Number(env.PACT_REVEAL_RESULTS_PER_SECOND);
+  return Number.isFinite(value) && value > 0 ? value : PACT_RULES.revealResultsPerSecond;
+}
+
 export const pact = {
   current: os.pact.current.use(requireViewer).handler(async ({ context }) => {
     const db = context.database();
@@ -71,6 +84,7 @@ export const pact = {
       serverNow: now.toISOString(),
       participation: participation ? { modes: participation.modes } : null,
       participants,
+      revealWindowMs: revealWindowMs(participants, revealResultsPerSecond()),
       availableModes: [...viewer.member.modes],
       questionnaire: { answered: answers.length, required: PACT_RULES.minAnswers },
     };
@@ -118,30 +132,46 @@ export const pact = {
   }),
 
   result: os.pact.result.use(requireViewer).handler(async ({ context, input }) => {
+    // Every member asks within seconds of the reveal (docs/11): few round trips, no reload of the viewer.
     const db = context.database();
     const now = new Date();
-    const viewer = await requireMemberRow(db, context.viewer.userId);
-    const season = await requireSeason(db);
-    const participation = await participationOf(db, season.id, context.viewer.userId);
+    const userId = context.viewer.userId;
+    const [viewer, season] = await Promise.all([requireMemberRow(db, userId), requireSeason(db)]);
+    const [participation, results] = await Promise.all([
+      participationOf(db, season.id, userId),
+      resultsFor(db, season.id, userId),
+    ]);
     if (!canViewPactResult(season, now, participation !== null)) {
       throw new ORPCError("FORBIDDEN", { message: "not_revealed" });
     }
     const today = campusDate(now);
+    const otherIds = results.map((result) => result.otherId);
+    const [others, relations] = await Promise.all([
+      loadMembers(db, otherIds),
+      loadRelations(db, userId, otherIds),
+    ]);
+    // The match created at the reveal makes the profile visible; a block since then hides it again.
+    const visible = results.flatMap((result) => {
+      const target = others.get(result.otherId);
+      return target && canViewProfile(viewer.member, target.member, { today, relations }).visible
+        ? [{ result, target }]
+        : [];
+    });
+    const cards = new Map(
+      (
+        await buildCards(
+          db,
+          context.services,
+          viewer,
+          visible.map(({ result, target }) => ({ row: target, modes: [result.mode] })),
+          input.locale,
+          today,
+        )
+      ).map((card) => [card.userId, card]),
+    );
     const matches: PactMatchView[] = [];
-    for (const result of await resultsFor(db, season.id, context.viewer.userId)) {
-      // The match created at the reveal makes the profile visible; a block since then hides it again.
-      const pair = await loadPairAccess(db, context.viewer.userId, result.otherId, now);
-      if (!pair?.access.visible) {
-        continue;
-      }
-      const [card] = await buildCards(
-        db,
-        context.services,
-        viewer,
-        [{ row: pair.target, modes: [result.mode] }],
-        input.locale,
-        today,
-      );
+    for (const { result } of visible) {
+      const card = cards.get(result.otherId);
       if (!card) {
         continue;
       }
