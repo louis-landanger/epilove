@@ -86,7 +86,11 @@ export function defaultServices(env: Record<string, string | undefined> = proces
 export function createApp(dependencies: AppDependencies) {
   const rpc = new RPCHandler(router, {
     interceptors: [
-      onError((error) => {
+      onError((error, { request }) => {
+        // A client that went away (navigation, closed tab) is not a failure of ours.
+        if (request.signal?.aborted || (error instanceof Error && error.message === "aborted")) {
+          return;
+        }
         // Unexpected failures only, and only their class: messages can embed SQL parameters
         // or user data (docs/07-confiance-securite.md).
         if (!(error instanceof ORPCError) || error.code === "INTERNAL_SERVER_ERROR") {

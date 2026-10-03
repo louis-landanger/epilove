@@ -1,6 +1,6 @@
 import { createApiClient } from "@epilove/contracts/client";
 import { createMemoryRateLimiter } from "@epilove/rate-limit";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createApp, createServerClient } from "./app";
 import { anonymous, devHeaderResolver } from "./context";
 
@@ -48,6 +48,36 @@ describe("api", () => {
     const response = await app.request("/api/nope");
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: "not_found" });
+  });
+});
+
+describe("error log", () => {
+  it("does not report requests the client gave up on", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      // What Node reports when a browser closes the connection while sending the body.
+      const controller = new AbortController();
+      const body = new ReadableStream({
+        start(stream) {
+          controller.abort();
+          stream.error(new Error("aborted"));
+        },
+      });
+      await Promise.resolve(
+        app.fetch(
+          new Request("http://localhost/api/rpc/campus/checkEmail", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body,
+            duplex: "half",
+            signal: controller.signal,
+          } as RequestInit),
+        ),
+      ).catch(() => undefined);
+      expect(errors.mock.calls.flat().join(" ")).not.toContain("procedure failed");
+    } finally {
+      errors.mockRestore();
+    }
   });
 });
 
