@@ -1,5 +1,5 @@
 import type { Locale } from "@epilove/core";
-import { ToastProvider } from "@epilove/ui";
+import { ToastProvider } from "@epilove/ui/primitives/toast";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import type { ReactNode } from "react";

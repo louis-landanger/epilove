@@ -1,6 +1,6 @@
 "use client";
 
-import { useToast } from "@epilove/ui";
+import { useToast } from "@epilove/ui/primitives/toast";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 

@@ -1019,3 +1019,14 @@ html.lenis body {
   font-weight: 600;
   color: var(--color-paper);
 }
+
+/* Far below the fold: laid out and painted only when about to scroll into view
+   (mobile Lighthouse: style and layout at load). Their reveals only run once. */
+#course,
+#pacte,
+#securite,
+#faq,
+.site-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1100px;
+}

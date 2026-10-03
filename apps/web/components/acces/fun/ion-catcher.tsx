@@ -1,7 +1,7 @@
 "use client";
 
 import { colors } from "@epilove/tokens";
-import { Button } from "@epilove/ui";
+import { Button } from "@epilove/ui/primitives/button";
 import { useTranslations } from "next-intl";
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 

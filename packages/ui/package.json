@@ -4,8 +4,12 @@
   "private": true,
   "description": "Design system: accessible primitives and app components built on Base UI, Tailwind CSS and the design tokens.",
   "type": "module",
+  "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./cn": "./src/cn.ts",
+    "./primitives/*": "./src/primitives/*.tsx",
+    "./app/*": "./src/app/*.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

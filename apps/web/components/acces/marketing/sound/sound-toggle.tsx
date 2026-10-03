@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@epilove/ui";
+import { cn } from "@epilove/ui/cn";
 import { Volume2, VolumeX } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { setSoundEnabled, useSoundEnabled } from "./sound-store";
