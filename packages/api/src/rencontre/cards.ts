@@ -76,7 +76,11 @@ export async function buildCards(
         isSelf || sheet.size === 0 || viewerSheet.size === 0
           ? null
           : compatibilityView(questions, viewerSheet, sheet, locale),
-      badges: badgesOf({ createdAt: row.createdAt, granted: granted.get(row.member.id) ?? new Set() }),
+      badges: badgesOf({
+        createdAt: row.createdAt,
+        photoVerified: row.photoVerified,
+        granted: granted.get(row.member.id) ?? new Set(),
+      }),
     };
   });
 }

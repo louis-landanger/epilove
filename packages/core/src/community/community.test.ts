@@ -143,12 +143,23 @@ describe("badges (COM-04)", () => {
   it("makes founders of early members and shows granted badges, in a fixed order", () => {
     const early = new Date("2026-11-01T10:00:00Z");
     const late = new Date("2027-03-01T10:00:00Z");
-    expect(badgesOf({ createdAt: early, granted: new Set() })).toEqual(["founder"]);
-    expect(badgesOf({ createdAt: late, granted: new Set(["ambassador", "photo_verified"]) })).toEqual([
+    expect(badgesOf({ createdAt: early, photoVerified: false, granted: new Set() })).toEqual(["founder"]);
+    expect(badgesOf({ createdAt: late, photoVerified: true, granted: new Set(["ambassador"]) })).toEqual([
       "photo_verified",
       "ambassador",
     ]);
-    expect(badgesOf({ createdAt: late, granted: new Set(["most_liked"]) })).toEqual([]);
+    expect(badgesOf({ createdAt: late, photoVerified: false, granted: new Set(["most_liked"]) })).toEqual([]);
+  });
+
+  it("only shows the verified photo badge after an approved gesture selfie (ONB-08)", () => {
+    const late = new Date("2027-03-01T10:00:00Z");
+    // A stale grant cannot stand in for the moderator's approval.
+    expect(badgesOf({ createdAt: late, photoVerified: false, granted: new Set(["photo_verified"]) })).toEqual(
+      [],
+    );
+    expect(badgesOf({ createdAt: late, photoVerified: true, granted: new Set() })).toEqual([
+      "photo_verified",
+    ]);
   });
 });
 

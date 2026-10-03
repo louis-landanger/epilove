@@ -1,7 +1,8 @@
 import { LYON_CAMPUS, questionForWeek, recentWeeks } from "@epilove/core";
+import { inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import { activeWeeklyBank } from "../repositories/campus-community";
-import { availability, memberBadge, weeklyAnswer } from "../schema";
+import { appUser, availability, memberBadge, weeklyAnswer } from "../schema";
 import { type DevMember, devMemberId } from "./members";
 import type { Random } from "./random";
 
@@ -43,11 +44,14 @@ export async function seedDevWeeklyAnswers(
  */
 export async function seedDevBadgesAndAvailability(db: Database, now: Date) {
   await db.insert(memberBadge).values([
-    { userId: devMemberId(1), badge: "photo_verified" },
     { userId: devMemberId(2), badge: "ambassador" },
-    { userId: devMemberId(2), badge: "photo_verified" },
     { userId: devMemberId(3), badge: "ambassador" },
   ]);
+  // "Photo vérifiée" comes from an approved gesture selfie (ONB-08).
+  await db
+    .update(appUser)
+    .set({ photoVerifiedAt: now })
+    .where(inArray(appUser.id, [devMemberId(1), devMemberId(2)]));
   await db.insert(availability).values([
     {
       userId: devMemberId(2),

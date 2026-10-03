@@ -29,6 +29,20 @@
       "when": 1791017970630,
       "tag": "0003_integration",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791037381556,
+      "tag": "0004_photo_verified_badge_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791037382425,
+      "tag": "0005_photo_verified_badge",
+      "breakpoints": true
     }
   ]
 }

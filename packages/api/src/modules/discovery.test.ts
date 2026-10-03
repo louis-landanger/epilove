@@ -1,4 +1,10 @@
+import { uuidv7, VERIFICATION_GESTURES } from "@epilove/core";
 import { createDatabase, schema } from "@epilove/db";
+import {
+  advanceVerification,
+  decideVerification,
+  insertVerification,
+} from "@epilove/db/repositories/profiles-verification";
 import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { and, eq, or } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -214,6 +220,29 @@ describe.skipIf(!url)("discovery", () => {
     await expect(
       as(viewer).discovery.decide({ targetId: blockedLiker, kind: "like", content: null, comment: null }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("shows the verified photo badge once a moderator approves the gesture selfie (ONB-08)", async () => {
+    const viewer = await member();
+    const target = await member({ firstName: "Vérane" });
+    const before = await as(viewer).discovery.profile({ userId: target, locale: "fr" });
+    expect(before.card.badges).not.toContain("photo_verified");
+
+    const moderator = await member();
+    const id = uuidv7();
+    const at = new Date();
+    await insertVerification(db, {
+      id,
+      userId: target,
+      gesture: VERIFICATION_GESTURES[0],
+      storageKey: `verification/${id}`,
+      createdAt: at,
+    });
+    await advanceVerification(db, id, "uploading", "pending");
+    await decideVerification(db, id, { status: "approved", rejection: null, reviewedBy: moderator, at });
+
+    const after = await as(viewer).discovery.profile({ userId: target, locale: "fr" });
+    expect(after.card.badges).toContain("photo_verified");
   });
 
   it("does not let a restricted account like", async () => {

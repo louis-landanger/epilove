@@ -1,0 +1,2 @@
+ALTER TABLE "member_badge" DROP CONSTRAINT "member_badge_check";--> statement-breakpoint
+ALTER TABLE "member_badge" ADD CONSTRAINT "member_badge_check" CHECK ("member_badge"."badge" in ('ambassador'));

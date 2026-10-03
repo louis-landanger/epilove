@@ -53,9 +53,9 @@ export const weeklyAnswer = pgTable(
 );
 
 /**
- * Badges granted by a person (COM-04): "photo_verified" when a moderator
- * approves the gesture selfie (ONB-08), "ambassador" by the team. "Founder"
- * is computed from the sign-up date and never stored.
+ * Badges granted by the team (COM-04): "ambassador". "Founder" is computed
+ * from the sign-up date and "photo_verified" from `app_user.photo_verified_at`
+ * (gesture selfie approved by a moderator, ONB-08): neither is stored here.
  */
 export const memberBadge = pgTable(
   "member_badge",

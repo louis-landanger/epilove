@@ -46,6 +46,8 @@ export interface MemberRow {
   readonly crossSchoolBoost: boolean;
   readonly schoolFilter: readonly string[];
   readonly createdAt: Date;
+  /** A moderator approved the gesture selfie (ONB-08). */
+  readonly photoVerified: boolean;
 }
 
 const memberColumns = {
@@ -54,6 +56,7 @@ const memberColumns = {
   emailHmac: appUser.emailHmac,
   lastActiveAt: appUser.lastActiveAt,
   createdAt: appUser.createdAt,
+  photoVerifiedAt: appUser.photoVerifiedAt,
   schoolSlug: school.slug,
   schoolName: school.name,
   firstName: profile.firstName,
@@ -115,6 +118,7 @@ function toMemberRow(r: MemberSelection): MemberRow {
     crossSchoolBoost: r.crossSchoolBoost,
     schoolFilter: r.schoolFilter,
     createdAt: r.createdAt,
+    photoVerified: r.photoVerifiedAt !== null,
   };
 }
 
