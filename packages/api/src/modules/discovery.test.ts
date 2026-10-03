@@ -222,7 +222,7 @@ describe.skipIf(!url)("discovery", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
-  it("shows the verified photo badge once a moderator approves the gesture selfie (ONB-08)", async () => {
+  it("shows the verified photo and campus badges from the verifications (ONB-08, ONB-11)", async () => {
     const viewer = await member();
     const target = await member({ firstName: "Vérane" });
     const before = await as(viewer).discovery.profile({ userId: target, locale: "fr" });
@@ -243,6 +243,12 @@ describe.skipIf(!url)("discovery", () => {
 
     const after = await as(viewer).discovery.profile({ userId: target, locale: "fr" });
     expect(after.card.badges).toContain("photo_verified");
+    expect(after.card.badges).not.toContain("campus_verified");
+
+    // Forge ID confirmed the Lyon campus (ONB-11).
+    await db.update(schema.appUser).set({ campusVerifiedAt: at }).where(eq(schema.appUser.id, target));
+    const campus = await as(viewer).discovery.profile({ userId: target, locale: "fr" });
+    expect(campus.card.badges).toEqual(expect.arrayContaining(["photo_verified", "campus_verified"]));
   });
 
   it("does not let a restricted account like", async () => {

@@ -48,6 +48,8 @@ export interface MemberRow {
   readonly createdAt: Date;
   /** A moderator approved the gesture selfie (ONB-08). */
   readonly photoVerified: boolean;
+  /** Forge ID confirmed the Lyon campus (ONB-11). */
+  readonly campusVerified: boolean;
 }
 
 const memberColumns = {
@@ -57,6 +59,7 @@ const memberColumns = {
   lastActiveAt: appUser.lastActiveAt,
   createdAt: appUser.createdAt,
   photoVerifiedAt: appUser.photoVerifiedAt,
+  campusVerifiedAt: appUser.campusVerifiedAt,
   schoolSlug: school.slug,
   schoolName: school.name,
   firstName: profile.firstName,
@@ -119,6 +122,7 @@ function toMemberRow(r: MemberSelection): MemberRow {
     schoolFilter: r.schoolFilter,
     createdAt: r.createdAt,
     photoVerified: r.photoVerifiedAt !== null,
+    campusVerified: r.campusVerifiedAt !== null,
   };
 }
 

@@ -79,6 +79,7 @@ export async function buildCards(
       badges: badgesOf({
         createdAt: row.createdAt,
         photoVerified: row.photoVerified,
+        campusVerified: row.campusVerified,
         granted: granted.get(row.member.id) ?? new Set(),
       }),
     };
