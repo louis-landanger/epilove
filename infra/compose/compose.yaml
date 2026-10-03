@@ -42,7 +42,7 @@ services:
     volumes:
       - ../centrifugo/config.json:/centrifugo/config.json:ro
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/health"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -61,7 +61,7 @@ services:
       - seaweedfs-data:/data
       - ../seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8333/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8333/healthz"]
       interval: 5s
       timeout: 3s
       retries: 30
