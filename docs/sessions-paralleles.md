@@ -1,5 +1,7 @@
 # Développement en deux sessions parallèles
 
+> **Archive.** Les deux sessions ont été fusionnées dans `main` le 3 octobre 2026 (voir [`integration/fusion.md`](integration/fusion.md)) : la propriété des fichiers ci-dessous ne s'applique plus, le développement continue sur `main`. Le document reste pour l'historique des choix.
+
 > Organisation temporaire : deux sessions de développement travaillent en même temps sur deux branches, puis une session d'intégration fusionne le tout. Ce document fixe **qui possède quoi** pour que les deux branches se fusionnent sans douleur.
 
 ## Branches

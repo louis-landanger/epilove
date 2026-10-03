@@ -2,7 +2,7 @@
 
 > Nom de code. Application de rencontre **et** d'amitié réservée aux étudiantes et étudiants vérifiés du campus IONIS de Lyon : **EPITA, ESME, Sup'Biotech, ISG, IPSA**.
 
-**Statut : phase 0 (cadrage), octobre 2026.** Le plan complet est dans [`docs/`](docs/) et le socle technique du sprint 0 est en place (monorepo, CI, environnement local). Voir la [roadmap](docs/09-roadmap.md#sprint-0--les-dix-premières-actions).
+**Statut : phase 0, octobre 2026.** Le plan complet est dans [`docs/`](docs/). Le socle technique et les trois premiers paliers de fonctionnalités sont en place : vitrine, inscription, profil, sécurité et back-office d'un côté, découverte, messagerie, Pacte et vie de campus de l'autre (bilan dans [`docs/integration/`](docs/integration/fusion.md)). Voir la [roadmap](docs/09-roadmap.md).
 
 *Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées.*
 
@@ -51,29 +51,39 @@ TypeScript partout · monorepo pnpm + Turborepo · Next.js 16 + React 19 · Tail
 
 ## Démarrer en local
 
-Prérequis : Node 24 (voir `.node-version`), Corepack (`corepack enable`), Docker.
+Prérequis : Node 24 (voir `.node-version`), Corepack (`corepack enable`), Docker, [uv](https://docs.astral.sh/uv/) (solveur du Pacte).
 
 ```bash
 pnpm install
 cp .env.example .env
 pnpm services:up          # PostgreSQL, Valkey, Centrifugo, SeaweedFS, imgproxy, Mailpit
 pnpm db:migrate && pnpm db:seed
-pnpm dev                  # http://localhost:3000
+pnpm db:seed:dev          # 400 membres fictifs ; choisir son membre sur /dev
+pnpm dev                  # app http://localhost:3000, back-office http://localhost:3001
 ```
 
 Vérifications : `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm test:e2e`. Toutes les commandes sont décrites dans [`CLAUDE.md`](CLAUDE.md#commandes).
 
 | Dossier | Contenu |
 |---|---|
-| `apps/web` | Next.js 16 : site, application, API montée sous `/api` |
-| `apps/worker` | Jobs et tâches planifiées (Graphile Worker) |
-| `packages/core` | Domaine sans framework : écoles et emails, âge, politique de visibilité `canSee`, compatibilité |
-| `packages/db` | Schéma Drizzle, migrations, seed |
+| `apps/web` | Next.js 16 : vitrine, application, API montée sous `/api` |
+| `apps/admin` | Back-office de modération (Next.js 16) |
+| `apps/worker` | Jobs et tâches planifiées (Graphile Worker) : photos, vocaux, notifications, Drop, Pacte |
+| `apps/pact-solver` | Solveur du Pacte (Python, couplage de poids maximum) |
+| `packages/core` | Domaine sans framework : règles du campus, politiques d'accès, matching |
+| `packages/db` | Schéma Drizzle, migrations, seeds, dépôts |
 | `packages/contracts` | Contrats oRPC et schémas Zod partagés, client typé |
 | `packages/api` | Routeur Hono + oRPC |
+| `packages/auth` | Better Auth : code par email d'école, passkeys, sessions |
+| `packages/ui` | Design system (Base UI, Tailwind CSS, Storybook) |
+| `packages/three` | Scènes WebGPU / WebGL2 de la vitrine |
+| `packages/email` | E-mails transactionnels (transport SMTP, gabarits fr / en) |
+| `packages/notifications` | Notifications discrètes et Web Push |
+| `packages/realtime` | Canaux temps réel et jetons Centrifugo |
+| `packages/media`, `packages/crypto`, `packages/rate-limit` | Médias (URL signées, traitement), chiffrement applicatif, limites de débit |
 | `packages/tokens` | Jetons de design (source TypeScript, thème Tailwind généré) |
 | `packages/config` | Configurations TypeScript partagées |
-| `infra/` | Services locaux (Docker Compose), configuration Centrifugo et SeaweedFS |
+| `infra/` | Services locaux (Docker Compose), configuration Centrifugo et SeaweedFS, tests de charge k6 |
 
 ## Contribuer
 
