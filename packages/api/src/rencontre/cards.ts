@@ -6,16 +6,20 @@ import { loadProfileContent } from "@epilove/db/repositories/discovery";
 import type { MemberRow } from "@epilove/db/repositories/members";
 import { interestIdsOf } from "@epilove/db/repositories/members";
 import { answerSheets, listActiveQuestions } from "@epilove/db/repositories/questionnaire";
+import type { ApiServices } from "../context";
+import { signVoiceUrl } from "../lib/voice-url";
 import { hiddenPhotos } from "./blind";
 import { type ContentLocale, compatibilityView } from "./compatibility";
 import { signedPhotoUrl } from "./media";
 
 /**
  * Builds member cards for the viewer. Callers must only pass members the
- * viewer is allowed to see (`canSee` / `canViewProfile`).
+ * viewer is allowed to see (`canSee` / `canViewProfile`): the cards carry
+ * signed photo and voice URLs.
  */
 export async function buildCards(
   db: Database,
+  services: Pick<ApiServices, "emailHmacSecret" | "now">,
   viewer: MemberRow,
   targets: readonly { row: MemberRow; modes: readonly Mode[] }[],
   locale: ContentLocale,
@@ -66,6 +70,8 @@ export async function buildCards(
         id: p.id,
         question: locale === "en" ? p.questionEn : p.questionFr,
         answer: p.answer,
+        // A voice says as much as a photo: blind mode withholds both (DEC-10).
+        voice: p.voice && !hidePhotos ? { url: signVoiceUrl(services, p.id), ...p.voice } : null,
       })),
       interests: c.interests.map((i) => ({
         id: i.id,

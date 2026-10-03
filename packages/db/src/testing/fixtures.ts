@@ -112,18 +112,28 @@ export async function createTestMember(db: Database, options: TestMemberOptions 
     );
   }
   if (options.prompts && options.prompts.length > 0) {
+    // One test prompt per position: a member answers a given prompt only once.
+    const slugs = options.prompts.map((_, position) => `test-prompt-${position + 1}`);
     await db
       .insert(prompt)
-      .values({ slug: "test-prompt", textFr: "Un sujet de test", textEn: "A test topic", category: "test" })
+      .values(
+        slugs.map((slug, position) => ({
+          slug,
+          textFr: `Un sujet de test (${position + 1})`,
+          textEn: `A test topic (${position + 1})`,
+          category: "test",
+        })),
+      )
       .onConflictDoNothing();
-    const [testPrompt] = await db
-      .select({ id: prompt.id })
+    const testPrompts = await db
+      .select({ id: prompt.id, slug: prompt.slug })
       .from(prompt)
-      .where(eq(prompt.slug, "test-prompt"));
+      .where(inArray(prompt.slug, slugs));
+    const idOf = new Map(testPrompts.map((p) => [p.slug, p.id]));
     await db.insert(promptAnswer).values(
       options.prompts.map((text, position) => ({
         userId: id,
-        promptId: testPrompt?.id ?? "",
+        promptId: idOf.get(slugs[position] ?? "") ?? "",
         text,
         position,
       })),

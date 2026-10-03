@@ -199,7 +199,14 @@ export interface ProfileContent {
     height: number | null;
     altText: string | null;
   }[];
-  readonly prompts: { id: string; questionFr: string; questionEn: string; answer: string }[];
+  readonly prompts: {
+    id: string;
+    questionFr: string;
+    questionEn: string;
+    answer: string;
+    /** A processed voice answer (PRO-06), if any. */
+    voice: { durationMs: number; peaks: number[] } | null;
+  }[];
   readonly interests: { id: string; labelFr: string; labelEn: string }[];
 }
 
@@ -235,6 +242,9 @@ export async function loadProfileContent(
         questionFr: prompt.textFr,
         questionEn: prompt.textEn,
         answer: promptAnswer.text,
+        voiceStage: promptAnswer.voiceStage,
+        voiceDurationMs: promptAnswer.voiceDurationMs,
+        voicePeaks: promptAnswer.voicePeaks,
       })
       .from(promptAnswer)
       .innerJoin(prompt, eq(prompt.id, promptAnswer.promptId))
@@ -255,8 +265,12 @@ export async function loadProfileContent(
   for (const { userId, ...p } of photos) {
     content.get(userId)?.photos.push(p);
   }
-  for (const { userId, answer, ...p } of prompts) {
-    content.get(userId)?.prompts.push({ ...p, answer: answer ?? "" });
+  for (const { userId, answer, voiceStage, voiceDurationMs, voicePeaks, ...p } of prompts) {
+    const voice =
+      voiceStage === "ready" && voiceDurationMs !== null
+        ? { durationMs: voiceDurationMs, peaks: voicePeaks ?? [] }
+        : null;
+    content.get(userId)?.prompts.push({ ...p, answer: answer ?? "", voice });
   }
   for (const { userId, ...i } of interests) {
     content.get(userId)?.interests.push(i);

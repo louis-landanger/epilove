@@ -1,8 +1,9 @@
 import { blindEvening, LYON_CAMPUS, uuidv7 } from "@epilove/core";
-import { createDatabase } from "@epilove/db";
+import { createDatabase, schema } from "@epilove/db";
 import { saveDeckFilter } from "@epilove/db/repositories/discovery";
 import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { createMemoryPublisher } from "@epilove/realtime";
+import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { setRealtimePublisher } from "../rencontre/realtime";
 import { createTestApi } from "../rencontre/testing";
@@ -47,6 +48,16 @@ describe.skipIf(!url)("blind mode (DEC-10)", () => {
       graduationYear: 2036,
       prompts: ["Je collectionne les cartes de métro."],
     });
+    // Oscar recorded his answer (PRO-06): a voice gives someone away as a photo does.
+    await db
+      .update(schema.promptAnswer)
+      .set({
+        voiceKey: "voice/oscar.webm",
+        voiceStage: "ready",
+        voiceContentType: "audio/webm",
+        voiceDurationMs: 3000,
+      })
+      .where(eq(schema.promptAnswer.userId, reader));
     // No prompt: nothing to read in a blind deck.
     await createTestMember(db, { gender: "man", interestedIn: ["woman"], graduationYear: 2036 });
     await saveDeckFilter(db, viewer, {
@@ -74,6 +85,7 @@ describe.skipIf(!url)("blind mode (DEC-10)", () => {
     expect(deck.cards.map((c) => c.userId)).toEqual([reader]);
     expect(deck.cards[0]).toMatchObject({ blind: true, photos: [] });
     expect(deck.cards[0]?.prompts).toHaveLength(1);
+    expect(deck.cards[0]?.prompts[0]?.voice).toBeNull();
 
     await as(viewer).discovery.decide({
       targetId: reader,

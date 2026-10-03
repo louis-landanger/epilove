@@ -136,6 +136,7 @@ export const pact = {
       }
       const [card] = await buildCards(
         db,
+        context.services,
         viewer,
         [{ row: pair.target, modes: [result.mode] }],
         input.locale,

@@ -12,7 +12,16 @@ export const memberPhoto = z.object({
   height: z.number().int().nullable(),
 });
 
-export const memberPrompt = z.object({ id: z.uuid(), question: z.string(), answer: z.string() });
+export const memberPrompt = z.object({
+  id: z.uuid(),
+  question: z.string(),
+  /** The written answer; with a voice answer, its transcript. */
+  answer: z.string(),
+  /** Voice answer (PRO-06): signed, expiring, same-origin URL. Withheld with the photos in blind mode. */
+  voice: z
+    .object({ url: z.string(), durationMs: z.int(), peaks: z.array(z.int().min(0).max(100)) })
+    .nullable(),
+});
 export const memberInterest = z.object({ id: z.uuid(), label: z.string(), shared: z.boolean() });
 
 /** Everything a card or a full profile shows about another member. Never an email or a last name. */

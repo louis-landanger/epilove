@@ -215,7 +215,9 @@ export const discovery = {
       return entry ? [{ row: entry.row, modes: entry.modes }] : [];
     });
 
-    const built = await buildCards(db, viewer, page, input.locale, today, { blindDeck: input.blind });
+    const built = await buildCards(db, context.services, viewer, page, input.locale, today, {
+      blindDeck: input.blind,
+    });
     // The blind deck only shows profiles with something to read (DEC-10).
     const cards = input.blind ? built.filter((c) => c.prompts.length > 0) : built;
     await recordImpressions(
@@ -325,6 +327,7 @@ export const discovery = {
         ? (
             await buildCards(
               db,
+              context.services,
               viewer,
               [{ row: pair.target, modes: sharedModes(viewer.member, pair.target.member) }],
               input.locale,
@@ -360,6 +363,7 @@ export const discovery = {
     });
     const cards = await buildCards(
       db,
+      context.services,
       viewer,
       visible.map((v) => ({ row: v.row, modes: sharedModes(viewer.member, v.row.member) })),
       input.locale,
@@ -409,7 +413,14 @@ export const discovery = {
     const { viewer, target, relations, access } = pair;
     const isSelf = access.via === "self";
     const modes = isSelf ? [...viewer.member.modes] : sharedModes(viewer.member, target.member);
-    const [card] = await buildCards(db, viewer, [{ row: target, modes }], input.locale, pair.today);
+    const [card] = await buildCards(
+      db,
+      context.services,
+      viewer,
+      [{ row: target, modes }],
+      input.locale,
+      pair.today,
+    );
     const [decision, activeMatch] = isSelf
       ? [null, null]
       : await Promise.all([
@@ -443,6 +454,7 @@ export const discovery = {
     const viewer = await requireMemberRow(db, context.viewer.userId);
     const [card] = await buildCards(
       db,
+      context.services,
       viewer,
       [{ row: viewer, modes: [...viewer.member.modes] }],
       input.locale,
@@ -532,7 +544,14 @@ export const discovery = {
           mode,
           now,
         });
-        const [card] = await buildCards(db, viewer, [{ row: other, modes: [mode] }], input.locale, today);
+        const [card] = await buildCards(
+          db,
+          context.services,
+          viewer,
+          [{ row: other, modes: [mode] }],
+          input.locale,
+          today,
+        );
         matched = card ? { matchId, card } : null;
       }
     }
@@ -574,7 +593,7 @@ export const discovery = {
       const decision = canSee(viewer.member, row.member, { today, relations });
       return decision.visible ? [{ row, modes: [...decision.modes] }] : [];
     });
-    const cards = await buildCards(db, viewer, visible, input.locale, today);
+    const cards = await buildCards(db, context.services, viewer, visible, input.locale, today);
     if (!current.openedAt) {
       await markDropOpened(db, viewer.member.id, day, now);
     }

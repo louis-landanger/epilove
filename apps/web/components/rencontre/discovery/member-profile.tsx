@@ -2,6 +2,7 @@ import type { MemberCard, ProfileView } from "@epilove/contracts";
 import { ViewerWatermark } from "@epilove/ui";
 import { getTranslations } from "next-intl/server";
 import { Fragment, ViewTransition } from "react";
+import { VoicePlayer } from "@/components/acces/profile/voice/voice-player";
 import { MemberBadges } from "./badges";
 import { CompatibilityPanel } from "./compatibility";
 import {
@@ -126,6 +127,15 @@ export async function MemberProfile({ profile, me }: { profile: ProfileView; me:
                   <blockquote className="mt-2 font-serif text-2xl italic leading-snug">
                     {prompt.answer}
                   </blockquote>
+                  {/* PRO-06: the recorded answer; the text above is its transcript. */}
+                  {prompt.voice && (
+                    <VoicePlayer
+                      src={prompt.voice.url}
+                      peaks={prompt.voice.peaks}
+                      durationMs={prompt.voice.durationMs}
+                      className="mt-4"
+                    />
+                  )}
                   {profile.canLike && (
                     <div className="absolute top-1/2 right-3 -translate-y-1/2">
                       <ProfileLikeButton

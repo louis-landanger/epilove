@@ -1,4 +1,7 @@
+import { createDatabase, schema } from "@epilove/db";
+import { cleanupTestMembers, createTestMember } from "@epilove/db/testing";
 import { expect, test } from "@playwright/test";
+import { eq } from "drizzle-orm";
 import { signUp } from "./support/auth";
 import { onboardMember } from "./support/onboarding";
 
@@ -12,11 +15,22 @@ test.use({
   },
 });
 
+const url = process.env.DATABASE_URL;
+const { db, close } = createDatabase(url ?? "postgres://invalid", { maxConnections: 2 });
+
 test.describe("voice prompts (PRO-06)", () => {
   test.describe.configure({ timeout: 150_000 });
+  test.afterAll(async () => {
+    await cleanupTestMembers(db);
+    await close();
+  });
 
-  test("records a voice answer, plays it through a signed URL and removes it", async ({ page }) => {
-    await signUp(page, "isg.fr");
+  test("records a voice answer, plays it through a signed URL and removes it", async ({
+    page,
+    browser,
+    baseURL,
+  }) => {
+    const email = await signUp(page, "isg.fr");
     await onboardMember(page, "Lou");
 
     await page.goto("/profil");
@@ -41,6 +55,30 @@ test.describe("voice prompts (PRO-06)", () => {
 
     await page.getByRole("tab", { name: "Aperçu" }).click();
     await expect(page.getByText("Transcription")).toBeVisible();
+
+    // A match listens to it from Lou's profile, through their own signed URL.
+    if (url) {
+      const [lou] = await db
+        .select({ id: schema.appUser.id })
+        .from(schema.appUser)
+        .where(eq(schema.appUser.email, email));
+      const romane = await createTestMember(db, { firstName: "Romane", graduationYear: 2039 });
+      const louId = lou?.id ?? "";
+      const [userLow, userHigh] = louId < romane ? [louId, romane] : [romane, louId];
+      await db.insert(schema.match).values({ userLow, userHigh, mode: "friends", source: "like" });
+      const context = await browser.newContext();
+      await context.addCookies([
+        { name: "epilove_dev_user", value: romane, url: baseURL ?? "http://127.0.0.1:3100" },
+      ]);
+      const romanePage = await context.newPage();
+      await romanePage.goto(`/membres/${louId}`);
+      const theirs = romanePage.getByRole("button", { name: "Écouter la réponse vocale" });
+      await expect(theirs).toBeVisible();
+      const heard = romanePage.waitForResponse((response) => response.url().includes("/api/voice/"));
+      await theirs.click();
+      expect([200, 206]).toContain((await heard).status());
+      await context.close();
+    }
 
     await page.getByRole("tab", { name: "Modifier" }).click();
     await page.getByRole("button", { name: "Supprimer le vocal" }).click();

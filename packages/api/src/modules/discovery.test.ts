@@ -251,6 +251,31 @@ describe.skipIf(!url)("discovery", () => {
     expect(campus.card.badges).toEqual(expect.arrayContaining(["photo_verified", "campus_verified"]));
   });
 
+  it("plays the voice answers of a visible profile through signed URLs (PRO-06)", async () => {
+    const viewer = await member();
+    const target = await member({ prompts: ["Écoute plutôt", "Pas de vocal ici"] });
+    const [spoken] = await db
+      .select({ id: schema.promptAnswer.id })
+      .from(schema.promptAnswer)
+      .where(and(eq(schema.promptAnswer.userId, target), eq(schema.promptAnswer.position, 0)));
+    await db
+      .update(schema.promptAnswer)
+      .set({
+        voiceKey: `voice/${spoken?.id}.webm`,
+        voiceStage: "ready",
+        voiceContentType: "audio/webm",
+        voiceDurationMs: 4200,
+        voicePeaks: [10, 80, 40],
+      })
+      .where(eq(schema.promptAnswer.id, spoken?.id ?? ""));
+
+    const { card } = await as(viewer).discovery.profile({ userId: target, locale: "fr" });
+    const [withVoice, withoutVoice] = card.prompts;
+    expect(withVoice?.voice).toMatchObject({ durationMs: 4200, peaks: [10, 80, 40] });
+    expect(withVoice?.voice?.url).toMatch(new RegExp(`^/api/voice/${spoken?.id}\\?exp=\\d+&sig=[\\w-]+$`));
+    expect(withoutVoice?.voice).toBeNull();
+  });
+
   it("does not let a restricted account like", async () => {
     const restricted = await member({ status: "restricted" });
     const target = await member();
