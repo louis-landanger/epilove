@@ -122,6 +122,8 @@ export async function createTestMember(db: Database, options: TestMemberOptions 
           textFr: `Un sujet de test (${position + 1})`,
           textEn: `A test topic (${position + 1})`,
           category: "test",
+          // Answerable by test members, never offered in the prompt pickers.
+          active: false,
         })),
       )
       .onConflictDoNothing();

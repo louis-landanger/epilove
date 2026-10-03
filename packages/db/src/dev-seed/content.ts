@@ -102,20 +102,15 @@ export const PROGRAMS: Readonly<Record<string, readonly string[]>> = {
 };
 
 export interface DevPrompt {
+  /** A prompt of the catalogue (`seeds/catalog-prompts.ts`). */
   readonly slug: string;
-  readonly textFr: string;
-  readonly textEn: string;
-  readonly category: string;
   readonly answers: readonly string[];
 }
 
-/** Prefixed `dev-` until the real prompt catalogue (session A) is merged. */
+/** Answers written for some prompts of the catalogue. */
 export const DEV_PROMPTS: readonly DevPrompt[] = [
   {
-    slug: "dev-campus-spot",
-    textFr: "Le spot du campus où on me trouve…",
-    textEn: "The campus spot where you'll find me…",
-    category: "campus",
+    slug: "campus-spot",
     answers: [
       "La terrasse au soleil entre deux cours, café à la main.",
       "Au fond de la bibliothèque, casque sur les oreilles.",
@@ -126,10 +121,7 @@ export const DEV_PROMPTS: readonly DevPrompt[] = [
     ],
   },
   {
-    slug: "dev-worst-bug",
-    textFr: "Mon pire bug / ma pire manip de TP…",
-    textEn: "My worst bug / lab disaster…",
-    category: "campus",
+    slug: "worst-bug",
     answers: [
       "Un point-virgule manquant. Trois heures. Je ne veux pas en parler.",
       "J'ai fait mousser une culture bactérienne. Elle ne devait pas mousser.",
@@ -140,10 +132,7 @@ export const DEV_PROMPTS: readonly DevPrompt[] = [
     ],
   },
   {
-    slug: "dev-could-teach",
-    textFr: "La matière que je pourrais enseigner les yeux fermés…",
-    textEn: "The subject I could teach blindfolded…",
-    category: "campus",
+    slug: "could-teach",
     answers: [
       "Les pointeurs en C. Oui, vraiment.",
       "La mécanique des fluides, et je le vis bien.",
@@ -154,23 +143,17 @@ export const DEV_PROMPTS: readonly DevPrompt[] = [
     ],
   },
   {
-    slug: "dev-group-debate",
-    textFr: "Mon plus gros débat de projet de groupe…",
-    textEn: "My biggest group project debate…",
-    category: "campus",
+    slug: "group-project-role",
     answers: [
-      "Le nom du projet. On y a passé plus de temps que sur le projet.",
-      "Police Comic Sans : pour ou contre. J'étais pour. J'ai perdu.",
-      "Qui présente ? Tout le monde a soudain eu un empêchement.",
-      "Tabs contre espaces, la rupture a été consommée.",
-      "Faut-il vraiment un logo ? Oui. Trois même.",
+      "…trouve le nom du projet avant la première ligne de code.",
+      "…défend Comic Sans en soutenance. Et qui perd.",
+      "…a soudain un empêchement quand il faut présenter.",
+      "…relance le débat tabs contre espaces à 2 h du matin.",
+      "…propose trois logos alors que personne n'en a demandé.",
     ],
   },
   {
-    slug: "dev-sunday-lyon",
-    textFr: "Mon plan parfait pour un dimanche à Lyon…",
-    textEn: "My perfect Sunday plan in Lyon…",
-    category: "lyon",
+    slug: "lyon-sunday",
     answers: [
       "Marché du quai Saint-Antoine, puis sieste au parc de la Tête d'Or.",
       "Monter à Fourvière à pied, redescendre en funiculaire, sans honte.",
@@ -181,10 +164,7 @@ export const DEV_PROMPTS: readonly DevPrompt[] = [
     ],
   },
   {
-    slug: "dev-convince",
-    textFr: "Je te convaincs en un argument que…",
-    textEn: "I'll convince you in one argument that…",
-    category: "fun",
+    slug: "convince-you",
     answers: [
       "Les céréales se mangent avant le lait. Physique élémentaire.",
       "Le mode sombre sauve des vies (au moins les tiennes, à 2 h).",
@@ -194,10 +174,7 @@ export const DEV_PROMPTS: readonly DevPrompt[] = [
     ],
   },
   {
-    slug: "dev-green-flag",
-    textFr: "Mon green flag le plus sous-côté…",
-    textEn: "My most underrated green flag…",
-    category: "values",
+    slug: "green-flag",
     answers: [
       "Je réponds aux messages. Même tard, mais je réponds.",
       "Je me souviens de ce que tu m'as raconté la semaine dernière.",
@@ -208,10 +185,7 @@ export const DEV_PROMPTS: readonly DevPrompt[] = [
     ],
   },
   {
-    slug: "dev-bde-memory",
-    textFr: "Le meilleur souvenir de soirée BDE que je peux raconter ici…",
-    textEn: "The best student party memory I can share here…",
-    category: "campus",
+    slug: "bde-memory",
     answers: [
       "Le karaoké improvisé dans le bus du retour.",
       "Une bataille de confettis qui a duré deux heures.",
@@ -222,38 +196,34 @@ export const DEV_PROMPTS: readonly DevPrompt[] = [
   },
 ];
 
-export const DEV_INTERESTS: readonly { slug: string; labelFr: string; labelEn: string; category: string }[] =
-  [
-    { slug: "dev-climbing", labelFr: "Escalade", labelEn: "Climbing", category: "sport" },
-    { slug: "dev-running", labelFr: "Course à pied", labelEn: "Running", category: "sport" },
-    { slug: "dev-football", labelFr: "Foot", labelEn: "Football", category: "sport" },
-    { slug: "dev-volley", labelFr: "Volley", labelEn: "Volleyball", category: "sport" },
-    { slug: "dev-yoga", labelFr: "Yoga", labelEn: "Yoga", category: "sport" },
-    { slug: "dev-cooking", labelFr: "Cuisine", labelEn: "Cooking", category: "lifestyle" },
-    {
-      slug: "dev-coffee",
-      labelFr: "Cafés de spécialité",
-      labelEn: "Specialty coffee",
-      category: "lifestyle",
-    },
-    { slug: "dev-thrifting", labelFr: "Friperies", labelEn: "Thrifting", category: "lifestyle" },
-    { slug: "dev-photo", labelFr: "Photo argentique", labelEn: "Film photography", category: "culture" },
-    { slug: "dev-cinema", labelFr: "Cinéma", labelEn: "Cinema", category: "culture" },
-    { slug: "dev-concerts", labelFr: "Concerts", labelEn: "Concerts", category: "culture" },
-    { slug: "dev-reading", labelFr: "Lecture", labelEn: "Reading", category: "culture" },
-    { slug: "dev-manga", labelFr: "Manga", labelEn: "Manga", category: "culture" },
-    { slug: "dev-boardgames", labelFr: "Jeux de société", labelEn: "Board games", category: "games" },
-    { slug: "dev-videogames", labelFr: "Jeux vidéo", labelEn: "Video games", category: "games" },
-    { slug: "dev-chess", labelFr: "Échecs", labelEn: "Chess", category: "games" },
-    { slug: "dev-hackathons", labelFr: "Hackathons", labelEn: "Hackathons", category: "tech" },
-    { slug: "dev-3dprint", labelFr: "Impression 3D", labelEn: "3D printing", category: "tech" },
-    { slug: "dev-space", labelFr: "Espace", labelEn: "Space", category: "science" },
-    { slug: "dev-plants", labelFr: "Plantes vertes", labelEn: "House plants", category: "lifestyle" },
-    { slug: "dev-hiking", labelFr: "Randonnée", labelEn: "Hiking", category: "outdoors" },
-    { slug: "dev-cycling", labelFr: "Vélo", labelEn: "Cycling", category: "outdoors" },
-    { slug: "dev-dance", labelFr: "Danse", labelEn: "Dance", category: "culture" },
-    { slug: "dev-volunteering", labelFr: "Bénévolat", labelEn: "Volunteering", category: "community" },
-  ];
+/** Interests of the catalogue (`seeds/catalog-interests.ts`) the fictional members pick from. */
+export const DEV_INTERESTS: readonly string[] = [
+  "climbing",
+  "running",
+  "football",
+  "volleyball",
+  "yoga",
+  "parkour",
+  "cooking",
+  "coffee",
+  "thrifting",
+  "photography",
+  "cinema",
+  "concerts",
+  "reading",
+  "anime",
+  "board-games",
+  "video-games",
+  "escape-games",
+  "hackathons",
+  "electronics",
+  "space",
+  "plants",
+  "hiking",
+  "cycling",
+  "dance",
+  "volunteering",
+];
 
 /** Opening lines, often echoing the like that started the match. */
 export const OPENERS: readonly string[] = [

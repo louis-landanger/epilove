@@ -1,6 +1,6 @@
 import { calendarDateIn, emailHint, LYON_CAMPUS, uuidv7 } from "@epilove/core";
 import { emailHmac, encryptText, type KeyRing } from "@epilove/crypto";
-import { and, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, gte, inArray, like, lte } from "drizzle-orm";
 import type { Database } from "../client";
 import {
   appUser,
@@ -91,26 +91,11 @@ export async function runDevSeed(options: DevSeedOptions): Promise<DevSeedSummar
   const log = options.log ?? (() => {});
   const random = new Random(DEV_SEED);
 
+  // Reference data, prompt and interest catalogues included: the members answer real prompts.
   await runSeeds(db);
-
-  await db
-    .insert(prompt)
-    .values(DEV_PROMPTS.map(({ slug, textFr, textEn, category }) => ({ slug, textFr, textEn, category })))
-    .onConflictDoUpdate({
-      target: prompt.slug,
-      set: { textFr: sql`excluded.text_fr`, textEn: sql`excluded.text_en`, category: sql`excluded.category` },
-    });
-  await db
-    .insert(interest)
-    .values([...DEV_INTERESTS])
-    .onConflictDoUpdate({
-      target: interest.slug,
-      set: {
-        labelFr: sql`excluded.label_fr`,
-        labelEn: sql`excluded.label_en`,
-        category: sql`excluded.category`,
-      },
-    });
+  // The `dev-` catalogue of earlier development data sets: out of the pickers.
+  await db.update(prompt).set({ active: false }).where(like(prompt.slug, "dev-%"));
+  await db.delete(interest).where(like(interest.slug, "dev-%"));
 
   const schools = new Map(
     (await db.select({ id: school.id, slug: school.slug }).from(school)).map((s) => [s.slug, s.id]),
@@ -131,12 +116,10 @@ export async function runDevSeed(options: DevSeedOptions): Promise<DevSeedSummar
   const interests = await db
     .select({ id: interest.id })
     .from(interest)
-    .where(
-      inArray(
-        interest.slug,
-        DEV_INTERESTS.map((i) => i.slug),
-      ),
-    );
+    .where(inArray(interest.slug, [...DEV_INTERESTS]));
+  if (promptIds.size !== DEV_PROMPTS.length || interests.length !== DEV_INTERESTS.length) {
+    throw new Error("The development data set uses a prompt or an interest missing from the catalogue.");
+  }
 
   const members = generateMembers(random.fork("members"));
   const activity = planActivity(random.fork("activity"), members);
