@@ -45,6 +45,8 @@ test("asks for consent, suggests ideas, never sends them", async ({ context, pag
   await expect(consent.getByText(/sans ton prénom/)).toBeVisible();
   expect((await new AxeBuilder({ page }).withTags(WCAG).analyze()).violations.map((v) => v.id)).toEqual([]);
   await consent.getByRole("button", { name: "Activer" }).click();
+  // Accessibility checks run on settled screens, not during the sheet's closing transition.
+  await expect(consent).toBeHidden();
 
   const idea = page.getByRole("button", { name: "Plutôt escalade en salle ou en falaise ?" });
   await expect(idea).toBeVisible();
