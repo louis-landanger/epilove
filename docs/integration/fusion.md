@@ -24,12 +24,26 @@ Fusion de `claude/eloquent-noether-dza0e1` (A — Accès) et `claude/confident-p
 
 ## Après la fusion
 
-Points de « Reste à faire » traités sur `main` :
+Points de « Reste à faire » et d'intégration traités sur `main`, chacun avec un test qui le couvre :
 
 - **`CLAUDE.md` et `README.md`** : développement sur `main`, commandes des deux sessions ; `docs/sessions-paralleles.md` devient une archive.
 - **E-mails** : un seul envoi, `packages/email`. Le résumé hebdomadaire de B (NOT-05) y devient un gabarit (`weeklyDigestEmail`, même mise en page que les autres e-mails, en français ou en anglais selon la langue du membre) ; `RenderedEmail.unsubscribeUrl` ajoute l'en-tête `List-Unsubscribe` aux e-mails facultatifs. `smtpSender` et la dépendance à nodemailer de `packages/notifications` disparaissent.
+- **Bloquer, signaler, annuler un match** : une seule implémentation, celle du contrat `safety` (`components/acces/safety`), sur `packages/ui` : `SafetyMenu` (`ActionMenu`), `BlockDialog`, `ReportDialog` et un nouveau `UnmatchDialog`. Un signalement avec « bloquer aussi » quitte désormais le profil ou la conversation. Scénario : `e2e/safety-actions.spec.ts`.
+- **Design system** : le `Sheet` de B devient une primitive de `packages/ui` (même Base UI Dialog que `Dialog`) ; les écrans d'état de B utilisent `EmptyState` et `Button`.
+- **Fonctionnalités de A dans les écrans de B** : filigrane du lecteur (SAF-12) sur les photos des autres (deck, profil, likes, Pacte, photos des conversations) ; badges « Photo vérifiée » (ONB-08) et « Campus vérifié » (ONB-11) calculés depuis `app_user.photo_verified_at` et `campus_verified_at` (`member_badge` ne garde que « Ambassadeur », migrations 0004 et 0005) ; réponses vocales (PRO-06) lisibles sur le profil des autres par URL signée, retenues avec les photos en mode à l'aveugle (DEC-10).
+- **Coquille unique** : les fournisseurs de B (cache de requêtes, temps réel, service worker) sont montés une fois par `(app)/layout.tsx` au lieu d'une fois par section ; l'onglet Messages affiche le nombre de conversations non lues, en direct. Un seul client d'API pour le navigateur (`lib/api-client.ts`) et un seul pour le serveur (`lib/server/api-app.ts`, en processus).
+- **Règle « profil complet »** : celle de B (onboarding terminé et au moins une photo validée) est celle de docs/06 ; l'onboarding de A impose déjà photos, prompts et intérêts. Inchangée.
+- **Données de développement** : les membres fictifs répondent aux prompts et choisissent les intérêts du catalogue de A (les anciens `dev-` sont retirés des sélecteurs).
+
+Bogues trouvés en branchant les deux côtés, corrigés avec un test qui les reproduit :
+
+- Sur téléphone, la barre d'onglets de la coquille couvrait la barre d'actions d'un profil et la zone de saisie d'une conversation : impossible de liker depuis un profil ou d'écrire un message. Les écrans plein écran portent `data-immersive` et la barre s'efface (`e2e/app-layout.spec.ts`).
+- Le nombre de messages non lus valait toujours 0 (sous-requête corrélée dont Drizzle ne qualifie pas les colonnes : `"match_id" = "id"` comparait le message à lui-même) ; il alimente aussi le résumé hebdomadaire.
+- Les pages de B demandaient le contenu en français dans tous les cas (questions des prompts, intérêts, questionnaire, Spots…), et les notifications push ignoraient la langue du compte (PLT-04).
+- Le badge « Photo vérifiée » n'apparaissait jamais pour une vérification approuvée par la modération.
+- La fixture `createTestMember({ prompts })` échouait au-delà d'une réponse (un membre ne répond qu'une fois à un prompt depuis le schéma de A).
+- Le filigrane coupait la seconde copie du code au bord du motif, ce qui la rendait mal lisible.
 
 ## Reste à faire
 
-- Deux implémentations des dialogues bloquer / signaler (`components/acces/safety` et `components/rencontre/safety`) : à harmoniser sur le design system de A (`packages/ui`), comme le reste des composants de B.
 - Capacité de la révélation du Pacte à 3 000 et performance mobile de la vitrine : voir les questions ouvertes des deux notes.
