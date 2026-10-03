@@ -123,3 +123,87 @@ describe("photo verification emails (ONB-08)", () => {
     expect(refused.text).toContain("selfie has been deleted");
   });
 });
+
+describe("weekly digest (NOT-05)", () => {
+  const base = {
+    likes: null,
+    matches: null,
+    unreadConversations: null,
+    events: null,
+    pactClosesAt: null,
+    appUrl: "https://app.example/",
+    timeZone: "Europe/Paris",
+  };
+
+  it("is not sent when there is nothing to tell", async () => {
+    const { digestIsEmpty } = await import("./templates/weekly-digest");
+    expect(digestIsEmpty(base)).toBe(true);
+    expect(digestIsEmpty({ ...base, likes: 0, events: [] })).toBe(true);
+    expect(digestIsEmpty({ ...base, likes: 2 })).toBe(false);
+  });
+
+  it("gives counts and campus events, escaped, with a way out", async () => {
+    const { weeklyDigestEmail } = await import("./templates/weekly-digest");
+    const digest = weeklyDigestEmail({
+      ...base,
+      likes: 3,
+      matches: 1,
+      events: [{ title: "Quiz <script>", startsAt: new Date("2026-10-08T17:00:00Z") }],
+    });
+    expect(digest.subject).toBe("Ta semaine sur Epilove");
+    expect(digest.text).toContain("3 personnes t'ont liké cette semaine.");
+    expect(digest.text).toContain("1 nouvelle liaison.");
+    expect(digest.text).toContain("Quiz <script>, jeudi 8 octobre à 19:00");
+    expect(digest.html).toContain("Quiz &lt;script&gt;");
+    expect(digest.html).not.toContain("<script>");
+    expect(digest.html).toContain('<html lang="fr">');
+    expect(digest.unsubscribeUrl).toBe("https://app.example/reglages/notifications");
+    expect(digest.text).toContain("https://app.example/reglages/notifications");
+  });
+
+  it("speaks English to members who chose it", async () => {
+    const { weeklyDigestEmail } = await import("./templates/weekly-digest");
+    const digest = weeklyDigestEmail(
+      {
+        ...base,
+        likes: 1,
+        unreadConversations: 2,
+        pactClosesAt: new Date("2026-10-08T17:00:00Z"),
+        events: [{ title: "Quiz", startsAt: new Date("2026-10-08T17:00:00Z") }],
+      },
+      "en",
+    );
+    expect(digest.subject).toBe("Your week on Epilove");
+    expect(digest.text).toContain("1 person liked you this week.");
+    expect(digest.text).toContain("2 conversations are waiting for your reply.");
+    expect(digest.text).toContain("The Pact is open until Thursday 8 October at 19:00.");
+    expect(digest.text).toContain("Events this week:");
+    expect(digest.html).toContain('<html lang="en">');
+  });
+});
+
+describe.skipIf(!smtpUrl)("smtp headers", () => {
+  it("adds List-Unsubscribe to optional e-mails only", async () => {
+    const { weeklyDigestEmail } = await import("./templates/weekly-digest");
+    const to = `digest-${Date.now()}@epita.fr`;
+    const mailer = createMailer({ smtpUrl: smtpUrl ?? "", from: "Epilove <no-reply@epilove.local>" });
+    await mailer.send(
+      to,
+      weeklyDigestEmail({
+        likes: 2,
+        matches: null,
+        unreadConversations: null,
+        events: null,
+        pactClosesAt: null,
+        appUrl: "https://app.example",
+        timeZone: "Europe/Paris",
+      }),
+    );
+    const search = await fetch(`${mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:${to}`)}`);
+    const { messages } = (await search.json()) as { messages: Array<{ ID: string }> };
+    const headers = (await (
+      await fetch(`${mailpitUrl}/api/v1/message/${messages[0]?.ID}/headers`)
+    ).json()) as Record<string, string[]>;
+    expect(headers["List-Unsubscribe"]).toEqual(["<https://app.example/reglages/notifications>"]);
+  });
+});

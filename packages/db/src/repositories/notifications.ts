@@ -268,6 +268,7 @@ export async function digestRecipients(db: Database, week: string, limit = 200) 
     .select({
       userId: appUser.id,
       email: appUser.email,
+      locale: appUser.locale,
       schoolId: appUser.schoolId,
       groups: sql<string[]>`array_agg(${notificationPreference.group})`,
     })
@@ -282,7 +283,7 @@ export async function digestRecipients(db: Database, week: string, limit = 200) 
         sql`not exists (select 1 from ${emailDigest} d where d.user_id = ${appUser.id} and d.week = ${week})`,
       ),
     )
-    .groupBy(appUser.id, appUser.email, appUser.schoolId)
+    .groupBy(appUser.id, appUser.email, appUser.locale, appUser.schoolId)
     .limit(limit);
   return rows;
 }

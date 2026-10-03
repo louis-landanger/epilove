@@ -22,9 +22,14 @@ Fusion de `claude/eloquent-noether-dza0e1` (A — Accès) et `claude/confident-p
 
 `pnpm check` (lint, types, tests unitaires et d'intégration des 15 paquets), `pnpm build`, Playwright de l'app (110 scénarios et les 2 corrigés, desktop et mobile, axe) et du back-office (5 scénarios). Non relancés : tests visuels Storybook (`pnpm --filter @epilove/ui test:visual`, sans lien avec B) et tests de charge (`infra/load`).
 
+## Après la fusion
+
+Points de « Reste à faire » traités sur `main` :
+
+- **`CLAUDE.md` et `README.md`** : développement sur `main`, commandes des deux sessions ; `docs/sessions-paralleles.md` devient une archive.
+- **E-mails** : un seul envoi, `packages/email`. Le résumé hebdomadaire de B (NOT-05) y devient un gabarit (`weeklyDigestEmail`, même mise en page que les autres e-mails, en français ou en anglais selon la langue du membre) ; `RenderedEmail.unsubscribeUrl` ajoute l'en-tête `List-Unsubscribe` aux e-mails facultatifs. `smtpSender` et la dépendance à nodemailer de `packages/notifications` disparaissent.
+
 ## Reste à faire
 
-- `CLAUDE.md` décrit encore deux sessions parallèles : à mettre à jour (développement sur `main`), avec les commandes de B (`pnpm db:seed:dev`, `pnpm pact:*`, `infra/load/run.sh`).
-- Deux envois d'e-mails coexistent (`packages/email` de A, `smtpSender` de `packages/notifications` pour le résumé de B) : à réunir sur `packages/email`.
 - Deux implémentations des dialogues bloquer / signaler (`components/acces/safety` et `components/rencontre/safety`) : à harmoniser sur le design system de A (`packages/ui`), comme le reste des composants de B.
 - Capacité de la révélation du Pacte à 3 000 et performance mobile de la vitrine : voir les questions ouvertes des deux notes.

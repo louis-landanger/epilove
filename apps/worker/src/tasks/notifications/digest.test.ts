@@ -7,7 +7,8 @@ import {
   prepareTestDatabase,
   testMemberEmail,
 } from "@epilove/db/testing";
-import { createMemoryEmailSender } from "@epilove/notifications";
+import { createMemoryMailer } from "@epilove/email";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { sendWeeklyDigests } from "./digest";
 
@@ -59,19 +60,20 @@ describe.skipIf(!url)("weekly digest (NOT-05)", () => {
       schoolIds: [],
     });
 
-    const { sender, sent } = createMemoryEmailSender();
+    const mailer = createMemoryMailer();
+    const { sent } = mailer;
     const only = [reader, silent, quiet];
-    const first = await sendWeeklyDigests(db, sender, { now, appUrl: "https://app.example", only });
+    const first = await sendWeeklyDigests(db, mailer, { now, appUrl: "https://app.example", only });
     expect(first).toMatchObject({ sent: 1, empty: 1, failed: 0 });
     expect(sent.map((m) => m.to)).toEqual([testMemberEmail(reader)]);
-    const [mail] = sent;
+    const mail = sent[0]?.email;
     expect(mail?.text).toContain("2 personnes t'ont liké cette semaine.");
     expect(mail?.text).toContain("Soirée quiz du digest");
     // Never a first name in the digest.
     expect(mail?.text).not.toContain("Romy");
     expect(mail?.unsubscribeUrl).toBe("https://app.example/reglages/notifications");
 
-    const again = await sendWeeklyDigests(db, sender, { now, appUrl: "https://app.example", only });
+    const again = await sendWeeklyDigests(db, mailer, { now, appUrl: "https://app.example", only });
     expect(again).toMatchObject({ sent: 0, empty: 0 });
     expect(sent).toHaveLength(1);
   });
@@ -92,12 +94,24 @@ describe.skipIf(!url)("weekly digest (NOT-05)", () => {
     ).toMatchObject({
       failed: 1,
     });
-    const { sender, sent } = createMemoryEmailSender();
+    const mailer = createMemoryMailer();
     expect(
-      await sendWeeklyDigests(db, sender, { now, appUrl: "https://app.example", only: [member] }),
+      await sendWeeklyDigests(db, mailer, { now, appUrl: "https://app.example", only: [member] }),
     ).toMatchObject({
       sent: 1,
     });
-    expect(sent[0]?.text).toContain("1 personne t'a liké cette semaine.");
+    expect(mailer.sent[0]?.email.text).toContain("1 personne t'a liké cette semaine.");
+  });
+
+  it("writes in the language the member chose (PLT-04)", async () => {
+    const member = await createTestMember(db, { graduationYear: 2038 });
+    const fan = await createTestMember(db, { graduationYear: 2038 });
+    await db.update(schema.appUser).set({ locale: "en" }).where(eq(schema.appUser.id, member));
+    await saveNotificationPreferences(db, member, new Map([["likes", { push: true, email: true }]]));
+    await db.insert(schema.likeAction).values({ actorId: fan, targetId: member, kind: "like" });
+    const mailer = createMemoryMailer();
+    await sendWeeklyDigests(db, mailer, { now: new Date(), appUrl: "https://app.example", only: [member] });
+    expect(mailer.sent[0]?.email.subject).toBe("Your week on Epilove");
+    expect(mailer.sent[0]?.email.text).toContain("1 person liked you this week.");
   });
 });

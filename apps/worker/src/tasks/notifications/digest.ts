@@ -11,13 +11,14 @@ import {
 } from "@epilove/db/repositories/notifications";
 import { currentSeason } from "@epilove/db/repositories/pact";
 import {
+  createMailer,
   type DigestInput,
   digestIsEmpty,
-  type EmailSender,
-  localHour,
-  renderDigest,
-  smtpSenderFromEnv,
-} from "@epilove/notifications";
+  type Mailer,
+  mailerConfigFromEnv,
+  weeklyDigestEmail,
+} from "@epilove/email";
+import { localHour } from "@epilove/notifications";
 import type { Task } from "graphile-worker";
 
 const TIME_ZONE = LYON_CAMPUS.timeZone;
@@ -36,7 +37,7 @@ const isSundayEvening = (now: Date) =>
  */
 export async function sendWeeklyDigests(
   db: Database,
-  sender: EmailSender,
+  mailer: Mailer,
   options: { now: Date; appUrl: string; only?: readonly string[] },
 ): Promise<{ sent: number; empty: number; failed: number }> {
   const { now } = options;
@@ -79,8 +80,7 @@ export async function sendWeeklyDigests(
         if (digestIsEmpty(input)) {
           stats.empty++;
         } else {
-          const content = renderDigest(input);
-          await sender.send({ to: recipient.email, ...content });
+          await mailer.send(recipient.email, weeklyDigestEmail(input, recipient.locale));
           stats.sent++;
         }
         await markDigestSent(db, recipient.userId, week, now);
@@ -99,14 +99,14 @@ export async function sendWeeklyDigests(
 /** Hourly on Sundays (the crontab has no time zone): sends from 18:00 campus time. */
 export const weeklyDigest: Task = async (_payload, helpers) => {
   const url = process.env.DATABASE_URL;
-  const sender = smtpSenderFromEnv();
   const now = new Date();
-  if (!url || !sender || !isSundayEvening(now)) {
+  if (!url || !process.env.SMTP_URL || !isSundayEvening(now)) {
     return;
   }
+  const mailer = createMailer(mailerConfigFromEnv());
   const { db, close } = createDatabase(url, { maxConnections: 1 });
   try {
-    const stats = await sendWeeklyDigests(db, sender, {
+    const stats = await sendWeeklyDigests(db, mailer, {
       now,
       appUrl: process.env.APP_URL ?? "http://localhost:3000",
     });

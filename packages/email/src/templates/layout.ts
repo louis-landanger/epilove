@@ -3,6 +3,8 @@ export interface RenderedEmail {
   readonly subject: string;
   readonly html: string;
   readonly text: string;
+  /** Where to stop this kind of e-mail (RFC 2369 `List-Unsubscribe`), for optional e-mails only. */
+  readonly unsubscribeUrl?: string;
 }
 
 const ENTITIES: Record<string, string> = {

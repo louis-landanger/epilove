@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { digestIsEmpty, renderDigest } from "./digest";
 import { DEFAULT_QUIET_HOURS, inQuietHours, localHour, pushAllowedAt } from "./quiet-hours";
 import { renderPush } from "./render";
 import { groupOf, NOTIFICATION_TYPES, notificationUrl } from "./types";
@@ -70,38 +69,5 @@ describe("quiet hours (NOT-04)", () => {
     expect(pushAllowedAt("message_received", messages, night, PARIS)).toBe(true);
     expect(pushAllowedAt("chat_nudge", messages, night, PARIS)).toBe(false);
     expect(pushAllowedAt("date_check_in", DEFAULT_QUIET_HOURS, night, PARIS)).toBe(true);
-  });
-});
-
-describe("weekly digest (NOT-05)", () => {
-  const base = {
-    likes: null,
-    matches: null,
-    unreadConversations: null,
-    events: null,
-    pactClosesAt: null,
-    appUrl: "https://app.example/",
-    timeZone: "Europe/Paris",
-  };
-
-  it("is not sent when there is nothing to tell", () => {
-    expect(digestIsEmpty(base)).toBe(true);
-    expect(digestIsEmpty({ ...base, likes: 0, events: [] })).toBe(true);
-    expect(digestIsEmpty({ ...base, likes: 2 })).toBe(false);
-  });
-
-  it("gives counts and campus events, escaped, with a way out", () => {
-    const digest = renderDigest({
-      ...base,
-      likes: 3,
-      matches: 1,
-      events: [{ title: "Quiz <script>", startsAt: new Date("2026-10-08T17:00:00Z") }],
-    });
-    expect(digest.text).toContain("3 personnes t'ont liké cette semaine.");
-    expect(digest.text).toContain("1 nouvelle liaison.");
-    expect(digest.text).toContain("Quiz <script>, jeudi 8 octobre à 19:00");
-    expect(digest.html).toContain("Quiz &lt;script&gt;");
-    expect(digest.html).not.toContain("<script>");
-    expect(digest.unsubscribeUrl).toBe("https://app.example/reglages/notifications");
   });
 });

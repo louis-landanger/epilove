@@ -21,6 +21,7 @@ export function createMailer(config: MailerConfig): Mailer {
         subject: email.subject,
         text: email.text,
         html: email.html,
+        headers: email.unsubscribeUrl ? { "List-Unsubscribe": `<${email.unsubscribeUrl}>` } : undefined,
       });
     },
   };

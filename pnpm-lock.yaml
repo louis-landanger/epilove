@@ -959,9 +959,6 @@ importers:
 
   packages/notifications:
     dependencies:
-      nodemailer:
-        specifier: 'catalog:'
-        version: 10.0.13
       web-push:
         specifier: 'catalog:'
         version: 3.6.7(supports-color@7.2.0)

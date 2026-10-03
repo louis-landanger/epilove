@@ -2,7 +2,7 @@
   "name": "@epilove/notifications",
   "version": "0.0.0",
   "private": true,
-  "description": "Notification types, discreet rendering and Web Push delivery.",
+  "description": "Notification types, discreet rendering and Web Push delivery (e-mails go through @epilove/email).",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -14,7 +14,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "nodemailer": "catalog:",
     "web-push": "catalog:"
   },
   "devDependencies": {
