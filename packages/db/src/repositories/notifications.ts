@@ -106,6 +106,12 @@ export async function saveNotificationPreferences(
 }
 
 /** Discreet notifications setting (SAF-06), stored with session A's preferences. Discreet unless explicitly off. */
+/** The language the member chose for the app (PLT-04), used for pushes. */
+export async function localeOf(db: Database, userId: string): Promise<"fr" | "en"> {
+  const [row] = await db.select({ locale: appUser.locale }).from(appUser).where(eq(appUser.id, userId));
+  return row?.locale ?? "fr";
+}
+
 export async function isDiscreet(db: Database, userId: string): Promise<boolean> {
   const [row] = await db
     .select({ discreet: preferences.discreetNotifications })

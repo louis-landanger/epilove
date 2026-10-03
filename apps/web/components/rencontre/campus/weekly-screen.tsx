@@ -4,9 +4,10 @@ import type { DistributionView, WeeklyView } from "@epilove/contracts";
 import { SCHOOLS } from "@epilove/core";
 import { ORPCError } from "@orpc/client";
 import Link from "next/link";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 import { schoolColor } from "../discovery/school";
 
 const CAMPUS_TIME_ZONE = "Europe/Paris";
@@ -48,6 +49,7 @@ function Bars({
 /** Question of the week (COM-01): answer, then see the campus and each school (from ten answers). */
 export function WeeklyScreen({ initial }: { initial: WeeklyView }) {
   const t = useTranslations("campus.weekly");
+  const locale = contentLocale(useLocale());
   const format = useFormatter();
   const [view, setView] = useState(initial);
   const [changing, setChanging] = useState(false);
@@ -63,11 +65,11 @@ export function WeeklyScreen({ initial }: { initial: WeeklyView }) {
     setBusy(true);
     setNotice(null);
     try {
-      setView(await api.community.answerWeekly({ questionId: question.id, option, locale: "fr" }));
+      setView(await api.community.answerWeekly({ questionId: question.id, option, locale }));
       setChanging(false);
     } catch (error) {
       if (error instanceof ORPCError && error.message === "closed") {
-        setView(await api.community.weekly({ locale: "fr" }));
+        setView(await api.community.weekly({ locale }));
         setNotice(t("closed"));
       } else {
         setNotice(t("error"));

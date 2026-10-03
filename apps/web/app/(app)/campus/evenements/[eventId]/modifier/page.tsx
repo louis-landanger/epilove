@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { EventForm } from "@/components/rencontre/events/event-form";
 import { GateScreen } from "@/components/rencontre/ui/states";
 import { serverApi } from "@/lib/rencontre/api.server";
 import { gated } from "@/lib/rencontre/gate";
+import { contentLocale } from "@/lib/rencontre/locale";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -18,10 +19,11 @@ export default async function EditEventPage({ params }: { params: Promise<{ even
     return <GateScreen gate="notfound" />;
   }
   const api = await serverApi();
+  const locale = contentLocale(await getLocale());
   const result = await gated(async () => {
     const [detail, spots] = await Promise.all([
-      api.events.get({ eventId, locale: "fr" }),
-      api.campusLife.spots({ locale: "fr" }),
+      api.events.get({ eventId, locale }),
+      api.campusLife.spots({ locale }),
     ]);
     return { event: detail.event, spots: spots.spots };
   });

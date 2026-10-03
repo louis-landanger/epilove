@@ -5,9 +5,10 @@ import { clockOffsetMs, type Mode, revealDelayMs } from "@epilove/core";
 import { PACT_CHANNEL } from "@epilove/realtime/events";
 import { ORPCError } from "@orpc/client";
 import Link from "next/link";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 import { useBroadcast } from "@/lib/rencontre/realtime";
 import { schoolColor } from "../discovery/school";
 import { Countdown } from "./countdown";
@@ -47,6 +48,7 @@ function preload(matches: readonly PactMatchView[], timeoutMs = 2000) {
  */
 export function PactScreen({ initial }: { initial: PactCurrent }) {
   const t = useTranslations("pact");
+  const locale = contentLocale(useLocale());
   const format = useFormatter();
   const [data, setData] = useState(initial);
   const [offset, setOffset] = useState(0);
@@ -76,20 +78,23 @@ export function PactScreen({ initial }: { initial: PactCurrent }) {
     return () => clearInterval(interval);
   }, [refresh]);
 
-  const loadResult = useCallback(async (attempt = 0): Promise<PactMatchView[]> => {
-    try {
-      const { matches } = await api.pact.result({ locale: "fr" });
-      await preload(matches);
-      return matches;
-    } catch (cause) {
-      // The broadcast can beat the database replica by a moment: try again shortly.
-      if (attempt < 5 && cause instanceof ORPCError && cause.message === "not_revealed") {
-        await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1500));
-        return loadResult(attempt + 1);
+  const loadResult = useCallback(
+    async (attempt = 0): Promise<PactMatchView[]> => {
+      try {
+        const { matches } = await api.pact.result({ locale });
+        await preload(matches);
+        return matches;
+      } catch (cause) {
+        // The broadcast can beat the database replica by a moment: try again shortly.
+        if (attempt < 5 && cause instanceof ORPCError && cause.message === "not_revealed") {
+          await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1500));
+          return loadResult(attempt + 1);
+        }
+        throw cause;
       }
-      throw cause;
-    }
-  }, []);
+    },
+    [locale],
+  );
 
   const startReveal = useCallback(
     (animated: boolean) => {

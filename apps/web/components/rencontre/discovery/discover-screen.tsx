@@ -1,9 +1,10 @@
 "use client";
 
 import type { DeckFilterView, MemberCard } from "@epilove/contracts";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 import { Deck, type DeckInitial } from "./deck";
 import { DropHeader } from "./drop-header";
 import { FiltersDrawer, isFilterActive } from "./filters-drawer";
@@ -19,6 +20,7 @@ export function DiscoverScreen({
   filter: DeckFilterView;
 }) {
   const t = useTranslations("discovery");
+  const locale = contentLocale(useLocale());
   const [filter, setFilter] = useState(initialFilter);
   const [deck, setDeck] = useState({ version: 0, initial });
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -32,12 +34,12 @@ export function DiscoverScreen({
   const toggleBlind = async () => {
     setSwitching(true);
     try {
-      const next = await api.discovery.deck({ locale: "fr", limit: 8, exclude: [], blind: !blind });
+      const next = await api.discovery.deck({ locale, limit: 8, exclude: [], blind: !blind });
       setBlind(!blind);
       setDeck((current) => ({ version: current.version + 1, initial: next }));
     } catch {
       // The evening may just have ended: back to the usual deck.
-      const next = await api.discovery.deck({ locale: "fr", limit: 8, exclude: [] }).catch(() => null);
+      const next = await api.discovery.deck({ locale, limit: 8, exclude: [] }).catch(() => null);
       setBlind(false);
       if (next) {
         setDeck((current) => ({ version: current.version + 1, initial: next }));
@@ -121,7 +123,7 @@ export function DiscoverScreen({
         onSaved={async (saved) => {
           setFilter(saved);
           setFiltersOpen(false);
-          const next = await api.discovery.deck({ locale: "fr", limit: 8, exclude: [], blind });
+          const next = await api.discovery.deck({ locale, limit: 8, exclude: [], blind });
           setDeck((current) => ({ version: current.version + 1, initial: next }));
         }}
       />

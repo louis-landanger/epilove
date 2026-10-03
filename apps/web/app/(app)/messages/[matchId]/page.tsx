@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Conversation } from "@/components/rencontre/chat/conversation";
 import { GateScreen } from "@/components/rencontre/ui/states";
 import { serverApi } from "@/lib/rencontre/api.server";
 import { gated } from "@/lib/rencontre/gate";
+import { contentLocale } from "@/lib/rencontre/locale";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -19,7 +20,8 @@ export default async function ConversationPage({ params }: { params: Promise<{ m
     return <GateScreen gate="notfound" />;
   }
   const api = await serverApi();
-  const result = await gated(() => api.messaging.thread({ matchId, locale: "fr" }));
+  const locale = contentLocale(await getLocale());
+  const result = await gated(() => api.messaging.thread({ matchId, locale }));
   if (!result.ok) {
     return <GateScreen gate={result.gate} />;
   }

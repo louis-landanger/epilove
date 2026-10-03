@@ -39,6 +39,30 @@ describe.skipIf(!url)("push delivery", () => {
     return { sender, sent };
   }
 
+  it("pushes in the language the member chose (PLT-04)", async () => {
+    const member = await createTestMember(db);
+    await db.update(schema.appUser).set({ locale: "en" }).where(eq(schema.appUser.id, member));
+    const endpoint = `https://push.example/${member}/en`;
+    await saveSubscription(db, member, { endpoint, p256dh: "k", auth: "a", userAgent: null });
+    await db.insert(schema.notification).values({
+      userId: member,
+      type: "like_received",
+      payload: {},
+      createdAt: new Date(Date.now() - 2 * 3_600_000),
+    });
+    const { sender, sent } = recordingSender();
+    const deliver = createPushDelivery({
+      db,
+      sender,
+      publisher: createMemoryPublisher().publisher,
+      now: () => NOON,
+    });
+    while ((await processPendingPushes(db, deliver, { userId: member, maxAgeMinutes: 24 * 60 })) > 0) {}
+    expect(sent.filter((s) => s.target.endpoint === endpoint).map((s) => s.content.body)).toEqual([
+      "Someone liked you.",
+    ]);
+  });
+
   it("pushes discreetly, respects preferences and drops expired subscriptions", async () => {
     const member = await createTestMember(db);
     const endpoint = `https://push.example/${member}`;

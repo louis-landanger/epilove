@@ -3,9 +3,10 @@
 import { countdown } from "@epilove/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { orpc } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 import { useRealtime } from "@/lib/rencontre/realtime";
 import { SchoolGlyph, schoolColor } from "./school";
 
@@ -16,8 +17,9 @@ import { SchoolGlyph, schoolColor } from "./school";
  */
 export function DropHeader() {
   const t = useTranslations("discovery.drop");
+  const locale = contentLocale(useLocale());
   const queryClient = useQueryClient();
-  const options = orpc.discovery.drop.queryOptions({ input: { locale: "fr" } });
+  const options = orpc.discovery.drop.queryOptions({ input: { locale } });
   const { data } = useQuery({ ...options, refetchOnWindowFocus: true });
   const [now, setNow] = useState<number | null>(null);
   const [offset, setOffset] = useState(0);

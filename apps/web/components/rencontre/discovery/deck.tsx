@@ -4,9 +4,10 @@ import type { MemberCard as MemberCardData, QuotaView } from "@epilove/contracts
 import { ORPCError } from "@orpc/client";
 import { AnimatePresence, animate, motion, type PanInfo, useMotionValue, useTransform } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { api } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 import { useOnline } from "@/lib/rencontre/use-online";
 import { Liaison } from "../matches/liaison";
 import { type LikeRequest, LikeSheet } from "./like-sheet";
@@ -60,6 +61,7 @@ export function Deck({
   onQuota?: (quota: QuotaView) => void;
 }) {
   const t = useTranslations("discovery");
+  const locale = contentLocale(useLocale());
   const router = useRouter();
   const online = useOnline();
   const [cards, setCards] = useState(initial.cards);
@@ -101,7 +103,7 @@ export function Deck({
     setLoadingMore(true);
     api.discovery
       .deck({
-        locale: "fr",
+        locale,
         limit: 8,
         exclude: [...cards.map((c) => c.userId), ...decided.current.slice(-80)],
         blind,
@@ -119,7 +121,7 @@ export function Deck({
       })
       .catch(() => showToast(t("errors.generic")))
       .finally(() => setLoadingMore(false));
-  }, [cards, loadingMore, empty, online, showToast, t, blind]);
+  }, [cards, loadingMore, empty, online, showToast, t, blind, locale]);
 
   const send = useCallback(
     async (card: MemberCardData, kind: Kind, content: LikedContent | null, comment: string | null) => {
@@ -168,7 +170,7 @@ export function Deck({
 
   const undo = useCallback(async () => {
     try {
-      const result = await api.discovery.undo({ locale: "fr" });
+      const result = await api.discovery.undo({ locale });
       setQuota(result.quota);
       if (result.restored) {
         const restored = result.restored;
@@ -181,7 +183,7 @@ export function Deck({
     } catch (error) {
       showToast(t(`errors.${errorCode(error)}` as "errors.generic"));
     }
-  }, [showToast, t]);
+  }, [showToast, t, locale]);
 
   const openProfile = useCallback(
     (card: MemberCardData) => startTransition(() => router.push(`/membres/${card.userId}`)),

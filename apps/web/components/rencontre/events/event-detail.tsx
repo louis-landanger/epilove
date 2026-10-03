@@ -5,9 +5,10 @@ import { dateIcs, EVENT_RULES, flashOpen, type RsvpStatus } from "@epilove/core"
 import { Sheet } from "@epilove/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 
 const CAMPUS_TIME_ZONE = "Europe/Paris";
 
@@ -20,6 +21,7 @@ export function EventDetailScreen({
   schools: string;
 }) {
   const t = useTranslations("events");
+  const locale = contentLocale(useLocale());
   const format = useFormatter();
   const router = useRouter();
   const [event, setEvent] = useState(initial.event);
@@ -45,7 +47,7 @@ export function EventDetailScreen({
       const result = await api.events.rsvp({ eventId: event.id, status, shareWithMatches });
       setEvent((current) => ({ ...current, ...result.event }));
       setShare(status === null ? false : shareWithMatches);
-      const fresh = await api.events.get({ eventId: event.id, locale: "fr" });
+      const fresh = await api.events.get({ eventId: event.id, locale });
       setMatchesGoing(fresh.matchesGoing);
     } catch {
       setError(t("detail.error"));

@@ -3,9 +3,10 @@
 import type { CrushView, MemberCard } from "@epilove/contracts";
 import { ORPCError } from "@orpc/client";
 import Link from "next/link";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 import { Liaison } from "../matches/liaison";
 
 const CAMPUS_TIME_ZONE = "Europe/Paris";
@@ -23,6 +24,7 @@ export function CrushScreen({
   me: MemberCard | null;
 }) {
   const t = useTranslations("likes.crush");
+  const locale = contentLocale(useLocale());
   const format = useFormatter();
   const inputId = useId();
   const [list, setList] = useState(initial);
@@ -37,7 +39,7 @@ export function CrushScreen({
     setPending(true);
     setMessage(null);
     try {
-      const result = await api.discovery.addCrush({ email, locale: "fr" });
+      const result = await api.discovery.addCrush({ email, locale });
       setList({ crushes: result.crushes, maxActive: result.maxActive });
       setEmail("");
       if (result.matched) {

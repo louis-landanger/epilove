@@ -3,6 +3,7 @@ import type { Database } from "@epilove/db";
 import {
   deleteSubscription,
   isDiscreet,
+  localeOf,
   notificationPreferencesOf,
   otherFirstName,
   type PendingPush,
@@ -45,11 +46,12 @@ export function createPushDelivery(options: {
       if (await publisher.isOnline(personalChannel(userId))) {
         continue;
       }
-      const [preferences, discreet, subscriptions, quiet] = await Promise.all([
+      const [preferences, discreet, subscriptions, quiet, locale] = await Promise.all([
         notificationPreferencesOf(db, userId),
         isDiscreet(db, userId),
         subscriptionsOf(db, userId),
         quietHoursOf(db, userId),
+        localeOf(db, userId),
       ]);
       if (subscriptions.length === 0) {
         continue;
@@ -64,7 +66,12 @@ export function createPushDelivery(options: {
         }
         const name =
           !discreet && item.payload?.matchId ? await otherFirstName(db, item.payload.matchId, userId) : null;
-        const content = renderPush(item.type, { discreet, otherFirstName: name, payload: item.payload });
+        const content = renderPush(item.type, {
+          discreet,
+          otherFirstName: name,
+          locale,
+          payload: item.payload,
+        });
         for (const subscription of subscriptions) {
           const result = await sender.send(subscription, content);
           if (result === "gone") {

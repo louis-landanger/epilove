@@ -1,21 +1,23 @@
 "use client";
 
 import type { PactStatsView } from "@epilove/contracts";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 
 /** "Le Pacte en chiffres" (PAC-04), after the reveal: anonymous aggregates of ten people or more. */
 export function PactStats() {
   const t = useTranslations("pact.stats");
+  const locale = contentLocale(useLocale());
   const [stats, setStats] = useState<PactStatsView | null>(null);
 
   useEffect(() => {
     void api.community
-      .pactStats({ locale: "fr" })
+      .pactStats({ locale })
       .then(setStats)
       .catch(() => undefined);
-  }, []);
+  }, [locale]);
 
   if (!stats?.season || stats.participants === null) {
     return null;

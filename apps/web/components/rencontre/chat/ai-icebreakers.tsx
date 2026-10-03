@@ -5,6 +5,7 @@ import { ORPCError } from "@orpc/client";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 
 type State =
   | { readonly kind: "idle" }
@@ -27,7 +28,7 @@ export function AiIcebreakers({
   onPick: (text: string) => void;
 }) {
   const t = useTranslations("chat.ai");
-  const locale = useLocale() === "en" ? "en" : "fr";
+  const locale = contentLocale(useLocale());
   const [consented, setConsented] = useState(initiallyConsented);
   const [asking, setAsking] = useState(false);
   const [state, setState] = useState<State>({ kind: "idle" });

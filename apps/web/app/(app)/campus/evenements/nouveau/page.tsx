@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { EventForm } from "@/components/rencontre/events/event-form";
 import { GateScreen } from "@/components/rencontre/ui/states";
 import { serverApi } from "@/lib/rencontre/api.server";
 import { gated } from "@/lib/rencontre/gate";
+import { contentLocale } from "@/lib/rencontre/locale";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("events.form");
@@ -13,10 +14,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function NewEventPage() {
   const api = await serverApi();
+  const locale = contentLocale(await getLocale());
   const result = await gated(async () => {
     const [list, spots] = await Promise.all([
       api.events.list({ filter: "mine" }),
-      api.campusLife.spots({ locale: "fr" }),
+      api.campusLife.spots({ locale }),
     ]);
     return { canOrganize: list.canOrganize, spots: spots.spots };
   });

@@ -4,9 +4,10 @@ import type { SpotView } from "@epilove/contracts";
 import { DATE_RULES } from "@epilove/core";
 import { Sheet } from "@epilove/ui";
 import { ORPCError } from "@orpc/client";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
 import { api } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 
 export interface DateDraft {
   readonly spotId: string | null;
@@ -38,6 +39,7 @@ export function DateSheet({
   onSubmit: (draft: DateDraft) => Promise<void>;
 }) {
   const t = useTranslations("chat.date");
+  const locale = contentLocale(useLocale());
   const titleId = useId();
   const [spots, setSpots] = useState<SpotView[]>([]);
   const [spotId, setSpotId] = useState<string>("");
@@ -50,11 +52,11 @@ export function DateSheet({
   useEffect(() => {
     if (open && spots.length === 0) {
       api.campusLife
-        .spots({ locale: "fr" })
+        .spots({ locale })
         .then((result) => setSpots(result.spots))
         .catch(() => setSpots([]));
     }
-  }, [open, spots.length]);
+  }, [open, spots.length, locale]);
 
   const min = localInput(new Date(Date.now() + DATE_RULES.minLeadMinutes * 60_000));
 

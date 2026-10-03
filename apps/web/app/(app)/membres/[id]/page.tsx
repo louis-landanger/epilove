@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { MemberProfile } from "@/components/rencontre/discovery/member-profile";
 import { GateScreen, NotFoundScreen } from "@/components/rencontre/ui/states";
 import { serverApi } from "@/lib/rencontre/api.server";
 import { gated } from "@/lib/rencontre/gate";
+import { contentLocale } from "@/lib/rencontre/locale";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -19,10 +20,11 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
     return <NotFoundScreen />;
   }
   const api = await serverApi();
+  const locale = contentLocale(await getLocale());
   const result = await gated(() =>
     Promise.all([
-      api.discovery.profile({ userId: id, locale: "fr" }),
-      api.discovery.me({ locale: "fr" }).catch(() => null),
+      api.discovery.profile({ userId: id, locale }),
+      api.discovery.me({ locale }).catch(() => null),
     ]),
   );
   if (!result.ok) {

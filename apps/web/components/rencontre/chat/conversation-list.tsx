@@ -2,8 +2,9 @@
 
 import type { MatchSummary } from "@epilove/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useFormatter, useNow, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useNow, useTranslations } from "next-intl";
 import { orpc } from "@/lib/rencontre/api.client";
+import { contentLocale } from "@/lib/rencontre/locale";
 import { useRealtime } from "@/lib/rencontre/realtime";
 import { Avatar } from "./avatar";
 import { DispoChip } from "./dispo";
@@ -17,6 +18,7 @@ export function ConversationList({
   activeMatchId: string | null;
 }) {
   const t = useTranslations("chat");
+  const locale = contentLocale(useLocale());
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
   // A message newer than the last tick of `now` is "just now", never "in 5 seconds".
@@ -25,7 +27,7 @@ export function ConversationList({
     return format.relativeTime(at, at > now ? at : now);
   };
   const client = useQueryClient();
-  const options = orpc.matches.list.queryOptions({ input: { locale: "fr" } });
+  const options = orpc.matches.list.queryOptions({ input: { locale } });
   const { data } = useQuery({ ...options, initialData: { matches: initial } });
 
   useRealtime((signal) => {
