@@ -2,6 +2,7 @@
   "$schema": "./node_modules/turbo/schema.json",
   "ui": "stream",
   "agentGuidance": false,
+  "globalPassThroughEnv": ["SWC_NATIVE_BINDING_CACHE"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
