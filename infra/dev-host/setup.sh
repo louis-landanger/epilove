@@ -222,8 +222,11 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 }
-unit web apps/web "--hostname 127.0.0.1"
-unit admin apps/admin "--hostname 127.0.0.1"
+# Loopback only, but named `localhost`: with any other --hostname, Next.js 16.3 builds
+# the proxy.ts URL and its own base URL from different hosts, then forwards the
+# rewritten /en pages to itself over TLS (500 behind Caddy's X-Forwarded-Proto).
+unit web apps/web "--hostname localhost"
+unit admin apps/admin "--hostname localhost"
 unit worker apps/worker ""
 systemctl daemon-reload
 systemctl enable epilove-web epilove-admin epilove-worker >/dev/null
@@ -244,18 +247,18 @@ app.$DOMAIN {
 	# Browsers fetch the web app manifest without credentials.
 	@manifest path /manifest.webmanifest
 	handle @manifest {
-		reverse_proxy 127.0.0.1:3000
+		reverse_proxy localhost:3000
 	}
 	handle {
 		import team
-		reverse_proxy 127.0.0.1:3000
+		reverse_proxy localhost:3000
 	}
 }
 
 admin.$DOMAIN {
 	encode zstd gzip
 	import team
-	reverse_proxy 127.0.0.1:3001
+	reverse_proxy localhost:3001
 }
 
 mail.$DOMAIN {

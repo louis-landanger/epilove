@@ -58,6 +58,15 @@ test.describe("English (PLT-04)", () => {
     });
   });
 
+  test("serves English pages behind a TLS-terminating reverse proxy", async ({ request }) => {
+    // Caddy (infra/dev-host) and Coolify forward plain HTTP with X-Forwarded-Proto: https.
+    for (const path of ["/en", "/en/legal/cgu"]) {
+      const response = await request.get(path, { headers: { "x-forwarded-proto": "https" } });
+      expect(response.status(), path).toBe(200);
+      expect(await response.text(), path).toContain('<html lang="en"');
+    }
+  });
+
   test("switches the whole app to English from the settings", async ({ page, browser }) => {
     const email = await signUp(page, "isg.fr");
     await onboardMember(page, "Malik");
