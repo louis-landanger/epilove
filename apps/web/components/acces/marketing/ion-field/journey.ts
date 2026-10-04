@@ -35,15 +35,11 @@ export interface JourneyState {
   readonly condense: number;
   /** 1 while the hero and the manifesto are on screen, 0 once they have scrolled away. */
   readonly opening: number;
-  /** Overall brightness: the field recedes behind the sections that are mostly text. */
-  readonly dim: number;
-  /** An opaque section hides the whole field. */
+  /** Nothing of the field shows: an opaque section fills the viewport, or the shape it holds is off screen. */
   readonly hidden: boolean;
+  /** With `condense`, the weights add up to 1 once the hero is scrolled past: no particle drifts freely. */
   readonly formations: ViewportFormations;
 }
-
-/** Brightness of the free field once the opening has scrolled away. */
-const RESTING_DIM = 0.45;
 
 const ramp = (value: number) => {
   const t = Math.min(1, Math.max(0, value));
@@ -61,23 +57,26 @@ function lerpBox(from: PixelBox, to: PixelBox, t: number): PixelBox {
   };
 }
 
+/** A shape of the journey: how present its section is, and where it stands. */
+interface Stage {
+  readonly presence: number;
+  readonly box: PixelBox;
+}
+
 /**
- * The stacked cards: the formation gathers as the first card comes up and
- * lets go once the list scrolls away; in between it follows whichever card
- * is on top, morphing into the next one (and the next motif) as it slides in.
+ * The stacked cards: present from the moment the first card comes up until
+ * the list scrolls away; the shape follows whichever card is on top,
+ * morphing into the next one (and the next motif) as it slides in.
  */
-function cardFormation(measures: JourneyMeasures): ViewportFormations["card"] {
+function cardStage(measures: JourneyMeasures): (Stage & { readonly step: number }) | null {
   const { cards, cardList, height } = measures;
   const first = cards[0];
   if (!first || !cardList) {
     return null;
   }
-  const weight =
+  const presence =
     ramp((height - first.box.top) / (0.55 * height)) *
     ramp((bottomOf(cardList) - 0.25 * height) / (0.5 * height));
-  if (weight <= 0.001) {
-    return null;
-  }
   let box = first.box;
   let step = 0;
   // Cards follow each other closely: the motif changes over the last stretch of
@@ -88,36 +87,101 @@ function cardFormation(measures: JourneyMeasures): ViewportFormations["card"] {
     box = lerpBox(box, card.box, arrival);
     step += arrival;
   }
-  return { weight, box, radius: measures.cardRadius, step };
+  return { presence, box, step };
 }
 
+/** Distance from a box to the middle of the viewport (0 when it spans it). */
+function distanceToMiddle(box: PixelBox, height: number): number {
+  const middle = height / 2;
+  if (box.top <= middle && bottomOf(box) >= middle) {
+    return 0;
+  }
+  return Math.min(Math.abs(box.top - middle), Math.abs(bottomOf(box) - middle));
+}
+
+/**
+ * Only the hero has free particles. From there on every particle belongs to a
+ * shape: the logo mark over the manifesto, then the cards, the tubes and the
+ * Pact rings. Neighbouring shapes share the particles while one section gives
+ * way to the next (their weights add up to 1); between sections the nearest
+ * shape keeps them, and scrolls away with its section.
+ */
 export function journey(measures: JourneyMeasures): JourneyState {
   const { height, scope, rack, pact } = measures;
 
-  // Hero and manifesto: the field condenses into the logo mark, then lets go as the manifesto leaves.
+  // Free at the top of the hero, fully held once it has scrolled by.
+  const settled = scope ? ramp(-scope.top / (0.85 * height)) : 1;
+  // The logo mark holds the particles over the manifesto, then hands them over.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
-  const condense = scope ? ramp(-scope.top / (0.85 * height)) * opening : 0;
 
-  const card = cardFormation(measures);
+  const card = cardStage(measures);
+  const stages: ReadonlyArray<Stage | null> = [
+    scope ? { presence: opening, box: scope } : null,
+    card,
+    rack
+      ? {
+          presence:
+            ramp((0.92 * height - rack.top) / (0.42 * height)) *
+            ramp((bottomOf(rack) - 0.08 * height) / (0.4 * height)),
+          box: rack,
+        }
+      : null,
+    pact
+      ? {
+          presence:
+            ramp((0.95 * height - pact.top) / (0.45 * height)) *
+            ramp((bottomOf(pact) - 0.05 * height) / (0.4 * height)),
+          box: pact,
+        }
+      : null,
+  ];
 
-  const tubesWeight = rack
-    ? ramp((0.92 * height - rack.top) / (0.42 * height)) *
-      ramp((bottomOf(rack) - 0.08 * height) / (0.4 * height))
-    : 0;
-  const tubes = tubesWeight > 0.001 ? { weight: tubesWeight, tubes: measures.tubes } : null;
+  const weights = stages.map((stage) => stage?.presence ?? 0);
+  let total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (total < 0.001) {
+    // Between sections: the nearest shape keeps the particles.
+    let nearest = -1;
+    let best = Number.POSITIVE_INFINITY;
+    for (const [index, stage] of stages.entries()) {
+      const distance = stage ? distanceToMiddle(stage.box, height) : Number.POSITIVE_INFINITY;
+      if (distance < best) {
+        best = distance;
+        nearest = index;
+      }
+    }
+    if (nearest >= 0) {
+      weights[nearest] = 1;
+      total = 1;
+    }
+  }
+  const share = (index: number) => (total > 0 ? ((weights[index] ?? 0) / total) * settled : 0);
+  const [condense, cardShare, tubesShare, pactShare] = [0, 1, 2, 3].map(share) as [
+    number,
+    number,
+    number,
+    number,
+  ];
 
-  const pactWeight = pact
-    ? ramp((0.95 * height - pact.top) / (0.45 * height)) *
-      ramp((bottomOf(pact) - 0.05 * height) / (0.4 * height))
-    : 0;
-  const pactFormation = pact && pactWeight > 0.001 ? { weight: pactWeight, box: pact } : null;
+  // The logo mark is drawn in the viewport itself; the other shapes leave with their section.
+  const offScreen = (stage: Stage | null) => !stage || bottomOf(stage.box) < 0 || stage.box.top > height;
+  const shapesOffScreen =
+    settled >= 1 &&
+    condense <= 0.001 &&
+    [cardShare, tubesShare, pactShare].every(
+      (weight, index) => weight <= 0.001 || offScreen(stages[index + 1] ?? null),
+    );
 
-  const shaping = Math.max(opening, card?.weight ?? 0, tubesWeight, pactWeight);
   return {
     condense,
     opening,
-    dim: RESTING_DIM + (1 - RESTING_DIM) * shaping,
-    hidden: measures.covers.some((cover) => cover.top <= 0 && bottomOf(cover) >= height),
-    formations: { card, tubes, pact: pactFormation },
+    hidden: shapesOffScreen || measures.covers.some((cover) => cover.top <= 0 && bottomOf(cover) >= height),
+    formations: {
+      card:
+        card && cardShare > 0.001
+          ? { weight: cardShare, box: card.box, radius: measures.cardRadius, step: card.step }
+          : null,
+      tubes: rack && tubesShare > 0.001 ? { weight: tubesShare, tubes: measures.tubes } : null,
+      pact: pact && pactShare > 0.001 ? { weight: pactShare, box: pact } : null,
+    },
   };
 }

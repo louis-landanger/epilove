@@ -145,16 +145,17 @@ Structure de la page d'accueil :
 7. **FAQ** en accordéon.
 8. **Pied de page** : logotype géant, bandeau défilant, liens légaux, mention de non-affiliation.
 
-**Le fil des atomes.** Le champ d'ions ne s'arrête pas à l'accueil : il reste derrière toute la page et chaque section lui donne une forme.
+**Le fil des atomes.** Le champ d'ions ne s'arrête pas à l'accueil : il reste derrière toute la page et chaque section lui donne une forme. Seul l'accueil a des atomes libres ; ensuite, chaque atome appartient toujours à une forme, comme pour le logo.
 
 | Section | Ce que font les atomes |
 |---|---|
 | Accueil | Champ libre, interactif au pointeur. |
 | Manifeste | Ils se condensent en logo. |
 | Comment ça marche | Ils tracent le contour de la carte du dessus, un motif par étape : anneau de scan balayé d'impulsions (vérification), couches d'électrons (profil), double hélice dont les brins sont reliés par des liaisons (chimie). Le motif change quand la carte suivante recouvre la précédente. |
-| Course des écoles | Chaque atome rejoint l'éprouvette de son école et la remplit jusqu'au niveau réel ; ceux qui n'ont pas encore de place attendent en nuage au-dessus. Le liquide CSS devient un verre teinté. |
-| Pacte | Les atomes tournent en couples liés sur les trois anneaux. |
-| Sections suivantes | Champ libre atténué ; la section claire « Sécurité » le recouvre, et la simulation se met alors en pause. |
+| Course des écoles | Chaque atome rejoint l'éprouvette de son école et la remplit jusqu'au niveau réel ; ceux qui n'ont pas encore de place attendent en panache au-dessus. Le liquide CSS devient un verre teinté. |
+| Pacte | Tous les atomes tournent en couples liés sur les trois anneaux. |
+| Entre deux sections | Les deux formes voisines se partagent les atomes (leurs poids font 1) : ils glissent de l'une à l'autre sans jamais redevenir libres. Là où aucune forme n'est en jeu, la plus proche les garde et s'éloigne avec sa section. |
+| Sections suivantes | Rien : la forme du Pacte est sortie de l'écran avec sa section. Quand plus rien n'est visible (section claire « Sécurité », forme hors écran), le champ s'efface puis la simulation se met en pause. |
 
 Les formes sont calculées à partir de la position réelle des éléments de la page à chaque image (`apps/web/components/acces/marketing/ion-field/journey.ts`, `packages/three/src/ion-field/formations.ts`) : elles suivent le défilement, la taille de l'écran et les données en direct. Sans champ animé (mouvement réduit, appareil modeste, pas de WebGL2), la page reste celle d'avant : image fixe de l'accueil, éprouvettes en liquide CSS.
 

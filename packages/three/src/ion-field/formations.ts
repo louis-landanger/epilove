@@ -71,16 +71,8 @@ export interface FormationParticles {
 /** Floats per particle in each output buffer (both are vec4 on the GPU). */
 export const FORMATION_STRIDE = 4;
 
-/** Share of the particles that trace the card motifs; the others drift, dimmed. */
-const CARD_SHARE = 0.62;
-/** Share of the particles still waiting above a tube (the rest drift, dimmed). */
-const WAITING_SHARE = 0.32;
-/** Share of the particles that orbit the Pact rings, in bonded pairs. */
-const PACT_SHARE = 0.5;
 /** Radii of the three Pact rings (marketing.css, `.pact-ring-*`), relative to the outer one. */
 const PACT_RINGS = [1, 0.77, 0.52] as const;
-/** Brightness left to the particles that sit a formation out. */
-const BYSTANDER_GLOW = 0.14;
 
 const TAU = Math.PI * 2;
 const fract = (value: number) => value - Math.floor(value);
@@ -217,9 +209,6 @@ function cardContribution(
   into: Contribution,
 ): boolean {
   const pair = index & ~1;
-  if ((particles.lanes[pair] ?? 1) >= CARD_SHARE) {
-    return false;
-  }
   const along = particles.along[index] ?? 0;
   const phase = particles.phases[index] ?? 0;
   const scan = 1 - smoothstep(0, 1, card.step);
@@ -242,7 +231,7 @@ function cardContribution(
     const pulse = Math.exp(-fract(s - head) * 16) + Math.exp(-fract(s - head - 0.5) * 16);
     into.x += point.x * scan;
     into.y += point.y * scan;
-    into.glow += (0.45 + 1.25 * pulse) * scan;
+    into.glow += (0.35 + 1.1 * pulse) * scan;
     into.volt += 0.55 * scan;
   }
   if (shells > 0.001) {
@@ -254,7 +243,7 @@ function cardContribution(
     contourPoint(card.box, card.radius, offset, s, point);
     into.x += point.x * shells;
     into.y += point.y * shells;
-    into.glow += (1 - 0.14 * shell) * shells;
+    into.glow += (0.85 - 0.12 * shell) * shells;
   }
   if (helix > 0.001) {
     // Chemistry: partners ride the two strands of a double helix, bonded across.
@@ -267,7 +256,7 @@ function cardContribution(
     contourPoint(card.box, card.radius, offset, s, point);
     into.x += point.x * helix;
     into.y += point.y * helix;
-    into.glow += 0.8 * helix;
+    into.glow += 0.65 * helix;
     into.plasma += (strand === 0 ? 0.6 : 0) * helix;
     into.volt += (strand === 1 ? 0.55 : 0) * helix;
   }
@@ -309,24 +298,17 @@ function tubeContribution(
       bottom + level * height,
     );
     into.pull = 1;
-    into.glow = 1.15;
+    into.glow = 1;
     return true;
   }
-  if (fract((particles.along[index] ?? 0) * 5.3) >= WAITING_SHARE) {
-    return false;
-  }
-  // Waiting above the mouth of the tube, a small swirling cloud.
-  const angle = lane * TAU + time * (0.35 + 0.25 * phase);
-  const radius = box.hw * (0.4 + 1.1 * Math.sqrt(fract((particles.along[index] ?? 0) * 11.7)));
+  // Not poured yet: a slow plume above the mouth of the tube, waiting for sign-ups
+  // (narrow enough not to merge with the next tube's).
+  const angle = lane * TAU + time * (0.3 + 0.2 * phase);
+  const radius = box.hw * (0.25 + 0.95 * Math.sqrt(fract((particles.along[index] ?? 0) * 11.7)));
   into.x = box.x + Math.cos(angle) * radius;
-  into.y =
-    box.y +
-    box.hh +
-    box.hw * 1.8 +
-    Math.sin(angle) * radius * 0.55 +
-    Math.sin(time * 0.8 + phase * 9) * box.hw * 0.2;
-  into.pull = 0.75;
-  into.glow = 0.5;
+  into.y = box.y + box.hh + box.hw * 2.4 + Math.sin(angle) * radius * 0.9;
+  into.pull = 1;
+  into.glow = 0.3;
   return true;
 }
 
@@ -339,9 +321,6 @@ function pactContribution(
   into: Contribution,
 ): boolean {
   const pair = index & ~1;
-  if ((particles.lanes[pair] ?? 1) >= PACT_SHARE) {
-    return false;
-  }
   const along = particles.along[pair] ?? 0;
   const ring = Math.floor(fract(along * 2.3) * 3);
   const direction = ring % 2 === 0 ? 1 : -1;
@@ -353,14 +332,14 @@ function pactContribution(
   into.x = pact.x + Math.cos(angle) * radius;
   into.y = pact.y + Math.sin(angle) * radius;
   into.pull = 1;
-  into.glow = 0.6;
+  into.glow = 0.45;
   into.volt = 0;
   into.plasma = 0;
   return true;
 }
 
 const contribution: Contribution = { x: 0, y: 0, pull: 0, glow: 1, volt: 0, plasma: 0 };
-const sum = { x: 0, y: 0, total: 0, pull: 0, glow: 0, volt: 0, plasma: 0 };
+const sum = { x: 0, y: 0, total: 0, glow: 0, volt: 0, plasma: 0 };
 
 /** Adds the current `contribution`, weighted by its formation, to `sum`. */
 function accumulate(weight: number): void {
@@ -371,7 +350,6 @@ function accumulate(weight: number): void {
   sum.volt += contribution.volt * w;
   sum.plasma += contribution.plasma * w;
   sum.total += w;
-  sum.pull = Math.max(sum.pull, w);
 }
 
 /**
@@ -391,14 +369,11 @@ export function writeFormations(
   const card = formations.card && formations.card.weight > 0.001 ? formations.card : null;
   const tubes = formations.tubes && formations.tubes.weight > 0.001 ? formations.tubes : null;
   const pact = formations.pact && formations.pact.weight > 0.001 ? formations.pact : null;
-  const strength = formationStrength(formations);
-  const bystander = 1 - (1 - BYSTANDER_GLOW) * strength;
 
   for (let index = 0; index < particles.count; index += 1) {
     sum.x = 0;
     sum.y = 0;
     sum.total = 0;
-    sum.pull = 0;
     sum.glow = 0;
     sum.volt = 0;
     sum.plasma = 0;
@@ -411,22 +386,24 @@ export function writeFormations(
     if (pact && pactContribution(particles, index, pact, time, contribution)) {
       accumulate(pact.weight);
     }
-    const { x, y, total, pull, glow, volt, plasma } = sum;
+    const { x, y, total, glow, volt, plasma } = sum;
 
+    // Between two formations their weights add up to 1: the particle glides
+    // from one shape to the next, held all the way, never set free.
     const offset = index * FORMATION_STRIDE;
     if (total > 0) {
       const share = Math.min(1, total);
       targets[offset] = x / total;
       targets[offset + 1] = y / total;
-      targets[offset + 2] = pull;
+      targets[offset + 2] = share;
       looks[offset] = (volt / total) * share;
       looks[offset + 1] = (plasma / total) * share;
-      looks[offset + 2] = bystander + (glow / total - bystander) * share;
+      looks[offset + 2] = 1 + (glow / total - 1) * share;
     } else {
       targets[offset + 2] = 0;
       looks[offset] = 0;
       looks[offset + 1] = 0;
-      looks[offset + 2] = bystander;
+      looks[offset + 2] = 1;
     }
   }
 }

@@ -47,8 +47,7 @@ describe("journey", () => {
   it("drifts freely at the top, then condenses into the logo mark over the manifesto", () => {
     const top = journey(page(0));
     expect(top.condense).toBe(0);
-    expect(top.dim).toBe(1);
-    expect(top.formations.card).toBeNull();
+    expect(top.formations).toEqual({ card: null, tubes: null, pact: null });
     const manifesto = journey(page(900));
     expect(manifesto.condense).toBeGreaterThan(0.9);
   });
@@ -88,17 +87,35 @@ describe("journey", () => {
     const pact = journey(page(6600));
     expect(pact.formations.tubes).toBeNull();
     expect(pact.formations.pact?.weight).toBeGreaterThan(0.95);
-    expect(pact.dim).toBeCloseTo(1, 1);
   });
 
-  it("dims the free field between formations and rests behind opaque sections", () => {
-    const between = journey(page(5900));
-    expect(between.formations.card).toBeNull();
-    expect(between.formations.tubes).toBeNull();
-    expect(between.dim).toBeLessThan(0.6);
-    expect(between.hidden).toBe(false);
+  it("never sets a particle free once the hero is scrolled past", () => {
+    for (let scroll = 800; scroll <= 11000; scroll += 37) {
+      const { condense, formations } = journey(page(scroll));
+      const held =
+        condense +
+        (formations.card?.weight ?? 0) +
+        (formations.tubes?.weight ?? 0) +
+        (formations.pact?.weight ?? 0);
+      expect(held, `scrolled ${scroll}px`).toBeCloseTo(1, 5);
+    }
+  });
 
+  it("keeps the nearest shape between sections, and rests once it is off screen", () => {
+    // Just after the tubes, they still hold the particles while the rack scrolls away.
+    const leaving = journey(page(5520));
+    expect(leaving.formations.tubes?.weight).toBe(1);
+    expect(leaving.hidden).toBe(false);
+    // Between the tubes and the Pact (the waiting list form), both off screen: the field rests.
+    const between = journey(page(5800));
+    expect(between.hidden).toBe(true);
+    // Further down, the Pact holds them, off screen: nothing to draw.
+    const faq = journey(page(9300));
+    expect(faq.formations.pact?.weight).toBe(1);
+    expect(faq.hidden).toBe(true);
+    // An opaque section filling the viewport hides the field too.
     expect(journey(page(7650)).hidden).toBe(true);
+    expect(journey(page(6600)).hidden).toBe(false);
   });
 
   it("copes with a page missing some sections", () => {

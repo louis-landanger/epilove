@@ -96,10 +96,12 @@ export interface IonField {
   pulse(): void;
   /** 0: free field, 1: condensed into the logo mark. */
   setCondense(value: number): void;
-  /** Shapes drawn by the particles around page elements (cards, test tubes, Pact rings). */
+  /**
+   * Shapes drawn by the particles around page elements (cards, test tubes,
+   * Pact rings). With the logo mark, their weights add up to at most 1; the
+   * rest of each particle drifts freely.
+   */
   setFormations(formations: ViewportFormations): void;
-  /** Overall brightness, 1 by default: the field recedes behind long reads. */
-  setDim(value: number): void;
   setRunning(running: boolean): void;
   resize(width: number, height: number): void;
   dispose(): void;
@@ -240,7 +242,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const uCondense = uniform(0);
   const uMarkScale = uniform(0.5);
   const uMarkOffset = uniform(new Vector2(0, 0));
-  const uDim = uniform(1);
 
   // Formations, computed on the CPU every frame (formations.ts): x, y, pull, 0 and volt, plasma, glow, 0.
   const formationTargets = new Float32Array(count * FORMATION_STRIDE);
@@ -305,8 +306,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       const phase = prop.w;
       const formation = targets.element(instanceIndex);
       const pull = formation.z;
-      const hold = max(uCondense, pull);
-      const free = float(1).sub(uCondense).mul(float(1).sub(pull));
+      // The logo mark and the formations share each particle: whatever they leave drifts freely.
+      const hold = clamp(uCondense.add(pull), 0, 1);
+      const free = float(1).sub(hold);
 
       // 1. Drift along a smooth flow field.
       const angle = sin(p.x.mul(1.6).add(uTime.mul(0.21)))
@@ -461,8 +463,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         const charge = data.props[index * 4 + 2] ?? 1;
         const phase = data.props[index * 4 + 3] ?? 0;
         const pull = formationTargets[index * FORMATION_STRIDE + 2] ?? 0;
-        const hold = Math.max(condense, pull);
-        const free = (1 - condense) * (1 - pull);
+        const hold = Math.min(1, condense + pull);
+        const free = 1 - hold;
 
         const angle = flowAngle(px, py, time);
         let ax = Math.cos(angle) * FLOW * free;
@@ -588,7 +590,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     .mul(0.5 + density * 0.5)
     .mul(mix(float(1), float(0.62), uCondense))
     .mul(particleLook.z)
-    .mul(uDim)
     .toVarying();
   const fromCenter = length(uv().sub(0.5)).mul(2);
   const halo = exp(fromCenter.mul(fromCenter).mul(-9)).mul(0.55);
@@ -614,7 +615,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const bondStrength = float(1)
     .sub(smoothstep(0.03, 0.14, segmentLength))
     .mul(float(1).sub(uCondense))
-    .mul(uDim)
     .mul(bondGlow)
     .mul(0.75 * density)
     .toVarying();
@@ -789,9 +789,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     },
     setFormations(next) {
       measured = next;
-    },
-    setDim(value) {
-      uDim.value = Math.min(1, Math.max(0, value));
     },
     setRunning,
     resize,

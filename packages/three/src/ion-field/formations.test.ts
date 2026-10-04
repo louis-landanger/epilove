@@ -76,28 +76,23 @@ describe("writeFormations", () => {
     }
   });
 
-  it("traces the card outline with most particles and dims the others", () => {
-    for (const step of [0, 1, 2]) {
-      const { targets, looks, layout } = run({ card: { weight: 1, box, radius: 0.07, step } });
-      let traced = 0;
+  it("puts every particle on the card outline, none left drifting", () => {
+    for (const step of [0, 0.5, 1, 1.5, 2]) {
+      const { targets, layout } = run({ card: { weight: 1, box, radius: 0.07, step } });
       for (let index = 0; index < layout.count; index += 1) {
         const offset = index * FORMATION_STRIDE;
-        if ((targets[offset + 2] ?? 0) > 0) {
-          traced += 1;
+        expect(targets[offset + 2]).toBe(1);
+        if (Number.isInteger(step)) {
           const distance = distanceToRoundedBox(targets[offset] ?? 0, targets[offset + 1] ?? 0, 0.07);
           // Outside the card (it hides the canvas), within the motif's reach (about 100 px).
           expect(distance).toBeGreaterThan(0);
           expect(distance).toBeLessThan(0.25);
-        } else {
-          expect(looks[offset + 2]).toBeLessThan(0.5);
         }
       }
-      expect(traced / layout.count).toBeGreaterThan(0.5);
-      expect(traced / layout.count).toBeLessThan(0.75);
     }
   });
 
-  it("pours each school into its own tube, up to the level, and keeps the rest above", () => {
+  it("pours each school into its own tube, up to the level, and keeps all the rest above", () => {
     const tubes = SCHOOL_KEYS.map((_, school) => ({
       box: { x: -0.8 + school * 0.4, y: 0, hw: 0.06, hh: 0.4 },
       level: [0.9, 0.5, 0.2, 0, 0.6][school] ?? 0,
@@ -113,9 +108,7 @@ describe("writeFormations", () => {
       }
       members[school] = (members[school] ?? 0) + 1;
       const offset = index * FORMATION_STRIDE;
-      if ((targets[offset + 2] ?? 0) === 0) {
-        continue;
-      }
+      expect(targets[offset + 2]).toBe(1);
       const x = targets[offset] ?? 0;
       const y = targets[offset + 1] ?? 0;
       const bottom = tube.box.y - tube.box.hh;
@@ -126,7 +119,8 @@ describe("writeFormations", () => {
         expect(y).toBeLessThanOrEqual(bottom + tube.level * tube.box.hh * 2 + 1e-6);
       } else {
         // Waiting above the mouth of its own tube.
-        expect(Math.abs(x - tube.box.x)).toBeLessThan(tube.box.hw * 1.6);
+        expect(Math.abs(x - tube.box.x)).toBeLessThan(tube.box.hw * 1.25);
+        expect(y).toBeLessThan(tube.box.y + tube.box.hh + tube.box.hw * 3.6);
       }
     }
     for (const [school, tube] of tubes.entries()) {
@@ -135,18 +129,14 @@ describe("writeFormations", () => {
     }
   });
 
-  it("orbits the Pact rings in bonded pairs", () => {
+  it("orbits the Pact rings in bonded pairs, every particle included", () => {
     const pact = { weight: 1, x: 0.5, y: 0.1, radius: 0.6 };
     const { targets, layout } = run({ pact });
-    let pairs = 0;
     for (let index = 0; index < layout.count; index += 2) {
       const a = index * FORMATION_STRIDE;
       const b = (index + 1) * FORMATION_STRIDE;
-      if ((targets[a + 2] ?? 0) === 0) {
-        expect(targets[b + 2]).toBe(0);
-        continue;
-      }
-      pairs += 1;
+      expect(targets[a + 2]).toBe(1);
+      expect(targets[b + 2]).toBe(1);
       const radius = Math.hypot((targets[a] ?? 0) - pact.x, (targets[a + 1] ?? 0) - pact.y);
       expect(radius).toBeGreaterThan(pact.radius * 0.45);
       expect(radius).toBeLessThan(pact.radius * 1.05);
@@ -155,15 +145,23 @@ describe("writeFormations", () => {
         Math.hypot((targets[a] ?? 0) - (targets[b] ?? 0), (targets[a + 1] ?? 0) - (targets[b + 1] ?? 0)),
       ).toBeLessThan(0.06);
     }
-    expect(pairs / (layout.count / 2)).toBeGreaterThan(0.4);
   });
 
-  it("blends formations and fades the pull with their weight", () => {
+  it("fades the pull with the weight, and hands particles from one shape to the next", () => {
     const half = run({ card: { weight: 0.5, box, radius: 0.07, step: 1 } });
-    const full = run({ card: { weight: 1, box, radius: 0.07, step: 1 } });
     for (let index = 0; index < half.layout.count; index += 1) {
-      const offset = index * FORMATION_STRIDE + 2;
-      expect(half.targets[offset]).toBeCloseTo((full.targets[offset] ?? 0) / 2, 5);
+      expect(half.targets[index * FORMATION_STRIDE + 2]).toBeCloseTo(0.5, 5);
+    }
+    // Between two shapes whose weights add up to 1, particles stay fully held, on their way across.
+    const pact = { weight: 0.5, x: 1.5, y: -0.5, radius: 0.4 };
+    const card = run({ card: { weight: 1, box, radius: 0.07, step: 1 } });
+    const both = run({ card: { weight: 0.5, box, radius: 0.07, step: 1 }, pact });
+    const ring = run({ pact: { ...pact, weight: 1 } });
+    for (let index = 0; index < both.layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      expect(both.targets[offset + 2]).toBeCloseTo(1, 5);
+      const midway = ((card.targets[offset] ?? 0) + (ring.targets[offset] ?? 0)) / 2;
+      expect(both.targets[offset]).toBeCloseTo(midway, 5);
     }
   });
 });

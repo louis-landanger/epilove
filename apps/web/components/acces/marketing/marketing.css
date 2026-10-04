@@ -180,6 +180,11 @@
   opacity: 1;
 }
 
+/* Nothing of the field shows (opaque section, shape off screen): it fades out, then rests. */
+[data-ion-field][data-resting="true"] {
+  opacity: 0;
+}
+
 /* The live field runs behind the whole page: the hero's static poster gives way to it. */
 .ion-field-poster {
   transition: opacity 1.2s var(--ease-out);

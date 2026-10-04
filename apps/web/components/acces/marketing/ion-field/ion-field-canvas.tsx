@@ -137,14 +137,6 @@ function createPageMeasurer() {
         covers: elements.covers.map(toBox),
       };
     },
-    /** Cheap check for the scroll handler: an opaque section fills the viewport. */
-    covered(): boolean {
-      const height = window.innerHeight;
-      return elements.covers.some((cover) => {
-        const rect = cover.getBoundingClientRect();
-        return rect.top <= 0 && rect.bottom >= height;
-      });
-    },
   };
 }
 
@@ -224,36 +216,54 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         container.dataset.backend = field.backend;
         cleanups.push(() => field.dispose());
 
+        // Run only while something shows: in the foreground tab, not behind an opaque
+        // section, and not while the shape holding the particles is off screen.
+        // Hidden, the field fades out first and only then rests: particles still on
+        // their way never freeze in view (a jump down the page, for instance).
+        let hidden = journey(page.measure()).hidden;
+        let restTimer = 0;
+        const update = () => {
+          window.clearTimeout(restTimer);
+          container.dataset.resting = hidden ? "true" : "false";
+          if (document.visibilityState !== "visible") {
+            field.setRunning(false);
+          } else if (hidden) {
+            restTimer = window.setTimeout(() => field.setRunning(false), 1300);
+          } else {
+            field.setRunning(true);
+          }
+        };
+        const setHidden = (next: boolean) => {
+          if (next !== hidden) {
+            hidden = next;
+            update();
+          }
+        };
+
         // Every frame: where the page stands in the journey.
         followPage = () => {
           const state = journey(page.measure());
           field.setCondense(state.condense);
           field.setFormations(state.formations);
-          field.setDim(state.dim);
           // The hero's vignette leaves with the opening.
           if (backdrop) {
             backdrop.style.opacity = String(state.opening);
           }
+          setHidden(state.hidden);
         };
         cleanups.push(() => backdrop?.style.removeProperty("opacity"));
 
-        // Run only while visible: in the foreground tab, and not behind an opaque section.
-        let covered = page.covered();
-        const update = () => field.setRunning(!covered && document.visibilityState === "visible");
+        // While the field rests, scrolling wakes it up.
         let scrollFrame = 0;
         const onScroll = () => {
           cancelAnimationFrame(scrollFrame);
-          scrollFrame = requestAnimationFrame(() => {
-            const next = page.covered();
-            if (next !== covered) {
-              covered = next;
-              update();
-            }
-          });
+          scrollFrame = requestAnimationFrame(() => setHidden(journey(page.measure()).hidden));
         };
         window.addEventListener("scroll", onScroll, { passive: true });
         document.addEventListener("visibilitychange", update);
         cleanups.push(() => {
+          window.clearTimeout(restTimer);
+          delete container.dataset.resting;
           cancelAnimationFrame(scrollFrame);
           window.removeEventListener("scroll", onScroll);
           document.removeEventListener("visibilitychange", update);
