@@ -45,6 +45,28 @@ describe("createIonFieldLayout", () => {
     }
   });
 
+  it("spreads formation coordinates evenly, even over the first particles only", () => {
+    const layout = createIonFieldLayout(4000);
+    for (const prefix of [600, 4000]) {
+      for (const values of [layout.along, layout.lanes]) {
+        const bins = [0, 0, 0, 0];
+        for (const value of values.slice(0, prefix)) {
+          expect(value).toBeGreaterThanOrEqual(0);
+          expect(value).toBeLessThan(1);
+          bins[Math.floor(value * 4)] = (bins[Math.floor(value * 4)] ?? 0) + 1;
+        }
+        for (const bin of bins) {
+          expect(bin / prefix).toBeCloseTo(0.25, 1);
+        }
+      }
+    }
+    // Ranks within each school cover [0, 1): its tube fills evenly up to any level.
+    for (const school of SCHOOL_KEYS.keys()) {
+      const ranks = [...layout.ranks.slice(0, 600)].filter((_, index) => layout.schools[index] === school);
+      expect(ranks.filter((rank) => rank < 0.5).length / ranks.length).toBeCloseTo(0.5, 1);
+    }
+  });
+
   it("condenses into the logo mark", () => {
     const layout = createIonFieldLayout(3000);
     const roles = [0, 0, 0];

@@ -180,6 +180,15 @@
   opacity: 1;
 }
 
+/* The live field runs behind the whole page: the hero's static poster gives way to it. */
+.ion-field-poster {
+  transition: opacity 1.2s var(--ease-out);
+}
+
+.marketing:has([data-ion-field][data-live="true"]) .ion-field-poster {
+  opacity: 0;
+}
+
 .hint-coarse {
   display: none;
 }
@@ -526,6 +535,27 @@
     transform: translateY(calc(var(--tube-h) * var(--level) * -0.9)) scale(1);
     opacity: 0;
   }
+}
+
+/*
+ * With the live field, the atoms of each school pour into its tube and are the
+ * liquid: the CSS liquid thins to a tinted glass, its surface still drawn.
+ */
+.marketing:has([data-ion-field][data-live="true"]) .tube-liquid {
+  background: linear-gradient(
+    to top,
+    color-mix(in oklch, var(--school) 30%, transparent),
+    color-mix(in oklch, var(--school) 10%, transparent)
+  );
+  box-shadow: none;
+}
+
+.marketing:has([data-ion-field][data-live="true"]) .tube-wave {
+  fill: color-mix(in oklch, var(--school) 55%, transparent);
+}
+
+.marketing:has([data-ion-field][data-live="true"]) .tube-bubble {
+  display: none;
 }
 
 .tube-shine {

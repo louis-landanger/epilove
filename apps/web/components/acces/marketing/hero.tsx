@@ -7,15 +7,32 @@ import { LiveCount } from "./live-count";
 import { SchoolGlyph } from "./school-glyph";
 
 /**
- * Backdrop shared by the hero and the manifesto: it stays pinned while both
- * scroll by, and the field condenses into the logo mark on the way.
+ * Backdrop shared by the hero and the manifesto: the static poster of the
+ * field and the vignette that keeps the copy legible. It stays pinned while
+ * both scroll by; the poster gives way to the live field once it runs.
  */
 export function IonFieldBackdrop() {
   return (
-    <div aria-hidden="true" className="-mb-[100svh] pointer-events-none sticky top-0 h-svh overflow-hidden">
-      <IonFieldPoster className="absolute inset-0 size-full" />
-      <IonFieldCanvas className="absolute inset-0 size-full" />
+    <div
+      aria-hidden="true"
+      data-field-backdrop
+      className="-mb-[100svh] pointer-events-none sticky top-0 h-svh overflow-hidden"
+    >
+      <IonFieldPoster className="ion-field-poster absolute inset-0 size-full" />
       <div className="hero-vignette absolute inset-0" />
+    </div>
+  );
+}
+
+/**
+ * The live field, behind the whole landing: it follows the visitor down the
+ * page (journey.ts). Below every section's content (negative z-index in the
+ * isolated `.marketing` root), so opaque cards hide it and glass shows it.
+ */
+export function IonFieldLayer() {
+  return (
+    <div aria-hidden="true" className="-z-10 pointer-events-none fixed inset-0">
+      <IonFieldCanvas className="absolute inset-0 size-full" />
     </div>
   );
 }

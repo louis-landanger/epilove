@@ -41,7 +41,12 @@ function Tube({
   } as CSSProperties;
 
   return (
-    <div className="tube-slot" style={style} data-leader={leader ? "true" : undefined}>
+    <div
+      className="tube-slot"
+      style={style}
+      data-tube={standing.slug}
+      data-leader={leader ? "true" : undefined}
+    >
       <div className="flex h-7 items-end justify-center">
         {leader ? (
           <span className="rounded-full bg-volt px-2 py-0.5 font-mono font-semibold text-[0.6rem] text-ink uppercase tracking-[0.14em]">
@@ -132,7 +137,13 @@ export function SchoolRace({ initial }: { initial: WaitlistStats | null }) {
 
   return (
     <div className="mt-14 grid gap-12 lg:mt-20 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-16">
-      <div ref={rackRef} aria-hidden="true" className="race-rack" data-filled={filled ? "true" : "false"}>
+      <div
+        ref={rackRef}
+        aria-hidden="true"
+        className="race-rack"
+        data-field-rack
+        data-filled={filled ? "true" : "false"}
+      >
         <div className="race-scale">
           {ticks.map((tick) => (
             <span key={tick} style={{ bottom: `${tick * 100}%` }}>

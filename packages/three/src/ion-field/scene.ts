@@ -12,6 +12,7 @@ import {
   instanceIndex,
   length,
   max,
+  min,
   mix,
   positionGeometry,
   sign,
@@ -39,6 +40,14 @@ import {
   WebGPURenderer,
 } from "three/webgpu";
 import { type LinearRgb, tokenToLinearSrgb } from "../colors";
+import {
+  FORMATION_STRIDE,
+  type Formations,
+  formationStrength,
+  toWorldFormations,
+  type ViewportFormations,
+  writeFormations,
+} from "./formations";
 import {
   createIonFieldLayout,
   ION_FIELD_SEED,
@@ -72,6 +81,10 @@ export interface IonFieldOptions {
   readonly onError?: (error: unknown) => void;
   /** Skip WebGPU (for instance after a WebGPU field failed). */
   readonly forceWebGL?: boolean;
+  /** Lower the quality, then give up, when the device cannot keep up (default: true). */
+  readonly adaptiveQuality?: boolean;
+  /** Called at the start of every frame, before the simulation: the page measures its formations here. */
+  readonly beforeFrame?: () => void;
 }
 
 export interface IonField {
@@ -83,6 +96,10 @@ export interface IonField {
   pulse(): void;
   /** 0: free field, 1: condensed into the logo mark. */
   setCondense(value: number): void;
+  /** Shapes drawn by the particles around page elements (cards, test tubes, Pact rings). */
+  setFormations(formations: ViewportFormations): void;
+  /** Overall brightness, 1 by default: the field recedes behind long reads. */
+  setDim(value: number): void;
   setRunning(running: boolean): void;
   resize(width: number, height: number): void;
   dispose(): void;
@@ -99,6 +116,9 @@ const DAMPING_CONDENSED = 9;
 const CONDENSE_SPRING = 26;
 const MAX_SPEED = 1.6;
 const GLOW_QUAD = 7;
+// Formations follow page elements while they scroll: stiffer, and allowed to move faster.
+const FORMATION_SPRING = 30;
+const FORMATION_MAX_SPEED = 5;
 
 const SCHOOL_RGB: readonly LinearRgb[] = SCHOOL_KEYS.map((key) => tokenToLinearSrgb(schoolColors[key]));
 const MARK_RGB: Record<number, LinearRgb> = {
@@ -107,6 +127,8 @@ const MARK_RGB: Record<number, LinearRgb> = {
   [MARK_ROLES.electron]: tokenToLinearSrgb(colorTokens.volt),
 };
 const INK = tokenToLinearSrgb(colorTokens.ink);
+const VOLT = tokenToLinearSrgb(colorTokens.volt);
+const PLASMA = tokenToLinearSrgb(colorTokens.plasma);
 
 interface StaticData {
   /** r, g, b, radius */
@@ -218,6 +240,14 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const uCondense = uniform(0);
   const uMarkScale = uniform(0.5);
   const uMarkOffset = uniform(new Vector2(0, 0));
+  const uDim = uniform(1);
+
+  // Formations, computed on the CPU every frame (formations.ts): x, y, pull, 0 and volt, plasma, glow, 0.
+  const formationTargets = new Float32Array(count * FORMATION_STRIDE);
+  const formationLooks = new Float32Array(count * FORMATION_STRIDE);
+  for (let index = 0; index < count; index += 1) {
+    formationLooks[index * FORMATION_STRIDE + 2] = 1;
+  }
 
   // Static per-particle attributes, usable by both backends.
   const colorAttribute = instancedBufferAttribute<"vec4">(
@@ -249,6 +279,11 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   // ---------------------------------------------------------------------------
   let particleCenter: Node<"vec2">;
   let particleBond: Node<"float">;
+  let particleLook: Node<"vec4">;
+  /** Glow of each bond: the dimmer of its two ends (formations dim the particles that sit them out). */
+  let bondGlow: Node<"float">;
+  /** Uploads the formation buffers after `writeFormations`. */
+  let uploadFormations: () => void;
   let bondA: Node<"vec2">;
   let bondB: Node<"vec2">;
   let step: (delta: number) => void;
@@ -257,6 +292,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const positions = instancedArray(initialPositions, "vec2");
     const velocities = instancedArray(new Float32Array(count * 2), "vec2");
     const props = instancedArray(data.props, "vec4");
+    const targets = instancedArray(formationTargets, "vec4");
+    const looks = instancedArray(formationLooks, "vec4");
 
     const partnerOf = (index: Node<"uint">) => index.add(1).sub(index.mod(2).mul(2));
 
@@ -266,7 +303,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       const prop = props.element(instanceIndex);
       const charge = prop.z;
       const phase = prop.w;
-      const free = float(1).sub(uCondense);
+      const formation = targets.element(instanceIndex);
+      const pull = formation.z;
+      const hold = max(uCondense, pull);
+      const free = float(1).sub(uCondense).mul(float(1).sub(pull));
 
       // 1. Drift along a smooth flow field.
       const angle = sin(p.x.mul(1.6).add(uTime.mul(0.21)))
@@ -294,7 +334,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       const pointerDistance = length(toPointer).add(0.02);
       const pointerDirection = toPointer.div(pointerDistance);
       const polarity = charge.mul(uPointerCharge).negate();
-      const pull = clamp(
+      const pointerPull = clamp(
         polarity
           .mul(uPointerStrength)
           .mul(POINTER_FORCE)
@@ -302,24 +342,28 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         -3.5,
         3.5,
       );
-      acc.addAssign(pointerDirection.mul(pull).mul(float(1).sub(uCondense.mul(0.75))));
-      const swirl = max(pull, 0).mul(0.35);
+      acc.addAssign(pointerDirection.mul(pointerPull).mul(float(1).sub(hold.mul(0.75))));
+      const swirl = max(pointerPull, 0).mul(0.35);
       acc.addAssign(vec2(pointerDirection.y.negate(), pointerDirection.x).mul(swirl));
       acc.subAssign(pointerDirection.mul(uPulse.mul(2.4).mul(exp(pointerDistance.mul(-3.5)))));
 
-      // 4. Stay on screen.
+      // 4. Stay on screen (formations may lead off screen while their element scrolls away).
       const bounds = vec2(uAspect.mul(1.04), 1.04);
       const overflow = max(abs(p).sub(bounds), vec2(0, 0)).mul(sign(p));
-      acc.subAssign(overflow.mul(CONTAIN));
+      acc.subAssign(overflow.mul(CONTAIN).mul(float(1).sub(pull)));
 
       // 5. Condense into the logo mark while scrolling.
       const target = vec2(prop.x, prop.y).mul(uMarkScale).add(uMarkOffset);
       acc.addAssign(target.sub(p).mul(uCondense.mul(uCondense).mul(CONDENSE_SPRING)));
 
+      // 6. Formations further down the page (cards, test tubes, Pact rings).
+      acc.addAssign(formation.xy.sub(p).mul(pull.mul(pull).mul(FORMATION_SPRING)));
+
       v.addAssign(acc.mul(uDelta));
-      v.mulAssign(exp(mix(float(DAMPING_FREE), float(DAMPING_CONDENSED), uCondense).mul(uDelta).negate()));
+      v.mulAssign(exp(mix(float(DAMPING_FREE), float(DAMPING_CONDENSED), hold).mul(uDelta).negate()));
       const speed = length(v);
-      v.assign(v.mul(clamp(float(MAX_SPEED).div(speed.add(0.00001)), 0, 1)));
+      const maxSpeed = mix(float(MAX_SPEED), float(FORMATION_MAX_SPEED), pull);
+      v.assign(v.mul(clamp(maxSpeed.div(speed.add(0.00001)), 0, 1)));
       velocities.element(instanceIndex).assign(v);
     })().compute(count);
 
@@ -335,6 +379,12 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     particleBond = float(1).sub(smoothstep(0.03, 0.2, length(partnerCenter.sub(particleCenter))));
     bondA = positions.element(instanceIndex.mul(2));
     bondB = positions.element(instanceIndex.mul(2).add(1));
+    particleLook = looks.element(instanceIndex);
+    bondGlow = min(looks.element(instanceIndex.mul(2)).z, looks.element(instanceIndex.mul(2).add(1)).z);
+    uploadFormations = () => {
+      targets.value.needsUpdate = true;
+      looks.value.needsUpdate = true;
+    };
 
     step = () => {
       renderer.compute(computeNodes);
@@ -351,6 +401,23 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     bondBuffer.setUsage(DynamicDrawUsage);
     const particleNode = instancedDynamicBufferAttribute<"vec4">(particleBuffer, "vec4");
     const bondNode = instancedDynamicBufferAttribute<"vec4">(bondBuffer, "vec4");
+    const lookBuffer = new InstancedBufferAttribute(formationLooks, 4);
+    lookBuffer.setUsage(DynamicDrawUsage);
+    particleLook = instancedDynamicBufferAttribute<"vec4">(lookBuffer, "vec4");
+    const bondGlowState = new Float32Array(count / 2).fill(1);
+    const bondGlowBuffer = new InstancedBufferAttribute(bondGlowState, 1);
+    bondGlowBuffer.setUsage(DynamicDrawUsage);
+    bondGlow = instancedDynamicBufferAttribute<"float">(bondGlowBuffer, "float");
+    uploadFormations = () => {
+      for (let pair = 0; pair < count / 2; pair += 1) {
+        bondGlowState[pair] = Math.min(
+          formationLooks[pair * 2 * FORMATION_STRIDE + 2] ?? 1,
+          formationLooks[(pair * 2 + 1) * FORMATION_STRIDE + 2] ?? 1,
+        );
+      }
+      lookBuffer.needsUpdate = true;
+      bondGlowBuffer.needsUpdate = true;
+    };
 
     particleCenter = particleNode.xy;
     particleBond = particleNode.z;
@@ -380,7 +447,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     step = (delta) => {
       const time = uTime.value;
       const condense = uCondense.value;
-      const free = 1 - condense;
       const aspect = uAspect.value;
       const pointer = uPointer.value;
       const pointerStrength = uPointerStrength.value;
@@ -388,13 +454,15 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       const pulse = uPulse.value;
       const markScale = uMarkScale.value;
       const markOffset = uMarkOffset.value;
-      const damping = Math.exp(-(DAMPING_FREE + (DAMPING_CONDENSED - DAMPING_FREE) * condense) * delta);
       for (let index = 0; index < count; index += 1) {
         const partner = index ^ 1;
         const px = positions[index * 2] ?? 0;
         const py = positions[index * 2 + 1] ?? 0;
         const charge = data.props[index * 4 + 2] ?? 1;
         const phase = data.props[index * 4 + 3] ?? 0;
+        const pull = formationTargets[index * FORMATION_STRIDE + 2] ?? 0;
+        const hold = Math.max(condense, pull);
+        const free = (1 - condense) * (1 - pull);
 
         const angle = flowAngle(px, py, time);
         let ax = Math.cos(angle) * FLOW * free;
@@ -419,7 +487,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         const pointerDistance = Math.hypot(tx, ty) + 0.02;
         const qx = tx / pointerDistance;
         const qy = ty / pointerDistance;
-        const pull = Math.max(
+        const pointerPull = Math.max(
           -3.5,
           Math.min(
             3.5,
@@ -427,10 +495,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
               (pointerDistance * pointerDistance + 0.012),
           ),
         );
-        const pointerWeight = 1 - condense * 0.75;
-        ax += qx * pull * pointerWeight;
-        ay += qy * pull * pointerWeight;
-        const swirl = Math.max(pull, 0) * 0.35;
+        const pointerWeight = 1 - hold * 0.75;
+        ax += qx * pointerPull * pointerWeight;
+        ay += qy * pointerPull * pointerWeight;
+        const swirl = Math.max(pointerPull, 0) * 0.35;
         ax += -qy * swirl;
         ay += qx * swirl;
         const shock = pulse * 2.4 * Math.exp(-pointerDistance * 3.5);
@@ -438,23 +506,32 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         ay -= qy * shock;
 
         const boundX = aspect * 1.04;
+        const contain = CONTAIN * (1 - pull);
         if (Math.abs(px) > boundX) {
-          ax -= (Math.abs(px) - boundX) * Math.sign(px) * CONTAIN;
+          ax -= (Math.abs(px) - boundX) * Math.sign(px) * contain;
         }
         if (Math.abs(py) > 1.04) {
-          ay -= (Math.abs(py) - 1.04) * Math.sign(py) * CONTAIN;
+          ay -= (Math.abs(py) - 1.04) * Math.sign(py) * contain;
         }
 
         const pull2 = condense * condense * CONDENSE_SPRING;
         ax += ((data.props[index * 4] ?? 0) * markScale + markOffset.x - px) * pull2;
         ay += ((data.props[index * 4 + 1] ?? 0) * markScale + markOffset.y - py) * pull2;
 
+        if (pull > 0) {
+          const spring = pull * pull * FORMATION_SPRING;
+          ax += ((formationTargets[index * FORMATION_STRIDE] ?? 0) - px) * spring;
+          ay += ((formationTargets[index * FORMATION_STRIDE + 1] ?? 0) - py) * spring;
+        }
+
+        const damping = Math.exp(-(DAMPING_FREE + (DAMPING_CONDENSED - DAMPING_FREE) * hold) * delta);
         let vx = ((velocities[index * 2] ?? 0) + ax * delta) * damping;
         let vy = ((velocities[index * 2 + 1] ?? 0) + ay * delta) * damping;
         const speed = Math.hypot(vx, vy);
-        if (speed > MAX_SPEED) {
-          vx *= MAX_SPEED / speed;
-          vy *= MAX_SPEED / speed;
+        const maxSpeed = MAX_SPEED + (FORMATION_MAX_SPEED - MAX_SPEED) * pull;
+        if (speed > maxSpeed) {
+          vx *= maxSpeed / speed;
+          vy *= maxSpeed / speed;
         }
         velocities[index * 2] = vx;
         velocities[index * 2 + 1] = vy;
@@ -499,11 +576,19 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     particleCenter.add(positionGeometry.xy.mul(radius.mul(swell).mul(GLOW_QUAD))),
     0,
   );
-  const ionColor = mix(colorAttribute.xyz, markAttribute.xyz, uCondense.mul(0.85))
+  // Formations tint some motifs (volt, plasma) and dim the particles that sit them out.
+  const tinted = mix(
+    mix(colorAttribute.xyz, vec3(VOLT[0], VOLT[1], VOLT[2]), particleLook.x),
+    vec3(PLASMA[0], PLASMA[1], PLASMA[2]),
+    particleLook.y,
+  );
+  const ionColor = mix(tinted, markAttribute.xyz, uCondense.mul(0.85))
     .mul(twinkle.add(particleBond.mul(0.5)).add(pointerProximity.mul(0.8)))
     .mul(depth)
     .mul(0.5 + density * 0.5)
     .mul(mix(float(1), float(0.62), uCondense))
+    .mul(particleLook.z)
+    .mul(uDim)
     .toVarying();
   const fromCenter = length(uv().sub(0.5)).mul(2);
   const halo = exp(fromCenter.mul(fromCenter).mul(-9)).mul(0.55);
@@ -529,6 +614,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const bondStrength = float(1)
     .sub(smoothstep(0.03, 0.14, segmentLength))
     .mul(float(1).sub(uCondense))
+    .mul(uDim)
+    .mul(bondGlow)
     .mul(0.75 * density)
     .toVarying();
   const bondColor = mix(bondColorA, bondColorB, along).toVarying();
@@ -556,6 +643,22 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   let pointerTarget = 0;
   const pointerWorld = new Vector2(10, 10);
   const monitor = createFrameMonitor();
+  const adaptive = options.adaptiveQuality ?? true;
+  let formations: Formations = {};
+  let measured: ViewportFormations = {};
+  let formationsOn = false;
+
+  /** Recomputes the formation targets for this frame (skipped while the field drifts freely). */
+  const updateFormations = () => {
+    const active = formationStrength(measured) > 0.001;
+    if (!active && !formationsOn) {
+      return;
+    }
+    formations = toWorldFormations(measured, width, height);
+    writeFormations(formationTargets, formationLooks, layout, formations, uTime.value, 2 / height);
+    uploadFormations();
+    formationsOn = active;
+  };
 
   const resize = (nextWidth: number, nextHeight: number) => {
     width = Math.max(1, nextWidth);
@@ -586,6 +689,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     pointer.lerp(pointerWorld, Math.min(1, delta * 14));
 
     try {
+      options.beforeFrame?.();
+      updateFormations();
       step(delta);
       renderer.render(scene, camera);
     } catch (error) {
@@ -600,7 +705,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       options.onFirstFrame?.();
     }
     const atFloor = pixelRatio <= 1 && ions.count <= 600;
-    const verdict = monitor.push(frameMs, atFloor);
+    const verdict = adaptive ? monitor.push(frameMs, atFloor) : "ok";
     if (verdict === "give-up") {
       // Even at the lowest quality the device cannot keep up: back to the poster.
       setRunning(false);
@@ -681,6 +786,12 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     },
     setCondense(value) {
       uCondense.value = Math.min(1, Math.max(0, value));
+    },
+    setFormations(next) {
+      measured = next;
+    },
+    setDim(value) {
+      uDim.value = Math.min(1, Math.max(0, value));
     },
     setRunning,
     resize,

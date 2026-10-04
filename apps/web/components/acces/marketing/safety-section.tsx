@@ -31,6 +31,7 @@ export async function SafetySection() {
     <section
       id="securite"
       aria-labelledby="safety-title"
+      data-field-cover
       className="safety-section relative bg-paper px-4 py-24 text-ink sm:px-10 sm:py-32"
     >
       <div className="mx-auto max-w-7xl">

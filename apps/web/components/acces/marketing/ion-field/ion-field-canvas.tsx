@@ -1,7 +1,15 @@
 "use client";
 
-import { canAffordLiveField, type DeviceProfile, isSoftwareRenderer, particleBudget } from "@atomes/three";
+import {
+  canAffordLiveField,
+  type DeviceProfile,
+  isSoftwareRenderer,
+  type PixelBox,
+  particleBudget,
+  SCHOOL_KEYS,
+} from "@atomes/three";
 import { useEffect, useRef, useState } from "react";
+import { type JourneyMeasures, journey } from "./journey";
 
 function deviceProfile(): DeviceProfile {
   const nav = navigator as Navigator & {
@@ -66,16 +74,87 @@ function afterLoadAndIdle(task: () => void): () => void {
   };
 }
 
-const smoothstep = (value: number) => {
-  const t = Math.min(1, Math.max(0, value));
-  return t * t * (3 - 2 * t);
+const toBox = (element: Element): PixelBox => {
+  const rect = element.getBoundingClientRect();
+  return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 };
 
 /**
- * The live ion field (docs/02-design.md, moment 1), layered over its static
- * poster. The three.js chunk is imported only after load, when motion is
- * allowed and the device can afford it; otherwise the poster stays.
- * The field condenses into the logo mark while `[data-field-scope]` scrolls by.
+ * Reads the page for the field's journey (journey.ts). Elements and their
+ * static styles are looked up once (and again on resize); positions are read
+ * every frame, so the formations stick to the page while it scrolls.
+ */
+function createPageMeasurer() {
+  let elements = lookUp();
+
+  function lookUp() {
+    const steps = [...document.querySelectorAll<HTMLElement>("[data-step]")];
+    const firstCard = steps[0]?.querySelector("article");
+    return {
+      scope: document.querySelector("[data-field-scope]"),
+      cards: steps.flatMap((step) => {
+        const card = step.querySelector("article");
+        return card ? [{ card, stuckTop: Number.parseFloat(getComputedStyle(step).top) || 0 }] : [];
+      }),
+      cardRadius: firstCard ? Number.parseFloat(getComputedStyle(firstCard).borderTopLeftRadius) || 0 : 0,
+      cardList: document.querySelector("[data-steps]"),
+      rack: document.querySelector("[data-field-rack]"),
+      tubes: SCHOOL_KEYS.map((school) => {
+        const slot = document.querySelector(`[data-tube="${school}"]`);
+        const glass = slot?.querySelector(".tube-glass");
+        const liquid = slot?.querySelector(".tube-liquid");
+        return glass && liquid ? { glass, liquid } : null;
+      }),
+      pact: document.querySelector("[data-field-pact]"),
+      covers: [...document.querySelectorAll("[data-field-cover]")],
+    };
+  }
+
+  return {
+    refresh() {
+      elements = lookUp();
+    },
+    measure(): JourneyMeasures {
+      return {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        scope: elements.scope ? toBox(elements.scope) : null,
+        cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
+        cardList: elements.cardList ? toBox(elements.cardList) : null,
+        cardRadius: elements.cardRadius,
+        rack: elements.rack ? toBox(elements.rack) : null,
+        tubes: elements.tubes.map((tube) => {
+          if (!tube) {
+            return null;
+          }
+          const box = toBox(tube.glass);
+          // The liquid's surface, as the CSS transition raises it.
+          const surface = tube.liquid.getBoundingClientRect().top;
+          const level = Math.min(1, Math.max(0, (box.top + box.height - surface) / Math.max(1, box.height)));
+          return { box, level };
+        }),
+        pact: elements.pact ? toBox(elements.pact) : null,
+        covers: elements.covers.map(toBox),
+      };
+    },
+    /** Cheap check for the scroll handler: an opaque section fills the viewport. */
+    covered(): boolean {
+      const height = window.innerHeight;
+      return elements.covers.some((cover) => {
+        const rect = cover.getBoundingClientRect();
+        return rect.top <= 0 && rect.bottom >= height;
+      });
+    },
+  };
+}
+
+/**
+ * The live ion field (docs/02-design.md, moment 1), behind the whole landing
+ * and layered over the hero's static poster. The three.js chunk is imported
+ * only after load, when motion is allowed and the device can afford it;
+ * otherwise the poster stays. Down the page the field condenses into the
+ * logo mark, traces the stacked cards, fills the school race tubes and
+ * orbits the Pact (journey.ts).
  */
 export function IonFieldCanvas({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -87,7 +166,11 @@ export function IonFieldCanvas({ className }: { className?: string }) {
       return;
     }
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reducedMotion.matches || !canAffordLiveField(deviceProfile())) {
+    // Development only: `?field=live` runs the field on software renderers too, at full quality.
+    const forced =
+      process.env.NODE_ENV !== "production" &&
+      new URLSearchParams(window.location.search).get("field") === "live";
+    if (reducedMotion.matches || (!forced && !canAffordLiveField(deviceProfile()))) {
       return;
     }
 
@@ -95,7 +178,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
     const cleanups: Array<() => void> = [];
 
     const start = async (forceWebGL = false) => {
-      if (isSoftwareRenderer(rendererName())) {
+      if (!forced && isSoftwareRenderer(rendererName())) {
         // No GPU acceleration: the poster stays rather than hogging the main thread.
         return;
       }
@@ -105,9 +188,14 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           return;
         }
         const profile = deviceProfile();
+        const page = createPageMeasurer();
+        const backdrop = document.querySelector<HTMLElement>("[data-field-backdrop]");
+        let followPage = () => {};
         const field = await createIonField({
           container,
           particleCount: (backend) => particleBudget(backend, profile),
+          adaptiveQuality: !forced,
+          beforeFrame: () => followPage(),
           onFirstFrame: () => setLive(true),
           // The device cannot keep up even at the lowest quality: back to the poster for good.
           onGiveUp: () => {
@@ -136,24 +224,46 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         container.dataset.backend = field.backend;
         cleanups.push(() => field.dispose());
 
-        // Run only while visible: on screen and in the foreground tab.
-        let onScreen = true;
-        const update = () => field.setRunning(onScreen && document.visibilityState === "visible");
-        const observer = new IntersectionObserver(([entry]) => {
-          onScreen = entry?.isIntersecting ?? false;
-          update();
-        });
-        observer.observe(container);
+        // Every frame: where the page stands in the journey.
+        followPage = () => {
+          const state = journey(page.measure());
+          field.setCondense(state.condense);
+          field.setFormations(state.formations);
+          field.setDim(state.dim);
+          // The hero's vignette leaves with the opening.
+          if (backdrop) {
+            backdrop.style.opacity = String(state.opening);
+          }
+        };
+        cleanups.push(() => backdrop?.style.removeProperty("opacity"));
+
+        // Run only while visible: in the foreground tab, and not behind an opaque section.
+        let covered = page.covered();
+        const update = () => field.setRunning(!covered && document.visibilityState === "visible");
+        let scrollFrame = 0;
+        const onScroll = () => {
+          cancelAnimationFrame(scrollFrame);
+          scrollFrame = requestAnimationFrame(() => {
+            const next = page.covered();
+            if (next !== covered) {
+              covered = next;
+              update();
+            }
+          });
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
         document.addEventListener("visibilitychange", update);
         cleanups.push(() => {
-          observer.disconnect();
+          cancelAnimationFrame(scrollFrame);
+          window.removeEventListener("scroll", onScroll);
           document.removeEventListener("visibilitychange", update);
         });
         update();
 
-        const resizeObserver = new ResizeObserver(() =>
-          field.resize(container.clientWidth, container.clientHeight),
-        );
+        const resizeObserver = new ResizeObserver(() => {
+          field.resize(container.clientWidth, container.clientHeight);
+          page.refresh();
+        });
         resizeObserver.observe(container);
         cleanups.push(() => resizeObserver.disconnect());
 
@@ -181,10 +291,8 @@ export function IonFieldCanvas({ className }: { className?: string }) {
             return;
           }
           const rect = container.getBoundingClientRect();
-          if (event.clientY >= rect.top && event.clientY <= rect.bottom) {
-            field.setPointer(event.clientX - rect.left, event.clientY - rect.top, true);
-            field.pulse();
-          }
+          field.setPointer(event.clientX - rect.left, event.clientY - rect.top, true);
+          field.pulse();
         };
         window.addEventListener("pointermove", onPointerMove, { passive: true });
         window.addEventListener("pointerup", onPointerEnd, { passive: true });
@@ -198,34 +306,6 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           document.documentElement.removeEventListener("pointerleave", onLeave);
           window.removeEventListener("click", onClick);
         });
-
-        // Condense into the logo mark while the hero scrolls away.
-        const scope = container.closest<HTMLElement>("[data-field-scope]");
-        const backdrop = container.parentElement;
-        if (scope) {
-          let frame = 0;
-          const onScroll = () => {
-            cancelAnimationFrame(frame);
-            frame = requestAnimationFrame(() => {
-              const rect = scope.getBoundingClientRect();
-              const viewport = window.innerHeight;
-              field.setCondense(smoothstep(-rect.top / (viewport * 0.85)));
-              // Fade out as the manifesto leaves, before the next section slides under the mark.
-              if (backdrop) {
-                backdrop.style.opacity = String(
-                  smoothstep((rect.bottom - viewport * 0.3) / (viewport * 0.7)),
-                );
-              }
-            });
-          };
-          window.addEventListener("scroll", onScroll, { passive: true });
-          onScroll();
-          cleanups.push(() => {
-            cancelAnimationFrame(frame);
-            window.removeEventListener("scroll", onScroll);
-            backdrop?.style.removeProperty("opacity");
-          });
-        }
       } catch {
         // No WebGPU and no WebGL2, or the chunk failed to load: the poster stays.
         setLive(false);

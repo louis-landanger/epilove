@@ -30,7 +30,11 @@ export async function PactSection() {
           </div>
         </div>
 
-        <div aria-hidden="true" className="pact-stage relative mx-auto aspect-square w-full max-w-[30rem]">
+        <div
+          aria-hidden="true"
+          data-field-pact
+          className="pact-stage relative mx-auto aspect-square w-full max-w-[30rem]"
+        >
           <div className="pact-ring pact-ring-1" />
           <div className="pact-ring pact-ring-2" />
           <div className="pact-ring pact-ring-3" />

@@ -41,6 +41,15 @@ export interface IonFieldLayout {
   /** Position in the logo mark, in units of the orbit's major radius. */
   readonly targets: Float32Array;
   readonly roles: Uint8Array;
+  /**
+   * Order of the particle within its school, spread over [0, 1): the tubes of
+   * the school race fill from rank 0 upwards (formations.ts).
+   */
+  readonly ranks: Float32Array;
+  /** Position along a formation's path, in [0, 1). */
+  readonly along: Float32Array;
+  /** Second coordinate in a formation (lane, shell, strand), in [0, 1). */
+  readonly lanes: Float32Array;
 }
 
 /** mulberry32: small, fast, good enough for visuals, reproducible from a seed. */
@@ -57,6 +66,10 @@ export function createRandom(seed: number): () => number {
 
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 const GOLDEN_RATIO_FRACTION = (Math.sqrt(5) - 1) / 2;
+// R2 low-discrepancy sequence (Roberts): any prefix of the particles covers
+// [0, 1)² evenly, so formations stay even when the quality monitor draws fewer.
+const R2_A = 0.7548776662466927;
+const R2_B = 0.5698402909980532;
 
 /** Role pattern repeated every 25 particles: 7 nucleus, 2 electron, 16 orbit. */
 function roleOf(index: number): number {
@@ -159,5 +172,20 @@ export function createIonFieldLayout(count: number, seed: number = ION_FIELD_SEE
     targets[index * 2 + 1] = ty;
   }
 
-  return { count, positions, schools, charges, sizes, phases, targets, roles };
+  // Formation coordinates: derived from the index, not drawn from the random
+  // stream, so the starting layout (and the poster) stay as they were.
+  const ranks = new Float32Array(count);
+  const along = new Float32Array(count);
+  const lanes = new Float32Array(count);
+  const perSchool = new Array<number>(SCHOOL_KEYS.length).fill(0);
+  for (let index = 0; index < count; index += 1) {
+    const school = schools[index] ?? 0;
+    const order = perSchool[school] ?? 0;
+    perSchool[school] = order + 1;
+    ranks[index] = (0.5 + order * GOLDEN_RATIO_FRACTION) % 1;
+    along[index] = (0.5 + index * R2_A) % 1;
+    lanes[index] = (0.5 + index * R2_B) % 1;
+  }
+
+  return { count, positions, schools, charges, sizes, phases, targets, roles, ranks, along, lanes };
 }
