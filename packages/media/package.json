@@ -1,5 +1,5 @@
 {
-  "name": "@epilove/media",
+  "name": "@atomes/media",
   "version": "0.0.0",
   "private": true,
   "description": "Media: signed imgproxy URLs, upload policy, object storage and photo processing.",
@@ -16,14 +16,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@epilove/core": "workspace:*",
+    "@atomes/core": "workspace:*",
     "@aws-sdk/client-s3": "catalog:",
     "@aws-sdk/s3-presigned-post": "catalog:",
     "sharp": "catalog:",
     "thumbhash": "catalog:"
   },
   "devDependencies": {
-    "@epilove/config": "workspace:*",
+    "@atomes/config": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

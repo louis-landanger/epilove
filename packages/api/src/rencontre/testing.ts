@@ -1,5 +1,5 @@
-import { type ApiClient, createApiClient } from "@epilove/contracts/client";
-import type { Database } from "@epilove/db";
+import { type ApiClient, createApiClient } from "@atomes/contracts/client";
+import type { Database } from "@atomes/db";
 import { createApp } from "../app";
 import { devHeaderResolver } from "../context";
 import { setEmailHmacSecret } from "./email";

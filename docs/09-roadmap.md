@@ -6,7 +6,7 @@
 
 ```mermaid
 gantt
-    title Epilove — de l'idée au lancement
+    title Atomes — de l'idée au lancement
     dateFormat  YYYY-MM-DD
     axisFormat  %d/%m
     section Phase 0

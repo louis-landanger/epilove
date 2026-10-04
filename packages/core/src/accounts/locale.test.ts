@@ -60,9 +60,9 @@ describe("locale prefixes", () => {
 
 describe("requestLocale", () => {
   it("prefers the explicit header, then the cookie, then Accept-Language", () => {
-    expect(requestLocale(new Headers({ "x-epilove-locale": "en", cookie: "NEXT_LOCALE=fr" }))).toBe("en");
+    expect(requestLocale(new Headers({ "x-atomes-locale": "en", cookie: "NEXT_LOCALE=fr" }))).toBe("en");
     expect(requestLocale(new Headers({ cookie: "a=1; NEXT_LOCALE=en", "accept-language": "fr" }))).toBe("en");
     expect(requestLocale(new Headers({ cookie: "NEXT_LOCALE=de", "accept-language": "en" }))).toBe("en");
-    expect(requestLocale(new Headers({ "x-epilove-locale": "xx" }))).toBe("fr");
+    expect(requestLocale(new Headers({ "x-atomes-locale": "xx" }))).toBe("fr");
   });
 });

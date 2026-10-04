@@ -1,4 +1,4 @@
-import type { VoiceContentType } from "@epilove/core";
+import type { VoiceContentType } from "@atomes/core";
 
 /** Voice prompts (PRO-06): storage keys and format checks. Safe in client components. */
 

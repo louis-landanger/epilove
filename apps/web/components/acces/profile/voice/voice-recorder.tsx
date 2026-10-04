@@ -1,8 +1,8 @@
 "use client";
 
-import type { OwnProfile } from "@epilove/contracts";
-import { baseVoiceType, VOICE_MAX_BYTES, VOICE_MAX_DURATION_MS, VOICE_PEAK_COUNT } from "@epilove/core";
-import { Button, Dialog } from "@epilove/ui";
+import type { OwnProfile } from "@atomes/contracts";
+import { baseVoiceType, VOICE_MAX_BYTES, VOICE_MAX_DURATION_MS, VOICE_PEAK_COUNT } from "@atomes/core";
+import { Button, Dialog } from "@atomes/ui";
 import { Mic, RotateCcw, Square } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";

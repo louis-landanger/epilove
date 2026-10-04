@@ -1,6 +1,6 @@
 "use client";
 
-import type { WaitlistStats } from "@epilove/contracts";
+import type { WaitlistStats } from "@atomes/contracts";
 import { useSyncExternalStore } from "react";
 
 /**
@@ -16,7 +16,7 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 let inFlight: Promise<void> | null = null;
 
 async function fetchStats(): Promise<void> {
-  const { createApiClient } = await import("@epilove/contracts/client");
+  const { createApiClient } = await import("@atomes/contracts/client");
   const client = createApiClient({ url: `${window.location.origin}/api/rpc` });
   try {
     current = await client.waitlist.stats();

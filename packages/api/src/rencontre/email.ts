@@ -1,4 +1,4 @@
-import { emailHmac } from "@epilove/crypto";
+import { emailHmac } from "@atomes/crypto";
 import { ORPCError } from "@orpc/server";
 
 /**

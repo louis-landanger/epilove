@@ -6,9 +6,9 @@ import {
   defaultServices,
   type Role,
   type ViewerResolver,
-} from "@epilove/api";
-import { revokeAllSessions } from "@epilove/auth";
-import { createValkeyRateLimiter, valkeyFromEnv } from "@epilove/rate-limit";
+} from "@atomes/api";
+import { revokeAllSessions } from "@atomes/auth";
+import { createValkeyRateLimiter, valkeyFromEnv } from "@atomes/rate-limit";
 import { headers } from "next/headers";
 import { cache } from "react";
 import { getAuth } from "./auth";

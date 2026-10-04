@@ -1,4 +1,4 @@
-import { Badge } from "@epilove/ui";
+import { Badge } from "@atomes/ui";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";

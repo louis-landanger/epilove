@@ -1,4 +1,4 @@
-import type { RsvpStatus } from "@epilove/core";
+import type { RsvpStatus } from "@atomes/core";
 import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { event, eventRsvp, flashScan, match, notification, school } from "../schema";
@@ -11,7 +11,7 @@ import { enqueue } from "./outbox";
 
 const DEFAULT_DURATION = sql.raw("interval '180 minutes'");
 
-/** When an event stops being listed (same rule as `eventEndsAt` in @epilove/core). */
+/** When an event stops being listed (same rule as `eventEndsAt` in @atomes/core). */
 const endsAtSql = sql`coalesce(${event.endsAt}, ${event.startsAt} + ${DEFAULT_DURATION})`;
 
 /** Open to the viewer's school (no school listed = whole campus), or organized by the viewer. */

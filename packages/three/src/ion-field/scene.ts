@@ -1,4 +1,4 @@
-import { colors as colorTokens, schoolColors } from "@epilove/tokens";
+import { colors as colorTokens, schoolColors } from "@atomes/tokens";
 import {
   abs,
   clamp,

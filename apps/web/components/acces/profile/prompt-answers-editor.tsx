@@ -1,8 +1,8 @@
 "use client";
 
-import type { Catalog } from "@epilove/contracts";
-import { normalizePromptAnswer, PROMPT_ANSWER_COUNT, PROMPT_ANSWER_MAX_LENGTH } from "@epilove/core";
-import { Button, Dialog, TextAreaField, TextField } from "@epilove/ui";
+import type { Catalog } from "@atomes/contracts";
+import { normalizePromptAnswer, PROMPT_ANSWER_COUNT, PROMPT_ANSWER_MAX_LENGTH } from "@atomes/core";
+import { Button, Dialog, TextAreaField, TextField } from "@atomes/ui";
 import { Plus, RefreshCw, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useMemo, useState } from "react";

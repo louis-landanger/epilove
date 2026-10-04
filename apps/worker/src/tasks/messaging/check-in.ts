@@ -1,5 +1,5 @@
-import { createDatabase } from "@epilove/db";
-import { notifyDueCheckIns } from "@epilove/db/repositories/messaging-date-safety";
+import { createDatabase } from "@atomes/db";
+import { notifyDueCheckIns } from "@atomes/db/repositories/messaging-date-safety";
 import type { Task } from "graphile-worker";
 
 /**

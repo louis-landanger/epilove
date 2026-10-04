@@ -1,4 +1,4 @@
-import { parseSchoolEmail } from "@epilove/core";
+import { parseSchoolEmail } from "@atomes/core";
 import { os } from "../procedures";
 
 export const campus = {

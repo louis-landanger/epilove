@@ -1,6 +1,6 @@
-import type { Database } from "@epilove/db";
-import { listenForOutbox, type PendingEvent, relayPending } from "@epilove/db/repositories/outbox";
-import { type Publisher, personalChannel } from "@epilove/realtime";
+import type { Database } from "@atomes/db";
+import { listenForOutbox, type PendingEvent, relayPending } from "@atomes/db/repositories/outbox";
+import { type Publisher, personalChannel } from "@atomes/realtime";
 
 export interface OutboxRelayOptions {
   readonly db: Database;

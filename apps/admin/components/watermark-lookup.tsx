@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, TextAreaField, TextField } from "@epilove/ui";
+import { Button, TextAreaField, TextField } from "@atomes/ui";
 import { Search } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";

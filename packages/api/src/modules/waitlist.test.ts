@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { REFERRAL_CODE_PATTERN } from "@epilove/contracts";
-import { createApiClient } from "@epilove/contracts/client";
-import { emailHmac } from "@epilove/crypto";
-import { createDatabase, deleteWaitlistEntries, findWaitlistEntry } from "@epilove/db";
-import { createMemoryMailer } from "@epilove/email";
+import { REFERRAL_CODE_PATTERN } from "@atomes/contracts";
+import { createApiClient } from "@atomes/contracts/client";
+import { emailHmac } from "@atomes/crypto";
+import { createDatabase, deleteWaitlistEntries, findWaitlistEntry } from "@atomes/db";
+import { createMemoryMailer } from "@atomes/email";
 import { call } from "@orpc/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp, defaultServices } from "../app";
@@ -50,7 +50,7 @@ describe.skipIf(!url)("waitlist procedures (PostgreSQL)", () => {
     const pending: Promise<void>[] = [];
     const procedures = createWaitlistProcedures({
       hmacSecret: () => SECRET,
-      siteUrl: () => "https://epilove.test",
+      siteUrl: () => "https://atomes.test",
       mailer: () => mailer,
       runInBackground: (task) => {
         pending.push(task());
@@ -85,7 +85,7 @@ describe.skipIf(!url)("waitlist procedures (PostgreSQL)", () => {
     expect(mailer.sent).toHaveLength(1);
     expect(mailer.sent[0]?.to).toBe(address);
     expect(mailer.sent[0]?.email.subject).toBe("Tu es sur la liste d'attente");
-    expect(mailer.sent[0]?.email.text).toContain(`https://epilove.test/?r=${row?.referralCode}`);
+    expect(mailer.sent[0]?.email.text).toContain(`https://atomes.test/?r=${row?.referralCode}`);
     expect(mailer.sent[0]?.email.text).toContain("ISG");
   });
 

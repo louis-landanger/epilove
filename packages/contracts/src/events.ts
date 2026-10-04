@@ -1,4 +1,4 @@
-import { EVENT_RULES, EVENT_STATUSES, RSVP_STATUSES, SCHOOL_SLUGS } from "@epilove/core";
+import { EVENT_RULES, EVENT_STATUSES, RSVP_STATUSES, SCHOOL_SLUGS } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 import { contentLocale } from "./questionnaire";

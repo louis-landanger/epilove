@@ -1,5 +1,5 @@
-import { type Database, schema } from "@epilove/db";
-import { enrolMembers, type NewPactResult, saveResults, upsertSeason } from "@epilove/db/repositories/pact";
+import { type Database, schema } from "@atomes/db";
+import { enrolMembers, type NewPactResult, saveResults, upsertSeason } from "@atomes/db/repositories/pact";
 import { eq, sql } from "drizzle-orm";
 
 /**

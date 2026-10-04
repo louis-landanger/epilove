@@ -1,4 +1,4 @@
-import { CHECK_IN_ANSWERS } from "@epilove/core";
+import { CHECK_IN_ANSWERS } from "@atomes/core";
 import { sql } from "drizzle-orm";
 import { check, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { bytea, createdAt, oneOf } from "./columns";

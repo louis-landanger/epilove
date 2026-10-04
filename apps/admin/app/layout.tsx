@@ -1,4 +1,4 @@
-import { ToastProvider } from "@epilove/ui";
+import { ToastProvider } from "@atomes/ui";
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
@@ -9,7 +9,7 @@ const sans = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swa
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "Modération", template: "%s · Modération Epilove" },
+  title: { default: "Modération", template: "%s · Modération Atomes" },
   robots: { index: false, follow: false },
 };
 

@@ -1,13 +1,13 @@
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { createDatabase, schema } from "@epilove/db";
-import { enrolMembers, seasonById, upsertSeason } from "@epilove/db/repositories/pact";
+import { createDatabase, schema } from "@atomes/db";
+import { enrolMembers, seasonById, upsertSeason } from "@atomes/db/repositories/pact";
 import {
   answerQuestionnaire,
   cleanupTestMembers,
   createTestMember,
   prepareTestDatabase,
-} from "@epilove/db/testing";
+} from "@atomes/db/testing";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { computePact } from "./compute";

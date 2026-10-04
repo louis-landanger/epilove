@@ -1,4 +1,4 @@
-import { cn } from "@epilove/ui";
+import { cn } from "@atomes/ui";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { CONTEXT, REASON, STATUS } from "@/lib/labels";

@@ -1,5 +1,5 @@
-import { createIonFieldLayout, SCHOOL_KEYS } from "@epilove/three";
-import { schoolColors } from "@epilove/tokens";
+import { createIonFieldLayout, SCHOOL_KEYS } from "@atomes/three";
+import { schoolColors } from "@atomes/tokens";
 
 const POSTER_PARTICLES = 260;
 const layout = createIonFieldLayout(POSTER_PARTICLES);

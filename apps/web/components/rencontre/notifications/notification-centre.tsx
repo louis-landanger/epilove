@@ -1,6 +1,6 @@
 "use client";
 
-import type { NotificationItem } from "@epilove/contracts";
+import type { NotificationItem } from "@atomes/contracts";
 import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";

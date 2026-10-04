@@ -1,5 +1,5 @@
-import type { WaitlistStats } from "@epilove/contracts";
-import { SCHOOLS } from "@epilove/core";
+import type { WaitlistStats } from "@atomes/contracts";
+import { SCHOOLS } from "@atomes/core";
 import { getTranslations } from "next-intl/server";
 import { IonFieldCanvas } from "./ion-field/ion-field-canvas";
 import { IonFieldPoster } from "./ion-field/ion-field-poster";

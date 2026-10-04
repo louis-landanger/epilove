@@ -1,6 +1,6 @@
-import { VOICE_MAX_BYTES } from "@epilove/core";
-import { advanceVoice, findPromptAnswerById } from "@epilove/db/repositories/profiles";
-import { sniffAudio, voiceKey } from "@epilove/media/audio";
+import { VOICE_MAX_BYTES } from "@atomes/core";
+import { advanceVoice, findPromptAnswerById } from "@atomes/db/repositories/profiles";
+import { sniffAudio, voiceKey } from "@atomes/media/audio";
 import type { Task } from "graphile-worker";
 import { z } from "zod";
 import type { MediaDependencies } from "./process-photo";

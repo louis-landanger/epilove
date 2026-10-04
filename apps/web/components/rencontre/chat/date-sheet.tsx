@@ -1,8 +1,8 @@
 "use client";
 
-import type { SpotView } from "@epilove/contracts";
-import { DATE_RULES } from "@epilove/core";
-import { Sheet } from "@epilove/ui";
+import type { SpotView } from "@atomes/contracts";
+import { DATE_RULES } from "@atomes/core";
+import { Sheet } from "@atomes/ui";
 import { ORPCError } from "@orpc/client";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";

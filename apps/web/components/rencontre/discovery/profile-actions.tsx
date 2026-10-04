@@ -1,6 +1,6 @@
 "use client";
 
-import type { MemberCard, ProfileView } from "@epilove/contracts";
+import type { MemberCard, ProfileView } from "@atomes/contracts";
 import { ORPCError } from "@orpc/client";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";

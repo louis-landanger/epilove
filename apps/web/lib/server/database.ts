@@ -1,5 +1,5 @@
 import "server-only";
-import { createDatabase, type Database, databaseUrlFromEnv } from "@epilove/db";
+import { createDatabase, type Database, databaseUrlFromEnv } from "@atomes/db";
 
 let database: Database | undefined;
 

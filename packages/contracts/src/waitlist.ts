@@ -1,4 +1,4 @@
-import { LOCALES, SCHOOL_SLUGS } from "@epilove/core";
+import { LOCALES, SCHOOL_SLUGS } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

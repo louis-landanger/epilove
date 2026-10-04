@@ -1,4 +1,4 @@
-import { schoolColors } from "@epilove/tokens";
+import { schoolColors } from "@atomes/tokens";
 
 /**
  * Deterministic starting layout of the ion field (docs/02-design.md, moment 1).

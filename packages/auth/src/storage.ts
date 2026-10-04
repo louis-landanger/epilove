@@ -1,4 +1,4 @@
-import type { Redis } from "@epilove/rate-limit";
+import type { Redis } from "@atomes/rate-limit";
 import type { SecondaryStorage } from "better-auth";
 
 // INCR, and set the expiry only when the key is created (fixed window).

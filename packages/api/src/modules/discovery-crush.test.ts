@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { emailHmac } from "@epilove/crypto";
-import { createDatabase, schema } from "@epilove/db";
-import { saveDeckFilter } from "@epilove/db/repositories/discovery";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import { emailHmac } from "@atomes/crypto";
+import { createDatabase, schema } from "@atomes/db";
+import { saveDeckFilter } from "@atomes/db/repositories/discovery";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi, TEST_EMAIL_HMAC_SECRET } from "../rencontre/testing";

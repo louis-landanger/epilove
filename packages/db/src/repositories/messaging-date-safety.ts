@@ -1,4 +1,4 @@
-import type { CheckInAnswer } from "@epilove/core";
+import type { CheckInAnswer } from "@atomes/core";
 import { and, count, eq, gt, gte, isNull, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { dateShare, notification } from "../schema";

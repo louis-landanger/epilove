@@ -23,7 +23,7 @@ import {
 
 /**
  * Campus community figures (COM-01, COM-02, PAC-04). These functions return
- * raw counts by group; the anonymity rules of @epilove/core decide what is
+ * raw counts by group; the anonymity rules of @atomes/core decide what is
  * shown. Banned, suspended and deleted accounts are never counted.
  */
 const COUNTED = sql`${appUser.status} in ('active', 'restricted', 'paused')`;

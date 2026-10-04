@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Epilove",
-    short_name: "Epilove",
+    name: "Atomes",
+    short_name: "Atomes",
     description: "Rencontres et amitiés entre étudiantes et étudiants vérifiés du campus.",
     lang: "fr",
     start_url: "/",

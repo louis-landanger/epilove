@@ -1,4 +1,4 @@
-import type { PactCurrent } from "@epilove/contracts";
+import type { PactCurrent } from "@atomes/contracts";
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 

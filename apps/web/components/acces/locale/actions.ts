@@ -1,6 +1,6 @@
 "use server";
 
-import { isLocale, LOCALE_COOKIE, localizedPath, splitLocalePrefix } from "@epilove/core";
+import { isLocale, LOCALE_COOKIE, localizedPath, splitLocalePrefix } from "@atomes/core";
 import type { Route } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";

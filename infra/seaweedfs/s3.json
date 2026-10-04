@@ -1,11 +1,11 @@
 {
   "identities": [
     {
-      "name": "epilove-dev",
+      "name": "atomes-dev",
       "credentials": [
         {
-          "accessKey": "epilove",
-          "secretKey": "epilove-dev-secret"
+          "accessKey": "atomes",
+          "secretKey": "atomes-dev-secret"
         }
       ],
       "actions": ["Admin", "Read", "Write", "List", "Tagging"]

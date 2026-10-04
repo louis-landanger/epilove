@@ -30,7 +30,7 @@ function contentSecurityPolicy(nonce: string) {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
-  if (!isPublic && !getSessionCookie(request, { cookiePrefix: "epilove-staff" })) {
+  if (!isPublic && !getSessionCookie(request, { cookiePrefix: "atomes-staff" })) {
     return NextResponse.redirect(new URL("/connexion", request.url));
   }
   const nonce = btoa(crypto.randomUUID());

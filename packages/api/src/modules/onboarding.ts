@@ -1,4 +1,4 @@
-import type { OnboardingSaveInput, OnboardingState } from "@epilove/contracts";
+import type { OnboardingSaveInput, OnboardingState } from "@atomes/contracts";
 import {
   adulthoodDate,
   checkBirthDate,
@@ -14,8 +14,8 @@ import {
   normalizePronouns,
   type OnboardingProgress,
   profileCompleteness,
-} from "@epilove/core";
-import type { Database } from "@epilove/db";
+} from "@atomes/core";
+import type { Database } from "@atomes/db";
 import {
   activateAccount,
   activeConsents,
@@ -28,14 +28,14 @@ import {
   readPreferences,
   upsertPreferences,
   withdrawConsent,
-} from "@epilove/db/repositories/accounts";
+} from "@atomes/db/repositories/accounts";
 import {
   countUsablePhotos,
   listInterestIds,
   listPromptAnswers,
   replaceInterests,
   replacePromptAnswers,
-} from "@epilove/db/repositories/profiles";
+} from "@atomes/db/repositories/profiles";
 import { ORPCError } from "@orpc/server";
 import { checkedInterests, checkedProgram, checkedPromptAnswers, InvalidValue } from "../lib/profile-content";
 import { withinQuota } from "../lib/quota";

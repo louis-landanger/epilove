@@ -126,7 +126,7 @@ Autorité nationale de coordination : l'Arcom.
 - **Âge minimum** : aucune règle française ou européenne n'impose d'âge minimum spécifique aux applications de rencontre. Le seuil de 18 ans est un choix, non négociable, inscrit dans les CGU. La vérification par email d'école renforce la simple déclaration.
 - **Décisions de justice** : depuis la loi SREN, un juge peut ordonner la suspension du compte d'une personne condamnée et l'interdiction d'en créer un nouveau (article 131-35-1 du Code pénal). Le principe « une adresse d'école = un compte » rend ces décisions applicables ; prévoir la procédure.
 - **Réquisitions judiciaires** : procédure écrite (vérification de l'authenticité, réponse limitée au strict nécessaire, traçabilité).
-- **Noms des écoles** : usage référentiel uniquement (« réservé aux étudiantes et étudiants de… ») ; ni logo, ni couleurs, ni typographies des écoles ; mention de non-affiliation visible. Le nom « Epilove » peut évoquer EPITA : à remplacer pour le nom public ou à faire valider par l'école. Vérifier les dépôts sur data.inpi.fr.
+- **Noms des écoles** : usage référentiel uniquement (« réservé aux étudiantes et étudiants de… ») ; ni logo, ni couleurs, ni typographies des écoles ; mention de non-affiliation visible. Le nom « Atomes » peut évoquer EPITA : à remplacer pour le nom public ou à faire valider par l'école. Vérifier les dépôts sur data.inpi.fr.
 - **Contenus des utilisateurs** : licence limitée accordée à l'association pour afficher les contenus dans le service uniquement, révoquée à la suppression.
 - **API tierces** : respect des conditions de chaque API (voir [03](03-stack.md#services-tiers)).
 

@@ -1,5 +1,5 @@
+import { schema } from "@atomes/db";
 import AxeBuilder from "@axe-core/playwright";
-import { schema } from "@epilove/db";
 import { expect, test } from "@playwright/test";
 import { eq } from "drizzle-orm";
 import {

@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { createDatabase, schema } from "@epilove/db";
-import { scheduleMediaDeletion } from "@epilove/db/repositories/messaging";
-import { createMemoryObjectStore, type ObjectStore } from "@epilove/db/storage";
-import { prepareTestDatabase } from "@epilove/db/testing";
+import { createDatabase, schema } from "@atomes/db";
+import { scheduleMediaDeletion } from "@atomes/db/repositories/messaging";
+import { createMemoryObjectStore, type ObjectStore } from "@atomes/db/storage";
+import { prepareTestDatabase } from "@atomes/db/testing";
 import { inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { purgeDueMedia } from "./purge";

@@ -4,7 +4,7 @@
  * when DEV_AUTH=1 and APP_ENV is development or test.
  */
 // Same cookie as the API's development resolver and the app shell guard (packages/api/src/context.ts).
-export const DEV_MEMBER_COOKIE = "epilove_dev_user";
+export const DEV_MEMBER_COOKIE = "atomes_dev_user";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 

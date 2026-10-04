@@ -1,4 +1,4 @@
-import { ACCOUNT_STATUSES, type Gender, LOCALES } from "@epilove/core";
+import { ACCOUNT_STATUSES, type Gender, LOCALES } from "@atomes/core";
 import { sql } from "drizzle-orm";
 import { boolean, check, date, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { school } from "./campus";

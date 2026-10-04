@@ -1,8 +1,8 @@
-import { uuidv7 } from "@epilove/core";
-import { createDatabase, schema } from "@epilove/db";
-import { notifyDueCheckIns } from "@epilove/db/repositories/messaging-date-safety";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
-import { createMemoryPublisher } from "@epilove/realtime";
+import { uuidv7 } from "@atomes/core";
+import { createDatabase, schema } from "@atomes/db";
+import { notifyDueCheckIns } from "@atomes/db/repositories/messaging-date-safety";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
+import { createMemoryPublisher } from "@atomes/realtime";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { setRealtimePublisher } from "../rencontre/realtime";

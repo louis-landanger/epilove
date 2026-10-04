@@ -1,5 +1,5 @@
 {
-  "name": "@epilove/three",
+  "name": "@atomes/three",
   "version": "0.0.0",
   "private": true,
   "description": "WebGPU/WebGL2 scenes of the marketing site (three.js, TSL): the ion field.",
@@ -13,11 +13,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@epilove/tokens": "workspace:*",
+    "@atomes/tokens": "workspace:*",
     "three": "catalog:"
   },
   "devDependencies": {
-    "@epilove/config": "workspace:*",
+    "@atomes/config": "workspace:*",
     "@types/three": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

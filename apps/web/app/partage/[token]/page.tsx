@@ -1,4 +1,4 @@
-import { EMERGENCY_NUMBERS } from "@epilove/core";
+import { EMERGENCY_NUMBERS } from "@atomes/core";
 import type { Metadata } from "next";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { serverApi } from "@/lib/rencontre/api.server";
@@ -41,7 +41,7 @@ export default async function SharedDatePage({ params }: { params: Promise<{ tok
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 px-4 pt-8 pb-10">
       <header className="flex flex-col gap-2">
-        <p className="font-mono text-paper/60 text-xs uppercase tracking-widest">Epilove</p>
+        <p className="font-mono text-paper/60 text-xs uppercase tracking-widest">Atomes</p>
         <h1 className="font-display font-semibold text-3xl tracking-tight">{t("public.title")}</h1>
         <p className="text-paper/80">{t("public.lead", { sharer })}</p>
       </header>

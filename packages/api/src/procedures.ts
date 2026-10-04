@@ -1,5 +1,5 @@
-import { contract } from "@epilove/contracts";
-import { schema } from "@epilove/db";
+import { contract } from "@atomes/contracts";
+import { schema } from "@atomes/db";
 import { implement, ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import type { ApiContext, Viewer } from "./context";

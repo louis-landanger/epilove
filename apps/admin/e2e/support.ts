@@ -1,7 +1,7 @@
-import { uuidv7 } from "@epilove/core";
-import { encryptText, keyRingFromEnv } from "@epilove/crypto";
-import { createDatabase, databaseUrlFromEnv, schema } from "@epilove/db";
-import { createStorage, storageConfigFromEnv } from "@epilove/media/storage";
+import { uuidv7 } from "@atomes/core";
+import { encryptText, keyRingFromEnv } from "@atomes/crypto";
+import { createDatabase, databaseUrlFromEnv, schema } from "@atomes/db";
+import { createStorage, storageConfigFromEnv } from "@atomes/media/storage";
 import { expect, type Page } from "@playwright/test";
 import { eq } from "drizzle-orm";
 import sharp from "sharp";

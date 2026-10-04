@@ -31,7 +31,7 @@ export function digestIsEmpty(input: DigestInput): boolean {
 
 const COPY = {
   fr: {
-    subject: "Ta semaine sur Epilove",
+    subject: "Ta semaine sur Atomes",
     likes: (count: number) =>
       count === 1 ? "1 personne t'a liké cette semaine." : `${count} personnes t'ont liké cette semaine.`,
     matches: (count: number) => (count === 1 ? "1 nouvelle liaison." : `${count} nouvelles liaisons.`),
@@ -39,7 +39,7 @@ const COPY = {
       count === 1 ? "1 conversation attend ta réponse." : `${count} conversations attendent ta réponse.`,
     pact: (date: string) => `Le Pacte est ouvert jusqu'au ${date}.`,
     events: "Événements de la semaine",
-    open: "Ouvrir Epilove",
+    open: "Ouvrir Atomes",
     openText: "Ouvrir l'app :",
     stop: "Ne plus recevoir ce résumé",
     stopText: "Ne plus recevoir ce résumé :",
@@ -47,7 +47,7 @@ const COPY = {
       "Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées. Tu reçois ce résumé parce que tu l'as activé dans tes réglages de notifications.",
   },
   en: {
-    subject: "Your week on Epilove",
+    subject: "Your week on Atomes",
     likes: (count: number) =>
       count === 1 ? "1 person liked you this week." : `${count} people liked you this week.`,
     matches: (count: number) => (count === 1 ? "1 new bond." : `${count} new bonds.`),
@@ -57,7 +57,7 @@ const COPY = {
         : `${count} conversations are waiting for your reply.`,
     pact: (date: string) => `The Pact is open until ${date}.`,
     events: "Events this week",
-    open: "Open Epilove",
+    open: "Open Atomes",
     openText: "Open the app:",
     stop: "Stop receiving this digest",
     stopText: "Stop receiving this digest:",

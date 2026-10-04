@@ -1,4 +1,4 @@
-import { baseVoiceType, isValidPeaks } from "@epilove/core";
+import { baseVoiceType, isValidPeaks } from "@atomes/core";
 import { describe, expect, it } from "vitest";
 import { sniffAudio, voiceKey } from "./audio";
 

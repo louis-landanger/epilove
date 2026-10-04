@@ -1,9 +1,9 @@
-import type { KeyRing } from "@epilove/crypto";
-import type { Database, Role } from "@epilove/db";
-import type { Mailer } from "@epilove/email";
-import type { ImgproxyConfig } from "@epilove/media";
-import type { Storage } from "@epilove/media/storage";
-import type { RateLimiter } from "@epilove/rate-limit";
+import type { KeyRing } from "@atomes/crypto";
+import type { Database, Role } from "@atomes/db";
+import type { Mailer } from "@atomes/email";
+import type { ImgproxyConfig } from "@atomes/media";
+import type { Storage } from "@atomes/media/storage";
+import type { RateLimiter } from "@atomes/rate-limit";
 import type { MusicCatalog } from "./lib/music";
 
 /** The authenticated member behind a request. */
@@ -51,7 +51,7 @@ export const anonymous: ViewerResolver = async () => null;
 
 const DEV_USER_HEADER = "x-dev-user-id";
 /** Same value as the header, for browsers (set by the development member picker). */
-export const DEV_USER_COOKIE = "epilove_dev_user";
+export const DEV_USER_COOKIE = "atomes_dev_user";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /**

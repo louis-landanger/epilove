@@ -4,8 +4,8 @@ import { type LockConfig, type LockSession, lockKey, parseConfig, sessionKey } f
 
 /** Browser storage access for the app lock; every call tolerates blocked storage. */
 
-export const LOCK_CHANGED = "epilove:lock-changed";
-const attemptsKey = (userId: string) => `epilove:lock-attempts:${userId}`;
+export const LOCK_CHANGED = "atomes:lock-changed";
+const attemptsKey = (userId: string) => `atomes:lock-attempts:${userId}`;
 
 export function readConfig(userId: string): LockConfig | null {
   try {

@@ -1,4 +1,4 @@
-import { Redis } from "@epilove/rate-limit";
+import { Redis } from "@atomes/rate-limit";
 import { afterAll, describe, expect, it } from "vitest";
 import { valkeySecondaryStorage } from "./storage";
 

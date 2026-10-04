@@ -12,18 +12,18 @@ test.describe("app lock (SAF-13)", () => {
 
     await page.goto("/reglages");
     await page.getByRole("switch", { name: "Verrouiller l'application sur cet appareil" }).click();
-    await page.getByRole("radio", { name: /Un code Epilove/ }).click();
+    await page.getByRole("radio", { name: /Un code Atomes/ }).click();
     await page.getByLabel("Code (4 à 6 chiffres)").fill("4821");
     await page.getByLabel("Confirme le code").fill("4821");
     await page.getByRole("radio", { name: "Immédiatement" }).click();
     await page.getByRole("button", { name: "Activer le verrouillage" }).click();
     await expect(page.getByText("Verrouillage activé sur cet appareil.")).toBeVisible();
     // Turning it on does not lock the current tab.
-    await expect(page.getByRole("dialog", { name: "Epilove est verrouillée" })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Atomes est verrouillé" })).toHaveCount(0);
 
     const other = await context.newPage();
     await other.goto("/profil");
-    const lock = other.getByRole("dialog", { name: "Epilove est verrouillée" });
+    const lock = other.getByRole("dialog", { name: "Atomes est verrouillé" });
     await expect(lock).toBeVisible();
     await expect(other.locator("#contenu")).toBeHidden();
     expect(
@@ -44,12 +44,12 @@ test.describe("app lock (SAF-13)", () => {
 
     // A reload right away stays unlocked; turning the lock off frees new tabs.
     await other.reload();
-    await expect(other.getByRole("dialog", { name: "Epilove est verrouillée" })).toHaveCount(0);
+    await expect(other.getByRole("dialog", { name: "Atomes est verrouillé" })).toHaveCount(0);
     await page.getByRole("switch", { name: "Verrouiller l'application sur cet appareil" }).click();
     await expect(page.getByText("Verrouillage désactivé.")).toBeVisible();
     const third = await context.newPage();
     await third.goto("/profil");
     await expect(third.getByRole("heading", { name: "Mon profil", level: 1 })).toBeVisible();
-    await expect(third.getByRole("dialog", { name: "Epilove est verrouillée" })).toHaveCount(0);
+    await expect(third.getByRole("dialog", { name: "Atomes est verrouillé" })).toHaveCount(0);
   });
 });

@@ -3,7 +3,7 @@ import {
   answersOf,
   listActiveQuestions,
   saveAnswer,
-} from "@epilove/db/repositories/questionnaire";
+} from "@atomes/db/repositories/questionnaire";
 import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
 import { requireMemberRow, requireVisibleProfile } from "../rencontre/access";

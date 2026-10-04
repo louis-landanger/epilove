@@ -1,7 +1,7 @@
 "use client";
 
-import type { OwnProfile, VoiceAnswer as VoiceAnswerData } from "@epilove/contracts";
-import { Button } from "@epilove/ui";
+import type { OwnProfile, VoiceAnswer as VoiceAnswerData } from "@atomes/contracts";
+import { Button } from "@atomes/ui";
 import { Mic, RotateCcw, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";

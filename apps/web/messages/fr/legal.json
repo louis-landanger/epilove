@@ -13,13 +13,13 @@
   },
   "legalNotice": {
     "title": "Mentions légales",
-    "description": "Éditeur, hébergeur et points de contact du service Epilove.",
+    "description": "Éditeur, hébergeur et points de contact du service Atomes.",
     "sections": [
       {
         "id": "editeur",
         "title": "Éditeur du service",
         "blocks": [
-          "Le service Epilove (nom de code) est édité par l’association [Nom de l’association], association régie par la loi du 1er juillet 1901, déclarée à la préfecture du Rhône le [date de déclaration] sous le numéro RNA [W000000000], dont le siège est situé [adresse du siège], Lyon.",
+          "Le service Atomes est édité par l’association [Nom de l’association], association régie par la loi du 1er juillet 1901, déclarée à la préfecture du Rhône le [date de déclaration] sous le numéro RNA [W000000000], dont le siège est situé [adresse du siège], Lyon.",
           "Téléphone : [numéro de téléphone]. Email : [contact@domaine]."
         ]
       },
@@ -61,20 +61,20 @@
         "title": "Indépendance",
         "blocks": [
           "Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées. Les noms des écoles servent uniquement à indiquer qui peut s’inscrire ; aucun logo ni élément d’identité visuelle des écoles n’est utilisé.",
-          "« Epilove » est un nom de code provisoire. Le nom public du service sera annoncé avant l’ouverture."
+          "« Atomes » est un nom provisoire, qui peut encore changer avant l’ouverture du service."
         ]
       }
     ]
   },
   "terms": {
     "title": "Conditions générales d’utilisation",
-    "description": "Les règles d’utilisation d’Epilove, de la liste d’attente à la modération.",
+    "description": "Les règles d’utilisation d’Atomes, de la liste d’attente à la modération.",
     "sections": [
       {
         "id": "objet",
         "title": "Objet",
         "blocks": [
-          "Ces conditions encadrent l’utilisation d’Epilove, service gratuit de rencontre et d’amitié réservé aux étudiantes et étudiants des écoles participantes du campus de Lyon, édité par l’association [Nom de l’association]. En créant un compte, tu les acceptes."
+          "Ces conditions encadrent l’utilisation d’Atomes, service gratuit de rencontre et d’amitié réservé aux étudiantes et étudiants des écoles participantes du campus de Lyon, édité par l’association [Nom de l’association]. En créant un compte, tu les acceptes."
         ]
       },
       {
@@ -171,7 +171,7 @@
   },
   "privacy": {
     "title": "Politique de confidentialité",
-    "description": "Quelles données Epilove traite, pourquoi, combien de temps, et comment exercer tes droits.",
+    "description": "Quelles données Atomes traite, pourquoi, combien de temps, et comment exercer tes droits.",
     "sections": [
       {
         "id": "essentiel",
@@ -369,7 +369,7 @@
   },
   "transparency": {
     "title": "Transparence du classement",
-    "description": "Comment Epilove choisit les profils qui te sont proposés, et ce qui n’est jamais utilisé.",
+    "description": "Comment Atomes choisit les profils qui te sont proposés, et ce qui n’est jamais utilisé.",
     "sections": [
       {
         "id": "principe",

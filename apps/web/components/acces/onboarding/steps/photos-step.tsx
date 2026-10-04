@@ -1,7 +1,7 @@
 "use client";
 
-import { MIN_PHOTOS } from "@epilove/core";
-import { Button } from "@epilove/ui";
+import { MIN_PHOTOS } from "@atomes/core";
+import { Button } from "@atomes/ui";
 import { Lightbulb } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

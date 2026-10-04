@@ -89,7 +89,7 @@
   },
   "wrapped": {
     "title": "Ton Wrapped",
-    "lead": "Ton année {label} sur Epilove. Rien que pour toi : personne d'autre ne le voit.",
+    "lead": "Ton année {label} sur Atomes. Rien que pour toi : personne d'autre ne le voit.",
     "back": "Campus",
     "matches": "{count, plural, =0 {Pas encore de liaison : l'année ne fait que commencer.} one {liaison cette année} other {liaisons cette année}}",
     "messages": "{count, plural, =0 {Pas encore de message envoyé.} one {message envoyé} other {messages envoyés}}",
@@ -102,7 +102,7 @@
     "pacts": "{count, plural, =0 {Pas encore de Pacte.} one {Pacte joué} other {Pactes joués}}",
     "download": "Télécharger en image",
     "privacy": "L'image ne contient que tes chiffres : ni prénom, ni photo, ni message. À toi de voir si tu la partages.",
-    "imageTitle": "Mon année sur Epilove",
+    "imageTitle": "Mon année sur Atomes",
     "imageFooter": "Rien que mes chiffres.",
     "reactionWord": "Réaction préférée : {word}",
     "peakWord": "Heure de pointe : {hour} h"

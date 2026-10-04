@@ -1,7 +1,7 @@
 "use client";
 
-import { LOCALES, splitLocalePrefix } from "@epilove/core";
-import { cn } from "@epilove/ui/cn";
+import { LOCALES, splitLocalePrefix } from "@atomes/core";
+import { cn } from "@atomes/ui/cn";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { changeLocaleAction } from "./actions";

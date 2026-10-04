@@ -1,7 +1,7 @@
 "use client";
 
-import type { LikeReceived, MemberCard, QuotaView } from "@epilove/contracts";
-import { ViewerWatermark } from "@epilove/ui";
+import type { LikeReceived, MemberCard, QuotaView } from "@atomes/contracts";
+import { ViewerWatermark } from "@atomes/ui";
 import { ORPCError } from "@orpc/client";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";

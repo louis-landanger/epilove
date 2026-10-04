@@ -1,13 +1,13 @@
-import { pactEligibleModes } from "@epilove/core";
-import { createDatabase, type Database } from "@epilove/db";
-import { campusDate, loadMembers, loadRelationsAmong } from "@epilove/db/repositories/members";
+import { pactEligibleModes } from "@atomes/core";
+import { createDatabase, type Database } from "@atomes/db";
+import { campusDate, loadMembers, loadRelationsAmong } from "@atomes/db/repositories/members";
 import {
   participantsOf,
   type RevealOutcome,
   resultsOfSeason,
   revealSeason,
   seasonsDueForReveal,
-} from "@epilove/db/repositories/pact";
+} from "@atomes/db/repositories/pact";
 import type { Task } from "graphile-worker";
 import { z } from "zod";
 

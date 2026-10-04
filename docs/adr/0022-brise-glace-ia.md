@@ -21,7 +21,7 @@ Le schéma commun prévoit déjà une table `consent` versionnée et historisée
 Option 3, avec :
 
 - un consentement enregistré dans `consent` (type `ai_features`, version `AI_ICEBREAKER_RULES.consentVersion`), demandé au premier usage avec une explication en clair (ce qui part, où, ce qui n'est jamais fait) et retirable dans les réglages ; le retrait reste possible même si la fonction est coupée ;
-- des extraits minimisés et pseudonymisés dans `@epilove/core` (`minimizeProfile`, `pseudonymize`) : 3 réponses aux prompts au plus, 240 caractères chacune, centres d'intérêt du catalogue fermé ; prénoms des deux personnes, adresses e-mail, liens, pseudos et numéros remplacés par des marqueurs ; ni photo, ni âge, ni école, ni genre, ni orientation, ni mode de la liaison ;
+- des extraits minimisés et pseudonymisés dans `@atomes/core` (`minimizeProfile`, `pseudonymize`) : 3 réponses aux prompts au plus, 240 caractères chacune, centres d'intérêt du catalogue fermé ; prénoms des deux personnes, adresses e-mail, liens, pseudos et numéros remplacés par des marqueurs ; ni photo, ni âge, ni école, ni genre, ni orientation, ni mode de la liaison ;
 - un filtre de sortie (`acceptSuggestions`) : longueur, doublons, marqueurs, prénoms, et le filtre des messages (liens, coordonnées, insultes) ;
 - un refus du modèle (`stop_reason: "refusal"`) traité comme un résultat normal (« pas d'idée cette fois »), une panne comme une indisponibilité qui ne consomme pas le quota (5 demandes par jour) ;
 - rien n'est conservé : ni l'extrait, ni les idées ; la table `ai_icebreaker_request` ne sert qu'au quota ;

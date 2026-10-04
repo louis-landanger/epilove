@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, LOCALES, type Locale, localizedPath } from "@epilove/core";
+import { DEFAULT_LOCALE, LOCALES, type Locale, localizedPath } from "@atomes/core";
 import type { Metadata, Route } from "next";
 
 /** Public pages that exist in every language, under a prefix for English (`/en/legal/cgu`). */

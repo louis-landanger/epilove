@@ -8,9 +8,9 @@ import {
   devHeaderResolver,
   type Role,
   type ViewerResolver,
-} from "@epilove/api";
-import { revokeAllSessions } from "@epilove/auth";
-import { createValkeyRateLimiter, valkeyFromEnv } from "@epilove/rate-limit";
+} from "@atomes/api";
+import { revokeAllSessions } from "@atomes/auth";
+import { createValkeyRateLimiter, valkeyFromEnv } from "@atomes/rate-limit";
 import { getAuth } from "./auth";
 import { getDatabase } from "./database";
 import { getCurrentMember } from "./session";
@@ -26,7 +26,7 @@ const sessionResolver: ViewerResolver = async (request) => {
 
 /**
  * Session first; in development and tests (DEV_AUTH=1 and APP_ENV=development
- * or test), the `x-dev-user-id` header or `epilove_dev_user` cookie as a fallback.
+ * or test), the `x-dev-user-id` header or `atomes_dev_user` cookie as a fallback.
  */
 function viewerResolver(): ViewerResolver {
   if (process.env.DEV_AUTH !== "1") {

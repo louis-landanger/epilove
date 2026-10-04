@@ -6,7 +6,7 @@ import {
   MODES,
   ONBOARDING_STEPS,
   PROMPT_ANSWER_COUNT,
-} from "@epilove/core";
+} from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

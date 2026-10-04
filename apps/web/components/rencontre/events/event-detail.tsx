@@ -1,8 +1,8 @@
 "use client";
 
-import type { AttendingMatch, EventDetail } from "@epilove/contracts";
-import { dateIcs, EVENT_RULES, flashOpen, type RsvpStatus } from "@epilove/core";
-import { Sheet } from "@epilove/ui";
+import type { AttendingMatch, EventDetail } from "@atomes/contracts";
+import { dateIcs, EVENT_RULES, flashOpen, type RsvpStatus } from "@atomes/core";
+import { Sheet } from "@atomes/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
@@ -82,7 +82,7 @@ export function EventDetailScreen({
     const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = "evenement-epilove.ics";
+    link.download = "evenement-atomes.ics";
     link.click();
     URL.revokeObjectURL(url);
   };

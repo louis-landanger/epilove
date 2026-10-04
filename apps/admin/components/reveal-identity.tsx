@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Dialog, TextAreaField, useToast } from "@epilove/ui";
+import { Button, Dialog, TextAreaField, useToast } from "@atomes/ui";
 import { Eye } from "lucide-react";
 import { useState } from "react";
 import { api } from "@/lib/api-client";

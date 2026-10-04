@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@epilove/tokens/theme.css";
+@import "@atomes/tokens/theme.css";
 /* Self-hosted fonts: identical rendering on every machine, for the visual tests. */
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";

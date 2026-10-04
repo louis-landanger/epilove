@@ -1,4 +1,4 @@
-import type { ReportContext, ReportPriority, ReportReason } from "@epilove/core";
+import type { ReportContext, ReportPriority, ReportReason } from "@atomes/core";
 import { and, count, countDistinct, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { appUser, auditLog, block, hiddenContact, profile, report } from "../schema";

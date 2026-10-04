@@ -1,4 +1,4 @@
-import type { MemberCard } from "@epilove/contracts";
+import type { MemberCard } from "@atomes/contracts";
 import { useTranslations } from "next-intl";
 
 const ICONS: Record<MemberCard["badges"][number], string> = {

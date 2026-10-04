@@ -1,8 +1,8 @@
-import { uuidv7 } from "@epilove/core";
-import { createDatabase, runSeeds, schema } from "@epilove/db";
-import { runMigrations } from "@epilove/db/migrations";
-import { quarantineKey } from "@epilove/media";
-import { createMemoryStorage } from "@epilove/media/storage";
+import { uuidv7 } from "@atomes/core";
+import { createDatabase, runSeeds, schema } from "@atomes/db";
+import { runMigrations } from "@atomes/db/migrations";
+import { quarantineKey } from "@atomes/media";
+import { createMemoryStorage } from "@atomes/media/storage";
 import { eq } from "drizzle-orm";
 import type { JobHelpers } from "graphile-worker";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";

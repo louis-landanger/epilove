@@ -1,7 +1,7 @@
 "use client";
 
-import type { MemberCard as MemberCardData } from "@epilove/contracts";
-import { ViewerWatermark } from "@epilove/ui";
+import type { MemberCard as MemberCardData } from "@atomes/contracts";
+import { ViewerWatermark } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { useRef, useState, ViewTransition } from "react";
 import { MemberBadges } from "./badges";

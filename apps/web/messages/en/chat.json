@@ -140,7 +140,7 @@
     "counter": "Something else",
     "decline": "Decline",
     "calendar": "Add to calendar",
-    "icsTitle": "Date (Epilove)",
+    "icsTitle": "Date (Atomes)",
     "errors": {
       "no_place": "Pick a place.",
       "too_soon": "Leave at least an hour before the date.",
@@ -246,7 +246,7 @@
       "refresh": "Refresh",
       "goneTitle": "Inactive link",
       "goneLead": "This link has expired or was stopped by the person who created it.",
-      "about": "Epilove is a dating app for students on the campus. No account needed to see this page."
+      "about": "Atomes is a dating app for students on the campus. No account needed to see this page."
     },
     "linkLabel": "Link to send"
   },
@@ -332,7 +332,7 @@
       "title": "AI ideas to start the conversation?",
       "what": "To suggest ideas, we send an excerpt of your prompt answers and interests, without your first name, contact details or photos.",
       "other": "The other person's answers are only sent if they turned this option on too.",
-      "where": "The excerpt goes to Anthropic (Claude AI), in the United States. Epilove keeps neither the excerpt nor the ideas.",
+      "where": "The excerpt goes to Anthropic (Claude AI), in the United States. Atomes keeps neither the excerpt nor the ideas.",
       "never": "Nothing is ever sent on your behalf: you pick an idea, edit it, and send it.",
       "withdraw": "You can withdraw your consent at any time in Notification settings, under “In conversations”.",
       "accept": "Turn on",

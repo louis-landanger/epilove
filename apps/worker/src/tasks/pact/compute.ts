@@ -1,8 +1,8 @@
-import { canComputePact, type PactParticipant } from "@epilove/core";
-import type { Database } from "@epilove/db";
-import { campusDate, loadMembers, loadRelationsAmong } from "@epilove/db/repositories/members";
-import { participantsOf, saveResults, seasonById } from "@epilove/db/repositories/pact";
-import { answerSheets, listActiveQuestions } from "@epilove/db/repositories/questionnaire";
+import { canComputePact, type PactParticipant } from "@atomes/core";
+import type { Database } from "@atomes/db";
+import { campusDate, loadMembers, loadRelationsAmong } from "@atomes/db/repositories/members";
+import { participantsOf, saveResults, seasonById } from "@atomes/db/repositories/pact";
+import { answerSheets, listActiveQuestions } from "@atomes/db/repositories/questionnaire";
 import { type PactRunOutput, runPact } from "./pipeline";
 import type { Solve, SolverRequest } from "./solver";
 

@@ -1,5 +1,5 @@
-import { decryptText } from "@epilove/crypto";
-import { schema } from "@epilove/db";
+import { decryptText } from "@atomes/crypto";
+import { schema } from "@atomes/db";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createTestApi, insertActiveMember, TEST_KEY_RING } from "../test-support";

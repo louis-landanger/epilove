@@ -140,7 +140,7 @@
     "counter": "Autre chose",
     "decline": "Décliner",
     "calendar": "Ajouter au calendrier",
-    "icsTitle": "Date (Epilove)",
+    "icsTitle": "Date (Atomes)",
     "errors": {
       "no_place": "Choisis un lieu.",
       "too_soon": "Laisse au moins une heure avant le date.",
@@ -246,7 +246,7 @@
       "refresh": "Actualiser",
       "goneTitle": "Lien inactif",
       "goneLead": "Ce lien a expiré ou a été arrêté par la personne qui l'a créé.",
-      "about": "Epilove est une app de rencontre réservée aux étudiants du campus. Pas besoin de compte pour voir cette page."
+      "about": "Atomes est une app de rencontre réservée aux étudiants du campus. Pas besoin de compte pour voir cette page."
     },
     "linkLabel": "Lien à envoyer"
   },
@@ -332,7 +332,7 @@
       "title": "Des idées de début de conversation par IA ?",
       "what": "Pour te proposer des idées, on envoie un extrait de tes réponses aux prompts et de tes centres d'intérêt, sans ton prénom, ni tes coordonnées, ni tes photos.",
       "other": "Les réponses de l'autre personne ne sont envoyées que si elle a aussi activé cette option.",
-      "where": "L'extrait part chez Anthropic (IA Claude), aux États-Unis. Ni l'extrait ni les idées ne sont conservés par Epilove.",
+      "where": "L'extrait part chez Anthropic (IA Claude), aux États-Unis. Ni l'extrait ni les idées ne sont conservés par Atomes.",
       "never": "Rien n'est jamais envoyé à ta place : tu choisis une idée, tu la modifies, tu l'envoies.",
       "withdraw": "Tu peux retirer ton accord à tout moment dans Réglages des notifications, rubrique « Dans les conversations ».",
       "accept": "Activer",

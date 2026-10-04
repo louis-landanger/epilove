@@ -1,4 +1,4 @@
-import { createDatabase, databaseUrlFromEnv, schema } from "@epilove/db";
+import { createDatabase, databaseUrlFromEnv, schema } from "@atomes/db";
 import { expect, test } from "@playwright/test";
 import { eq } from "drizzle-orm";
 import { latestCode, signUp } from "./support/auth";

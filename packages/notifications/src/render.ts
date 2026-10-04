@@ -17,7 +17,7 @@ type Locale = "fr" | "en";
 
 const TEXTS = {
   fr: {
-    title: "Epilove",
+    title: "Atomes",
     like_received: "Quelqu'un t'a liké.",
     superlike_received: "Tu as reçu un coup de cœur.",
     match_created: "Nouvelle liaison !",
@@ -32,7 +32,7 @@ const TEXTS = {
     date_check_in: "Petite vérification : tout va bien ?",
   },
   en: {
-    title: "Epilove",
+    title: "Atomes",
     like_received: "Someone liked you.",
     superlike_received: "You got a crush.",
     match_created: "New bond!",

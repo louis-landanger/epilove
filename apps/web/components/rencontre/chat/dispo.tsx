@@ -1,8 +1,8 @@
 "use client";
 
-import type { AvailabilityView } from "@epilove/contracts";
-import { AVAILABILITY_ACTIVITIES, AVAILABILITY_AREAS } from "@epilove/core";
-import { Sheet } from "@epilove/ui";
+import type { AvailabilityView } from "@atomes/contracts";
+import { AVAILABILITY_ACTIVITIES, AVAILABILITY_AREAS } from "@atomes/core";
+import { Sheet } from "@atomes/ui";
 import { ORPCError } from "@orpc/client";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";

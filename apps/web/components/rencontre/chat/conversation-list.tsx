@@ -1,6 +1,6 @@
 "use client";
 
-import type { MatchSummary } from "@epilove/contracts";
+import type { MatchSummary } from "@atomes/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFormatter, useLocale, useNow, useTranslations } from "next-intl";
 import { orpc } from "@/lib/api-client";

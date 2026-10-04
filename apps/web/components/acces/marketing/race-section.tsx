@@ -1,4 +1,4 @@
-import type { WaitlistStats } from "@epilove/contracts";
+import type { WaitlistStats } from "@atomes/contracts";
 import { getTranslations } from "next-intl/server";
 import { accent, Eyebrow } from "./eyebrow";
 import { SchoolRace } from "./school-race/school-race";

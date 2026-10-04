@@ -1,6 +1,6 @@
 "use client";
 
-import type { AiIcebreakersState, NotificationPreferencesView, QuietHoursView } from "@epilove/contracts";
+import type { AiIcebreakersState, NotificationPreferencesView, QuietHoursView } from "@atomes/contracts";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/api-client";

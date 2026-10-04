@@ -1,4 +1,4 @@
-import { schoolColors } from "@epilove/tokens";
+import { schoolColors } from "@atomes/tokens";
 import { getTranslations } from "next-intl/server";
 import { Eyebrow } from "./eyebrow";
 import { LogoMark } from "./logo";

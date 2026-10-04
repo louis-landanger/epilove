@@ -1,7 +1,7 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { Button, RadioGroupField, SwitchField, TextField, useToast } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import { Button, RadioGroupField, SwitchField, TextField, useToast } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { type FormEvent, useEffect, useState } from "react";
 import { isPin, LOCK_TIMEOUTS, type LockMethod, pinConfig } from "./lock-config";

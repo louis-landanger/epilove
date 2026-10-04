@@ -1,8 +1,8 @@
-import { LYON_CAMPUS, SCHOOLS } from "@epilove/core";
+import { LYON_CAMPUS, SCHOOLS } from "@atomes/core";
 import type { Database } from "../client";
 import { campus, school } from "../schema";
 
-/** Idempotent reference data: the Lyon campus and its schools (from @epilove/core). */
+/** Idempotent reference data: the Lyon campus and its schools (from @atomes/core). */
 export async function seedReferenceData(db: Database) {
   const [lyon] = await db
     .insert(campus)

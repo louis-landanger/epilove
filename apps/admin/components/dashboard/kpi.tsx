@@ -1,5 +1,5 @@
-import type { TargetState } from "@epilove/core";
-import { cn } from "@epilove/ui";
+import type { TargetState } from "@atomes/core";
+import { cn } from "@atomes/ui";
 import type { ReactNode } from "react";
 
 const STATE_LABEL: Record<TargetState, string> = {

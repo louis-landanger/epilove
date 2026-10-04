@@ -1,7 +1,7 @@
 "use client";
 
-import { MIN_INTERESTS } from "@epilove/core";
-import { Button } from "@epilove/ui";
+import { MIN_INTERESTS } from "@atomes/core";
+import { Button } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { InterestsPicker } from "../../profile/interests-picker";

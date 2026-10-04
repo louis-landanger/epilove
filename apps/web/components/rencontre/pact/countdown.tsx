@@ -1,6 +1,6 @@
 "use client";
 
-import { countdown } from "@epilove/core";
+import { countdown } from "@atomes/core";
 import { useTranslations } from "next-intl";
 
 /**

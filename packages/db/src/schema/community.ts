@@ -1,4 +1,4 @@
-import { AVAILABILITY_ACTIVITIES, AVAILABILITY_AREAS, GRANTED_BADGES } from "@epilove/core";
+import { AVAILABILITY_ACTIVITIES, AVAILABILITY_AREAS, GRANTED_BADGES } from "@atomes/core";
 import {
   boolean,
   check,

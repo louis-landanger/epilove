@@ -1,8 +1,8 @@
 "use client";
 
-import type { Catalog } from "@epilove/contracts";
-import { MAX_INTERESTS } from "@epilove/core";
-import { TextField } from "@epilove/ui";
+import type { Catalog } from "@atomes/contracts";
+import { MAX_INTERESTS } from "@atomes/core";
+import { TextField } from "@atomes/ui";
 import { Check, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";

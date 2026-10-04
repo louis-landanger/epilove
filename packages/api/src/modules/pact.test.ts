@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { createDatabase, schema } from "@epilove/db";
-import { upsertSeason } from "@epilove/db/repositories/pact";
+import { createDatabase, schema } from "@atomes/db";
+import { upsertSeason } from "@atomes/db/repositories/pact";
 import {
   answerQuestionnaire,
   cleanupTestMembers,
   createTestMember,
   prepareTestDatabase,
-} from "@epilove/db/testing";
+} from "@atomes/db/testing";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi } from "../rencontre/testing";

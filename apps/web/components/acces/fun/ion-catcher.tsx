@@ -1,14 +1,14 @@
 "use client";
 
-import { colors } from "@epilove/tokens";
-import { Button } from "@epilove/ui/primitives/button";
+import { colors } from "@atomes/tokens";
+import { Button } from "@atomes/ui/primitives/button";
 import { useTranslations } from "next-intl";
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 
 const WIDTH = 640;
 const HEIGHT = 400;
 const ROUND_SECONDS = 30;
-const BEST_KEY = "epilove.404.best";
+const BEST_KEY = "atomes.404.best";
 
 interface Ion {
   x: number;

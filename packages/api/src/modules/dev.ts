@@ -1,5 +1,5 @@
-import { ageOn } from "@epilove/core";
-import { campusDate, listMembersForDevPicker } from "@epilove/db/repositories/members";
+import { ageOn } from "@atomes/core";
+import { campusDate, listMembersForDevPicker } from "@atomes/db/repositories/members";
 import { ORPCError } from "@orpc/server";
 import { os } from "../procedures";
 

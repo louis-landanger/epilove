@@ -1,4 +1,4 @@
-import { parseSchoolEmail } from "@epilove/core";
+import { parseSchoolEmail } from "@atomes/core";
 
 /**
  * Forge ID (ONB-11): EPITA's OpenID Connect provider for student projects.

@@ -6,7 +6,7 @@
 #   sudo TEAM_PASSWORD='…' bash infra/dev-host/setup.sh
 #
 # Options (environment): DOMAIN (default: <public IP>.sslip.io), TEAM_USER
-# (default: epilove), TEAM_PASSWORD (asked if missing on the first run),
+# (default: atomes), TEAM_PASSWORD (asked if missing on the first run),
 # SEED_DEV=0 to skip the fictional members. Safe to run again: secrets, .env and
 # data are kept; see infra/dev-host/README.md.
 set -euo pipefail
@@ -14,11 +14,11 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 HOST_DIR="$REPO_DIR/infra/dev-host"
 GENERATED="$HOST_DIR/generated"
-RUN_USER=epilove
+RUN_USER=atomes
 RUN_HOME="/home/$RUN_USER"
 # @swc/core unpacks its native addon into a cache it refuses to use when a parent
 # directory is group- or world-writable (some images ship /home that way).
-SWC_CACHE=/var/cache/epilove-swc
+SWC_CACHE=/var/cache/atomes-swc
 COMPOSE=(docker compose -f "$REPO_DIR/infra/compose/compose.yaml" -f "$HOST_DIR/compose.yaml"
   --env-file "$GENERATED/services.env")
 
@@ -105,7 +105,7 @@ CENTRIFUGO_TOKEN_SECRET=$(hex 32)
 CENTRIFUGO_HTTP_API_KEY=$(hex 24)
 IMGPROXY_KEY=$(hex 32)
 IMGPROXY_SALT=$(hex 32)
-S3_ACCESS_KEY_ID=epilove
+S3_ACCESS_KEY_ID=atomes
 S3_SECRET_ACCESS_KEY=$(hex 24)
 ENCRYPTION_KEY=$(openssl rand -base64 32)
 EMAIL_HMAC_SECRET=$(hex 32)
@@ -123,7 +123,7 @@ domain, repo, generated = os.environ["DOMAIN"], pathlib.Path(os.environ["REPO_DI
 secrets = dict(line.split("=", 1) for line in (generated / "services.env").read_text().splitlines() if "=" in line)
 
 (generated / "s3.json").write_text(json.dumps({"identities": [{
-    "name": "epilove",
+    "name": "atomes",
     "credentials": [{"accessKey": secrets["S3_ACCESS_KEY_ID"], "secretKey": secrets["S3_SECRET_ACCESS_KEY"]}],
     "actions": ["Admin", "Read", "Write", "List", "Tagging"],
 }]}, indent=2) + "\n")
@@ -134,7 +134,7 @@ if env_path.exists():
 else:
     values = {
         "APP_ENV": "development",
-        "DATABASE_URL": f"postgres://epilove:{secrets['POSTGRES_PASSWORD']}@127.0.0.1:5432/epilove",
+        "DATABASE_URL": f"postgres://atomes:{secrets['POSTGRES_PASSWORD']}@127.0.0.1:5432/atomes",
         "CENTRIFUGO_HTTP_API_KEY": secrets["CENTRIFUGO_HTTP_API_KEY"],
         "CENTRIFUGO_TOKEN_SECRET": secrets["CENTRIFUGO_TOKEN_SECRET"],
         "CENTRIFUGO_WS_URL": f"wss://ws.{domain}/connection/websocket",
@@ -149,7 +149,7 @@ else:
         "EMAIL_HMAC_SECRET": secrets["EMAIL_HMAC_SECRET"],
         # The whole site sits behind the team password (Caddy), so the /dev member picker can stay.
         "DEV_AUTH": "1",
-        "EMAIL_FROM": f"Epilove <no-reply@{domain}>",
+        "EMAIL_FROM": f"Atomes <no-reply@{domain}>",
         "APP_URL": f"https://app.{domain}",
         "AUTH_TRUSTED_ORIGINS": f"https://admin.{domain}",
         "BETTER_AUTH_SECRET": secrets["BETTER_AUTH_SECRET"],
@@ -174,7 +174,7 @@ PY
 chown -R "$RUN_USER:$RUN_USER" "$GENERATED" "$REPO_DIR/.env"
 
 # --- Team password (Caddy basic auth) -----------------------------------------
-TEAM_USER="${TEAM_USER:-$(cat "$GENERATED/team-user" 2>/dev/null || echo epilove)}"
+TEAM_USER="${TEAM_USER:-$(cat "$GENERATED/team-user" 2>/dev/null || echo atomes)}"
 if [ -n "${TEAM_PASSWORD:-}" ] || [ ! -f "$GENERATED/team-hash" ]; then
   if [ -z "${TEAM_PASSWORD:-}" ]; then
     read -r -s -p "Team password (shared by the whole team, 12 characters or more): " TEAM_PASSWORD
@@ -203,9 +203,9 @@ fi
 # --- App processes (systemd) ----------------------------------------------------
 log "App, back-office and worker"
 unit() {
-  cat >"/etc/systemd/system/epilove-$1.service" <<EOF
+  cat >"/etc/systemd/system/atomes-$1.service" <<EOF
 [Unit]
-Description=Epilove $1
+Description=Atomes $1
 After=network-online.target docker.service
 Wants=network-online.target
 
@@ -229,8 +229,8 @@ unit web apps/web "--hostname localhost"
 unit admin apps/admin "--hostname localhost"
 unit worker apps/worker ""
 systemctl daemon-reload
-systemctl enable epilove-web epilove-admin epilove-worker >/dev/null
-systemctl restart epilove-web epilove-admin epilove-worker
+systemctl enable atomes-web atomes-admin atomes-worker >/dev/null
+systemctl restart atomes-web atomes-admin atomes-worker
 
 # --- Caddy: HTTPS (Let's Encrypt) and the team password -------------------------
 log "Caddy"
@@ -298,6 +298,6 @@ cat <<EOF
   E-mails      https://mail.$DOMAIN       (sign-in codes land here)
   Members      https://app.$DOMAIN/dev    (pick a fictional member)
 
-  Logs: journalctl -fu epilove-web   (or epilove-admin, epilove-worker)
+  Logs: journalctl -fu atomes-web   (or atomes-admin, atomes-worker)
   Update: sudo bash infra/dev-host/update.sh
 EOF

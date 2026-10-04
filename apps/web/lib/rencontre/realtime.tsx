@@ -1,6 +1,6 @@
 "use client";
 
-import { type BroadcastChannel, parseRealtimeEvent, type RealtimeEvent } from "@epilove/realtime/events";
+import { type BroadcastChannel, parseRealtimeEvent, type RealtimeEvent } from "@atomes/realtime/events";
 import type { Centrifuge, Subscription } from "centrifuge";
 import { createContext, type ReactNode, use, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api-client";

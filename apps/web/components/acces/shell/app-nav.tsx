@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@epilove/ui";
+import { cn } from "@atomes/ui";
 import { Atom, CircleUser, Compass, Heart, LifeBuoy, MessageCircle, Settings } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -75,7 +75,7 @@ export function AppNav({ counts = {} }: { counts?: NavCounts }) {
         className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-paper/10 border-r bg-ink px-4 py-6 lg:flex"
       >
         <Link href="/" className="mb-10 px-3 font-display font-semibold text-2xl tracking-tight">
-          epilove<span className="text-plasma">.</span>
+          atomes<span className="text-plasma">.</span>
         </Link>
         <ul className="flex flex-col gap-1">
           {TABS.map(({ href, key, icon: Icon }) => {

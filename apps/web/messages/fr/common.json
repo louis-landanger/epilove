@@ -21,7 +21,7 @@
   "terminal": {
     "metaTitle": "Terminal",
     "label": "Commande",
-    "welcome": "epilove shell 0.1 — tape help pour la liste des commandes.",
+    "welcome": "atomes shell 0.1 — tape help pour la liste des commandes.",
     "help": "Commandes : help, whoami, ls, cat <fichier>, ./pacte.sh, date, echo <texte>, coffee, sudo <…>, clear, exit",
     "whoami": "une personne curieuse du campus IONIS de Lyon (et qui lit les terminaux cachés)",
     "ls": "charte.txt  ecoles/  pacte.sh  secret.txt",

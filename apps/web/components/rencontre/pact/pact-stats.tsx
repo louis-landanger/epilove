@@ -1,6 +1,6 @@
 "use client";
 
-import type { PactStatsView } from "@epilove/contracts";
+import type { PactStatsView } from "@atomes/contracts";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";

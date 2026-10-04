@@ -1,5 +1,5 @@
-import { canComputePact, canJoinPact, type Mode, type PactStatus } from "@epilove/core";
-import { PACT_CHANNEL } from "@epilove/realtime/events";
+import { canComputePact, canJoinPact, type Mode, type PactStatus } from "@atomes/core";
+import { PACT_CHANNEL } from "@atomes/realtime/events";
 import { and, asc, count, desc, eq, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { appUser, block, match, notification, pactParticipant, pactResult, pactSeason } from "../schema";

@@ -32,7 +32,7 @@ wheels = [
 ]
 
 [[package]]
-name = "epilove-pact-solver"
+name = "atomes-pact-solver"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [

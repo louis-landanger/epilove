@@ -1,6 +1,6 @@
 "use client";
 
-import type { Catalog, OwnPhoto, OwnProfile } from "@epilove/contracts";
+import type { Catalog, OwnPhoto, OwnProfile } from "@atomes/contracts";
 import {
   FIRST_NAME_MAX_LENGTH,
   GENDERS,
@@ -14,8 +14,8 @@ import {
   MIN_INTERESTS,
   PROGRAM_MAX_LENGTH,
   PRONOUNS_MAX_LENGTH,
-} from "@epilove/core";
-import { Button, ChoiceGroup, Tabs, TextField, useToast } from "@epilove/ui";
+} from "@atomes/core";
+import { Button, ChoiceGroup, Tabs, TextField, useToast } from "@atomes/ui";
 import { LifeBuoy, Lock, ScanFace, Settings } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";

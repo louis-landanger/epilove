@@ -71,7 +71,7 @@
   },
   "language": {
     "title": "Langue",
-    "hint": "L'interface et les emails d'Epilove. Ton choix suit ton compte sur tous tes appareils."
+    "hint": "L'interface et les emails d'Atomes. Ton choix suit ton compte sur tous tes appareils."
   },
   "lock": {
     "title": "Verrouillage",
@@ -84,7 +84,7 @@
         "help": "Avec une de tes passkeys."
       },
       "pin": {
-        "label": "Un code Epilove",
+        "label": "Un code Atomes",
         "help": "4 à 6 chiffres, différent de ton code de téléphone."
       }
     },
@@ -104,7 +104,7 @@
     "enabled": "Verrouillage activé sur cet appareil.",
     "disabled": "Verrouillage désactivé.",
     "screen": {
-      "title": "Epilove est verrouillée",
+      "title": "Atomes est verrouillé",
       "lead": "Déverrouille pour continuer.",
       "passkey": "Déverrouiller",
       "passkeyFailed": "La vérification n'a pas abouti. Réessaie.",

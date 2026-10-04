@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 test.describe("home", () => {
   test("presents the project, the eligible schools and the non-affiliation notice", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle("Epilove");
+    await expect(page).toHaveTitle("Atomes");
     await expect(page.locator("html")).toHaveAttribute("lang", "fr");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("atomes crochus");
     await expect(page.getByRole("list", { name: "Écoles concernées" }).getByRole("listitem")).toHaveText([

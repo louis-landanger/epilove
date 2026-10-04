@@ -6,7 +6,7 @@ export const DEFAULT_LOCALE: Locale = "fr";
 /** Explicit language choice (switcher, or the account's language at sign-in). */
 export const LOCALE_COOKIE = "NEXT_LOCALE";
 /** Request header carrying the resolved language: set by the web proxy and the auth client. */
-export const LOCALE_HEADER = "x-epilove-locale";
+export const LOCALE_HEADER = "x-atomes-locale";
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);

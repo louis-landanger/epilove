@@ -1,4 +1,4 @@
-import type { Catalog, OnboardingSaveInput, OnboardingState } from "@epilove/contracts";
+import type { Catalog, OnboardingSaveInput, OnboardingState } from "@atomes/contracts";
 
 export type SaveResult = { readonly ok: true } | { readonly ok: false; readonly field: string | null };
 

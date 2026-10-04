@@ -1,4 +1,4 @@
-import type { Locale } from "@epilove/core";
+import type { Locale } from "@atomes/core";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { publicHref } from "@/i18n/paths";
@@ -95,7 +95,7 @@ export async function SiteFooter({ onLanding = true }: { onLanding?: boolean }) 
       </div>
 
       <p aria-hidden="true" className="footer-giant select-none" data-footer-giant>
-        epilove
+        atomes
       </p>
     </footer>
   );

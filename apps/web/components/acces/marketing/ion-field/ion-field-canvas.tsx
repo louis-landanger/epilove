@@ -1,6 +1,6 @@
 "use client";
 
-import { canAffordLiveField, type DeviceProfile, isSoftwareRenderer, particleBudget } from "@epilove/three";
+import { canAffordLiveField, type DeviceProfile, isSoftwareRenderer, particleBudget } from "@atomes/three";
 import { useEffect, useRef, useState } from "react";
 
 function deviceProfile(): DeviceProfile {
@@ -100,7 +100,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         return;
       }
       try {
-        const { createIonField } = await import("@epilove/three/ion-field");
+        const { createIonField } = await import("@atomes/three/ion-field");
         if (disposed) {
           return;
         }

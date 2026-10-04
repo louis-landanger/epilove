@@ -1,5 +1,5 @@
-import { SCHOOLS, type SchoolSlug } from "@epilove/core";
-import { SchoolChip } from "@epilove/ui";
+import { SCHOOLS, type SchoolSlug } from "@atomes/core";
+import { SchoolChip } from "@atomes/ui";
 import { ExternalLink, Phone, Settings, Smartphone } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";

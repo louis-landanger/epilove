@@ -1,8 +1,8 @@
 "use client";
 
-import type { SchoolRaceStanding, WaitlistStats } from "@epilove/contracts";
-import { SCHOOLS, type SchoolSlug } from "@epilove/core";
-import { schoolColors } from "@epilove/tokens";
+import type { SchoolRaceStanding, WaitlistStats } from "@atomes/contracts";
+import { SCHOOLS, type SchoolSlug } from "@atomes/core";
+import { schoolColors } from "@atomes/tokens";
 import { useFormatter, useTranslations } from "next-intl";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { SchoolGlyph } from "../school-glyph";

@@ -1,7 +1,7 @@
 "use client";
 
-import { FIRST_NAME_MAX_LENGTH, normalizeFirstName } from "@epilove/core";
-import { Button, TextField } from "@epilove/ui";
+import { FIRST_NAME_MAX_LENGTH, normalizeFirstName } from "@atomes/core";
+import { Button, TextField } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { StepShell } from "../step-shell";

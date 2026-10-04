@@ -1,4 +1,4 @@
-import { listSpots } from "@epilove/db/repositories/campus-life";
+import { listSpots } from "@atomes/db/repositories/campus-life";
 import { os, requireViewer } from "../procedures";
 
 /** Campus life (IRL-02 Spots). */

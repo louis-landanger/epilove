@@ -1,7 +1,7 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { cn } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import { cn } from "@atomes/ui";
 import {
   BarChart3,
   BookOpen,
@@ -40,7 +40,7 @@ export function StaffNav({ role, pseudonym }: { role: "moderator" | "admin"; pse
     >
       <div className="flex flex-col">
         <span className="font-display font-semibold text-xl">
-          epilove<span className="text-plasma">.</span>
+          atomes<span className="text-plasma">.</span>
         </span>
         <span className="font-mono text-paper/50 text-xs">
           {role === "admin" ? "Admin" : "Modération"} · {pseudonym}

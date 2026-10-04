@@ -1,4 +1,4 @@
-import type { CompatibilityView } from "@epilove/contracts";
+import type { CompatibilityView } from "@atomes/contracts";
 import { getTranslations } from "next-intl/server";
 
 /** Compatibility explained (DEC-05): a gauge, two shared answers and one harmless disagreement. */

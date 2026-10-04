@@ -1,9 +1,9 @@
 import { parseArgs } from "node:util";
-import { calendarDateIn, LYON_CAMPUS, PACT_RULES } from "@epilove/core";
-import { createDatabase, databaseUrlFromEnv, schema } from "@epilove/db";
-import { loadMembers } from "@epilove/db/repositories/members";
-import { currentSeason, enrolMembers, seasonBySlug, upsertSeason } from "@epilove/db/repositories/pact";
-import { answerSheets } from "@epilove/db/repositories/questionnaire";
+import { calendarDateIn, LYON_CAMPUS, PACT_RULES } from "@atomes/core";
+import { createDatabase, databaseUrlFromEnv, schema } from "@atomes/db";
+import { loadMembers } from "@atomes/db/repositories/members";
+import { currentSeason, enrolMembers, seasonBySlug, upsertSeason } from "@atomes/db/repositories/pact";
+import { answerSheets } from "@atomes/db/repositories/questionnaire";
 import { and, eq, like, sql } from "drizzle-orm";
 import { quickAddJob } from "graphile-worker";
 import { computePact } from "./compute";

@@ -1,5 +1,5 @@
 {
-  "name": "@epilove/email",
+  "name": "@atomes/email",
   "version": "0.0.0",
   "private": true,
   "description": "Transactional emails: SMTP transport and templates (sign-in code, waiting list\u2026).",
@@ -15,7 +15,7 @@
     "nodemailer": "catalog:"
   },
   "devDependencies": {
-    "@epilove/config": "workspace:*",
+    "@atomes/config": "workspace:*",
     "@types/node": "catalog:",
     "@types/nodemailer": "catalog:",
     "typescript": "catalog:",

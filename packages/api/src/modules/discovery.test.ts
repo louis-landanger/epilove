@@ -1,11 +1,11 @@
-import { uuidv7, VERIFICATION_GESTURES } from "@epilove/core";
-import { createDatabase, schema } from "@epilove/db";
+import { uuidv7, VERIFICATION_GESTURES } from "@atomes/core";
+import { createDatabase, schema } from "@atomes/db";
 import {
   advanceVerification,
   decideVerification,
   insertVerification,
-} from "@epilove/db/repositories/profiles-verification";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+} from "@atomes/db/repositories/profiles-verification";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import { and, eq, or } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi } from "../rencontre/testing";

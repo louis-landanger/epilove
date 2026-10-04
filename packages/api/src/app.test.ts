@@ -1,5 +1,5 @@
-import { createApiClient } from "@epilove/contracts/client";
-import { createMemoryRateLimiter } from "@epilove/rate-limit";
+import { createApiClient } from "@atomes/contracts/client";
+import { createMemoryRateLimiter } from "@atomes/rate-limit";
 import { describe, expect, it, vi } from "vitest";
 import { createApp, createServerClient } from "./app";
 import { anonymous, devHeaderResolver } from "./context";
@@ -95,7 +95,7 @@ describe("viewer resolution", () => {
     ).resolves.toBeNull();
     await expect(resolve(new Request("http://x"))).resolves.toBeNull();
     await expect(
-      resolve(new Request("http://x", { headers: { cookie: `theme=dark; epilove_dev_user=${id}` } })),
+      resolve(new Request("http://x", { headers: { cookie: `theme=dark; atomes_dev_user=${id}` } })),
     ).resolves.toEqual({ userId: id, role: "user" });
   });
 

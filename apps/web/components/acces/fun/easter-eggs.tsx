@@ -1,6 +1,6 @@
 "use client";
 
-import { useToast } from "@epilove/ui/primitives/toast";
+import { useToast } from "@atomes/ui/primitives/toast";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
@@ -27,7 +27,7 @@ export function EasterEggs() {
     if (!greeted) {
       greeted = true;
       console.info(
-        "%cepilove%c.\n%c%s",
+        "%catomes%c.\n%c%s",
         "font: 700 32px system-ui; color: #f5f0e6",
         "font: 700 32px system-ui; color: #ff3fa4",
         "font: 14px ui-monospace, monospace; color: #c8f74a",

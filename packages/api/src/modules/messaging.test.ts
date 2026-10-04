@@ -1,9 +1,9 @@
-import type { MessageAttachment } from "@epilove/contracts";
-import { uuidv7 } from "@epilove/core";
-import { createDatabase, schema } from "@epilove/db";
-import { createMemoryObjectStore } from "@epilove/db/storage";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
-import { createMemoryPublisher } from "@epilove/realtime";
+import type { MessageAttachment } from "@atomes/contracts";
+import { uuidv7 } from "@atomes/core";
+import { createDatabase, schema } from "@atomes/db";
+import { createMemoryObjectStore } from "@atomes/db/storage";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
+import { createMemoryPublisher } from "@atomes/realtime";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { setGiphyFetch } from "../rencontre/giphy";

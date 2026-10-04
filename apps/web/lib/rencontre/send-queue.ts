@@ -14,7 +14,7 @@ export interface QueuedMessage {
   readonly createdAt: string;
 }
 
-const DB_NAME = "epilove-rencontre";
+const DB_NAME = "atomes-rencontre";
 const STORE = "outgoing-messages";
 
 function open(): Promise<IDBDatabase> {

@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, isLocale, LOCALE_HEADER } from "@epilove/core";
+import { DEFAULT_LOCALE, isLocale, LOCALE_HEADER } from "@atomes/core";
 import { headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
 import { messagesFor } from "./messages";

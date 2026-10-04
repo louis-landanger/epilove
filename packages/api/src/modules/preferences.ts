@@ -1,4 +1,4 @@
-import type { PrivacySettings } from "@epilove/contracts";
+import type { PrivacySettings } from "@atomes/contracts";
 import {
   effectiveModes,
   emailHint,
@@ -8,22 +8,22 @@ import {
   type Mode,
   parseSchoolEmail,
   SAFETY_QUOTAS,
-} from "@epilove/core";
-import { emailHmac } from "@epilove/crypto";
-import { type Database, schema } from "@epilove/db";
+} from "@atomes/core";
+import { emailHmac } from "@atomes/crypto";
+import { type Database, schema } from "@atomes/db";
 import {
   activeConsents,
   grantConsent,
   upsertPreferences,
   withdrawConsent,
-} from "@epilove/db/repositories/accounts";
-import { findOwnProfile } from "@epilove/db/repositories/profiles";
+} from "@atomes/db/repositories/accounts";
+import { findOwnProfile } from "@atomes/db/repositories/profiles";
 import {
   countHiddenContacts,
   deleteHiddenContact,
   insertHiddenContact,
   listHiddenContacts,
-} from "@epilove/db/repositories/safety";
+} from "@atomes/db/repositories/safety";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import { os, requireViewer } from "../procedures";

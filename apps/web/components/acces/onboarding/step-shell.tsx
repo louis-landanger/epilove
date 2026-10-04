@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@epilove/ui";
+import { cn } from "@atomes/ui";
 import { type FormEvent, type ReactNode, useEffect, useRef } from "react";
 
 export interface StepShellProps {

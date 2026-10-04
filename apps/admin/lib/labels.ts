@@ -1,4 +1,4 @@
-import type { CharterRule, ReportContext, ReportReason, Sanction } from "@epilove/core";
+import type { CharterRule, ReportContext, ReportReason, Sanction } from "@atomes/core";
 
 export const REASON: Record<ReportReason, string> = {
   harassment: "Harcèlement",
@@ -58,7 +58,7 @@ export const STATEMENT_TEMPLATES: Partial<Record<CharterRule, string>> = {
     "Des informations privées sur un autre membre ont été partagées en dehors de l'application. La charte interdit les captures partagées et l'outing.",
   commerce: "Le profil ou les messages font de la promotion ou du commerce, ce que la charte interdit.",
   eligibility:
-    "Les éléments examinés montrent que tu ne fais pas partie des étudiants du campus de Lyon, à qui Epilove est réservé.",
+    "Les éléments examinés montrent que tu ne fais pas partie des étudiants du campus de Lyon, à qui Atomes est réservé.",
   minimum_age:
-    "Les éléments examinés montrent que tu as moins de 18 ans. Epilove est réservé aux personnes majeures.",
+    "Les éléments examinés montrent que tu as moins de 18 ans. Atomes est réservé aux personnes majeures.",
 };

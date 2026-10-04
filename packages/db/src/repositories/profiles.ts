@@ -1,4 +1,4 @@
-import type { VoiceContentType } from "@epilove/core";
+import type { VoiceContentType } from "@atomes/core";
 import { and, asc, count, eq, inArray, isNotNull, lt, ne, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { appUser, interest, photo, profile, profileInterest, prompt, promptAnswer, school } from "../schema";

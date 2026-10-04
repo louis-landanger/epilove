@@ -1,4 +1,3 @@
-import { passkey } from "@better-auth/passkey";
 import {
   calendarDateIn,
   DEFAULT_LOCALE,
@@ -9,13 +8,14 @@ import {
   parseSchoolEmail,
   requestLocale,
   uuidv7,
-} from "@epilove/core";
-import { emailHmac } from "@epilove/crypto";
-import type { Database } from "@epilove/db";
-import { schema } from "@epilove/db";
-import { isSignupBlocked, markCampusVerified, recordEmailProof } from "@epilove/db/repositories/accounts";
-import { type Mailer, signInCodeEmail } from "@epilove/email";
-import type { RateLimiter } from "@epilove/rate-limit";
+} from "@atomes/core";
+import { emailHmac } from "@atomes/crypto";
+import type { Database } from "@atomes/db";
+import { schema } from "@atomes/db";
+import { isSignupBlocked, markCampusVerified, recordEmailProof } from "@atomes/db/repositories/accounts";
+import { type Mailer, signInCodeEmail } from "@atomes/email";
+import type { RateLimiter } from "@atomes/rate-limit";
+import { passkey } from "@better-auth/passkey";
 import { betterAuth, type SecondaryStorage } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
@@ -81,7 +81,7 @@ export function createAuth({
   ].filter(Boolean);
 
   return betterAuth({
-    appName: "Epilove",
+    appName: "Atomes",
     baseURL: env.APP_URL,
     basePath: "/api/auth",
     secret: env.BETTER_AUTH_SECRET,
@@ -138,7 +138,7 @@ export function createAuth({
       updateAge: Math.min(SESSION_POLICY.updateAgeSeconds, Math.floor(sessionExpiresIn / 2)),
     },
     advanced: {
-      cookiePrefix: options.cookiePrefix ?? "epilove",
+      cookiePrefix: options.cookiePrefix ?? "atomes",
       useSecureCookies: env.APP_ENV === "production" || env.APP_ENV === "staging",
       database: { generateId: () => uuidv7() },
       ipAddress: {
@@ -283,7 +283,7 @@ export function createAuth({
       }),
       passkey({
         rpID: env.PASSKEY_RP_ID,
-        rpName: "Epilove",
+        rpName: "Atomes",
         origin: env.APP_URL,
       }),
       admin({

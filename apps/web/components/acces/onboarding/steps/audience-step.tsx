@@ -1,7 +1,7 @@
 "use client";
 
-import { ageOn, defaultAgeRange, GENDERS, type Gender, MAX_AGE_PREFERENCE, MINIMUM_AGE } from "@epilove/core";
-import { Button, CheckboxField, ChoiceGroup, RangeField } from "@epilove/ui";
+import { ageOn, defaultAgeRange, GENDERS, type Gender, MAX_AGE_PREFERENCE, MINIMUM_AGE } from "@atomes/core";
+import { Button, CheckboxField, ChoiceGroup, RangeField } from "@atomes/ui";
 import { ShieldAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

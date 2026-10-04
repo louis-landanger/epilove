@@ -1,5 +1,5 @@
 {
-  "name": "@epilove/worker",
+  "name": "@atomes/worker",
   "version": "0.0.0",
   "private": true,
   "description": "Background jobs and scheduled tasks (Graphile Worker on PostgreSQL).",
@@ -15,12 +15,12 @@
     "pact:load": "tsx --env-file-if-exists=../../.env src/tasks/pact/cli.ts load"
   },
   "dependencies": {
-    "@epilove/core": "workspace:*",
-    "@epilove/db": "workspace:*",
-    "@epilove/email": "workspace:*",
-    "@epilove/media": "workspace:*",
-    "@epilove/notifications": "workspace:*",
-    "@epilove/realtime": "workspace:*",
+    "@atomes/core": "workspace:*",
+    "@atomes/db": "workspace:*",
+    "@atomes/email": "workspace:*",
+    "@atomes/media": "workspace:*",
+    "@atomes/notifications": "workspace:*",
+    "@atomes/realtime": "workspace:*",
     "drizzle-orm": "catalog:",
     "fflate": "catalog:",
     "graphile-worker": "catalog:",
@@ -28,7 +28,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@epilove/config": "workspace:*",
+    "@atomes/config": "workspace:*",
     "@types/node": "catalog:",
     "sharp": "catalog:",
     "typescript": "catalog:",

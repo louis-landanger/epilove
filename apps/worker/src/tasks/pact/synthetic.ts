@@ -1,6 +1,6 @@
-import { calendarDateIn, LYON_CAMPUS, PACT_RULES, type PactParticipant } from "@epilove/core";
-import { QUESTIONS } from "@epilove/db";
-import { generateMembers, Random } from "@epilove/db/dev-seed";
+import { calendarDateIn, LYON_CAMPUS, PACT_RULES, type PactParticipant } from "@atomes/core";
+import { QUESTIONS } from "@atomes/db";
+import { generateMembers, Random } from "@atomes/db/dev-seed";
 
 /**
  * Synthetic campus for dry runs of the Pact (docs/06-matching.md, section 9:

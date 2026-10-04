@@ -1,4 +1,4 @@
-import { schema } from "@epilove/db";
+import { schema } from "@atomes/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi, insertActiveMember, insertMember } from "../test-support";

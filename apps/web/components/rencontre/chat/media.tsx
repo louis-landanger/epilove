@@ -1,7 +1,7 @@
 "use client";
 
-import type { MessageAttachment } from "@epilove/contracts";
-import { Sheet, ViewerWatermark } from "@epilove/ui";
+import type { MessageAttachment } from "@atomes/contracts";
+import { Sheet, ViewerWatermark } from "@atomes/ui";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 

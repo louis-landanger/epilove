@@ -1,4 +1,4 @@
-import { resumeScheduledPauses } from "@epilove/db/repositories/accounts";
+import { resumeScheduledPauses } from "@atomes/db/repositories/accounts";
 import type { Task } from "graphile-worker";
 import type { AccountsDependencies } from "./purge";
 

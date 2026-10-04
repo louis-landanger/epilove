@@ -1,8 +1,8 @@
 "use client";
 
-import type { PactCurrent, PactMatchView } from "@epilove/contracts";
-import { clockOffsetMs, type Mode, revealDelayMs } from "@epilove/core";
-import { PACT_CHANNEL } from "@epilove/realtime/events";
+import type { PactCurrent, PactMatchView } from "@atomes/contracts";
+import { clockOffsetMs, type Mode, revealDelayMs } from "@atomes/core";
+import { PACT_CHANNEL } from "@atomes/realtime/events";
 import { ORPCError } from "@orpc/client";
 import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";

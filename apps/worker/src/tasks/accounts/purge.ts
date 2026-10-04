@@ -1,15 +1,15 @@
-import { ACCOUNT_PURGE_DELAY_DAYS, calendarDateIn, LYON_CAMPUS, plusDays } from "@epilove/core";
-import type { Database } from "@epilove/db";
+import { ACCOUNT_PURGE_DELAY_DAYS, calendarDateIn, LYON_CAMPUS, plusDays } from "@atomes/core";
+import type { Database } from "@atomes/db";
 import {
   deleteAccountRow,
   listAccountsToPurge,
   listStorageKeys,
   purgeExpiredIdentities,
   purgeExpiredSignupBlocks,
-} from "@epilove/db/repositories/accounts";
-import { deleteExport, listExpiredExports } from "@epilove/db/repositories/exports";
-import { writeAudit } from "@epilove/db/repositories/safety";
-import type { Storage } from "@epilove/media/storage";
+} from "@atomes/db/repositories/accounts";
+import { deleteExport, listExpiredExports } from "@atomes/db/repositories/exports";
+import { writeAudit } from "@atomes/db/repositories/safety";
+import type { Storage } from "@atomes/media/storage";
 import type { Task } from "graphile-worker";
 
 export interface AccountsDependencies {

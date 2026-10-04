@@ -1,6 +1,6 @@
 "use client";
 
-import { durations } from "@epilove/tokens";
+import { durations } from "@atomes/tokens";
 import { motion, useReducedMotion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useId } from "react";

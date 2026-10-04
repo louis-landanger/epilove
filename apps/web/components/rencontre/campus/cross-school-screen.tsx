@@ -1,5 +1,5 @@
-import type { CrossSchoolView } from "@epilove/contracts";
-import { SCHOOLS } from "@epilove/core";
+import type { CrossSchoolView } from "@atomes/contracts";
+import { SCHOOLS } from "@atomes/core";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { schoolColor } from "../discovery/school";

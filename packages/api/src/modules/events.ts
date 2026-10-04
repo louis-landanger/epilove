@@ -11,8 +11,8 @@ import {
   flashOpen,
   flashWindow,
   normalizeFlashCode,
-} from "@epilove/core";
-import type { Database } from "@epilove/db";
+} from "@atomes/core";
+import type { Database } from "@atomes/db";
 import {
   answeredBy,
   cancelEvent,
@@ -29,17 +29,17 @@ import {
   sharingAttendees,
   upcomingEvents,
   updateEvent,
-} from "@epilove/db/repositories/campus-events";
-import { spotById } from "@epilove/db/repositories/campus-life";
-import { loadProfileContent } from "@epilove/db/repositories/discovery";
-import { activeMatchesOf } from "@epilove/db/repositories/matches";
+} from "@atomes/db/repositories/campus-events";
+import { spotById } from "@atomes/db/repositories/campus-life";
+import { loadProfileContent } from "@atomes/db/repositories/discovery";
+import { activeMatchesOf } from "@atomes/db/repositories/matches";
 import {
   campusDate,
   loadMembers,
   loadRelations,
   type MemberRow,
   roleOf,
-} from "@epilove/db/repositories/members";
+} from "@atomes/db/repositories/members";
 import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
 import { loadPairAccess, requireMemberRow } from "../rencontre/access";

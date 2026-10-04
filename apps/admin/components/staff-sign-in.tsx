@@ -1,8 +1,8 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { parseSchoolEmail } from "@epilove/core";
-import { Button, OtpInput, TextField } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import { parseSchoolEmail } from "@atomes/core";
+import { Button, OtpInput, TextField } from "@atomes/ui";
 import { Fingerprint } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";

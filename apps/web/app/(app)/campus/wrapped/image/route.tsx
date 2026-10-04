@@ -1,4 +1,4 @@
-import { REACTION_WORDS } from "@epilove/core";
+import { REACTION_WORDS } from "@atomes/core";
 import { ImageResponse } from "next/og";
 import { getTranslations } from "next-intl/server";
 import { serverApi } from "@/lib/rencontre/api.server";
@@ -44,7 +44,7 @@ export async function GET() {
       }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div style={{ fontSize: 34, letterSpacing: 8, opacity: 0.7 }}>{`EPILOVE · WRAPPED ${w.label}`}</div>
+        <div style={{ fontSize: 34, letterSpacing: 8, opacity: 0.7 }}>{`ATOMES · WRAPPED ${w.label}`}</div>
         <div style={{ fontSize: 84, fontWeight: 700, lineHeight: 1.05 }}>{t("imageTitle")}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 56 }}>

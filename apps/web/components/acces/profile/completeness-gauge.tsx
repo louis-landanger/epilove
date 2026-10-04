@@ -1,6 +1,6 @@
 "use client";
 
-import type { OwnProfile } from "@epilove/contracts";
+import type { OwnProfile } from "@atomes/contracts";
 import { CircleCheck, Sparkle } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";

@@ -1,5 +1,5 @@
-import { SCHOOLS, type SchoolSlug } from "@epilove/core";
-import { colors, schoolColors } from "@epilove/tokens";
+import { SCHOOLS, type SchoolSlug } from "@atomes/core";
+import { colors, schoolColors } from "@atomes/tokens";
 import { ImageResponse } from "next/og";
 import { oklchToHex } from "@/lib/oklch";
 import { serverApi } from "@/lib/server/api-app";
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 44, fontWeight: 700, letterSpacing: -1 }}>
-            epilove<span style={{ color: plasma }}>.</span>
+            atomes<span style={{ color: plasma }}>.</span>
           </span>
           {showSchool && school ? (
             <span
@@ -128,6 +128,6 @@ export async function GET(request: Request) {
   );
   const headers = new Headers(image.headers);
   headers.set("Cache-Control", "private, no-store");
-  headers.set("Content-Disposition", 'inline; filename="ma-carte-epilove.png"');
+  headers.set("Content-Disposition", 'inline; filename="ma-carte-atomes.png"');
   return new Response(image.body, { status: 200, headers });
 }

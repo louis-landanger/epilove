@@ -1,8 +1,8 @@
 import "server-only";
-import { DEV_USER_COOKIE } from "@epilove/api";
-import type { AccountStatus } from "@epilove/core";
-import { UUID_PATTERN } from "@epilove/core";
-import { type Role, schema } from "@epilove/db";
+import { DEV_USER_COOKIE } from "@atomes/api";
+import type { AccountStatus } from "@atomes/core";
+import { UUID_PATTERN } from "@atomes/core";
+import { type Role, schema } from "@atomes/db";
 import { eq } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";

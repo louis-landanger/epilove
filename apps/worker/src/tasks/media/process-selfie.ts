@@ -1,6 +1,6 @@
-import { advanceVerification, findVerification } from "@epilove/db/repositories/profiles-verification";
-import { quarantineKey, selfieKey } from "@epilove/media";
-import { processPhoto } from "@epilove/media/processing";
+import { advanceVerification, findVerification } from "@atomes/db/repositories/profiles-verification";
+import { quarantineKey, selfieKey } from "@atomes/media";
+import { processPhoto } from "@atomes/media/processing";
 import type { Task } from "graphile-worker";
 import { z } from "zod";
 import type { MediaDependencies } from "./process-photo";

@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import type { VerificationState } from "@epilove/contracts";
+import type { VerificationState } from "@atomes/contracts";
 import {
   isAttemptFresh,
   pickGesture,
@@ -7,8 +7,8 @@ import {
   VERIFICATION_ATTEMPT_TTL_MINUTES,
   VERIFICATION_ATTEMPTS_PER_DAY,
   verificationBlocker,
-} from "@epilove/core";
-import { type Database, enqueueJob } from "@epilove/db";
+} from "@atomes/core";
+import { type Database, enqueueJob } from "@atomes/db";
 import {
   advanceVerification,
   countAttemptsSince,
@@ -18,8 +18,8 @@ import {
   latestVerification,
   photoVerifiedAt,
   type VerificationRow,
-} from "@epilove/db/repositories/profiles-verification";
-import { quarantineKey } from "@epilove/media";
+} from "@atomes/db/repositories/profiles-verification";
+import { quarantineKey } from "@atomes/media";
 import { os, requireViewer } from "../procedures";
 
 export const PROCESS_SELFIE_TASK = "media/process-selfie";

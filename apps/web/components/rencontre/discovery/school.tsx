@@ -1,4 +1,4 @@
-import { schoolColors, schoolFoils } from "@epilove/tokens";
+import { schoolColors, schoolFoils } from "@atomes/tokens";
 import type { ReactNode } from "react";
 
 type SchoolSlug = keyof typeof schoolColors;

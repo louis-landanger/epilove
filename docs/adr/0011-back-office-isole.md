@@ -16,7 +16,7 @@ docs/04 prévoit un back-office « application séparée, sous-domaine séparé,
 
 ## Décision
 
-Option 3 : `apps/admin` (Next.js, port 3001) monte sa propre instance Better Auth (`createAuth` avec `allowSignUp: false`, sessions de 8 heures, cookie `epilove-staff`). Seuls les comptes existants peuvent se connecter ; la mise en page refuse tout rôle autre que `moderator` ou `admin`, et chaque procédure `admin.*` vérifie le rôle (`requireRole`). L'édition des catalogues est réservée aux `admin`.
+Option 3 : `apps/admin` (Next.js, port 3001) monte sa propre instance Better Auth (`createAuth` avec `allowSignUp: false`, sessions de 8 heures, cookie `atomes-staff`). Seuls les comptes existants peuvent se connecter ; la mise en page refuse tout rôle autre que `moderator` ou `admin`, et chaque procédure `admin.*` vérifie le rôle (`requireRole`). L'édition des catalogues est réservée aux `admin`.
 
 Les membres apparaissent sous un pseudonyme stable (`M-7KQ2XA`, HMAC de l'identifiant) ; le prénom et l'adresse ne sont révélés que sur justification écrite, inscrite au journal d'audit. L'ouverture d'un signalement (déchiffrement des détails) est aussi journalisée. Les décisions exigent une règle de la charte et une motivation d'au moins 40 caractères, envoyée par email à la personne (DSA, art. 17) ; la personne qui a signalé est informée sans détail.
 

@@ -1,5 +1,5 @@
 {
-  "name": "@epilove/db",
+  "name": "@atomes/db",
   "version": "0.0.0",
   "private": true,
   "description": "PostgreSQL schema, migrations and seeds (Drizzle ORM).",
@@ -22,16 +22,16 @@
     "db:seed:dev": "tsx --env-file-if-exists=../../.env src/dev-seed/index.ts"
   },
   "dependencies": {
-    "@epilove/core": "workspace:*",
-    "@epilove/crypto": "workspace:*",
-    "@epilove/realtime": "workspace:*",
+    "@atomes/core": "workspace:*",
+    "@atomes/crypto": "workspace:*",
+    "@atomes/realtime": "workspace:*",
     "aws4fetch": "catalog:",
     "drizzle-orm": "catalog:",
     "graphile-worker": "catalog:",
     "postgres": "catalog:"
   },
   "devDependencies": {
-    "@epilove/config": "workspace:*",
+    "@atomes/config": "workspace:*",
     "@types/node": "catalog:",
     "drizzle-kit": "catalog:",
     "tsx": "catalog:",

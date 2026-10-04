@@ -1,5 +1,5 @@
-import type { StickerId } from "@epilove/core";
-import { colors, schoolColors } from "@epilove/tokens";
+import type { StickerId } from "@atomes/core";
+import { colors, schoolColors } from "@atomes/tokens";
 import type { ReactNode } from "react";
 import { SchoolGlyph } from "../discovery/school";
 

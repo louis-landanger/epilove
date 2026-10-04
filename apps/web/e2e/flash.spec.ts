@@ -1,7 +1,7 @@
+import { createDatabase, schema } from "@atomes/db";
+import { createEvent } from "@atomes/db/repositories/campus-events";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import AxeBuilder from "@axe-core/playwright";
-import { createDatabase, schema } from "@epilove/db";
-import { createEvent } from "@epilove/db/repositories/campus-events";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { type Browser, expect, type Page, test } from "@playwright/test";
 
 /**
@@ -25,7 +25,7 @@ test.afterAll(async () => {
 async function signIn(browser: Browser, memberId: string, baseURL: string | undefined): Promise<Page> {
   const context = await browser.newContext();
   await context.addCookies([
-    { name: "epilove_dev_user", value: memberId, url: baseURL ?? "http://127.0.0.1:3100" },
+    { name: "atomes_dev_user", value: memberId, url: baseURL ?? "http://127.0.0.1:3100" },
   ]);
   return context.newPage();
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { REFERRAL_CODE_PATTERN } from "@epilove/contracts";
+import { REFERRAL_CODE_PATTERN } from "@atomes/contracts";
 import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { serverApi } from "../server/api";

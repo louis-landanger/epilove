@@ -1,5 +1,5 @@
-import { reportPriority, SAFETY_QUOTAS, shouldHoldProfile } from "@epilove/core";
-import { encryptText } from "@epilove/crypto";
+import { reportPriority, SAFETY_QUOTAS, shouldHoldProfile } from "@atomes/core";
+import { encryptText } from "@atomes/crypto";
 import {
   accountExists,
   countIndependentReporters,
@@ -10,7 +10,7 @@ import {
   insertReport,
   listBlocked,
   writeAudit,
-} from "@epilove/db/repositories/safety";
+} from "@atomes/db/repositories/safety";
 import { withinQuota } from "../lib/quota";
 import { os, requireViewer } from "../procedures";
 

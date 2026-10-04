@@ -1,4 +1,4 @@
-import type { Mode } from "@epilove/core";
+import type { Mode } from "@atomes/core";
 import { CLOSERS, EXCHANGES, LIKE_COMMENTS, OPENERS } from "./content";
 import type { DevMember } from "./members";
 import type { Random } from "./random";

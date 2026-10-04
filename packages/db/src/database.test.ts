@@ -1,4 +1,4 @@
-import { SCHOOLS } from "@epilove/core";
+import { SCHOOLS } from "@atomes/core";
 import { asc, eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { createDatabase } from "./client";

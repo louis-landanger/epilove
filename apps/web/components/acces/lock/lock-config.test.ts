@@ -33,7 +33,7 @@ describe("app lock (SAF-13)", () => {
 
   it("builds an early script that only reads this member's keys", () => {
     const script = earlyLockScript("0199a000-0000-7000-8000-000000000000");
-    expect(script).toContain("epilove:lock:0199a000-0000-7000-8000-000000000000");
+    expect(script).toContain("atomes:lock:0199a000-0000-7000-8000-000000000000");
     expect(script).not.toContain("</script");
   });
 });

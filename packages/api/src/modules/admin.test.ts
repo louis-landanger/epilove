@@ -1,5 +1,5 @@
-import { uuidv7 } from "@epilove/core";
-import { schema } from "@epilove/db";
+import { uuidv7 } from "@atomes/core";
+import { schema } from "@atomes/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi, insertActiveMember } from "../test-support";

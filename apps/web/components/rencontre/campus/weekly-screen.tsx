@@ -1,7 +1,7 @@
 "use client";
 
-import type { DistributionView, WeeklyView } from "@epilove/contracts";
-import { SCHOOLS } from "@epilove/core";
+import type { DistributionView, WeeklyView } from "@atomes/contracts";
+import { SCHOOLS } from "@atomes/core";
 import { ORPCError } from "@orpc/client";
 import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";

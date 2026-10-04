@@ -1,6 +1,6 @@
 "use client";
 
-import type { WaitlistStats } from "@epilove/contracts";
+import type { WaitlistStats } from "@atomes/contracts";
 import { useTranslations } from "next-intl";
 import { useWaitlistStats } from "./stats-store";
 

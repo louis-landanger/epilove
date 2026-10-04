@@ -1,7 +1,7 @@
 "use client";
 
-import { PHOTO_REJECTION_REASONS } from "@epilove/contracts";
-import { Button, cn, EmptyState, useToast, ViewerWatermark } from "@epilove/ui";
+import { PHOTO_REJECTION_REASONS } from "@atomes/contracts";
+import { Button, cn, EmptyState, useToast, ViewerWatermark } from "@atomes/ui";
 import { Check, ImageOff, X } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";

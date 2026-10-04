@@ -19,7 +19,7 @@ export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => ENTITIES[character] ?? character);
 }
 
-/** Same codes as `LOCALES` in `@epilove/core` (PLT-04). */
+/** Same codes as `LOCALES` in `@atomes/core` (PLT-04). */
 export type EmailLocale = "fr" | "en";
 
 export function layout(options: {
@@ -34,14 +34,14 @@ export function layout(options: {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Epilove</title>
+<title>Atomes</title>
 </head>
 <body style="margin:0;padding:0;background:#f6f2ea;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#100e18;">
 <span style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(options.preheader)}</span>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f2ea;">
 <tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:20px;">
-<tr><td style="padding:32px 32px 8px 32px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#6b6578;">Epilove</td></tr>
+<tr><td style="padding:32px 32px 8px 32px;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#6b6578;">Atomes</td></tr>
 <tr><td style="padding:8px 32px 32px 32px;font-size:16px;line-height:1.55;">${options.body}</td></tr>
 </table>
 <p style="max-width:480px;margin:16px auto 0;font-size:12px;line-height:1.5;color:#6b6578;">${escapeHtml(options.footer)}</p>
@@ -52,8 +52,8 @@ export function layout(options: {
 }
 
 const FOOTERS: Record<EmailLocale, string> = {
-  fr: "Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées. Tu reçois cet email parce que ton adresse d'école a été saisie sur Epilove.",
-  en: "An independent student project, not affiliated with IONIS Education Group or the schools mentioned. You are receiving this email because your school address was entered on Epilove.",
+  fr: "Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées. Tu reçois cet email parce que ton adresse d'école a été saisie sur Atomes.",
+  en: "An independent student project, not affiliated with IONIS Education Group or the schools mentioned. You are receiving this email because your school address was entered on Atomes.",
 };
 
 export const FOOTER = FOOTERS.fr;

@@ -29,7 +29,7 @@ const ACTION_LABELS = {
 
 export type NotifiedSanction = keyof (typeof ACTION_LABELS)["fr"];
 
-/** Charter rules (`CHARTER_RULES` in `@epilove/core`), as quoted in statements of reasons. */
+/** Charter rules (`CHARTER_RULES` in `@atomes/core`), as quoted in statements of reasons. */
 const RULE_LABELS: Record<EmailLocale, Record<string, string>> = {
   fr: {
     respect: "Respect des autres (charte, règle 1)",
@@ -55,7 +55,7 @@ export function ruleLabel(rule: string, locale: EmailLocale = "fr"): string {
   return RULE_LABELS[locale][rule] ?? rule;
 }
 
-/** Photo rejection reasons (`PHOTO_REJECTION_REASONS` in `@epilove/contracts`). */
+/** Photo rejection reasons (`PHOTO_REJECTION_REASONS` in `@atomes/contracts`). */
 const PHOTO_REJECTION_TEXT: Record<EmailLocale, Record<string, string>> = {
   fr: {
     no_face: "on ne voit pas ton visage sur la photo principale",
@@ -82,7 +82,7 @@ const PHOTO_REJECTION_TEXT: Record<EmailLocale, Record<string, string>> = {
 const COPY = {
   fr: {
     decision: {
-      subject: "Décision de modération sur ton compte Epilove",
+      subject: "Décision de modération sur ton compte Atomes",
       preheader: "Une décision de modération concerne ton compte.",
       title: "Décision de modération",
       decided: (action: string) => `L'équipe de modération a décidé ${action}.`,
@@ -101,7 +101,7 @@ const COPY = {
       lines: [
         "Ton signalement a été examiné par l'équipe de modération et une décision a été prise.",
         "Pour protéger la vie privée de chacun, on ne peut pas te donner plus de détails.",
-        "Merci d'aider à garder Epilove sûr. Si tu te sens en danger, la page d'aide de l'application liste les numéros utiles.",
+        "Merci d'aider à garder Atomes sûr. Si tu te sens en danger, la page d'aide de l'application liste les numéros utiles.",
       ],
     },
     photoRejected: {
@@ -131,7 +131,7 @@ const COPY = {
       preheader: "Ton fichier est prêt.",
       title: "Ton export est prêt",
       lines: (days: number) => [
-        "L'export de tes données Epilove est prêt : un fichier zip avec tes informations et tes photos.",
+        "L'export de tes données Atomes est prêt : un fichier zip avec tes informations et tes photos.",
         `Le lien reste valable ${days} jours et ne fonctionne que si tu es connecté·e à ton compte.`,
       ],
       link: "Télécharger",
@@ -152,7 +152,7 @@ const COPY = {
   },
   en: {
     decision: {
-      subject: "Moderation decision on your Epilove account",
+      subject: "Moderation decision on your Atomes account",
       preheader: "A moderation decision concerns your account.",
       title: "Moderation decision",
       decided: (action: string) => `The moderation team decided on ${action}.`,
@@ -170,7 +170,7 @@ const COPY = {
       lines: [
         "The moderation team reviewed your report and made a decision.",
         "To protect everyone's privacy, we cannot share more details.",
-        "Thank you for helping keep Epilove safe. If you feel in danger, the help page of the app lists useful numbers.",
+        "Thank you for helping keep Atomes safe. If you feel in danger, the help page of the app lists useful numbers.",
       ],
     },
     photoRejected: {
@@ -200,7 +200,7 @@ const COPY = {
       preheader: "Your file is ready.",
       title: "Your export is ready",
       lines: (days: number) => [
-        "Your Epilove data export is ready: a zip file with your information and your photos.",
+        "Your Atomes data export is ready: a zip file with your information and your photos.",
         `The link stays valid for ${days} days and only works when you are signed in to your account.`,
       ],
       link: "Download",

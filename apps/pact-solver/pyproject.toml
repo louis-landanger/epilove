@@ -1,5 +1,5 @@
 [project]
-name = "epilove-pact-solver"
+name = "atomes-pact-solver"
 version = "0.0.0"
 description = "Global matching of the Pact (PAC-02): maximum weight matching on a general graph."
 requires-python = ">=3.11"

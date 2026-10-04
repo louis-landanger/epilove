@@ -20,11 +20,11 @@ Contraintes : la vitrine et les pages légales doivent avoir une URL par langue 
 
 Option 3.
 
-- `proxy.ts` résout la langue de chaque page : préfixe d'URL (`/en/…`, réécrit vers la page sans préfixe), puis cookie `NEXT_LOCALE` (choix explicite), puis `Accept-Language`, puis le français. Il la transmet dans l'en-tête de requête `x-epilove-locale`, lu par `i18n/request.ts`.
+- `proxy.ts` résout la langue de chaque page : préfixe d'URL (`/en/…`, réécrit vers la page sans préfixe), puis cookie `NEXT_LOCALE` (choix explicite), puis `Accept-Language`, puis le français. Il la transmet dans l'en-tête de requête `x-atomes-locale`, lu par `i18n/request.ts`.
 - Les pages publiques traduites (`/`, `/legal/*`) ont une URL par langue : français sans préfixe, anglais sous `/en`. Une personne dont la langue préférée est l'anglais est redirigée (307, `Vary: Cookie, Accept-Language`) ; `/fr/…` redirige vers l'URL sans préfixe. Ces pages déclarent leurs alternatives `hreflang`.
 - Les pages de l'application n'ont pas de préfixe : leur langue vient du cookie ou du navigateur.
 - Le sélecteur FR / EN est un formulaire avec une Server Action : il pose le cookie (un an, `HttpOnly`, choix explicite donc nécessaire au service), enregistre `app_user.locale` pour un membre connecté, puis recharge la page dans la nouvelle langue. Il fonctionne sans JavaScript.
-- Le client Better Auth envoie la langue de la page (`x-epilove-locale`) : le code de connexion part dans cette langue, et un nouveau compte la reçoit. À chaque connexion, le cookie reprend la langue du compte.
+- Le client Better Auth envoie la langue de la page (`x-atomes-locale`) : le code de connexion part dans cette langue, et un nouveau compte la reçoit. À chaque connexion, le cookie reprend la langue du compte.
 - Les emails (code, liste d'attente, modération, export, re-vérification) sont rédigés dans les deux langues et envoyés dans la langue du compte.
 
 ## Conséquences

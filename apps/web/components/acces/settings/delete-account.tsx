@@ -1,7 +1,7 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { Button, Dialog, TextField, useToast } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import { Button, Dialog, TextField, useToast } from "@atomes/ui";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";

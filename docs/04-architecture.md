@@ -69,7 +69,7 @@ Principes :
 ## 2. Organisation du monorepo
 
 ```
-epilove/
+atomes/
 ├── apps/
 │   ├── web/          Next.js : site vitrine + application + API montée sous /api
 │   ├── admin/        Next.js : modération, contenus, Pacte, tableaux de bord

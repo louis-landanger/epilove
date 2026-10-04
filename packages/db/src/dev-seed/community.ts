@@ -1,4 +1,4 @@
-import { LYON_CAMPUS, questionForWeek, recentWeeks } from "@epilove/core";
+import { LYON_CAMPUS, questionForWeek, recentWeeks } from "@atomes/core";
 import { inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import { activeWeeklyBank } from "../repositories/campus-community";

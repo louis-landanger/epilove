@@ -1,12 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { AiIcebreakerProfile } from "@epilove/core";
+import type { AiIcebreakerProfile } from "@atomes/core";
 import { z } from "zod";
 
 /**
  * AI conversation starters (CHAT-04) through the Claude API, behind a flag:
  * active only with AI_ICEBREAKERS_ENABLED=1 and ANTHROPIC_API_KEY set, and
  * then only for members who consented. What is sent is already minimised
- * and pseudonymised by `@epilove/core` (`minimizeProfile`): no first name,
+ * and pseudonymised by `@atomes/core` (`minimizeProfile`): no first name,
  * no photo, no age, no school, no gender, no orientation.
  */
 export const AI_ICEBREAKER_MODEL = "claude-opus-5-5";

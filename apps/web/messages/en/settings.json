@@ -71,7 +71,7 @@
   },
   "language": {
     "title": "Language",
-    "hint": "The Epilove interface and emails. Your choice follows your account on all your devices."
+    "hint": "The Atomes interface and emails. Your choice follows your account on all your devices."
   },
   "lock": {
     "title": "App lock",
@@ -84,7 +84,7 @@
         "help": "With one of your passkeys."
       },
       "pin": {
-        "label": "An Epilove code",
+        "label": "An Atomes code",
         "help": "4 to 6 digits, different from your phone code."
       }
     },
@@ -104,7 +104,7 @@
     "enabled": "App lock is on for this device.",
     "disabled": "App lock is off.",
     "screen": {
-      "title": "Epilove is locked",
+      "title": "Atomes is locked",
       "lead": "Unlock to continue.",
       "passkey": "Unlock",
       "passkeyFailed": "The check did not go through. Try again.",

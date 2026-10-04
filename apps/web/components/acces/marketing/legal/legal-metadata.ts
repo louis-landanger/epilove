@@ -1,4 +1,4 @@
-import type { Locale } from "@epilove/core";
+import type { Locale } from "@atomes/core";
 import type { Metadata } from "next";
 import { getLocale, getMessages } from "next-intl/server";
 import { publicAlternates } from "@/i18n/paths";

@@ -51,7 +51,7 @@ export const pushSubscription = pgTable("push_subscription", {
 
 /**
  * Notification preferences per group and channel (NOT-03). No row means the
- * defaults of @epilove/notifications (push on, email off).
+ * defaults of @atomes/notifications (push on, email off).
  */
 export const notificationPreference = pgTable(
   "notification_preference",

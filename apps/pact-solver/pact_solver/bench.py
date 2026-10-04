@@ -1,5 +1,5 @@
 """
-Benchmark on synthetic members: ``pnpm --filter @epilove/pact-solver bench [-- --members 3000]``.
+Benchmark on synthetic members: ``pnpm --filter @atomes/pact-solver bench [-- --members 3000]``.
 
 Each synthetic member has a hidden taste vector; the compatibility of a pair is a noisy function of
 the similarity of their vectors, spread like real questionnaire scores (most pairs between 0.3 and

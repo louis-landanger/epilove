@@ -1,7 +1,7 @@
 "use client";
 
-import type { QuestionnaireQuestion, SavedAnswer } from "@epilove/contracts";
-import { IMPORTANCES, type Importance } from "@epilove/core";
+import type { QuestionnaireQuestion, SavedAnswer } from "@atomes/contracts";
+import { IMPORTANCES, type Importance } from "@atomes/core";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";

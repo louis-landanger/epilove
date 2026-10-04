@@ -1,8 +1,8 @@
 "use client";
 
-import type { OwnPhoto } from "@epilove/contracts";
-import { MAX_PHOTOS, PHOTO_ALT_TEXT_MAX_LENGTH } from "@epilove/core";
-import { ActionMenu, Button, cn, Dialog, ProgressBar, Spinner, TextAreaField, useToast } from "@epilove/ui";
+import type { OwnPhoto } from "@atomes/contracts";
+import { MAX_PHOTOS, PHOTO_ALT_TEXT_MAX_LENGTH } from "@atomes/core";
+import { ActionMenu, Button, cn, Dialog, ProgressBar, Spinner, TextAreaField, useToast } from "@atomes/ui";
 import { ArrowLeft, ArrowRight, Captions, ImagePlus, Star, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ChangeEvent, type DragEvent, useCallback, useEffect, useRef, useState } from "react";

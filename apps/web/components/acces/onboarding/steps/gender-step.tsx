@@ -1,7 +1,7 @@
 "use client";
 
-import { GENDERS, type Gender, normalizePronouns, PRONOUNS_MAX_LENGTH } from "@epilove/core";
-import { Button, ChoiceGroup, TextField } from "@epilove/ui";
+import { GENDERS, type Gender, normalizePronouns, PRONOUNS_MAX_LENGTH } from "@atomes/core";
+import { Button, ChoiceGroup, TextField } from "@atomes/ui";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { StepShell } from "../step-shell";

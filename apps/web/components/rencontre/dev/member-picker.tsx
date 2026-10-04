@@ -1,7 +1,7 @@
 "use client";
 
-import type { DevMember } from "@epilove/contracts";
-import { schoolColors } from "@epilove/tokens";
+import type { DevMember } from "@atomes/contracts";
+import { schoolColors } from "@atomes/tokens";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { chooseDevMember } from "@/app/dev/actions";

@@ -1,4 +1,4 @@
-import { keyRingFromEnv } from "@epilove/crypto";
+import { keyRingFromEnv } from "@atomes/crypto";
 import { createDatabase, databaseUrlFromEnv } from "../client";
 import { runDevSeed } from "./seed";
 import { devStorageFromEnv } from "./storage";

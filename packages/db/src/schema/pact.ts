@@ -1,4 +1,4 @@
-import { MODES, PACT_STATUSES } from "@epilove/core";
+import { MODES, PACT_STATUSES } from "@atomes/core";
 import { sql } from "drizzle-orm";
 import {
   check,

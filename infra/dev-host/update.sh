@@ -5,17 +5,17 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 HOST_DIR="$REPO_DIR/infra/dev-host"
-RUN_USER=epilove
+RUN_USER=atomes
 BRANCH="${1:-main}"
 
 [ "$(id -u)" = 0 ] || { echo "Run as root: sudo bash infra/dev-host/update.sh" >&2; exit 1; }
 [ -f "$HOST_DIR/generated/services.env" ] || { echo "Run infra/dev-host/setup.sh first." >&2; exit 1; }
 as_user() {
-  sudo -u "$RUN_USER" -H env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 SWC_NATIVE_BINDING_CACHE=/var/cache/epilove-swc \
+  sudo -u "$RUN_USER" -H env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 SWC_NATIVE_BINDING_CACHE=/var/cache/atomes-swc \
     PATH="/home/$RUN_USER/.local/bin:$PATH" "$@"
 }
 
-install -d -o "$RUN_USER" -g "$RUN_USER" -m 700 /var/cache/epilove-swc
+install -d -o "$RUN_USER" -g "$RUN_USER" -m 700 /var/cache/atomes-swc
 
 # Git as root: the clone uses root's deploy key (README); files go back to the service user.
 git_root() { git -c safe.directory="$REPO_DIR" -C "$REPO_DIR" "$@"; }
@@ -28,5 +28,5 @@ echo "Deploying $(git_root log -1 --format='%h %s')"
 docker compose -f "$REPO_DIR/infra/compose/compose.yaml" -f "$HOST_DIR/compose.yaml" \
   --env-file "$HOST_DIR/generated/services.env" up -d --wait
 as_user bash -c "cd '$REPO_DIR' && pnpm install --frozen-lockfile && pnpm build && pnpm db:migrate && pnpm db:seed"
-systemctl restart epilove-web epilove-admin epilove-worker
+systemctl restart atomes-web atomes-admin atomes-worker
 echo "Deployed."

@@ -1,6 +1,6 @@
 "use client";
 
-import type { WrappedView } from "@epilove/contracts";
+import type { WrappedView } from "@atomes/contracts";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -56,7 +56,7 @@ export function WrappedScreen({ wrapped }: { wrapped: WrappedView }) {
       </ol>
       <a
         href="/campus/wrapped/image"
-        download="epilove-wrapped.png"
+        download="atomes-wrapped.png"
         className="self-start rounded-full bg-plasma px-5 py-3 font-semibold text-ink"
       >
         {t("download")}

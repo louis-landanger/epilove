@@ -1,7 +1,7 @@
 "use client";
 
-import type { StickerId } from "@epilove/core";
-import { STICKERS } from "@epilove/core";
+import type { StickerId } from "@atomes/core";
+import { STICKERS } from "@atomes/core";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
 import { api } from "@/lib/api-client";

@@ -1,5 +1,5 @@
-import { createDatabase } from "@epilove/db";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import { createDatabase } from "@atomes/db";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -40,7 +40,7 @@ test("a member who reads English gets profiles and the questionnaire in English"
   });
   const context = await browser.newContext({ locale: "en-GB" });
   await context.addCookies([
-    { name: "epilove_dev_user", value: jade, url: baseURL ?? "http://127.0.0.1:3100" },
+    { name: "atomes_dev_user", value: jade, url: baseURL ?? "http://127.0.0.1:3100" },
   ]);
   const page = await context.newPage();
 

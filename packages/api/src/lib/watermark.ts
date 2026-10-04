@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { Database } from "@epilove/db";
-import { schema } from "@epilove/db";
+import type { Database } from "@atomes/db";
+import { schema } from "@atomes/db";
 import { asc, gt } from "drizzle-orm";
 
 /** Crockford base32 without ambiguous letters: easy to read back from a screenshot. */

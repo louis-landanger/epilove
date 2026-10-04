@@ -1,4 +1,4 @@
-import { GAME_RULES, GAMES, MODES } from "@epilove/core";
+import { GAME_RULES, GAMES, MODES } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 import { availabilityView } from "./matches";

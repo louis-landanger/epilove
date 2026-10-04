@@ -1,5 +1,5 @@
 {
-  "extends": "@epilove/config/tsconfig.nextjs.json",
+  "extends": "@atomes/config/tsconfig.nextjs.json",
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"]

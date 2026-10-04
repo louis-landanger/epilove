@@ -27,8 +27,8 @@ export const LOCK_GRACE_MS = 10_000;
 export const PIN_ATTEMPTS = 5;
 const PBKDF2_ITERATIONS = 210_000;
 
-export const lockKey = (userId: string) => `epilove:lock:${userId}`;
-export const sessionKey = (userId: string) => `epilove:unlocked:${userId}`;
+export const lockKey = (userId: string) => `atomes:lock:${userId}`;
+export const sessionKey = (userId: string) => `atomes:unlocked:${userId}`;
 
 export function isPin(value: string): boolean {
   return /^\d{4,6}$/.test(value);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, SwitchField, TextField, useToast } from "@epilove/ui";
+import { Button, SwitchField, TextField, useToast } from "@atomes/ui";
 import { type FormEvent, useState } from "react";
 import { api, errorCode } from "@/lib/api-client";
 

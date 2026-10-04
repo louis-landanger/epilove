@@ -1,5 +1,5 @@
 import "server-only";
-import type { WaitlistStats } from "@epilove/contracts";
+import type { WaitlistStats } from "@atomes/contracts";
 import { anonymousApi } from "@/lib/server/api-app";
 
 /** In-process API for the public pages: same validation and procedures as /api/rpc. */

@@ -1,4 +1,4 @@
-import { MODES } from "@epilove/core";
+import { MODES } from "@atomes/core";
 import { sql } from "drizzle-orm";
 import {
   boolean,

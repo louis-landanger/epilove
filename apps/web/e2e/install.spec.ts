@@ -24,7 +24,7 @@ test.describe("install guide (PLT-01)", () => {
     await expect(banner).toBeVisible();
     await banner.getByRole("link", { name: "Voir comment" }).click();
     await expect(
-      page.getByRole("heading", { name: "Epilove sur ton écran d'accueil", level: 1 }),
+      page.getByRole("heading", { name: "Atomes sur ton écran d'accueil", level: 1 }),
     ).toBeVisible();
     await expect(page.getByRole("tab", { name: "Android" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("complementary", { name: "Voir comment" })).toHaveCount(0);

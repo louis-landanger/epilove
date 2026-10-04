@@ -1,4 +1,4 @@
 {
-  "extends": "@epilove/config/tsconfig.library.json",
+  "extends": "@atomes/config/tsconfig.library.json",
   "include": ["src", "drizzle.config.ts"]
 }

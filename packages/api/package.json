@@ -1,5 +1,5 @@
 {
-  "name": "@epilove/api",
+  "name": "@atomes/api",
   "version": "0.0.0",
   "private": true,
   "description": "HTTP API (Hono + oRPC), mounted under /api by the web app.",
@@ -13,15 +13,15 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "catalog:",
-    "@epilove/contracts": "workspace:*",
-    "@epilove/core": "workspace:*",
-    "@epilove/crypto": "workspace:*",
-    "@epilove/db": "workspace:*",
-    "@epilove/email": "workspace:*",
-    "@epilove/media": "workspace:*",
-    "@epilove/notifications": "workspace:*",
-    "@epilove/rate-limit": "workspace:*",
-    "@epilove/realtime": "workspace:*",
+    "@atomes/contracts": "workspace:*",
+    "@atomes/core": "workspace:*",
+    "@atomes/crypto": "workspace:*",
+    "@atomes/db": "workspace:*",
+    "@atomes/email": "workspace:*",
+    "@atomes/media": "workspace:*",
+    "@atomes/notifications": "workspace:*",
+    "@atomes/rate-limit": "workspace:*",
+    "@atomes/realtime": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/server": "catalog:",
     "drizzle-orm": "catalog:",
@@ -29,7 +29,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@epilove/config": "workspace:*",
+    "@atomes/config": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

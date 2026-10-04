@@ -64,7 +64,7 @@
     "verified": "Liens vérifiés à chaque rentrée."
   },
   "inApp": {
-    "title": "Dans Epilove",
+    "title": "Dans Atomes",
     "block": "Bloquer : immédiat, réciproque, la personne n'est pas prévenue.",
     "report": "Signaler : depuis un profil, une photo ou un message. C'est anonyme pour la personne signalée.",
     "hide": "Masquer des personnes précises ou ton école, depuis les réglages.",
@@ -72,8 +72,8 @@
   },
   "call": "Appeler le {number}",
   "install": {
-    "metaTitle": "Installer Epilove",
-    "title": "Epilove sur ton écran d'accueil",
+    "metaTitle": "Installer Atomes",
+    "title": "Atomes sur ton écran d'accueil",
     "lead": "Plein écran, ouverture en un geste et notifications. Pas de store : l'app s'installe depuis ton navigateur, en trente secondes.",
     "installed": "C'est déjà fait : tu utilises l'app installée.",
     "device": "Ton appareil",
@@ -101,7 +101,7 @@
         },
         "confirm": {
           "title": "Ajouter",
-          "body": "Touche « Ajouter » en haut à droite : l'icône Epilove arrive sur ton écran d'accueil."
+          "body": "Touche « Ajouter » en haut à droite : l'icône Atomes arrive sur ton écran d'accueil."
         }
       },
       "note": "Sur iPhone, les notifications ne marchent que depuis l'app installée (iOS 16.4 ou plus récent)."
@@ -118,10 +118,10 @@
         },
         "confirm": {
           "title": "Confirme",
-          "body": "Epilove rejoint tes applications, comme les autres."
+          "body": "Atomes rejoint tes applications, comme les autres."
         }
       },
-      "button": "Installer Epilove",
+      "button": "Installer Atomes",
       "buttonHelp": "Ton navigateur permet l'installation directe."
     },
     "desktop": {
@@ -132,7 +132,7 @@
         },
         "install": {
           "title": "Installe",
-          "body": "Confirme : Epilove s'ouvre dans sa propre fenêtre, sans onglets."
+          "body": "Confirme : Atomes s'ouvre dans sa propre fenêtre, sans onglets."
         }
       },
       "note": "Firefox ne permet pas encore d'installer une application web : passe par Chrome, Edge ou Safari."
@@ -150,7 +150,7 @@
       "install": "Installer"
     },
     "banner": {
-      "text": "Installe Epilove sur ton écran d'accueil : plein écran et notifications.",
+      "text": "Installe Atomes sur ton écran d'accueil : plein écran et notifications.",
       "cta": "Voir comment",
       "dismiss": "Masquer ce message"
     },

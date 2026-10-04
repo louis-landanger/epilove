@@ -1,4 +1,4 @@
-import { MODES, PACT_PHASES } from "@epilove/core";
+import { MODES, PACT_PHASES } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 import { memberCard } from "./discovery";

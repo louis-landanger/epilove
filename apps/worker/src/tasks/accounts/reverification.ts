@@ -2,8 +2,8 @@ import {
   listReverificationReminders,
   markReminded,
   pauseOverdueReverifications,
-} from "@epilove/db/repositories/accounts";
-import { createMailer, mailerConfigFromEnv, reverificationReminderEmail } from "@epilove/email";
+} from "@atomes/db/repositories/accounts";
+import { createMailer, mailerConfigFromEnv, reverificationReminderEmail } from "@atomes/email";
 import type { Task } from "graphile-worker";
 import type { ExportDependencies } from "./export";
 

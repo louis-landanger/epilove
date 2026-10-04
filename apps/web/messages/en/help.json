@@ -64,7 +64,7 @@
     "verified": "Links checked at the start of every academic year."
   },
   "inApp": {
-    "title": "In Epilove",
+    "title": "In Atomes",
     "block": "Block: immediate, mutual, the person isn't told.",
     "report": "Report: from a profile, a photo or a message. It's anonymous for the reported person.",
     "hide": "Hide specific people or your school, from settings.",
@@ -72,8 +72,8 @@
   },
   "call": "Call {number}",
   "install": {
-    "metaTitle": "Install Epilove",
-    "title": "Epilove on your home screen",
+    "metaTitle": "Install Atomes",
+    "title": "Atomes on your home screen",
     "lead": "Full screen, one tap to open, and notifications. No store: the app installs from your browser in thirty seconds.",
     "installed": "Already done: you are using the installed app.",
     "device": "Your device",
@@ -101,7 +101,7 @@
         },
         "confirm": {
           "title": "Add",
-          "body": "Tap “Add” at the top right: the Epilove icon lands on your home screen."
+          "body": "Tap “Add” at the top right: the Atomes icon lands on your home screen."
         }
       },
       "note": "On iPhone, notifications only work from the installed app (iOS 16.4 or later)."
@@ -118,10 +118,10 @@
         },
         "confirm": {
           "title": "Confirm",
-          "body": "Epilove joins your apps, like any other."
+          "body": "Atomes joins your apps, like any other."
         }
       },
-      "button": "Install Epilove",
+      "button": "Install Atomes",
       "buttonHelp": "Your browser supports direct installation."
     },
     "desktop": {
@@ -132,7 +132,7 @@
         },
         "install": {
           "title": "Install",
-          "body": "Confirm: Epilove opens in its own window, without tabs."
+          "body": "Confirm: Atomes opens in its own window, without tabs."
         }
       },
       "note": "Firefox cannot install web apps yet: use Chrome, Edge or Safari."
@@ -150,7 +150,7 @@
       "install": "Install"
     },
     "banner": {
-      "text": "Install Epilove on your home screen: full screen and notifications.",
+      "text": "Install Atomes on your home screen: full screen and notifications.",
       "cta": "Show me how",
       "dismiss": "Hide this message"
     },

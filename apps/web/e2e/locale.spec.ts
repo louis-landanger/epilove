@@ -49,7 +49,7 @@ test.describe("English (PLT-04)", () => {
       const code = await latestCode(email);
       const search = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`);
       const { messages } = (await search.json()) as { messages: Array<{ Subject: string }> };
-      expect(messages[0]?.Subject).toMatch(/is your Epilove code$/);
+      expect(messages[0]?.Subject).toMatch(/is your Atomes code$/);
 
       await page.getByRole("textbox").first().click();
       await page.keyboard.type(code);

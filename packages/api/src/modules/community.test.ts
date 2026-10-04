@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { uuidv7 } from "@epilove/core";
-import { createDatabase, schema } from "@epilove/db";
-import { deleteSeason, enrolMembers, upsertSeason } from "@epilove/db/repositories/pact";
+import { uuidv7 } from "@atomes/core";
+import { createDatabase, schema } from "@atomes/db";
+import { deleteSeason, enrolMembers, upsertSeason } from "@atomes/db/repositories/pact";
 import {
   answerQuestionnaire,
   cleanupTestMembers,
   createTestMember,
   prepareTestDatabase,
-} from "@epilove/db/testing";
+} from "@atomes/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi } from "../rencontre/testing";
 

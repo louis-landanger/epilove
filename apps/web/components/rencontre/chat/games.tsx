@@ -1,8 +1,8 @@
 "use client";
 
-import type { MessageAttachment } from "@epilove/contracts";
-import { GAME_RULES } from "@epilove/core";
-import { Sheet } from "@epilove/ui";
+import type { MessageAttachment } from "@atomes/contracts";
+import { GAME_RULES } from "@atomes/core";
+import { Sheet } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 

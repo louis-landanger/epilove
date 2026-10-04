@@ -1,4 +1,4 @@
-import type { Locale } from "@epilove/core";
+import type { Locale } from "@atomes/core";
 import Link from "next/link";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Fragment } from "react";

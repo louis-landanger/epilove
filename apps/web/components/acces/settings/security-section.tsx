@@ -1,7 +1,7 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { Button, Skeleton, useToast } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import { Button, Skeleton, useToast } from "@atomes/ui";
 import { Fingerprint, LogOut, Monitor, Smartphone, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";

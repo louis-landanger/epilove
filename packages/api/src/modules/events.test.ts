@@ -1,6 +1,6 @@
-import { createDatabase, schema } from "@epilove/db";
-import { createEvent } from "@epilove/db/repositories/campus-events";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import { createDatabase, schema } from "@atomes/db";
+import { createEvent } from "@atomes/db/repositories/campus-events";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi } from "../rencontre/testing";

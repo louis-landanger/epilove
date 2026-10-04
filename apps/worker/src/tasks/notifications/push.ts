@@ -1,5 +1,5 @@
-import { LYON_CAMPUS } from "@epilove/core";
-import type { Database } from "@epilove/db";
+import { LYON_CAMPUS } from "@atomes/core";
+import type { Database } from "@atomes/db";
 import {
   deleteSubscription,
   isDiscreet,
@@ -10,7 +10,7 @@ import {
   quietHoursOf,
   subscriptionsOf,
   touchSubscription,
-} from "@epilove/db/repositories/notifications";
+} from "@atomes/db/repositories/notifications";
 import {
   DEFAULT_CHANNELS,
   DEFAULT_QUIET_HOURS,
@@ -19,8 +19,8 @@ import {
   type PushSender,
   pushAllowedAt,
   renderPush,
-} from "@epilove/notifications";
-import { type Publisher, personalChannel } from "@epilove/realtime";
+} from "@atomes/notifications";
+import { type Publisher, personalChannel } from "@atomes/realtime";
 
 /**
  * Web Push delivery (NOT-01): respects the member's preferences (NOT-03) and

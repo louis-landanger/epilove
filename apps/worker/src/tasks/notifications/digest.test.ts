@@ -1,13 +1,13 @@
-import { createDatabase, schema } from "@epilove/db";
-import { createEvent } from "@epilove/db/repositories/campus-events";
-import { saveNotificationPreferences } from "@epilove/db/repositories/notifications";
+import { createDatabase, schema } from "@atomes/db";
+import { createEvent } from "@atomes/db/repositories/campus-events";
+import { saveNotificationPreferences } from "@atomes/db/repositories/notifications";
 import {
   cleanupTestMembers,
   createTestMember,
   prepareTestDatabase,
   testMemberEmail,
-} from "@epilove/db/testing";
-import { createMemoryMailer } from "@epilove/email";
+} from "@atomes/db/testing";
+import { createMemoryMailer } from "@atomes/email";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { sendWeeklyDigests } from "./digest";
@@ -111,7 +111,7 @@ describe.skipIf(!url)("weekly digest (NOT-05)", () => {
     await db.insert(schema.likeAction).values({ actorId: fan, targetId: member, kind: "like" });
     const mailer = createMemoryMailer();
     await sendWeeklyDigests(db, mailer, { now: new Date(), appUrl: "https://app.example", only: [member] });
-    expect(mailer.sent[0]?.email.subject).toBe("Your week on Epilove");
+    expect(mailer.sent[0]?.email.subject).toBe("Your week on Atomes");
     expect(mailer.sent[0]?.email.text).toContain("1 person liked you this week.");
   });
 });

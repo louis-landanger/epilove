@@ -1,8 +1,8 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { ageOn, SCHOOLS, type SchoolSlug } from "@epilove/core";
-import { Badge, Button, SchoolChip, useToast } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import { ageOn, SCHOOLS, type SchoolSlug } from "@atomes/core";
+import { Badge, Button, SchoolChip, useToast } from "@atomes/ui";
 import { Fingerprint, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";

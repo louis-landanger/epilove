@@ -1,4 +1,4 @@
-import { WatermarkProvider } from "@epilove/ui";
+import { WatermarkProvider } from "@atomes/ui";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { StaffNav } from "@/components/staff-nav";

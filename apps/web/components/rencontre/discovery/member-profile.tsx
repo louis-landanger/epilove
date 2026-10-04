@@ -1,5 +1,5 @@
-import type { MemberCard, ProfileView } from "@epilove/contracts";
-import { ViewerWatermark } from "@epilove/ui";
+import type { MemberCard, ProfileView } from "@atomes/contracts";
+import { ViewerWatermark } from "@atomes/ui";
 import { getTranslations } from "next-intl/server";
 import { Fragment, ViewTransition } from "react";
 import { VoicePlayer } from "@/components/acces/profile/voice/voice-player";

@@ -1,9 +1,9 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import type { Catalog, OnboardingSaveInput, OnboardingState } from "@epilove/contracts";
-import { ONBOARDING_STEPS, type OnboardingStep } from "@epilove/core";
-import { Button, ProgressBar, Spinner, useToast } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import type { Catalog, OnboardingSaveInput, OnboardingState } from "@atomes/contracts";
+import { ONBOARDING_STEPS, type OnboardingStep } from "@atomes/core";
+import { Button, ProgressBar, Spinner, useToast } from "@atomes/ui";
 import { ArrowLeft } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { Route } from "next";

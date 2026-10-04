@@ -1,4 +1,4 @@
-import { REPORT_CONTEXTS, REPORT_PRIORITIES, REPORT_REASONS } from "@epilove/core";
+import { REPORT_CONTEXTS, REPORT_PRIORITIES, REPORT_REASONS } from "@atomes/core";
 import { sql } from "drizzle-orm";
 import { check, index, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { bytea, createdAt, id, oneOf } from "./columns";

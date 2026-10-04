@@ -1,4 +1,4 @@
-import { cn } from "@epilove/ui";
+import { cn } from "@atomes/ui";
 
 /** Waveform bars (0 to 100), the played part highlighted. Decorative. */
 export function Waveform({

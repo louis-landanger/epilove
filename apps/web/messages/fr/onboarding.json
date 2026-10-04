@@ -38,7 +38,7 @@
   },
   "birth": {
     "title": "Ta date de naissance",
-    "lead": "Epilove est réservé aux personnes majeures. On affiche ton âge, jamais ta date de naissance.",
+    "lead": "Atomes est réservé aux personnes majeures. On affiche ton âge, jamais ta date de naissance.",
     "label": "Date de naissance",
     "invalid": "Cette date n'est pas valide.",
     "confirmTitle": "Tu as {age} ans ?",
@@ -91,10 +91,10 @@
     "title": "Qui veux-tu voir ?",
     "consentTitle": "Une donnée sensible",
     "consentBody": "Le genre des personnes que tu veux rencontrer peut révéler ton orientation sexuelle. C'est une donnée sensible au sens du RGPD : on ne l'utilise que pour te proposer des profils, elle n'est jamais affichée, jamais partagée et jamais exportée.",
-    "consentLabel": "J'accepte qu'Epilove utilise les genres que je recherche, une donnée sensible, pour me proposer des profils en mode Love.",
+    "consentLabel": "J'accepte qu'Atomes utilise les genres que je recherche, une donnée sensible, pour me proposer des profils en mode Love.",
     "consentHelp": "Tu peux retirer ce consentement à tout moment dans les réglages : le mode Love se désactive alors, le mode Amis reste disponible.",
     "withoutConsent": "Continuer en mode Amis uniquement",
-    "withoutConsentNote": "Sans ce consentement, tu utilises Epilove en mode Amis.",
+    "withoutConsentNote": "Sans ce consentement, tu utilises Atomes en mode Amis.",
     "interestedInLabel": "En Love, tu veux voir",
     "interestedIn": {
       "woman": "Des femmes",
@@ -194,7 +194,7 @@
     "programPlaceholder": "Cycle ingénieur, Bachelor, MSc…",
     "onCampus": "J'étudie sur le campus de Lyon.",
     "student": "Je suis étudiant·e, pas membre du personnel.",
-    "declarationsHelp": "Epilove est réservé aux étudiantes et étudiants du campus. Un profil qui ne l'est pas peut être signalé et supprimé.",
+    "declarationsHelp": "Atomes est réservé aux étudiantes et étudiants du campus. Un profil qui ne l'est pas peut être signalé et supprimé.",
     "declarationsRequired": "Ces deux déclarations sont nécessaires."
   },
   "done": {
@@ -219,7 +219,7 @@
   "underage": {
     "metaTitle": "Reviens plus tard",
     "title": "Reviens à tes 18 ans.",
-    "body": "Epilove est réservé aux personnes majeures. Ton compte a été supprimé et aucune donnée n'a été conservée, hormis une empreinte chiffrée de ton adresse jusqu'à ta majorité.",
+    "body": "Atomes est réservé aux personnes majeures. Ton compte a été supprimé et aucune donnée n'a été conservée, hormis une empreinte chiffrée de ton adresse jusqu'à ta majorité.",
     "help": "Si tu as besoin de parler à quelqu'un, le 3018 (harcèlement en ligne) et Fil Santé Jeunes (0 800 235 236) sont gratuits et anonymes.",
     "home": "Retour à l'accueil"
   }

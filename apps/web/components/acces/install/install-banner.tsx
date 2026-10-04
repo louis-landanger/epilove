@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { useInstallState } from "./install-prompt";
 import { detectPlatform } from "./platform";
 
-const STORAGE_KEY = "epilove:install-banner";
+const STORAGE_KEY = "atomes:install-banner";
 export const INSTALL_GUIDE_PATH = "/aide/installer";
 
 /**

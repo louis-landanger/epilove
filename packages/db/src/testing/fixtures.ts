@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { Gender, Importance, Mode } from "@epilove/core";
-import { emailHmac } from "@epilove/crypto";
+import type { Gender, Importance, Mode } from "@atomes/core";
+import { emailHmac } from "@atomes/crypto";
 import { eq, inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import { runMigrations } from "../migrations";

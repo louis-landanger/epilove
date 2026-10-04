@@ -1,5 +1,5 @@
-import { createDatabase, schema } from "@epilove/db";
-import { cleanupTestMembers, createTestMember } from "@epilove/db/testing";
+import { createDatabase, schema } from "@atomes/db";
+import { cleanupTestMembers, createTestMember } from "@atomes/db/testing";
 import { expect, test } from "@playwright/test";
 import { eq } from "drizzle-orm";
 import { signUp } from "./support/auth";
@@ -68,7 +68,7 @@ test.describe("voice prompts (PRO-06)", () => {
       await db.insert(schema.match).values({ userLow, userHigh, mode: "friends", source: "like" });
       const context = await browser.newContext();
       await context.addCookies([
-        { name: "epilove_dev_user", value: romane, url: baseURL ?? "http://127.0.0.1:3100" },
+        { name: "atomes_dev_user", value: romane, url: baseURL ?? "http://127.0.0.1:3100" },
       ]);
       const romanePage = await context.newPage();
       await romanePage.goto(`/membres/${louId}`);

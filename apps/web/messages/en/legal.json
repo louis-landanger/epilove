@@ -13,13 +13,13 @@
   },
   "legalNotice": {
     "title": "Legal notice",
-    "description": "Publisher, host and points of contact of the Epilove service.",
+    "description": "Publisher, host and points of contact of the Atomes service.",
     "sections": [
       {
         "id": "editeur",
         "title": "Publisher",
         "blocks": [
-          "The Epilove service (code name) is published by the association [Association name], a non-profit governed by the French law of 1 July 1901, registered with the Rhône prefecture on [registration date] under RNA number [W000000000], with its registered office at [registered address], Lyon.",
+          "The Atomes service is published by the association [Association name], a non-profit governed by the French law of 1 July 1901, registered with the Rhône prefecture on [registration date] under RNA number [W000000000], with its registered office at [registered address], Lyon.",
           "Phone: [phone number]. Email: [contact@domain]."
         ]
       },
@@ -61,20 +61,20 @@
         "title": "Independence",
         "blocks": [
           "Independent student project, not affiliated with IONIS Education Group or the schools listed. School names are only used to state who can sign up; no school logo or visual identity element is used.",
-          "\"Epilove\" is a temporary code name. The public name of the service will be announced before it opens."
+          "\"Atomes\" is a provisional name, which may still change before the service opens."
         ]
       }
     ]
   },
   "terms": {
     "title": "Terms of use",
-    "description": "The rules for using Epilove, from the waiting list to moderation.",
+    "description": "The rules for using Atomes, from the waiting list to moderation.",
     "sections": [
       {
         "id": "objet",
         "title": "Purpose",
         "blocks": [
-          "These terms govern the use of Epilove, a free dating and friendship service reserved for students of the participating schools on the Lyon campus, published by the association [Association name]. By creating an account, you accept them."
+          "These terms govern the use of Atomes, a free dating and friendship service reserved for students of the participating schools on the Lyon campus, published by the association [Association name]. By creating an account, you accept them."
         ]
       },
       {
@@ -171,7 +171,7 @@
   },
   "privacy": {
     "title": "Privacy policy",
-    "description": "What data Epilove processes, why, for how long, and how to exercise your rights.",
+    "description": "What data Atomes processes, why, for how long, and how to exercise your rights.",
     "sections": [
       {
         "id": "essentiel",
@@ -360,7 +360,7 @@
   },
   "transparency": {
     "title": "Ranking transparency",
-    "description": "How Epilove chooses the profiles suggested to you, and what is never used.",
+    "description": "How Atomes chooses the profiles suggested to you, and what is never used.",
     "sections": [
       {
         "id": "principe",

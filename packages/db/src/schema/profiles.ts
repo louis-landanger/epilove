@@ -10,7 +10,7 @@ import {
   VERIFICATION_STATUSES,
   VOICE_CONTENT_TYPES,
   VOICE_MAX_DURATION_MS,
-} from "@epilove/core";
+} from "@atomes/core";
 import { sql } from "drizzle-orm";
 import {
   boolean,

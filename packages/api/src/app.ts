@@ -1,11 +1,11 @@
-import { type KeyRing, keyRingFromEnv } from "@epilove/crypto";
-import { findExport } from "@epilove/db/repositories/exports";
-import { findPromptAnswerById } from "@epilove/db/repositories/profiles";
-import { writeAudit } from "@epilove/db/repositories/safety";
-import { createMailer, type Mailer, mailerConfigFromEnv } from "@epilove/email";
-import { imgproxyConfigFromEnv } from "@epilove/media";
-import { createStorage, type Storage, storageConfigFromEnv } from "@epilove/media/storage";
-import { createMemoryRateLimiter } from "@epilove/rate-limit";
+import { type KeyRing, keyRingFromEnv } from "@atomes/crypto";
+import { findExport } from "@atomes/db/repositories/exports";
+import { findPromptAnswerById } from "@atomes/db/repositories/profiles";
+import { writeAudit } from "@atomes/db/repositories/safety";
+import { createMailer, type Mailer, mailerConfigFromEnv } from "@atomes/email";
+import { imgproxyConfigFromEnv } from "@atomes/media";
+import { createStorage, type Storage, storageConfigFromEnv } from "@atomes/media/storage";
+import { createMemoryRateLimiter } from "@atomes/rate-limit";
 import { createRouterClient, ORPCError, onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Hono } from "hono";
@@ -170,7 +170,7 @@ export function createApp(dependencies: AppDependencies) {
     });
     return c.body(body as Uint8Array<ArrayBuffer>, 200, {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="epilove-export-${row.createdAt.toISOString().slice(0, 10)}.zip"`,
+      "Content-Disposition": `attachment; filename="atomes-export-${row.createdAt.toISOString().slice(0, 10)}.zip"`,
       "Cache-Control": "no-store",
     });
   });

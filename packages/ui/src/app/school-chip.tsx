@@ -1,4 +1,4 @@
-import { schoolColors } from "@epilove/tokens";
+import { schoolColors } from "@atomes/tokens";
 import { cn } from "../cn";
 
 type SchoolSlug = keyof typeof schoolColors;

@@ -31,10 +31,10 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Install Playwright Chromium
-        run: pnpm --filter @epilove/ui exec playwright install --with-deps chromium
+        run: pnpm --filter @atomes/ui exec playwright install --with-deps chromium
 
       - name: Visual tests (one screenshot and an axe check per story)
-        run: pnpm --filter @epilove/ui test:visual
+        run: pnpm --filter @atomes/ui test:visual
 
       - name: Upload the differences
         if: failure()

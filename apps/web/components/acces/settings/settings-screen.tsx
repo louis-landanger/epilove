@@ -1,7 +1,7 @@
 "use client";
 
-import type { PrivacySettings } from "@epilove/contracts";
-import { GENDERS, type Gender, type Locale, MINIMUM_AGE, type Mode, parseSchoolEmail } from "@epilove/core";
+import type { PrivacySettings } from "@atomes/contracts";
+import { GENDERS, type Gender, type Locale, MINIMUM_AGE, type Mode, parseSchoolEmail } from "@atomes/core";
 import {
   Button,
   CheckboxField,
@@ -11,7 +11,7 @@ import {
   SwitchField,
   TextField,
   useToast,
-} from "@epilove/ui";
+} from "@atomes/ui";
 import { ChevronRight, ShieldAlert, X } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";

@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { flashWindow, toFlashCode } from "@epilove/core";
+import { flashWindow, toFlashCode } from "@atomes/core";
 import { emailFingerprint } from "./email";
 
 /**

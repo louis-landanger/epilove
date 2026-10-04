@@ -1,7 +1,7 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { Button, TextField } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import { Button, TextField } from "@atomes/ui";
 import { Fingerprint, LockKeyhole } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";

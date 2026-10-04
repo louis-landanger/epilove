@@ -106,10 +106,10 @@ export function dateIcs(input: {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Epilove//Date//FR",
+    "PRODID:-//Atomes//Date//FR",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    `UID:${input.uid}@epilove`,
+    `UID:${input.uid}@atomes`,
     `DTSTAMP:${icsDate(input.now ?? new Date())}`,
     `DTSTART:${icsDate(input.startsAt)}`,
     `DTEND:${icsDate(end)}`,

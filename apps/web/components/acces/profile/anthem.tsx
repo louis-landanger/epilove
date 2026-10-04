@@ -1,7 +1,7 @@
 "use client";
 
-import type { OwnProfile, SongInfo } from "@epilove/contracts";
-import { Button, Spinner, TextField, useToast } from "@epilove/ui";
+import type { OwnProfile, SongInfo } from "@atomes/contracts";
+import { Button, Spinner, TextField, useToast } from "@atomes/ui";
 import { Music2, Pause, Play, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";

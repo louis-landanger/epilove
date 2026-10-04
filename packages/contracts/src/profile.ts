@@ -12,7 +12,7 @@ import {
   VOICE_MAX_BYTES,
   VOICE_MAX_DURATION_MS,
   VOICE_PEAK_COUNT,
-} from "@epilove/core";
+} from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

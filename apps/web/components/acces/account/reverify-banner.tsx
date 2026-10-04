@@ -1,4 +1,4 @@
-import { calendarDateIn, LYON_CAMPUS, reverificationState } from "@epilove/core";
+import { calendarDateIn, LYON_CAMPUS, reverificationState } from "@atomes/core";
 import { ShieldCheck } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";

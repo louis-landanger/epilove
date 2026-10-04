@@ -6,7 +6,7 @@ export default defineConfig({
   out: "./drizzle",
   casing: "snake_case",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgres://epilove:epilove@localhost:5432/epilove",
+    url: process.env.DATABASE_URL ?? "postgres://atomes:atomes@localhost:5432/atomes",
   },
   strict: true,
   verbose: true,

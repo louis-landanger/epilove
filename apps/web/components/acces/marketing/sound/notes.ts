@@ -10,4 +10,4 @@ export function noteFor(step: number): number {
 /** Ratio of the modulator in the FM bell: inharmonic, glassy. */
 export const BELL_RATIO = 2.76;
 
-export const SOUND_STORAGE_KEY = "epilove:sound";
+export const SOUND_STORAGE_KEY = "atomes:sound";

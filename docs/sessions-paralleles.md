@@ -79,7 +79,7 @@ Une session **ne modifie pas** les fichiers possédés par l'autre. Les fichiers
 | `packages/contracts/src/{questionnaire,discovery,matches,messaging,notifications,pact,realtime,campus-life,dev}.ts` | | ✅ |
 | `packages/api/src/modules/*` : même découpage que les contrats | | |
 
-Le design system (`packages/ui`) appartient à A. En attendant la fusion, B construit ses composants dans `apps/web/components/rencontre/` avec Tailwind et les jetons de `@epilove/tokens` ; l'harmonisation se fera à l'intégration.
+Le design system (`packages/ui`) appartient à A. En attendant la fusion, B construit ses composants dans `apps/web/components/rencontre/` avec Tailwind et les jetons de `@atomes/tokens` ; l'harmonisation se fera à l'intégration.
 
 ## Fichiers partagés : règles
 

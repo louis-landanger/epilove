@@ -1,7 +1,7 @@
 "use client";
 
-import type { DeckFilterView } from "@epilove/contracts";
-import { Sheet } from "@epilove/ui";
+import type { DeckFilterView } from "@atomes/contracts";
+import { Sheet } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useState } from "react";
 import { api } from "@/lib/api-client";

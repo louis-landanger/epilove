@@ -1,4 +1,4 @@
-import { BADGES, MODES } from "@epilove/core";
+import { BADGES, MODES } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 import { compatibilityView, contentLocale } from "./questionnaire";

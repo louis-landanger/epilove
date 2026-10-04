@@ -1,13 +1,13 @@
-import { createDatabase, schema } from "@epilove/db";
+import { createDatabase, schema } from "@atomes/db";
 import {
   processPendingPushes,
   saveNotificationPreferences,
   saveQuietHours,
   saveSubscription,
-} from "@epilove/db/repositories/notifications";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
-import type { PushContent, PushSender, PushTarget } from "@epilove/notifications";
-import { createMemoryPublisher } from "@epilove/realtime";
+} from "@atomes/db/repositories/notifications";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
+import type { PushContent, PushSender, PushTarget } from "@atomes/notifications";
+import { createMemoryPublisher } from "@atomes/realtime";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createPushDelivery } from "./push";

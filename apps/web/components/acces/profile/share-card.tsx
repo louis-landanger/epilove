@@ -1,7 +1,7 @@
 "use client";
 
-import type { Catalog, OwnProfile } from "@epilove/contracts";
-import { Button, Dialog, RadioGroupField, SwitchField } from "@epilove/ui";
+import type { Catalog, OwnProfile } from "@atomes/contracts";
+import { Button, Dialog, RadioGroupField, SwitchField } from "@atomes/ui";
 import { Download, Share2, Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
@@ -30,7 +30,7 @@ export function ShareCard({ profile, catalog }: { profile: OwnProfile; catalog: 
 
   async function share() {
     const blob = await (await fetch(src)).blob();
-    const file = new File([blob], "ma-carte-epilove.png", { type: "image/png" });
+    const file = new File([blob], "ma-carte-atomes.png", { type: "image/png" });
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({ files: [file] }).catch(() => undefined);
     }
@@ -68,7 +68,7 @@ export function ShareCard({ profile, catalog }: { profile: OwnProfile; catalog: 
             ) : null}
             <a
               href={src}
-              download="ma-carte-epilove.png"
+              download="ma-carte-atomes.png"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-plasma px-5 font-semibold text-ink hover:brightness-110"
             >
               <Download className="size-4" aria-hidden="true" />

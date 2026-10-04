@@ -1,8 +1,8 @@
 "use client";
 
-import type { OwnPhoto, SongInfo } from "@epilove/contracts";
-import { SCHOOLS, type SchoolSlug } from "@epilove/core";
-import { Badge, SchoolChip } from "@epilove/ui";
+import type { OwnPhoto, SongInfo } from "@atomes/contracts";
+import { SCHOOLS, type SchoolSlug } from "@atomes/core";
+import { Badge, SchoolChip } from "@atomes/ui";
 import { BadgeCheck, ImageOff, ScanFace } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Fragment, type ReactNode } from "react";

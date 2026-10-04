@@ -1,4 +1,4 @@
-import type { ChatMessage, MessageAttachment } from "@epilove/contracts";
+import type { ChatMessage, MessageAttachment } from "@atomes/contracts";
 import {
   AI_ICEBREAKER_RULES,
   acceptSuggestions,
@@ -24,20 +24,20 @@ import {
   pickPrompt,
   promptOf,
   screenMessage,
-} from "@epilove/core";
-import { encryptText } from "@epilove/crypto";
-import type { Database } from "@epilove/db";
-import { availabilityOf } from "@epilove/db/repositories/campus-community";
-import { listSpots, spotById } from "@epilove/db/repositories/campus-life";
-import { loadProfileContent } from "@epilove/db/repositories/discovery";
-import { matchForMember } from "@epilove/db/repositories/matches";
+} from "@atomes/core";
+import { encryptText } from "@atomes/crypto";
+import type { Database } from "@atomes/db";
+import { availabilityOf } from "@atomes/db/repositories/campus-community";
+import { listSpots, spotById } from "@atomes/db/repositories/campus-life";
+import { loadProfileContent } from "@atomes/db/repositories/discovery";
+import { matchForMember } from "@atomes/db/repositories/matches";
 import {
   campusDate,
   interestIdsOf,
   loadMembers,
   loadRelations,
   touchLastActive,
-} from "@epilove/db/repositories/members";
+} from "@atomes/db/repositories/members";
 import {
   chatSettingsOf,
   deleteMessageForEveryone,
@@ -59,15 +59,15 @@ import {
   scheduleMediaDeletion,
   setReaction,
   updateMessageBody,
-} from "@epilove/db/repositories/messaging";
+} from "@atomes/db/repositories/messaging";
 import {
   aiConsentsOf,
   releaseAiIcebreaker,
   reserveAiIcebreaker,
   setAiConsent,
-} from "@epilove/db/repositories/messaging-ai";
-import { answerSheets, listActiveQuestions } from "@epilove/db/repositories/questionnaire";
-import { personalChannel } from "@epilove/realtime";
+} from "@atomes/db/repositories/messaging-ai";
+import { answerSheets, listActiveQuestions } from "@atomes/db/repositories/questionnaire";
+import { personalChannel } from "@atomes/realtime";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { os, requireViewer } from "../procedures";

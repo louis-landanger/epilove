@@ -1,7 +1,7 @@
 "use client";
 
-import { PROGRAM_MAX_LENGTH, SCHOOLS, type SchoolSlug } from "@epilove/core";
-import { Button, CheckboxField, ChoiceGroup, SchoolChip, TextField } from "@epilove/ui";
+import { PROGRAM_MAX_LENGTH, SCHOOLS, type SchoolSlug } from "@atomes/core";
+import { Button, CheckboxField, ChoiceGroup, SchoolChip, TextField } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { StepShell } from "../step-shell";

@@ -1,7 +1,7 @@
-import { calendarDateIn, canMessage, LYON_CAMPUS, NUDGE_RULES } from "@epilove/core";
-import { createDatabase, type Database } from "@epilove/db";
-import { matchesToNudge, recordNudges } from "@epilove/db/repositories/matches";
-import { loadMembers, loadRelationsAmong } from "@epilove/db/repositories/members";
+import { calendarDateIn, canMessage, LYON_CAMPUS, NUDGE_RULES } from "@atomes/core";
+import { createDatabase, type Database } from "@atomes/db";
+import { matchesToNudge, recordNudges } from "@atomes/db/repositories/matches";
+import { loadMembers, loadRelationsAmong } from "@atomes/db/repositories/members";
 import type { Task } from "graphile-worker";
 
 /**

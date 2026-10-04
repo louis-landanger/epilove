@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@epilove/ui";
+import { Button } from "@atomes/ui";
 
 export function ReloadButton({ label }: { label: string }) {
   return (

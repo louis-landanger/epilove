@@ -1,6 +1,6 @@
-import { createDatabase, schema } from "@epilove/db";
-import { recordNudges } from "@epilove/db/repositories/matches";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import { createDatabase, schema } from "@atomes/db";
+import { recordNudges } from "@atomes/db/repositories/matches";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { sendNudges } from "./nudge";

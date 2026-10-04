@@ -1,5 +1,5 @@
-import type { EventSummary } from "@epilove/contracts";
-import { SCHOOLS } from "@epilove/core";
+import type { EventSummary } from "@atomes/contracts";
+import { SCHOOLS } from "@atomes/core";
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 

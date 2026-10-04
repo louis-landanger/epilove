@@ -1,6 +1,6 @@
 "use client";
 
-import { Sheet } from "@epilove/ui";
+import { Sheet } from "@atomes/ui";
 import { ORPCError } from "@orpc/client";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";

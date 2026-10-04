@@ -1,8 +1,8 @@
 import { createHmac, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { createDatabase, deleteWaitlistEntries } from "@atomes/db";
 import AxeBuilder from "@axe-core/playwright";
-import { createDatabase, deleteWaitlistEntries } from "@epilove/db";
 import { expect, type Page, test } from "@playwright/test";
 
 // The server reads the repository's `.env`; the clean-up below needs the same secrets.
@@ -69,7 +69,7 @@ async function joinForm(page: Page) {
 test.describe("landing", () => {
   test("presents the headline, the call to action and the live count", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle("Epilove");
+    await expect(page).toHaveTitle("Atomes");
     const heading = page.getByRole("heading", { level: 1 });
     await expect(heading).toHaveAccessibleName("Trouve tes atomes crochus.");
     await expect(page.getByRole("link", { name: "Rejoindre la liste" }).first()).toHaveAttribute(
@@ -256,7 +256,7 @@ test.describe("legal pages", () => {
   for (const legal of LEGAL_PAGES) {
     test(`${legal.path} is a readable draft`, async ({ page }) => {
       await page.goto(legal.path);
-      await expect(page).toHaveTitle(`${legal.title} · Epilove`);
+      await expect(page).toHaveTitle(`${legal.title} · Atomes`);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(legal.title);
       await expect(page.getByRole("note")).toContainText("Brouillon — à valider par un juriste");
       await expect(

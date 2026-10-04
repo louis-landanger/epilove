@@ -1,4 +1,4 @@
-import { isAdult } from "@epilove/core";
+import { isAdult } from "@atomes/core";
 import { describe, expect, it } from "vitest";
 import { QUESTIONS } from "../seeds/questions";
 import { planActivity, sharedMode } from "./graph";

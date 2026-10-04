@@ -8,15 +8,15 @@ import {
   saveQuietHours,
   saveSubscription,
   unreadCount,
-} from "@epilove/db/repositories/notifications";
-import { DEFAULT_QUIET_HOURS } from "@epilove/notifications/quiet-hours";
+} from "@atomes/db/repositories/notifications";
+import { DEFAULT_QUIET_HOURS } from "@atomes/notifications/quiet-hours";
 import {
   DEFAULT_CHANNELS,
   isNotificationType,
   NOTIFICATION_GROUP_NAMES,
   type NOTIFICATION_GROUPS,
   notificationUrl,
-} from "@epilove/notifications/types";
+} from "@atomes/notifications/types";
 import { os, requireViewer } from "../procedures";
 
 type Groups = Record<keyof typeof NOTIFICATION_GROUPS, { push: boolean; email: boolean }>;

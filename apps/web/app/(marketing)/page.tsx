@@ -1,4 +1,4 @@
-import type { Locale } from "@epilove/core";
+import type { Locale } from "@atomes/core";
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Instrument_Serif } from "next/font/google";
 import { getLocale, getTranslations } from "next-intl/server";

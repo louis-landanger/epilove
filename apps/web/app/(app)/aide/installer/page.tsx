@@ -7,7 +7,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metaTitle") };
 }
 
-/** PLT-01: how to add Epilove to the home screen. */
+/** PLT-01: how to add Atomes to the home screen. */
 export default async function InstallPage() {
   const t = await getTranslations("help.install");
   return (

@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 
 /**
  * HMAC-SHA256 of a canonical school email (see `parseSchoolEmail` in
- * @epilove/core). Lets the app compare addresses (hidden contacts, secret
+ * @atomes/core). Lets the app compare addresses (hidden contacts, secret
  * crushes, waiting list) without storing them. The secret lives in
  * EMAIL_HMAC_SECRET and must never change once data exists.
  */

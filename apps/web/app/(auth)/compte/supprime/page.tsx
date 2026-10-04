@@ -1,5 +1,5 @@
-import type { Locale } from "@epilove/core";
-import { buttonVariants } from "@epilove/ui";
+import type { Locale } from "@atomes/core";
+import { buttonVariants } from "@atomes/ui";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";

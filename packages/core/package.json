@@ -1,5 +1,5 @@
 {
-  "name": "@epilove/core",
+  "name": "@atomes/core",
   "version": "0.0.0",
   "private": true,
   "description": "Framework-free domain logic: campus rules, access policies, matching.",
@@ -12,7 +12,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@epilove/config": "workspace:*",
+    "@atomes/config": "workspace:*",
     "@types/node": "catalog:",
     "fast-check": "catalog:",
     "typescript": "catalog:",

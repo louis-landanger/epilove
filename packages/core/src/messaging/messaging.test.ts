@@ -149,14 +149,14 @@ describe("date proposals (CHAT-10)", () => {
     const ics = dateIcs({
       uid: "0192",
       startsAt: new Date("2026-10-10T16:30:00Z"),
-      title: "Date, Epilove",
+      title: "Date, Atomes",
       location: "Place Bellecour; Lyon",
       description: "Rendez-vous près de la statue\nÀ tout à l'heure",
       now,
     });
     expect(ics).toContain("DTSTART:20261010T163000Z\r\n");
     expect(ics).toContain("DTEND:20261010T180000Z\r\n");
-    expect(ics).toContain("SUMMARY:Date\\, Epilove\r\n");
+    expect(ics).toContain("SUMMARY:Date\\, Atomes\r\n");
     expect(ics).toContain(`${String.raw`LOCATION:Place Bellecour\; Lyon`}\r\n`);
     expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
     for (const line of ics.split("\r\n")) {

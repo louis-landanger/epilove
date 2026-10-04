@@ -1,6 +1,6 @@
 "use client";
 
-import type { SpotView } from "@epilove/contracts";
+import type { SpotView } from "@atomes/contracts";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

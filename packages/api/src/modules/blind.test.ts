@@ -1,8 +1,8 @@
-import { blindEvening, LYON_CAMPUS, uuidv7 } from "@epilove/core";
-import { createDatabase, schema } from "@epilove/db";
-import { saveDeckFilter } from "@epilove/db/repositories/discovery";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
-import { createMemoryPublisher } from "@epilove/realtime";
+import { blindEvening, LYON_CAMPUS, uuidv7 } from "@atomes/core";
+import { createDatabase, schema } from "@atomes/db";
+import { saveDeckFilter } from "@atomes/db/repositories/discovery";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
+import { createMemoryPublisher } from "@atomes/realtime";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { setRealtimePublisher } from "../rencontre/realtime";

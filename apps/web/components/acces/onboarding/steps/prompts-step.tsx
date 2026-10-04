@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@epilove/ui";
+import { Button } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {

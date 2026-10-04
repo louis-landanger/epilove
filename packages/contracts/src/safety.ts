@@ -1,4 +1,4 @@
-import { REPORT_CONTEXTS, REPORT_REASONS } from "@epilove/core";
+import { REPORT_CONTEXTS, REPORT_REASONS } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

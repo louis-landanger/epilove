@@ -1,4 +1,4 @@
-import { CHECK_IN_ANSWERS } from "@epilove/core";
+import { CHECK_IN_ANSWERS } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

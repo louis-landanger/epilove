@@ -1,4 +1,4 @@
-import { touchLastActive } from "@epilove/db/repositories/accounts";
+import { touchLastActive } from "@atomes/db/repositories/accounts";
 import type { ApiContext } from "../context";
 
 /** Activity is recorded at most once per quarter of an hour and per member. */

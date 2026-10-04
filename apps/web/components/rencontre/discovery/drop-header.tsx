@@ -1,6 +1,6 @@
 "use client";
 
-import { countdown } from "@epilove/core";
+import { countdown } from "@atomes/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";

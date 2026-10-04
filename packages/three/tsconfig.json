@@ -1,5 +1,5 @@
 {
-  "extends": "@epilove/config/tsconfig.base.json",
+  "extends": "@atomes/config/tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"]
   },

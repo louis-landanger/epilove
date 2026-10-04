@@ -1,8 +1,8 @@
 "use client";
 
-import type { VerificationState } from "@epilove/contracts";
-import type { VerificationGesture } from "@epilove/core";
-import { Button, buttonVariants, cn } from "@epilove/ui";
+import type { VerificationState } from "@atomes/contracts";
+import type { VerificationGesture } from "@atomes/core";
+import { Button, buttonVariants, cn } from "@atomes/ui";
 import { Camera, CircleCheck, Clock, RotateCcw, ScanFace, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";

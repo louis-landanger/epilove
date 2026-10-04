@@ -1,6 +1,6 @@
 "use client";
 
-import type { DeckFilterView, MemberCard } from "@epilove/contracts";
+import type { DeckFilterView, MemberCard } from "@atomes/contracts";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/api-client";

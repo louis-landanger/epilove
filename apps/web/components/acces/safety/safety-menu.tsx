@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReportContext } from "@epilove/core";
-import { ActionMenu, type ActionMenuItem } from "@epilove/ui";
+import type { ReportContext } from "@atomes/core";
+import { ActionMenu, type ActionMenuItem } from "@atomes/ui";
 import { Ban, Flag, HeartOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

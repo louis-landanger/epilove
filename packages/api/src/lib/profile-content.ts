@@ -1,6 +1,6 @@
-import { normalizePromptAnswer, PROGRAM_MAX_LENGTH } from "@epilove/core";
-import type { Database } from "@epilove/db";
-import { countActivePrompts, countInterests } from "@epilove/db/repositories/profiles";
+import { normalizePromptAnswer, PROGRAM_MAX_LENGTH } from "@atomes/core";
+import type { Database } from "@atomes/db";
+import { countActivePrompts, countInterests } from "@atomes/db/repositories/profiles";
 
 type Db = Pick<Database, "select" | "insert" | "update" | "delete">;
 

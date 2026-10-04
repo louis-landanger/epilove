@@ -1,7 +1,7 @@
 "use client";
 
-import { ageOn, checkBirthDate } from "@epilove/core";
-import { Button, Dialog, TextField } from "@epilove/ui";
+import { ageOn, checkBirthDate } from "@atomes/core";
+import { Button, Dialog, TextField } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { StepShell } from "../step-shell";

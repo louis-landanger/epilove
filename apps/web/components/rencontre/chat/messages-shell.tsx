@@ -1,6 +1,6 @@
 "use client";
 
-import type { MatchSummary } from "@epilove/contracts";
+import type { MatchSummary } from "@atomes/contracts";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";

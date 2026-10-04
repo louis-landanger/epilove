@@ -12,7 +12,7 @@ Scénario de [docs/11](../../docs/11-qualite-ops.md) : **3 000 connexions temps 
 
 ## Lancer
 
-Prérequis : services locaux (`pnpm services:up`), l'app **compilée** (`pnpm --filter @epilove/web build`, puis `pnpm start` avec `APP_ENV=development` et `DEV_AUTH=1`), le worker (révélation et relais de l'outbox), Docker pour k6.
+Prérequis : services locaux (`pnpm services:up`), l'app **compilée** (`pnpm --filter @atomes/web build`, puis `pnpm start` avec `APP_ENV=development` et `DEV_AUTH=1`), le worker (révélation et relais de l'outbox), Docker pour k6.
 
 ```sh
 infra/load/run.sh 3000 180
@@ -62,7 +62,7 @@ Ce qui ne tient pas : la vague de `pact.result`. Mesures détaillées :
 Changements :
 
 - `pact.result` : le membre n'est plus chargé deux fois, les profils et relations des paires sont chargés en une fois, les allers-retours indépendants partent en parallèle (7 → 4), et les questions actives sont gardées 5 minutes par processus. Banc en processus sur la saison « Charge » : 17 → 16 requêtes, 8,4 → 8,1 ms de CPU, 179 → 194 résultats/s pour un processus (sans Next).
-- Fenêtre de révélation à la taille de la saison (`revealWindowMs` dans `@epilove/core`, renvoyée par `pact.current`) : les demandes arrivent au rythme que l'API sert au lieu de s'empiler ; régler `PACT_REVEAL_RESULTS_PER_SECOND` sur le débit mesuré du déploiement.
+- Fenêtre de révélation à la taille de la saison (`revealWindowMs` dans `@atomes/core`, renvoyée par `pact.current`) : les demandes arrivent au rythme que l'API sert au lieu de s'empiler ; régler `PACT_REVEAL_RESULTS_PER_SECOND` sur le débit mesuré du déploiement.
 - L'écran ne rappelle plus `pact.current` au signal de révélation (la phase change sur place, resynchronisation étalée sur la minute suivante) : la vague de requêtes est divisée par deux.
 - L'écran retente une demande de résultat qui échoue pour une raison passagère (réseau, serveur occupé, limite de débit), avec un délai croissant et aléatoire, au lieu d'afficher une erreur.
 

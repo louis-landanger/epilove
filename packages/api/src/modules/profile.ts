@@ -1,5 +1,5 @@
-import type { OwnProfile, SongInfo, VoiceAnswer } from "@epilove/contracts";
-import { song as songSchema } from "@epilove/contracts";
+import type { OwnProfile, SongInfo, VoiceAnswer } from "@atomes/contracts";
+import { song as songSchema } from "@atomes/contracts";
 import {
   ageOn,
   type Gender,
@@ -13,9 +13,9 @@ import {
   uuidv7,
   VOICE_MAX_BYTES,
   VOICE_MAX_DURATION_MS,
-} from "@epilove/core";
-import { type Database, enqueueJob } from "@epilove/db";
-import { findAccount, readPreferences } from "@epilove/db/repositories/accounts";
+} from "@atomes/core";
+import { type Database, enqueueJob } from "@atomes/db";
+import { findAccount, readPreferences } from "@atomes/db/repositories/accounts";
 import {
   advanceVoice,
   clearVoice,
@@ -31,8 +31,8 @@ import {
   replacePromptAnswers,
   startVoiceUpload,
   updateProfile,
-} from "@epilove/db/repositories/profiles";
-import { quarantineKey } from "@epilove/media";
+} from "@atomes/db/repositories/profiles";
+import { quarantineKey } from "@atomes/media";
 import { ORPCError } from "@orpc/server";
 import type { ApiServices } from "../context";
 import { refreshCompleteness } from "../lib/completeness";

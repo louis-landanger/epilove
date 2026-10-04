@@ -1,8 +1,8 @@
 "use client";
 
-import type { ChatMessage, IcebreakerView, ThreadView } from "@epilove/contracts";
-import { MESSAGING_RULES, needsSendWarning, type StickerId, screenMessage, uuidv7 } from "@epilove/core";
-import { Sheet } from "@epilove/ui";
+import type { ChatMessage, IcebreakerView, ThreadView } from "@atomes/contracts";
+import { MESSAGING_RULES, needsSendWarning, type StickerId, screenMessage, uuidv7 } from "@atomes/core";
+import { Sheet } from "@atomes/ui";
 import { ORPCError } from "@orpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";

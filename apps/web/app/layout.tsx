@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("common.meta");
   return {
     metadataBase: new URL(process.env.SITE_URL || process.env.APP_URL || "http://localhost:3000"),
-    title: { default: "Epilove", template: "%s · Epilove" },
+    title: { default: "Atomes", template: "%s · Atomes" },
     description: t("description"),
     // Not public before launch.
     robots: { index: false, follow: false },

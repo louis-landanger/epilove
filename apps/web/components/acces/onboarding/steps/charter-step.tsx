@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, cn } from "@epilove/ui";
+import { Button, cn } from "@atomes/ui";
 import { EyeOff, HeartHandshake, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";

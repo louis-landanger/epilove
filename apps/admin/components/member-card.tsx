@@ -1,6 +1,6 @@
-import type { AdminMemberCard } from "@epilove/contracts";
-import { SCHOOLS, type SchoolSlug } from "@epilove/core";
-import { Badge, SchoolChip, ViewerWatermark } from "@epilove/ui";
+import type { AdminMemberCard } from "@atomes/contracts";
+import { SCHOOLS, type SchoolSlug } from "@atomes/core";
+import { Badge, SchoolChip, ViewerWatermark } from "@atomes/ui";
 import { RULE, SANCTION } from "@/lib/labels";
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "Europe/Paris" });

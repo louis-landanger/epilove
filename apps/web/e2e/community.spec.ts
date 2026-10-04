@@ -1,6 +1,6 @@
+import { createDatabase, schema } from "@atomes/db";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import AxeBuilder from "@axe-core/playwright";
-import { createDatabase, schema } from "@epilove/db";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { expect, test } from "@playwright/test";
 
 /** Question of the week (COM-01), cross-school index (COM-02) and Wrapped (COM-03). */
@@ -23,7 +23,7 @@ test.afterAll(async () => {
 test("answers the question of the week, then sees the results", async ({ context, page, baseURL }) => {
   const member = await createTestMember(db, { graduationYear: 2039 });
   await context.addCookies([
-    { name: "epilove_dev_user", value: member, url: baseURL ?? "http://127.0.0.1:3100" },
+    { name: "atomes_dev_user", value: member, url: baseURL ?? "http://127.0.0.1:3100" },
   ]);
   await page.goto("/campus/question");
   await expect(page.getByRole("heading", { level: 1, name: "Question de la semaine" })).toBeVisible();
@@ -45,7 +45,7 @@ test("sees their Wrapped and downloads it as an image", async ({ context, page, 
   const [userLow, userHigh] = member < other ? [member, other] : [other, member];
   await db.insert(schema.match).values({ userLow, userHigh, mode: "friends", source: "like" });
   await context.addCookies([
-    { name: "epilove_dev_user", value: member, url: baseURL ?? "http://127.0.0.1:3100" },
+    { name: "atomes_dev_user", value: member, url: baseURL ?? "http://127.0.0.1:3100" },
   ]);
   await page.goto("/campus/wrapped");
   await expect(page.getByRole("heading", { level: 1, name: "Ton Wrapped" })).toBeVisible();

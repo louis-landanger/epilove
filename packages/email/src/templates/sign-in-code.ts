@@ -2,14 +2,14 @@ import { type EmailLocale, footerFor, layout, type RenderedEmail } from "./layou
 
 const COPY = {
   fr: {
-    subject: (code: string) => `${code} est ton code Epilove`,
+    subject: (code: string) => `${code} est ton code Atomes`,
     title: "Ton code de connexion",
     line: (code: string) => `Ton code de connexion : ${code}`,
     validity: (minutes: number) => `Il est valable ${minutes} minutes et ne sert qu'une fois.`,
     ignore: "Si tu n'as rien demandé, ignore cet email : personne ne peut se connecter sans ce code.",
   },
   en: {
-    subject: (code: string) => `${code} is your Epilove code`,
+    subject: (code: string) => `${code} is your Atomes code`,
     title: "Your sign-in code",
     line: (code: string) => `Your sign-in code: ${code}`,
     validity: (minutes: number) => `It is valid for ${minutes} minutes and works only once.`,

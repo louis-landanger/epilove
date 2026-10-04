@@ -1,6 +1,6 @@
 "use client";
 
-import type { CrushView, MemberCard } from "@epilove/contracts";
+import type { CrushView, MemberCard } from "@atomes/contracts";
 import { ORPCError } from "@orpc/client";
 import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";

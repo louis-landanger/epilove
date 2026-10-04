@@ -1,5 +1,5 @@
-import type { Locale } from "@epilove/core";
-import { ToastProvider } from "@epilove/ui/primitives/toast";
+import type { Locale } from "@atomes/core";
+import { ToastProvider } from "@atomes/ui/primitives/toast";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
@@ -18,7 +18,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         />
         <header className="flex items-center justify-between px-4 py-5 sm:px-10">
           <Link href={publicHref(locale, "/")} className="font-display font-semibold text-xl tracking-tight">
-            epilove<span className="text-plasma">.</span>
+            atomes<span className="text-plasma">.</span>
           </Link>
           <LocaleSwitcher />
         </header>

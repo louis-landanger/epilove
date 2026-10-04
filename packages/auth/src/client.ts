@@ -1,7 +1,7 @@
 "use client";
 
+import { isLocale, LOCALE_HEADER } from "@atomes/core";
 import { passkeyClient } from "@better-auth/passkey/client";
-import { isLocale, LOCALE_HEADER } from "@epilove/core";
 import { adminClient, emailOTPClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 

@@ -3,12 +3,12 @@ import {
   deletePhoto,
   listAbandonedUploads,
   listAbandonedVoices,
-} from "@epilove/db/repositories/profiles";
+} from "@atomes/db/repositories/profiles";
 import {
   deleteVerification,
   listAbandonedVerifications,
-} from "@epilove/db/repositories/profiles-verification";
-import { quarantineKey } from "@epilove/media";
+} from "@atomes/db/repositories/profiles-verification";
+import { quarantineKey } from "@atomes/media";
 import type { Task } from "graphile-worker";
 import type { MediaDependencies } from "./process-photo";
 

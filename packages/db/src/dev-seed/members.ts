@@ -1,4 +1,4 @@
-import type { Gender, Importance, Mode, SchoolSlug } from "@epilove/core";
+import type { Gender, Importance, Mode, SchoolSlug } from "@atomes/core";
 import { QUESTIONS } from "../seeds/questions";
 import { FIRST_NAMES, PROGRAMS } from "./content";
 import type { Random } from "./random";

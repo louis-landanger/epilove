@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { MODES, type Mode } from "@epilove/core";
+import { MODES, type Mode } from "@atomes/core";
 import { z } from "zod";
 
 /**

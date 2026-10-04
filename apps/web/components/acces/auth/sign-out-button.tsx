@@ -1,7 +1,7 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { Button } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import { Button } from "@atomes/ui";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

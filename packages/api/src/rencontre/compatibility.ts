@@ -1,6 +1,6 @@
-import type { CompatibilityView } from "@epilove/contracts";
-import { type AnswerSheet, compatibility, explainCompatibility } from "@epilove/core";
-import type { QuestionRow } from "@epilove/db/repositories/questionnaire";
+import type { CompatibilityView } from "@atomes/contracts";
+import { type AnswerSheet, compatibility, explainCompatibility } from "@atomes/core";
+import type { QuestionRow } from "@atomes/db/repositories/questionnaire";
 
 /** Section whose questions make good light-hearted disagreements. */
 const PLAYFUL_SECTION = "nerd";

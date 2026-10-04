@@ -4,7 +4,7 @@
   },
   "nav": {
     "label": "Navigation principale",
-    "home": "Epilove, retour à l’accueil",
+    "home": "Atomes, retour à l’accueil",
     "how": "Le concept",
     "race": "La course",
     "pact": "Le Pacte",
@@ -16,7 +16,7 @@
   "manifesto": {
     "eyebrow": "Manifeste",
     "title": "Cinq écoles. Une ville. Zéro <em>hasard</em>.",
-    "body": "On se croise tous les jours entre deux cours sans jamais se parler. Epilove réunit les étudiantes et étudiants vérifiés de cinq écoles du campus dans un même cercle : pas de swipe infini, pas de faux profils, pas d’algorithme qui te vend. Juste de bonnes <em>réactions</em>, en amitié comme en amour.",
+    "body": "On se croise tous les jours entre deux cours sans jamais se parler. Atomes réunit les étudiantes et étudiants vérifiés de cinq écoles du campus dans un même cercle : pas de swipe infini, pas de faux profils, pas d’algorithme qui te vend. Juste de bonnes <em>réactions</em>, en amitié comme en amour.",
     "signature": "La chimie, ça se provoque."
   },
   "how": {
@@ -93,7 +93,7 @@
   "safety": {
     "eyebrow": "Sécurité et discrétion",
     "title": "Nos engagements",
-    "lead": "Sur un campus, tout le monde se connaît. Epilove est conçu pour que ta présence et tes échanges restent entre toi et les personnes que tu choisis.",
+    "lead": "Sur un campus, tout le monde se connaît. Atomes est conçu pour que ta présence et tes échanges restent entre toi et les personnes que tu choisis.",
     "items": {
       "verified": {
         "title": "Vérifié ou rien",
@@ -147,7 +147,7 @@
         "answer": "Les profils et le questionnaire du Pacte ouvrent en janvier, et la révélation a lieu le jeudi 11 février 2027 à 20 h. Inscris-toi sur la liste pour ne rien manquer."
       },
       "team": {
-        "question": "Qui est derrière Epilove ?",
+        "question": "Qui est derrière Atomes ?",
         "answer": "Des étudiantes et étudiants du campus, réunis en association. Le projet est indépendant : ni IONIS Education Group ni les écoles n’y sont associés."
       },
       "help": {
@@ -169,7 +169,7 @@
     "privacy": "Confidentialité",
     "transparency": "Transparence du classement",
     "explore": "Explorer",
-    "codename": "« Epilove » est un nom de code.",
+    "codename": "« Atomes » est un nom provisoire.",
     "made": "Fait à Lyon, la nuit, au labo.",
     "backToTop": "Revenir en haut"
   },

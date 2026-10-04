@@ -1,7 +1,7 @@
 "use client";
 
-import type { EventDetail, EventInput, SpotView } from "@epilove/contracts";
-import { EVENT_RULES, SCHOOLS, type SchoolSlug } from "@epilove/core";
+import type { EventDetail, EventInput, SpotView } from "@atomes/contracts";
+import { EVENT_RULES, SCHOOLS, type SchoolSlug } from "@atomes/core";
 import { ORPCError } from "@orpc/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

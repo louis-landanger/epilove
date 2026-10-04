@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@epilove/ui";
+import { cn } from "@atomes/ui";
 import { Pause, Play } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";

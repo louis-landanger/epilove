@@ -1,5 +1,5 @@
-import { type Completeness, profileCompleteness } from "@epilove/core";
-import type { Database } from "@epilove/db";
+import { type Completeness, profileCompleteness } from "@atomes/core";
+import type { Database } from "@atomes/db";
 import {
   countPhotosWithAltText,
   countUsablePhotos,
@@ -7,8 +7,8 @@ import {
   listInterestIds,
   listPromptAnswers,
   updateProfile,
-} from "@epilove/db/repositories/profiles";
-import { photoVerifiedAt } from "@epilove/db/repositories/profiles-verification";
+} from "@atomes/db/repositories/profiles";
+import { photoVerifiedAt } from "@atomes/db/repositories/profiles-verification";
 
 type Db = Pick<Database, "select" | "insert" | "update" | "delete">;
 

@@ -15,7 +15,7 @@ describe("parseSchoolEmail", () => {
 
   it("canonicalises case and plus addressing so one mailbox is one identity", () => {
     const plain = parseSchoolEmail("prenom.nom@epita.fr");
-    const tagged = parseSchoolEmail("Prenom.Nom+epilove@Epita.fr");
+    const tagged = parseSchoolEmail("Prenom.Nom+atomes@Epita.fr");
     expect(plain.ok && plain.canonicalEmail).toBe("prenom.nom@epita.fr");
     expect(tagged.ok && tagged.canonicalEmail).toBe("prenom.nom@epita.fr");
   });

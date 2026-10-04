@@ -38,7 +38,7 @@
   },
   "birth": {
     "title": "Your date of birth",
-    "lead": "Epilove is for adults only. We show your age, never your date of birth.",
+    "lead": "Atomes is for adults only. We show your age, never your date of birth.",
     "label": "Date of birth",
     "invalid": "This date is not valid.",
     "confirmTitle": "You're {age}?",
@@ -91,10 +91,10 @@
     "title": "Who do you want to see?",
     "consentTitle": "Sensitive data",
     "consentBody": "The gender of the people you want to meet can reveal your sexual orientation. Under the GDPR this is sensitive data: we only use it to suggest profiles, it is never displayed, never shared and never exported.",
-    "consentLabel": "I agree that Epilove uses the genders I'm looking for, which is sensitive data, to suggest profiles in Love mode.",
+    "consentLabel": "I agree that Atomes uses the genders I'm looking for, which is sensitive data, to suggest profiles in Love mode.",
     "consentHelp": "You can withdraw this consent any time in settings: Love mode is then switched off, Friends mode stays available.",
     "withoutConsent": "Continue in Friends mode only",
-    "withoutConsentNote": "Without this consent, you use Epilove in Friends mode.",
+    "withoutConsentNote": "Without this consent, you use Atomes in Friends mode.",
     "interestedInLabel": "In Love mode, you want to see",
     "interestedIn": {
       "woman": "Women",
@@ -194,7 +194,7 @@
     "programPlaceholder": "Engineering, Bachelor, MSc…",
     "onCampus": "I study on the Lyon campus.",
     "student": "I'm a student, not a staff member.",
-    "declarationsHelp": "Epilove is only for students of the campus. A profile that isn't can be reported and removed.",
+    "declarationsHelp": "Atomes is only for students of the campus. A profile that isn't can be reported and removed.",
     "declarationsRequired": "Both statements are required."
   },
   "done": {
@@ -219,7 +219,7 @@
   "underage": {
     "metaTitle": "Come back later",
     "title": "Come back when you're 18.",
-    "body": "Epilove is for adults only. Your account has been deleted and no data was kept, except an encrypted fingerprint of your address until you turn 18.",
+    "body": "Atomes is for adults only. Your account has been deleted and no data was kept, except an encrypted fingerprint of your address until you turn 18.",
     "help": "If you need to talk to someone, 3018 (online harassment) and Fil Santé Jeunes (0 800 235 236) are free and anonymous.",
     "home": "Back to home"
   }

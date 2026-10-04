@@ -3,7 +3,7 @@ import { checkForgeIdProfile, type ForgeIdConfig, forgeIdConfigFromEnv } from ".
 
 const config: ForgeIdConfig = {
   discoveryUrl: "https://forge.example/.well-known/openid-configuration",
-  clientId: "epilove",
+  clientId: "atomes",
   clientSecret: "secret",
   campusClaim: "campus",
   campusValue: "Lyon",

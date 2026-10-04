@@ -7,18 +7,18 @@ import {
   IDENTITY_RETENTION_YEARS,
   isValidPauseEnd,
   plusYears,
-} from "@epilove/core";
-import type { Database } from "@epilove/db";
-import { enqueueJob } from "@epilove/db";
+} from "@atomes/core";
+import type { Database } from "@atomes/db";
+import { enqueueJob } from "@atomes/db";
 import {
   findAccount,
   requestAccountDeletion,
   setAccountLocale,
   transitionStatus,
-} from "@epilove/db/repositories/accounts";
-import { findDecision, hasAppeal, insertAppeal, listDecisionsFor } from "@epilove/db/repositories/admin";
-import { countRecentExports, insertExport, listExports } from "@epilove/db/repositories/exports";
-import { writeAudit } from "@epilove/db/repositories/safety";
+} from "@atomes/db/repositories/accounts";
+import { findDecision, hasAppeal, insertAppeal, listDecisionsFor } from "@atomes/db/repositories/admin";
+import { countRecentExports, insertExport, listExports } from "@atomes/db/repositories/exports";
+import { writeAudit } from "@atomes/db/repositories/safety";
 import { ORPCError } from "@orpc/server";
 import { watermarkCode } from "../lib/watermark";
 import { os, requireViewer } from "../procedures";

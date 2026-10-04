@@ -6,9 +6,9 @@ import {
   forgeIdConfigFromEnv,
   microsoftConfigFromEnv,
   valkeySecondaryStorage,
-} from "@epilove/auth";
-import { createMailer, mailerConfigFromEnv } from "@epilove/email";
-import { createMemoryRateLimiter, createValkeyRateLimiter, valkeyFromEnv } from "@epilove/rate-limit";
+} from "@atomes/auth";
+import { createMailer, mailerConfigFromEnv } from "@atomes/email";
+import { createMemoryRateLimiter, createValkeyRateLimiter, valkeyFromEnv } from "@atomes/rate-limit";
 import { getDatabase } from "./database";
 
 let auth: Auth | undefined;

@@ -1,4 +1,4 @@
-import type { DeckFilter, IsoDate } from "@epilove/core";
+import type { DeckFilter, IsoDate } from "@atomes/core";
 import { and, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { appUser, discoveryFilter, drop, dropRun, likeAction, notification } from "../schema";

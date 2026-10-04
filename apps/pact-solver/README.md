@@ -33,9 +33,9 @@ Une requête JSON sur l'entrée standard, une réponse JSON sur la sortie standa
 
 ```bash
 uv sync --frozen --extra cpsat               # dépendances, avec OR-Tools
-pnpm --filter @epilove/pact-solver test:py   # pytest (dont comparaison à une recherche exhaustive)
-pnpm --filter @epilove/pact-solver lint:py   # ruff
-pnpm --filter @epilove/pact-solver bench     # 3 000 membres synthétiques (≈ 4 minutes)
+pnpm --filter @atomes/pact-solver test:py   # pytest (dont comparaison à une recherche exhaustive)
+pnpm --filter @atomes/pact-solver lint:py   # ruff
+pnpm --filter @atomes/pact-solver bench     # 3 000 membres synthétiques (≈ 4 minutes)
 pnpm pact:compute --synthetic 3000           # chaîne complète à blanc, vrais scores de questionnaire
 ```
 

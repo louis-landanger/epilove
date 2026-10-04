@@ -1,4 +1,4 @@
-import { EVENT_STATUSES, RSVP_STATUSES } from "@epilove/core";
+import { EVENT_STATUSES, RSVP_STATUSES } from "@atomes/core";
 import { sql } from "drizzle-orm";
 import { boolean, check, index, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { id, oneOf, timestamps } from "./columns";

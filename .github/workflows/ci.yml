@@ -28,18 +28,18 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg18
         env:
-          POSTGRES_USER: epilove
-          POSTGRES_PASSWORD: epilove
-          POSTGRES_DB: epilove
+          POSTGRES_USER: atomes
+          POSTGRES_PASSWORD: atomes
+          POSTGRES_DB: atomes
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U epilove -d epilove"
+          --health-cmd "pg_isready -U atomes -d atomes"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
     env:
-      DATABASE_URL: postgres://epilove:epilove@localhost:5432/epilove
+      DATABASE_URL: postgres://atomes:atomes@localhost:5432/atomes
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
@@ -105,7 +105,7 @@ jobs:
         run: pnpm build
 
       - name: Install Playwright Chromium
-        run: pnpm --filter @epilove/web exec playwright install --with-deps chromium
+        run: pnpm --filter @atomes/web exec playwright install --with-deps chromium
 
       - name: End-to-end tests (Playwright + axe)
         run: pnpm test:e2e

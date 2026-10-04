@@ -1,6 +1,6 @@
 "use client";
 
-import { type ApiClient, createApiClient } from "@epilove/contracts/client";
+import { type ApiClient, createApiClient } from "@atomes/contracts/client";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 
 /**

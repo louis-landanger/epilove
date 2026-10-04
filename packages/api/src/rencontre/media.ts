@@ -1,5 +1,5 @@
-import { createMemoryObjectStore, type ObjectStore, objectStoreFromEnv } from "@epilove/db/storage";
-import { type ImgproxyConfig, imgproxyConfigFromEnv, photoUrl } from "@epilove/media";
+import { createMemoryObjectStore, type ObjectStore, objectStoreFromEnv } from "@atomes/db/storage";
+import { type ImgproxyConfig, imgproxyConfigFromEnv, photoUrl } from "@atomes/media";
 
 /**
  * Signed, expiring photo URLs. When imgproxy is not configured (unit tests

@@ -1,4 +1,4 @@
-import { buttonVariants, EmptyState } from "@epilove/ui";
+import { buttonVariants, EmptyState } from "@atomes/ui";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { isDevEnvironment } from "@/lib/rencontre/dev-member";

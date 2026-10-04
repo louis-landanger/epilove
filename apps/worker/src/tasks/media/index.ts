@@ -1,5 +1,5 @@
-import { createDatabase, type Database, databaseUrlFromEnv } from "@epilove/db";
-import { createStorage, type Storage, storageConfigFromEnv } from "@epilove/media/storage";
+import { createDatabase, type Database, databaseUrlFromEnv } from "@atomes/db";
+import { createStorage, type Storage, storageConfigFromEnv } from "@atomes/media/storage";
 import type { TaskList } from "graphile-worker";
 import { type MediaDependencies, processPhotoTask } from "./process-photo";
 import { processSelfieTask } from "./process-selfie";

@@ -1,4 +1,4 @@
-import type { VerificationGesture, VerificationRejection, VerificationStatus } from "@epilove/core";
+import type { VerificationGesture, VerificationRejection, VerificationStatus } from "@atomes/core";
 import { and, asc, count, desc, eq, gte, inArray, isNotNull, lt, ne, or } from "drizzle-orm";
 import type { Database } from "../client";
 import { appUser, photo, photoVerification } from "../schema";

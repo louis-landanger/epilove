@@ -1,11 +1,11 @@
-import AxeBuilder from "@axe-core/playwright";
-import { createDatabase, schema } from "@epilove/db";
+import { createDatabase, schema } from "@atomes/db";
 import {
   cleanupTestMembers,
   createTestMember,
   prepareTestDatabase,
   testMemberEmail,
-} from "@epilove/db/testing";
+} from "@atomes/db/testing";
+import AxeBuilder from "@axe-core/playwright";
 import { type Browser, expect, type Page, test } from "@playwright/test";
 
 /**
@@ -30,7 +30,7 @@ test.afterAll(async () => {
 async function signIn(browser: Browser, memberId: string, baseURL: string | undefined): Promise<Page> {
   const context = await browser.newContext();
   await context.addCookies([
-    { name: "epilove_dev_user", value: memberId, url: baseURL ?? "http://127.0.0.1:3100" },
+    { name: "atomes_dev_user", value: memberId, url: baseURL ?? "http://127.0.0.1:3100" },
   ]);
   return context.newPage();
 }
@@ -233,7 +233,7 @@ test("proposes a date at a Spot, accepted by the other member (CHAT-10)", async 
 
   const download = sachaPage.waitForEvent("download");
   await sachaPage.getByRole("button", { name: "Ajouter au calendrier" }).click();
-  expect((await download).suggestedFilename()).toBe("date-epilove.ics");
+  expect((await download).suggestedFilename()).toBe("date-atomes.ics");
 });
 
 test("pages send signed-out visitors to the sign-in page", async ({ page }) => {

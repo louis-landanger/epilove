@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, useToast } from "@epilove/ui";
+import { Button, useToast } from "@atomes/ui";
 import { Download } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";

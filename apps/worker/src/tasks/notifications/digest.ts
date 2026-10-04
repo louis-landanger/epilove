@@ -1,15 +1,15 @@
-import { isoWeek, LYON_CAMPUS } from "@epilove/core";
-import { createDatabase, type Database } from "@epilove/db";
-import { eventsBetween } from "@epilove/db/repositories/campus-events";
-import { activeMatchesOf } from "@epilove/db/repositories/matches";
+import { isoWeek, LYON_CAMPUS } from "@atomes/core";
+import { createDatabase, type Database } from "@atomes/db";
+import { eventsBetween } from "@atomes/db/repositories/campus-events";
+import { activeMatchesOf } from "@atomes/db/repositories/matches";
 import {
   claimDigest,
   digestCounts,
   digestRecipients,
   markDigestSent,
   releaseDigest,
-} from "@epilove/db/repositories/notifications";
-import { currentSeason } from "@epilove/db/repositories/pact";
+} from "@atomes/db/repositories/notifications";
+import { currentSeason } from "@atomes/db/repositories/pact";
 import {
   createMailer,
   type DigestInput,
@@ -17,8 +17,8 @@ import {
   type Mailer,
   mailerConfigFromEnv,
   weeklyDigestEmail,
-} from "@epilove/email";
-import { localHour } from "@epilove/notifications";
+} from "@atomes/email";
+import { localHour } from "@atomes/notifications";
 import type { Task } from "graphile-worker";
 
 const TIME_ZONE = LYON_CAMPUS.timeZone;

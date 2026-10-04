@@ -1,7 +1,7 @@
-import type { OwnPhoto } from "@epilove/contracts";
-import { canViewPhoto, MAX_PHOTOS, MIN_PHOTOS, uuidv7 } from "@epilove/core";
-import { type Database, enqueueJob } from "@epilove/db";
-import { findAccount } from "@epilove/db/repositories/accounts";
+import type { OwnPhoto } from "@atomes/contracts";
+import { canViewPhoto, MAX_PHOTOS, MIN_PHOTOS, uuidv7 } from "@atomes/core";
+import { type Database, enqueueJob } from "@atomes/db";
+import { findAccount } from "@atomes/db/repositories/accounts";
 import {
   countPhotoSlots,
   countUsablePhotos,
@@ -13,8 +13,8 @@ import {
   reorderPhotos,
   setPhotoAltText,
   setPhotoStage,
-} from "@epilove/db/repositories/profiles";
-import { type ImgproxyConfig, photoUrl, quarantineKey } from "@epilove/media";
+} from "@atomes/db/repositories/profiles";
+import { type ImgproxyConfig, photoUrl, quarantineKey } from "@atomes/media";
 import { sql } from "drizzle-orm";
 import { refreshCompleteness } from "../lib/completeness";
 import { withinQuota } from "../lib/quota";

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@epilove/tokens/theme.css";
+@import "@atomes/tokens/theme.css";
 
 /* Classes used by the design system package. */
 @source "../../../packages/ui/src";

@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
-import AxeBuilder from "@axe-core/playwright";
-import { createDatabase, schema } from "@epilove/db";
-import { deleteSeason, enrolMembers, revealSeason, upsertSeason } from "@epilove/db/repositories/pact";
+import { createDatabase, schema } from "@atomes/db";
+import { deleteSeason, enrolMembers, revealSeason, upsertSeason } from "@atomes/db/repositories/pact";
 import {
   answerQuestionnaire,
   cleanupTestMembers,
   createTestMember,
   prepareTestDatabase,
-} from "@epilove/db/testing";
+} from "@atomes/db/testing";
+import AxeBuilder from "@axe-core/playwright";
 import { type Browser, expect, type Page, test } from "@playwright/test";
 
 /**
@@ -35,7 +35,7 @@ test.afterAll(async () => {
 async function signIn(browser: Browser, memberId: string, baseURL: string | undefined): Promise<Page> {
   const context = await browser.newContext();
   await context.addCookies([
-    { name: "epilove_dev_user", value: memberId, url: baseURL ?? "http://127.0.0.1:3100" },
+    { name: "atomes_dev_user", value: memberId, url: baseURL ?? "http://127.0.0.1:3100" },
   ]);
   return context.newPage();
 }

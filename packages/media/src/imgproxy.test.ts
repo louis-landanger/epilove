@@ -6,7 +6,7 @@ const config: ImgproxyConfig = {
   baseUrl: "http://localhost:8080/",
   keyHex: Buffer.from("key").toString("hex"),
   saltHex: Buffer.from("salt").toString("hex"),
-  bucket: "epilove-media",
+  bucket: "atomes-media",
 };
 
 describe("photoUrl", () => {

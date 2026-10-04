@@ -1,5 +1,5 @@
-import { MAX_PHOTOS, PHOTO_ALT_TEXT_MAX_LENGTH } from "@epilove/core";
-import { MAX_UPLOAD_BYTES, UPLOAD_CONTENT_TYPES } from "@epilove/media/policy";
+import { MAX_PHOTOS, PHOTO_ALT_TEXT_MAX_LENGTH } from "@atomes/core";
+import { MAX_UPLOAD_BYTES, UPLOAD_CONTENT_TYPES } from "@atomes/media/policy";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

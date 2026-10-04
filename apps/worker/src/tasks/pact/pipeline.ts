@@ -8,8 +8,8 @@ import {
   type PolicyContext,
   pactModeReport,
   sectionScores,
-} from "@epilove/core";
-import type { NewPactResult } from "@epilove/db/repositories/pact";
+} from "@atomes/core";
+import type { NewPactResult } from "@atomes/db/repositories/pact";
 import type { Solve, SolverRequest, SolverResponse } from "./solver";
 
 /**

@@ -1,10 +1,10 @@
 import "server-only";
-import { type Auth, authEnvFromProcess, createAuth, valkeySecondaryStorage } from "@epilove/auth";
-import { createMailer, mailerConfigFromEnv } from "@epilove/email";
-import { createMemoryRateLimiter, createValkeyRateLimiter, valkeyFromEnv } from "@epilove/rate-limit";
+import { type Auth, authEnvFromProcess, createAuth, valkeySecondaryStorage } from "@atomes/auth";
+import { createMailer, mailerConfigFromEnv } from "@atomes/email";
+import { createMemoryRateLimiter, createValkeyRateLimiter, valkeyFromEnv } from "@atomes/rate-limit";
 import { getDatabase } from "./database";
 
-export const ADMIN_COOKIE_PREFIX = "epilove-staff";
+export const ADMIN_COOKIE_PREFIX = "atomes-staff";
 
 let auth: Auth | undefined;
 

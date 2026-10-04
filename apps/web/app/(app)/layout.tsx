@@ -1,4 +1,4 @@
-import { ToastProvider, WatermarkProvider } from "@epilove/ui";
+import { ToastProvider, WatermarkProvider } from "@atomes/ui";
 import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";

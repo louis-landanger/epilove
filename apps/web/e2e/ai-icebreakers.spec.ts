@@ -1,7 +1,7 @@
+import { createDatabase, schema } from "@atomes/db";
+import { messagesOf } from "@atomes/db/repositories/messaging";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import AxeBuilder from "@axe-core/playwright";
-import { createDatabase, schema } from "@epilove/db";
-import { messagesOf } from "@epilove/db/repositories/messaging";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -36,7 +36,7 @@ test("asks for consent, suggests ideas, never sends them", async ({ context, pag
     .values({ userLow, userHigh, mode: "friends", source: "like" })
     .returning({ id: schema.match.id });
   await context.addCookies([
-    { name: "epilove_dev_user", value: kim, url: baseURL ?? "http://127.0.0.1:3100" },
+    { name: "atomes_dev_user", value: kim, url: baseURL ?? "http://127.0.0.1:3100" },
   ]);
 
   await page.goto(`/messages/${created?.id}`);

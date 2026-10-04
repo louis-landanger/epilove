@@ -1,5 +1,5 @@
-import { type AccountStatus, LAUNCH_TARGETS, type Sanction, share, targetState } from "@epilove/core";
-import { cn } from "@epilove/ui";
+import { type AccountStatus, LAUNCH_TARGETS, type Sanction, share, targetState } from "@atomes/core";
+import { cn } from "@atomes/ui";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { DailyBars, fillDays } from "@/components/dashboard/bar-chart";

@@ -19,7 +19,7 @@ const MEMBERS = Number(__ENV.MEMBERS || 3000);
 const PER_VU = Number(__ENV.SOCKETS_PER_VU || 30);
 const RAMP_SECONDS = Number(__ENV.RAMP_SECONDS || 60);
 const MESSAGES_PER_PAIR = Number(__ENV.MESSAGES_PER_PAIR || 3);
-/** Results the API serves per second: the reveal window follows it (`revealWindowMs` in @epilove/core). */
+/** Results the API serves per second: the reveal window follows it (`revealWindowMs` in @atomes/core). */
 const RESULTS_PER_SECOND = Number(__ENV.PACT_REVEAL_RESULTS_PER_SECOND || 400);
 const REVEAL_JITTER_MS = Number(
   __ENV.REVEAL_JITTER_MS || Math.max(3000, Math.ceil((MEMBERS / RESULTS_PER_SECOND) * 1000)),

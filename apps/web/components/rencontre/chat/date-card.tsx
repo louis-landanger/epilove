@@ -1,7 +1,7 @@
 "use client";
 
-import type { MessageAttachment } from "@epilove/contracts";
-import { DATE_SAFETY_RULES, dateIcs } from "@epilove/core";
+import type { MessageAttachment } from "@atomes/contracts";
+import { DATE_SAFETY_RULES, dateIcs } from "@atomes/core";
 import { useFormatter, useTranslations } from "next-intl";
 
 type DateAttachment = Extract<MessageAttachment, { type: "date" }>;
@@ -44,7 +44,7 @@ export function DateCard({
     const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = "date-epilove.ics";
+    link.download = "date-atomes.ics";
     link.click();
     URL.revokeObjectURL(url);
   };

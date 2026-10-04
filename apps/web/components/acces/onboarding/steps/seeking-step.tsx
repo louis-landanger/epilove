@@ -1,7 +1,7 @@
 "use client";
 
-import { INTENTIONS, type Intention, type Mode } from "@epilove/core";
-import { Button, ChoiceGroup } from "@epilove/ui";
+import { INTENTIONS, type Intention, type Mode } from "@atomes/core";
+import { Button, ChoiceGroup } from "@atomes/ui";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

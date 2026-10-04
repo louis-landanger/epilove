@@ -1,8 +1,8 @@
 import { createServer } from "node:http";
-import { createDatabase } from "@epilove/db";
-import { processPendingPushes } from "@epilove/db/repositories/notifications";
-import { createPushSender, vapidConfigFromEnv } from "@epilove/notifications";
-import { createPublisher } from "@epilove/realtime";
+import { createDatabase } from "@atomes/db";
+import { processPendingPushes } from "@atomes/db/repositories/notifications";
+import { createPushSender, vapidConfigFromEnv } from "@atomes/notifications";
+import { createPublisher } from "@atomes/realtime";
 import { run } from "graphile-worker";
 import { parseEnv } from "./env";
 import { crontab, taskList } from "./tasks";

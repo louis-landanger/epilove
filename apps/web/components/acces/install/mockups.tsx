@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@epilove/ui";
+import { cn } from "@atomes/ui";
 import {
   Bookmark,
   BookOpen,
@@ -53,7 +53,7 @@ function AppIcon({ className }: { className?: string }) {
   );
 }
 
-/** A blurred Epilove screen behind the system UI. */
+/** A blurred Atomes screen behind the system UI. */
 function PageBehind() {
   return (
     <div aria-hidden="true" className="absolute inset-0 overflow-hidden bg-ink">
@@ -131,7 +131,7 @@ function HomeScreen({ delay }: { delay: number }) {
         transition={{ delay: delay + 0.25, type: "spring", stiffness: 260, damping: 14 }}
       >
         <AppIcon className="aspect-square w-full" />
-        <span className="text-[0.55rem] text-paper">Epilove</span>
+        <span className="text-[0.55rem] text-paper">Atomes</span>
       </motion.span>
     </motion.div>
   );
@@ -142,7 +142,7 @@ function HomeScreen({ delay }: { delay: number }) {
 function SafariBar({ highlight }: { highlight: boolean }) {
   return (
     <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 bg-[#1c1b24]/95 px-3 pt-2 pb-4 text-paper/80 backdrop-blur">
-      <span className="mx-auto w-full rounded-lg bg-paper/10 py-1 text-center text-[0.6rem]">epilove.fr</span>
+      <span className="mx-auto w-full rounded-lg bg-paper/10 py-1 text-center text-[0.6rem]">atomes.app</span>
       <div className="relative flex items-center justify-between px-1 [&_svg]:size-4">
         <ChevronLeft />
         <ChevronRight className="opacity-40" />
@@ -175,8 +175,8 @@ export function IosAdd() {
         <div className="flex items-center gap-2 border-paper/10 border-b px-2 pb-2">
           <AppIcon className="size-7" />
           <span className="flex flex-col leading-tight">
-            <span className="font-semibold">Epilove</span>
-            <span className="text-[0.6rem] text-paper/60">epilove.fr</span>
+            <span className="font-semibold">Atomes</span>
+            <span className="text-[0.6rem] text-paper/60">atomes.app</span>
           </span>
         </div>
         <div className="mt-1 flex flex-col">
@@ -204,8 +204,8 @@ export function IosConfirm() {
         <div className="flex items-center gap-2 rounded-xl bg-paper/5 p-2">
           <AppIcon className="size-9" />
           <span className="flex flex-col leading-tight">
-            <span className="font-semibold">Epilove</span>
-            <span className="text-[0.6rem] text-paper/60">epilove.fr</span>
+            <span className="font-semibold">Atomes</span>
+            <span className="text-[0.6rem] text-paper/60">atomes.app</span>
           </span>
         </div>
       </Sheet>
@@ -219,7 +219,7 @@ export function IosConfirm() {
 function ChromeBar({ highlight }: { highlight: boolean }) {
   return (
     <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-[#1c1b24]/95 px-3 pt-8 pb-2 text-paper/80">
-      <span className="flex-1 rounded-full bg-paper/10 px-3 py-1 text-[0.6rem]">epilove.fr</span>
+      <span className="flex-1 rounded-full bg-paper/10 px-3 py-1 text-[0.6rem]">atomes.app</span>
       <span className={cn("relative [&_svg]:size-4", highlight && "text-volt")}>
         <EllipsisVertical />
         {highlight ? <Tap className="top-1/2 left-1/2" /> : null}
@@ -273,8 +273,8 @@ function InstallDialog({ wide = false }: { wide?: boolean }) {
       <span className="flex items-center gap-2">
         <AppIcon className="size-8" />
         <span className="flex flex-col leading-tight">
-          <span className="font-semibold">Epilove</span>
-          <span className="text-[0.6rem] text-paper/60">epilove.fr</span>
+          <span className="font-semibold">Atomes</span>
+          <span className="text-[0.6rem] text-paper/60">atomes.app</span>
         </span>
       </span>
       <span className="flex justify-end gap-3">
@@ -312,7 +312,7 @@ function Browser({ children, highlight }: { children?: ReactNode; highlight: boo
           <span className="size-2 rounded-full bg-success/70" />
         </span>
         <span className="flex flex-1 items-center justify-between rounded-full bg-paper/10 px-3 py-1 text-[0.6rem]">
-          epilove.fr
+          atomes.app
           <span className={cn("relative [&_svg]:size-3.5", highlight && "text-volt")}>
             <MonitorDown />
             {highlight ? <Tap className="top-1/2 left-1/2" /> : null}

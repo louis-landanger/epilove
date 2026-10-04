@@ -1,8 +1,8 @@
-import type { Database } from "@epilove/db";
-import { findPhoto, markPhotoFailed, markPhotoProcessed } from "@epilove/db/repositories/profiles";
-import { photoKey, quarantineKey } from "@epilove/media";
-import { processPhoto } from "@epilove/media/processing";
-import type { Storage } from "@epilove/media/storage";
+import type { Database } from "@atomes/db";
+import { findPhoto, markPhotoFailed, markPhotoProcessed } from "@atomes/db/repositories/profiles";
+import { photoKey, quarantineKey } from "@atomes/media";
+import { processPhoto } from "@atomes/media/processing";
+import type { Storage } from "@atomes/media/storage";
 import type { Task } from "graphile-worker";
 import { z } from "zod";
 

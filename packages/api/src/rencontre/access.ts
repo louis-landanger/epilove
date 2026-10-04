@@ -1,11 +1,11 @@
-import { canViewProfile, type ProfileAccess, type Relations } from "@epilove/core";
-import type { Database } from "@epilove/db";
-import { campusDate, loadMembers, loadRelations, type MemberRow } from "@epilove/db/repositories/members";
+import { canViewProfile, type ProfileAccess, type Relations } from "@atomes/core";
+import type { Database } from "@atomes/db";
+import { campusDate, loadMembers, loadRelations, type MemberRow } from "@atomes/db/repositories/members";
 import { ORPCError } from "@orpc/server";
 
 /**
  * Shared access checks of the dating modules. Every read about another member
- * goes through here, so the policies of @epilove/core are always applied.
+ * goes through here, so the policies of @atomes/core are always applied.
  */
 
 export interface PairAccess {

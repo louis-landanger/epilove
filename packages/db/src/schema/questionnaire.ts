@@ -1,4 +1,4 @@
-import { IMPORTANCES } from "@epilove/core";
+import { IMPORTANCES } from "@atomes/core";
 import { boolean, check, integer, jsonb, pgTable, primaryKey, text, uuid } from "drizzle-orm/pg-core";
 import { id, oneOf, timestamps } from "./columns";
 import { appUser } from "./users";

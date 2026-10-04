@@ -1,4 +1,4 @@
-import { AVAILABILITY_ACTIVITIES, AVAILABILITY_AREAS, MODES } from "@epilove/core";
+import { AVAILABILITY_ACTIVITIES, AVAILABILITY_AREAS, MODES } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 import { contentLocale } from "./questionnaire";

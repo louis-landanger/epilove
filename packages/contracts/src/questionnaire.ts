@@ -1,4 +1,4 @@
-import { IMPORTANCES } from "@epilove/core";
+import { IMPORTANCES } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

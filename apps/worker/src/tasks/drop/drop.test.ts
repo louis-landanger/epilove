@@ -1,12 +1,12 @@
-import { createDatabase, schema } from "@epilove/db";
-import { saveDeckFilter } from "@epilove/db/repositories/discovery";
-import { dropRunOf, publishDrops } from "@epilove/db/repositories/discovery-drop";
+import { createDatabase, schema } from "@atomes/db";
+import { saveDeckFilter } from "@atomes/db/repositories/discovery";
+import { dropRunOf, publishDrops } from "@atomes/db/repositories/discovery-drop";
 import {
   answerQuestionnaire,
   cleanupTestMembers,
   createTestMember,
   prepareTestDatabase,
-} from "@epilove/db/testing";
+} from "@atomes/db/testing";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { computeDrops } from "./compute";

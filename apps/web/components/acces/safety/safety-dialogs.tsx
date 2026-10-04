@@ -1,7 +1,7 @@
 "use client";
 
-import { REPORT_REASONS, type ReportContext, type ReportReason } from "@epilove/core";
-import { Button, CheckboxField, Dialog, RadioGroupField, TextAreaField, useToast } from "@epilove/ui";
+import { REPORT_REASONS, type ReportContext, type ReportReason } from "@atomes/core";
+import { Button, CheckboxField, Dialog, RadioGroupField, TextAreaField, useToast } from "@atomes/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { api, errorCode } from "@/lib/api-client";

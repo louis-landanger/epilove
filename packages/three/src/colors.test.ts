@@ -1,4 +1,4 @@
-import { colors, schoolColors } from "@epilove/tokens";
+import { colors, schoolColors } from "@atomes/tokens";
 import { describe, expect, it } from "vitest";
 import { linearSrgbToHex, oklchToLinearSrgb, parseOklch, tokenToLinearSrgb } from "./colors";
 

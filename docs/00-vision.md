@@ -1,11 +1,11 @@
 # 00 — Vision produit
 
 > Statut : proposition v1 (octobre 2026) — à valider en équipe.
-> « Epilove » est le **nom de code** du projet. Le nom public est une décision ouverte (voir [§ Nom et identité](#nom-et-identité)).
+> « Atomes » est le nom retenu par l'équipe en octobre 2026, à la place du nom de code « Epilove » ; il reste provisoire jusqu'aux vérifications de marque (voir [§ Nom et identité](#nom-et-identité) et l'[ADR 0015](adr/0015-nom-atomes.md)).
 
 ## En une phrase
 
-Epilove est l'application de rencontre **et** d'amitié réservée aux étudiantes et étudiants vérifiés du campus IONIS de Lyon (EPITA, ESME, Sup'Biotech, ISG, IPSA) : un cercle fermé, sûr et soigné, pensé pour provoquer de vraies rencontres entre les cinq écoles.
+Atomes est l'application de rencontre **et** d'amitié réservée aux étudiantes et étudiants vérifiés du campus IONIS de Lyon (EPITA, ESME, Sup'Biotech, ISG, IPSA) : un cercle fermé, sûr et soigné, pensé pour provoquer de vraies rencontres entre les cinq écoles.
 
 ## Le constat
 
@@ -69,7 +69,7 @@ Ces principes servent d'arbitre quand deux idées s'opposent.
 
 ## Positionnement
 
-| | Tinder / Bumble | Hinge | Happn | Marriage Pact (campus US) | **Epilove** |
+| | Tinder / Bumble | Hinge | Happn | Marriage Pact (campus US) | **Atomes** |
 |---|---|---|---|---|---|
 | Communauté | Ouverte | Ouverte | Ouverte | Fermée (email universitaire) | **Fermée, 5 écoles, vérifiée** |
 | Mécanique | Swipe | Like ciblé sur un contenu | Croisements géolocalisés | Questionnaire + un match annuel | **Like ciblé + Drop quotidien + Pacte semestriel** |
@@ -90,7 +90,7 @@ Ces principes servent d'arbitre quand deux idées s'opposent.
 
 ## Nom et identité
 
-« Epilove » fonctionne comme nom de code, mais présente un défaut de fond pour un produit public : le préfixe *Epi-* renvoie à EPITA, alors que quatre écoles sur cinq ne sont pas EPITA. Le risque est que l'ISG, Sup'Biotech, l'ESME et l'IPSA perçoivent le produit comme « le truc des Épitéens ».
+« Epilove », le nom de code des débuts, présentait un défaut de fond pour un produit public : le préfixe *Epi-* renvoie à EPITA, alors que quatre écoles sur cinq ne sont pas EPITA. Le risque est que l'ISG, Sup'Biotech, l'ESME et l'IPSA perçoivent le produit comme « le truc des Épitéens ».
 
 Pistes évaluées :
 
@@ -102,7 +102,7 @@ Pistes évaluées :
 | **Liaison** | Liaison chimique et liaison amoureuse, élégant. | En français, « avoir une liaison » évoque l'infidélité. |
 | **Epilove** | Déjà adopté par l'équipe, sonne bien. | Centré EPITA, proche de la marque d'une école. |
 
-**Recommandation :** retenir **« Atomes »** comme nom public et **« atomes crochus »** comme plateforme créative (voir [02 — Design](02-design.md)). Faire valider le choix par un vote des ambassadeurs des cinq écoles avant fin octobre, puis vérifier : base INPI (classes 9, 38, 42, 45), disponibilité des domaines et des comptes Instagram/TikTok.
+**Décision (octobre 2026) :** **« Atomes »** remplace « Epilove » dans le produit, le code et l'infrastructure, avec **« atomes crochus »** comme plateforme créative (voir [02 — Design](02-design.md) et l'[ADR 0015](adr/0015-nom-atomes.md)). Le nom reste provisoire jusqu'au vote des ambassadeurs des cinq écoles et aux vérifications : base INPI (classes 9, 38, 42, 45), disponibilité des domaines et des comptes Instagram/TikTok.
 
 Règles d'usage des noms d'écoles, quel que soit le nom retenu :
 

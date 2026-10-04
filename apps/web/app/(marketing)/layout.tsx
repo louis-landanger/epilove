@@ -1,5 +1,5 @@
 // Direct imports: the landing does not need the rest of the design system (Lighthouse budgets).
-import { ToastProvider } from "@epilove/ui/primitives/toast";
+import { ToastProvider } from "@atomes/ui/primitives/toast";
 import type { ReactNode } from "react";
 import { EasterEggs } from "@/components/acces/fun/easter-eggs";
 import "@/components/acces/marketing/marketing.css";

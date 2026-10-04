@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, cn, Tabs } from "@epilove/ui";
+import { Button, cn, Tabs } from "@atomes/ui";
 import { Pause, Play } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useTranslations } from "next-intl";

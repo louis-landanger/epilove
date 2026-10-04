@@ -1,4 +1,4 @@
-import { buttonVariants } from "@epilove/ui";
+import { buttonVariants } from "@atomes/ui";
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { connection } from "next/server";

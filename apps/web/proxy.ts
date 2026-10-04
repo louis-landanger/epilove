@@ -6,7 +6,7 @@ import {
   localizedPath,
   negotiateLocale,
   splitLocalePrefix,
-} from "@epilove/core";
+} from "@atomes/core";
 import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 import { isLocalizedPublicPath } from "./i18n/paths";
@@ -85,7 +85,7 @@ function contentSecurityPolicy(nonce: string) {
 function hasDevMember(request: NextRequest) {
   const allowed =
     process.env.DEV_AUTH === "1" && (process.env.APP_ENV === "development" || process.env.APP_ENV === "test");
-  return allowed && Boolean(request.cookies.get("epilove_dev_user")?.value);
+  return allowed && Boolean(request.cookies.get("atomes_dev_user")?.value);
 }
 
 /**
@@ -121,7 +121,7 @@ export function proxy(request: NextRequest) {
   const locale = prefixed ?? (isPublic ? DEFAULT_LOCALE : preferred);
 
   if (matches(pathname, PROTECTED_PREFIXES)) {
-    const signedIn = Boolean(getSessionCookie(request, { cookiePrefix: "epilove" })) || hasDevMember(request);
+    const signedIn = Boolean(getSessionCookie(request, { cookiePrefix: "atomes" })) || hasDevMember(request);
     if (!signedIn) {
       const target = new URL(prefixed ? localizedPath(prefixed, "/connexion") : "/connexion", request.url);
       target.searchParams.set("suite", `${pathname}${search}`);

@@ -1,11 +1,11 @@
-import { MESSAGING_RULES } from "@epilove/core";
-import { createDatabase, type Database } from "@epilove/db";
+import { MESSAGING_RULES } from "@atomes/core";
+import { createDatabase, type Database } from "@atomes/db";
 import {
   dueMediaDeletions,
   forgetMediaDeletion,
   purgeDeletedBodies,
-} from "@epilove/db/repositories/messaging";
-import { type ObjectStore, objectStoreFromEnv } from "@epilove/db/storage";
+} from "@atomes/db/repositories/messaging";
+import { type ObjectStore, objectStoreFromEnv } from "@atomes/db/storage";
 import type { Task } from "graphile-worker";
 
 /**

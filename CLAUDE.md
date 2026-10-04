@@ -4,7 +4,7 @@ Contexte pour les assistants de code travaillant sur ce dépôt.
 
 ## Le projet
 
-Epilove (nom de code) : application de rencontre et d'amitié réservée aux étudiants vérifiés du campus IONIS de Lyon (EPITA, ESME, Sup'Biotech, ISG, IPSA). Le plan complet est dans `docs/` : **lire le document concerné avant d'implémenter une fonctionnalité**. Les fonctionnalités ont des identifiants stables (`DEC-02`, `SAF-04`…) définis dans `docs/01-fonctionnalites.md` ; les citer dans les issues, branches et PR.
+Atomes (nom provisoire, anciennement « Epilove », voir `docs/adr/0015-nom-atomes.md`) : application de rencontre et d'amitié réservée aux étudiants vérifiés du campus IONIS de Lyon (EPITA, ESME, Sup'Biotech, ISG, IPSA). Le plan complet est dans `docs/` : **lire le document concerné avant d'implémenter une fonctionnalité**. Les fonctionnalités ont des identifiants stables (`DEC-02`, `SAF-04`…) définis dans `docs/01-fonctionnalites.md` ; les citer dans les issues, branches et PR.
 
 Statut : phase 0, paliers 1 à 3 des sessions A (Accès) et B (Rencontre) fusionnés dans `main` le 3 octobre 2026 ; le développement continue sur `main`. La stack et l'organisation du monorepo sont décrites dans `docs/03-stack.md`, `docs/04-architecture.md` et `docs/adr/0001-socle-technique-sprint-0.md`. Ce que chaque session a livré, ses choix et ses questions ouvertes : `docs/integration/` (`session-a.md`, `session-b.md`, `fusion.md`).
 
@@ -31,8 +31,8 @@ Prérequis : Node 24 (`.node-version`), Corepack activé (`corepack enable`), Do
 | `pnpm build` | Build de production |
 | `pnpm test:e2e` | Playwright + axe sur le build, app et back-office (`PW_CHROMIUM_PATH` pour utiliser un Chromium déjà installé) |
 | `pnpm lighthouse` | Budgets Lighthouse (mobile) sur le build de l'app |
-| `pnpm --filter @epilove/ui storybook` / `test:visual` | Catalogue du design system (http://localhost:6006) et tests visuels (`--update-snapshots` après un changement voulu) |
-| `pnpm --filter @epilove/tokens generate` | Régénère `theme.gen.css` après modification des jetons |
+| `pnpm --filter @atomes/ui storybook` / `test:visual` | Catalogue du design system (http://localhost:6006) et tests visuels (`--update-snapshots` après un changement voulu) |
+| `pnpm --filter @atomes/tokens generate` | Régénère `theme.gen.css` après modification des jetons |
 | `pnpm pact:compute` / `pnpm pact:demo --reveal-in 60` | Calcule une saison du Pacte (solveur Python) / prépare une saison de démonstration révélée dans 60 s (le worker doit tourner) |
 | `pnpm drop:run` | Lance le Drop du soir sans attendre 21 h |
 | `sudo bash infra/dev-host/setup.sh` / `update.sh` | Serveur de développement partagé : toute la stack sur une VM Ubuntu, derrière HTTPS et un mot de passe d'équipe (voir `infra/dev-host/README.md`, ADR 0014) |

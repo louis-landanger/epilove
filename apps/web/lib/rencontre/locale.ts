@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, isLocale, type Locale } from "@epilove/core";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@atomes/core";
 
 /**
  * The language of the content the API writes (prompt questions, interests,

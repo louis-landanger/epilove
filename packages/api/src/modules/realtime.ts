@@ -1,4 +1,4 @@
-import { connectionToken, personalChannel } from "@epilove/realtime";
+import { connectionToken, personalChannel } from "@atomes/realtime";
 import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
 

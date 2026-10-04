@@ -1,5 +1,5 @@
-import { createDatabase } from "@epilove/db";
-import { purgePublished } from "@epilove/db/repositories/outbox";
+import { createDatabase } from "@atomes/db";
+import { purgePublished } from "@atomes/db/repositories/outbox";
 import type { Task } from "graphile-worker";
 
 /** Daily retention of the outbox: published events older than a day are deleted. */

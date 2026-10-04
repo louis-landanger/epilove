@@ -30,7 +30,7 @@ export function Logotype({ className, compact = false }: { className?: string; c
       <span
         className={`${compact ? "max-[419px]:hidden " : ""}font-semibold font-[family-name:var(--font-headline,var(--font-display))] text-xl lowercase tracking-tight [font-variation-settings:'wdth'_90]`}
       >
-        epilove
+        atomes
       </span>
     </span>
   );

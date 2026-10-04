@@ -1,8 +1,8 @@
 "use client";
 
-import type { PactMatchView } from "@epilove/contracts";
-import { springs } from "@epilove/tokens";
-import { ViewerWatermark } from "@epilove/ui";
+import type { PactMatchView } from "@atomes/contracts";
+import { springs } from "@atomes/tokens";
+import { ViewerWatermark } from "@atomes/ui";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";

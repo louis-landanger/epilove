@@ -6,7 +6,7 @@ import {
   type Member,
   type Mode,
   type Relations,
-} from "@epilove/core";
+} from "@atomes/core";
 import { and, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import {
@@ -25,7 +25,7 @@ import {
 /**
  * Read side of the members (read-only access to session A's tables): turns
  * rows into the `Member` and `Relations` objects the access policies of
- * @epilove/core work on. Nothing here decides visibility: callers always
+ * @atomes/core work on. Nothing here decides visibility: callers always
  * pass the result through `canSee`, `canViewProfile` or `canMessage`.
  */
 

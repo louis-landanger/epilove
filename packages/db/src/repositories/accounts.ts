@@ -1,4 +1,4 @@
-import type { Gender, Locale, Mode } from "@epilove/core";
+import type { Gender, Locale, Mode } from "@atomes/core";
 import { and, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import {

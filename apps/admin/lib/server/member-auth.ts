@@ -1,7 +1,7 @@
 import "server-only";
-import { type Auth, authEnvFromProcess, createAuth, valkeySecondaryStorage } from "@epilove/auth";
-import { createMailer, mailerConfigFromEnv } from "@epilove/email";
-import { createMemoryRateLimiter, valkeyFromEnv } from "@epilove/rate-limit";
+import { type Auth, authEnvFromProcess, createAuth, valkeySecondaryStorage } from "@atomes/auth";
+import { createMailer, mailerConfigFromEnv } from "@atomes/email";
+import { createMemoryRateLimiter, valkeyFromEnv } from "@atomes/rate-limit";
 import { getDatabase } from "./database";
 
 let auth: Auth | undefined;

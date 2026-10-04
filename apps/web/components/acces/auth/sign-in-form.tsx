@@ -1,12 +1,12 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { parseSchoolEmail } from "@epilove/core";
+import { authClient } from "@atomes/auth/client";
+import { parseSchoolEmail } from "@atomes/core";
 // Direct imports: the sign-in page loads only what it shows (Lighthouse budgets).
-import { Button } from "@epilove/ui/primitives/button";
-import { TextField } from "@epilove/ui/primitives/field";
-import { OtpInput } from "@epilove/ui/primitives/otp-input";
-import { useToast } from "@epilove/ui/primitives/toast";
+import { Button } from "@atomes/ui/primitives/button";
+import { TextField } from "@atomes/ui/primitives/field";
+import { OtpInput } from "@atomes/ui/primitives/otp-input";
+import { useToast } from "@atomes/ui/primitives/toast";
 import { ArrowLeft, Building2, Fingerprint, KeyRound, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";

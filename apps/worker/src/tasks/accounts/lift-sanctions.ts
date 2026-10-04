@@ -1,5 +1,5 @@
-import { listLapsedSanctions, reinstate } from "@epilove/db/repositories/admin";
-import { writeAudit } from "@epilove/db/repositories/safety";
+import { listLapsedSanctions, reinstate } from "@atomes/db/repositories/admin";
+import { writeAudit } from "@atomes/db/repositories/safety";
 import type { Task } from "graphile-worker";
 import type { AccountsDependencies } from "./purge";
 

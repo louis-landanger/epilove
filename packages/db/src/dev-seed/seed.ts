@@ -1,5 +1,5 @@
-import { calendarDateIn, emailHint, LYON_CAMPUS, uuidv7 } from "@epilove/core";
-import { emailHmac, encryptText, type KeyRing } from "@epilove/crypto";
+import { calendarDateIn, emailHint, LYON_CAMPUS, uuidv7 } from "@atomes/core";
+import { emailHmac, encryptText, type KeyRing } from "@atomes/crypto";
 import { and, gte, inArray, like, lte } from "drizzle-orm";
 import type { Database } from "../client";
 import {

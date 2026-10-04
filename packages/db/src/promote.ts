@@ -1,4 +1,4 @@
-import { parseSchoolEmail } from "@epilove/core";
+import { parseSchoolEmail } from "@atomes/core";
 import { eq } from "drizzle-orm";
 import { createDatabase, databaseUrlFromEnv } from "./client";
 import { appUser, ROLES, type Role } from "./schema/users";

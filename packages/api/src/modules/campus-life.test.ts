@@ -1,5 +1,5 @@
-import { createDatabase } from "@epilove/db";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import { createDatabase } from "@atomes/db";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi } from "../rencontre/testing";
 

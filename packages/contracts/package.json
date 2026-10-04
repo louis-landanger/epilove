@@ -1,5 +1,5 @@
 {
-  "name": "@epilove/contracts",
+  "name": "@atomes/contracts",
   "version": "0.0.0",
   "private": true,
   "description": "oRPC contracts and Zod schemas shared by the web app, the API, the worker and the future mobile app.",
@@ -12,14 +12,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@epilove/core": "workspace:*",
-    "@epilove/media": "workspace:*",
+    "@atomes/core": "workspace:*",
+    "@atomes/media": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@epilove/config": "workspace:*",
+    "@atomes/config": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:"
   }

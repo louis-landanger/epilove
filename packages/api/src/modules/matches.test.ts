@@ -1,6 +1,6 @@
-import { uuidv7 } from "@epilove/core";
-import { createDatabase, schema } from "@epilove/db";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import { uuidv7 } from "@atomes/core";
+import { createDatabase, schema } from "@atomes/db";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi } from "../rencontre/testing";

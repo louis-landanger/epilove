@@ -1,5 +1,5 @@
-import { VERIFICATION_GESTURES, VERIFICATION_REJECTIONS, VERIFICATION_STATUSES } from "@epilove/core";
-import { MAX_UPLOAD_BYTES, UPLOAD_CONTENT_TYPES } from "@epilove/media";
+import { VERIFICATION_GESTURES, VERIFICATION_REJECTIONS, VERIFICATION_STATUSES } from "@atomes/core";
+import { MAX_UPLOAD_BYTES, UPLOAD_CONTENT_TYPES } from "@atomes/media";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

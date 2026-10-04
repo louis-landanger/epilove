@@ -1,4 +1,4 @@
-import type { DeckFilter, IsoDate, Mode, QuotaUsage } from "@epilove/core";
+import type { DeckFilter, IsoDate, Mode, QuotaUsage } from "@atomes/core";
 import { and, asc, desc, eq, gte, inArray, isNull, ne, notExists, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { Database } from "../client";

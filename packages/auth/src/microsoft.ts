@@ -1,4 +1,4 @@
-import { parseSchoolEmail } from "@epilove/core";
+import { parseSchoolEmail } from "@atomes/core";
 
 /**
  * Microsoft sign-in (ONB-10, exploration, ADR 0013): each school runs its own

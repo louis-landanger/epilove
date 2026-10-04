@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
-import { checkShare, shareState, shareTimes } from "@epilove/core";
-import { encryptText } from "@epilove/crypto";
-import type { Database } from "@epilove/db";
-import { spotById } from "@epilove/db/repositories/campus-life";
+import { checkShare, shareState, shareTimes } from "@atomes/core";
+import { encryptText } from "@atomes/crypto";
+import type { Database } from "@atomes/db";
+import { spotById } from "@atomes/db/repositories/campus-life";
 import {
   answerCheckIn,
   type DateShareRow,
@@ -12,7 +12,7 @@ import {
   shareByTokenHash,
   shareCounts,
   sharesOfDate,
-} from "@epilove/db/repositories/messaging-date-safety";
+} from "@atomes/db/repositories/messaging-date-safety";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { os, requireViewer } from "../procedures";

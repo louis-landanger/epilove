@@ -1,7 +1,7 @@
-import { uuidv7 } from "@epilove/core";
-import { createDatabase, runSeeds, schema } from "@epilove/db";
-import { runMigrations } from "@epilove/db/migrations";
-import { createMemoryStorage } from "@epilove/media/storage";
+import { uuidv7 } from "@atomes/core";
+import { createDatabase, runSeeds, schema } from "@atomes/db";
+import { runMigrations } from "@atomes/db/migrations";
+import { createMemoryStorage } from "@atomes/media/storage";
 import { eq } from "drizzle-orm";
 import { strFromU8, unzipSync } from "fflate";
 import type { JobHelpers } from "graphile-worker";

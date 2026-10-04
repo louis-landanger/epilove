@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { AI_ICEBREAKER_RULES } from "@epilove/core";
-import { createDatabase, schema } from "@epilove/db";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
+import { AI_ICEBREAKER_RULES } from "@atomes/core";
+import { createDatabase, schema } from "@atomes/db";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
 import { and, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {

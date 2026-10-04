@@ -1,4 +1,4 @@
-import type { AdminMemberCard } from "@epilove/contracts";
+import type { AdminMemberCard } from "@atomes/contracts";
 import {
   type AccountStatus,
   ageOn,
@@ -13,9 +13,9 @@ import {
   SCHOOL_SLUGS,
   type SchoolSlug,
   sanctionEffect,
-} from "@epilove/core";
-import { decryptText } from "@epilove/crypto";
-import type { Database } from "@epilove/db";
+} from "@atomes/core";
+import { decryptText } from "@atomes/crypto";
+import type { Database } from "@atomes/db";
 import {
   applyAccountSanction,
   countOpenSeriousReports,
@@ -40,27 +40,27 @@ import {
   setAppealOutcome,
   setPhotoDecision,
   setReportStatus,
-} from "@epilove/db/repositories/admin";
+} from "@atomes/db/repositories/admin";
 import {
   healthMetrics,
   meetingMetrics,
   memberMetrics,
   moderationMetrics,
-} from "@epilove/db/repositories/admin-metrics";
+} from "@atomes/db/repositories/admin-metrics";
 import {
   decideVerification,
   listComparablePhotos,
   listPendingVerifications,
-} from "@epilove/db/repositories/profiles-verification";
-import { writeAudit } from "@epilove/db/repositories/safety";
+} from "@atomes/db/repositories/profiles-verification";
+import { writeAudit } from "@atomes/db/repositories/safety";
 import {
   appealOutcomeEmail,
   moderationDecisionEmail,
   photoRejectedEmail,
   reportHandledEmail,
   verificationOutcomeEmail,
-} from "@epilove/email";
-import { photoUrl } from "@epilove/media";
+} from "@atomes/email";
+import { photoUrl } from "@atomes/media";
 import { ORPCError } from "@orpc/server";
 import type { ApiServices } from "../context";
 import { refreshCompleteness } from "../lib/completeness";

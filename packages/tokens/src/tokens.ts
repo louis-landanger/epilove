@@ -1,6 +1,6 @@
 /**
  * Design tokens: single source of truth (docs/02-design.md).
- * `theme.gen.css` is generated from this file by `pnpm --filter @epilove/tokens generate`.
+ * `theme.gen.css` is generated from this file by `pnpm --filter @atomes/tokens generate`.
  *
  * School colours deliberately differ from the schools' official brand
  * identities and never carry information on their own (each school also has

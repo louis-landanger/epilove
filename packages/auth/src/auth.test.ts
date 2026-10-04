@@ -1,8 +1,8 @@
-import { emailHmac } from "@epilove/crypto";
-import { createDatabase, schema, seedReferenceData } from "@epilove/db";
-import { runMigrations } from "@epilove/db/migrations";
-import { createMemoryMailer } from "@epilove/email";
-import { createMemoryRateLimiter, valkeyFromEnv } from "@epilove/rate-limit";
+import { emailHmac } from "@atomes/crypto";
+import { createDatabase, schema, seedReferenceData } from "@atomes/db";
+import { runMigrations } from "@atomes/db/migrations";
+import { createMemoryMailer } from "@atomes/email";
+import { createMemoryRateLimiter, valkeyFromEnv } from "@atomes/rate-limit";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { authEnvFromProcess } from "./config";
@@ -78,11 +78,11 @@ describe.skipIf(!url)("authentication", () => {
   });
 
   it("writes in the page's language and remembers it on the account (PLT-04)", async () => {
-    const headers = new Headers({ "x-epilove-locale": "en", "accept-language": "fr-FR" });
+    const headers = new Headers({ "x-atomes-locale": "en", "accept-language": "fr-FR" });
     await auth.api.sendVerificationOTP({ body: { email: englishEmail, type: "sign-in" }, headers });
     const otp = await codeSentTo(mailer, englishEmail);
     const message = mailer.sent.find((entry) => entry.to === englishEmail);
-    expect(message?.email.subject).toMatch(/is your Epilove code$/);
+    expect(message?.email.subject).toMatch(/is your Atomes code$/);
 
     const signedIn = await auth.api.signInEmailOTP({
       body: { email: englishEmail, otp },

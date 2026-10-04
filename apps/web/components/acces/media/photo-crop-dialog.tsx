@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Dialog } from "@epilove/ui";
+import { Button, Dialog } from "@atomes/ui";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type KeyboardEvent, type PointerEvent, useEffect, useMemo, useRef, useState } from "react";

@@ -1,3 +1,4 @@
+import { VOICE_CONTENT_TYPES } from "@atomes/core";
 import {
   CreateBucketCommand,
   DeleteObjectCommand,
@@ -9,7 +10,6 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
-import { VOICE_CONTENT_TYPES } from "@epilove/core";
 import { MAX_UPLOAD_BYTES, UPLOAD_CONTENT_TYPES } from "./policy";
 
 /**

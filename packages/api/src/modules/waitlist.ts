@@ -1,4 +1,4 @@
-import { REFERRAL_CODE_ALPHABET, REFERRAL_CODE_LENGTH, type WaitlistStats } from "@epilove/contracts";
+import { REFERRAL_CODE_ALPHABET, REFERRAL_CODE_LENGTH, type WaitlistStats } from "@atomes/contracts";
 import {
   collectiveGoalProgress,
   localizedPath,
@@ -6,10 +6,10 @@ import {
   rankSchoolRace,
   SCHOOL_SLUGS,
   SCHOOLS,
-} from "@epilove/core";
-import { emailHmac } from "@epilove/crypto";
-import { countWaitlistBySchool, joinWaitlist } from "@epilove/db";
-import { createMailer, type Mailer, mailerConfigFromEnv, waitlistWelcomeEmail } from "@epilove/email";
+} from "@atomes/core";
+import { emailHmac } from "@atomes/crypto";
+import { countWaitlistBySchool, joinWaitlist } from "@atomes/db";
+import { createMailer, type Mailer, mailerConfigFromEnv, waitlistWelcomeEmail } from "@atomes/email";
 import { ORPCError } from "@orpc/server";
 import { os } from "../procedures";
 

@@ -1,8 +1,8 @@
-import { availabilityShown, canViewProfile, checkAvailability } from "@epilove/core";
-import { availabilityOf, setAvailability } from "@epilove/db/repositories/campus-community";
-import { loadProfileContent } from "@epilove/db/repositories/discovery";
-import { activeMatchesOf, matchForMember, unmatch } from "@epilove/db/repositories/matches";
-import { campusDate, loadMembers, loadRelations } from "@epilove/db/repositories/members";
+import { availabilityShown, canViewProfile, checkAvailability } from "@atomes/core";
+import { availabilityOf, setAvailability } from "@atomes/db/repositories/campus-community";
+import { loadProfileContent } from "@atomes/db/repositories/discovery";
+import { activeMatchesOf, matchForMember, unmatch } from "@atomes/db/repositories/matches";
+import { campusDate, loadMembers, loadRelations } from "@atomes/db/repositories/members";
 import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
 import { requireMemberRow } from "../rencontre/access";

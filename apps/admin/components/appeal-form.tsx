@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, RadioGroupField, TextAreaField, useToast } from "@epilove/ui";
+import { Button, RadioGroupField, TextAreaField, useToast } from "@atomes/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api-client";

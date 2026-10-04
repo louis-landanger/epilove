@@ -1,7 +1,7 @@
 "use client";
 
-import { VERIFICATION_REJECTIONS, type VerificationGesture, type VerificationRejection } from "@epilove/core";
-import { Button, EmptyState, useToast, ViewerWatermark } from "@epilove/ui";
+import { VERIFICATION_REJECTIONS, type VerificationGesture, type VerificationRejection } from "@atomes/core";
+import { Button, EmptyState, useToast, ViewerWatermark } from "@atomes/ui";
 import { Check, ScanFace, X } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";

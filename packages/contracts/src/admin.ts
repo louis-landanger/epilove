@@ -7,7 +7,7 @@ import {
   SANCTIONS,
   VERIFICATION_GESTURES,
   VERIFICATION_REJECTIONS,
-} from "@epilove/core";
+} from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

@@ -9,8 +9,8 @@ import {
   LYON_CAMPUS,
   questionForWeek,
   weekEndsAt,
-} from "@epilove/core";
-import type { Database } from "@epilove/db";
+} from "@atomes/core";
+import type { Database } from "@atomes/db";
 import {
   activeWeeklyBank,
   latestRevealedSeason,
@@ -21,8 +21,8 @@ import {
   weeklyAnswerOf,
   weeklyCounts,
   wrappedFigures,
-} from "@epilove/db/repositories/campus-community";
-import { campusDate, type MemberRow } from "@epilove/db/repositories/members";
+} from "@atomes/db/repositories/campus-community";
+import { campusDate, type MemberRow } from "@atomes/db/repositories/members";
 import { ORPCError } from "@orpc/server";
 import { os, requireViewer } from "../procedures";
 import { requireMemberRow } from "../rencontre/access";

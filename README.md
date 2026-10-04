@@ -1,6 +1,6 @@
-# Epilove
+# Atomes
 
-> Nom de code. Application de rencontre **et** d'amitié réservée aux étudiantes et étudiants vérifiés du campus IONIS de Lyon : **EPITA, ESME, Sup'Biotech, ISG, IPSA**.
+> Nom provisoire (anciennement « Epilove »). Application de rencontre **et** d'amitié réservée aux étudiantes et étudiants vérifiés du campus IONIS de Lyon : **EPITA, ESME, Sup'Biotech, ISG, IPSA**.
 
 **Statut : phase 0, octobre 2026.** Le plan complet est dans [`docs/`](docs/). Le socle technique et les trois premiers paliers de fonctionnalités sont en place : vitrine, inscription, profil, sécurité et back-office d'un côté, découverte, messagerie, Pacte et vie de campus de l'autre (bilan dans [`docs/integration/`](docs/integration/fusion.md)). Voir la [roadmap](docs/09-roadmap.md).
 
@@ -41,7 +41,7 @@ TypeScript partout · monorepo pnpm + Turborepo · Next.js 16 + React 19 · Tail
 
 | Décision | Recommandation | Échéance |
 |---|---|---|
-| Nom public | « Atomes » (signature : « Trouve tes atomes crochus. »), vote des ambassadeurs, vérifications INPI et domaines | Fin octobre 2026 |
+| Nom public | « Atomes » adopté dans le produit et le code ([ADR 0015](docs/adr/0015-nom-atomes.md)) ; restent le vote des ambassadeurs et les vérifications INPI, domaines et réseaux sociaux | Fin octobre 2026 |
 | Extension aux autres écoles IONIS de Lyon (site de Jean Macé : Epitech, ISEG, e-artsup…) | Lancer avec les cinq écoles, prendre contact dès la phase 0, et étendre pour le Pacte si la liste d'attente reste sous 600 inscrits mi-décembre | Mi-décembre 2026 |
 | Structure juridique | Association loi 1901 inter-écoles dédiée | Octobre 2026 |
 | Hébergeur | Hetzner (prix) ou Scaleway (hébergement en France) | Phase 0 |

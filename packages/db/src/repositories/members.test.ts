@@ -1,5 +1,5 @@
-import { canMessage, canSee, canViewProfile } from "@epilove/core";
-import { keyRingFromEnv } from "@epilove/crypto";
+import { canMessage, canSee, canViewProfile } from "@atomes/core";
+import { keyRingFromEnv } from "@atomes/crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDatabase } from "../client";
 import { devMemberId } from "../dev-seed/members";

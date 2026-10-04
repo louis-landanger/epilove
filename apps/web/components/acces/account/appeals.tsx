@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Button, TextAreaField, useToast } from "@epilove/ui";
+import { Badge, Button, TextAreaField, useToast } from "@atomes/ui";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
 import { api } from "@/lib/api-client";

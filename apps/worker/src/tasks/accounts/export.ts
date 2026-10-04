@@ -1,11 +1,11 @@
-import { identityOf } from "@epilove/db/repositories/admin";
+import { identityOf } from "@atomes/db/repositories/admin";
 import {
   collectPersonalData,
   findExport,
   markExportFailed,
   markExportReady,
-} from "@epilove/db/repositories/exports";
-import { createMailer, dataExportReadyEmail, mailerConfigFromEnv } from "@epilove/email";
+} from "@atomes/db/repositories/exports";
+import { createMailer, dataExportReadyEmail, mailerConfigFromEnv } from "@atomes/email";
 import { strToU8, zipSync } from "fflate";
 import type { Task } from "graphile-worker";
 import { z } from "zod";
@@ -17,8 +17,8 @@ const payloadSchema = z.object({ exportId: z.uuid() });
 export const EXPORT_TTL_DAYS = 7;
 
 const NOTICE = {
-  fr: "Export de tes données Epilove (RGPD, art. 15 et 20). Les genres que tu recherches, donnée sensible, ne sont jamais exportés : tu les retrouves dans tes réglages.",
-  en: "Export of your Epilove data (GDPR, art. 15 and 20). The genders you are looking for, a sensitive piece of data, are never exported: you can find them in your settings.",
+  fr: "Export de tes données Atomes (RGPD, art. 15 et 20). Les genres que tu recherches, donnée sensible, ne sont jamais exportés : tu les retrouves dans tes réglages.",
+  en: "Export of your Atomes data (GDPR, art. 15 and 20). The genders you are looking for, a sensitive piece of data, are never exported: you can find them in your settings.",
 } as const;
 
 export interface ExportDependencies extends AccountsDependencies {

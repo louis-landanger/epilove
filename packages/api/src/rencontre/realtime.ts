@@ -3,7 +3,7 @@ import {
   createMemoryPublisher,
   createPublisher,
   type Publisher,
-} from "@epilove/realtime";
+} from "@atomes/realtime";
 
 /**
  * Centrifugo publisher used by the API for ephemeral events (typing) and

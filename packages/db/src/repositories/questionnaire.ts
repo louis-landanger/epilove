@@ -1,4 +1,4 @@
-import type { AnswerSheet, Importance, QuestionAnswer } from "@epilove/core";
+import type { AnswerSheet, Importance, QuestionAnswer } from "@atomes/core";
 import { and, asc, count, eq, inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import { question, questionAnswer } from "../schema";

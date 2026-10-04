@@ -1,7 +1,7 @@
 "use client";
 
-import { authClient } from "@epilove/auth/client";
-import { Button, OtpInput } from "@epilove/ui";
+import { authClient } from "@atomes/auth/client";
+import { Button, OtpInput } from "@atomes/ui";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

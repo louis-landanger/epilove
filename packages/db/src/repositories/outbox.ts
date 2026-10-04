@@ -1,4 +1,4 @@
-import type { BroadcastChannel, RealtimeEvent } from "@epilove/realtime/events";
+import type { BroadcastChannel, RealtimeEvent } from "@atomes/realtime/events";
 import { and, asc, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../client";
 import { outbox } from "../schema";
@@ -9,7 +9,7 @@ import { outbox } from "../schema";
  * the worker relay. `pg_notify` is delivered at commit only, so the relay
  * wakes up exactly when the events become visible.
  */
-export const OUTBOX_CHANNEL = "epilove_outbox";
+export const OUTBOX_CHANNEL = "atomes_outbox";
 
 export type OutboxEntry =
   | {

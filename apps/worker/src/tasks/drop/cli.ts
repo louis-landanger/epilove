@@ -1,7 +1,7 @@
 import { parseArgs } from "node:util";
-import { dropDayAt, LYON_CAMPUS } from "@epilove/core";
-import { createDatabase, databaseUrlFromEnv } from "@epilove/db";
-import { publishDrops } from "@epilove/db/repositories/discovery-drop";
+import { dropDayAt, LYON_CAMPUS } from "@atomes/core";
+import { createDatabase, databaseUrlFromEnv } from "@atomes/db";
+import { publishDrops } from "@atomes/db/repositories/discovery-drop";
 import { computeDrops } from "./compute";
 
 /**

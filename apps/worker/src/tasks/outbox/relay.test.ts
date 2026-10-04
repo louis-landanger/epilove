@@ -1,7 +1,7 @@
-import { createDatabase, schema } from "@epilove/db";
-import { enqueue, relayPending } from "@epilove/db/repositories/outbox";
-import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@epilove/db/testing";
-import { createMemoryPublisher, PACT_CHANNEL, personalChannel } from "@epilove/realtime";
+import { createDatabase, schema } from "@atomes/db";
+import { enqueue, relayPending } from "@atomes/db/repositories/outbox";
+import { cleanupTestMembers, createTestMember, prepareTestDatabase } from "@atomes/db/testing";
+import { createMemoryPublisher, PACT_CHANNEL, personalChannel } from "@atomes/realtime";
 import { and, isNull, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { publishBatch, startOutboxRelay } from "./relay";

@@ -1,6 +1,6 @@
 "use client";
 
-import type { MemberCard as MemberCardData, QuotaView } from "@epilove/contracts";
+import type { MemberCard as MemberCardData, QuotaView } from "@atomes/contracts";
 import { ORPCError } from "@orpc/client";
 import { AnimatePresence, animate, motion, type PanInfo, useMotionValue, useTransform } from "motion/react";
 import { useRouter } from "next/navigation";

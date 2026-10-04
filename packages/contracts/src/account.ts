@@ -1,4 +1,4 @@
-import { ACCOUNT_STATUSES, LOCALES, SANCTIONS } from "@epilove/core";
+import { ACCOUNT_STATUSES, LOCALES, SANCTIONS } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

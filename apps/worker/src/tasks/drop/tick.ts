@@ -1,6 +1,6 @@
-import { dropSchedule, LYON_CAMPUS } from "@epilove/core";
-import { createDatabase, type Database } from "@epilove/db";
-import { dropRunOf, publishDrops } from "@epilove/db/repositories/discovery-drop";
+import { dropSchedule, LYON_CAMPUS } from "@atomes/core";
+import { createDatabase, type Database } from "@atomes/db";
+import { dropRunOf, publishDrops } from "@atomes/db/repositories/discovery-drop";
 import type { Task } from "graphile-worker";
 import { computeDrops } from "./compute";
 

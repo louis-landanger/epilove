@@ -1,9 +1,9 @@
-import type { SchoolSlug } from "@epilove/core";
-import { schoolColors } from "@epilove/tokens";
+import type { SchoolSlug } from "@atomes/core";
+import { schoolColors } from "@atomes/tokens";
 
 /**
  * Our own glyph per school (docs/02-design.md): colour never carries the
- * information alone. These are Epilove's "element families", not school logos.
+ * information alone. These are the "element families" of Atomes, not school logos.
  * EPITA "Kernel" brackets, ESME "Ampère" bolt, Sup'Biotech "Enzyme" hexagon,
  * ISG "Capital" guilloché rings, IPSA "Stratosphère" star.
  */

@@ -1,7 +1,7 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { SpotView } from "@epilove/contracts";
+import type { SpotView } from "@atomes/contracts";
 import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";

@@ -1,4 +1,4 @@
-import type { PactMatchView } from "@epilove/contracts";
+import type { PactMatchView } from "@atomes/contracts";
 import {
   canViewPactResult,
   canViewProfile,
@@ -6,8 +6,8 @@ import {
   PACT_RULES,
   pactPhase,
   revealWindowMs,
-} from "@epilove/core";
-import { campusDate, loadMembers, loadRelations } from "@epilove/db/repositories/members";
+} from "@atomes/core";
+import { campusDate, loadMembers, loadRelations } from "@atomes/db/repositories/members";
 import {
   currentSeason,
   joinSeason,
@@ -15,9 +15,9 @@ import {
   participantCount,
   participationOf,
   resultsFor,
-} from "@epilove/db/repositories/pact";
-import { answersOf } from "@epilove/db/repositories/questionnaire";
-import { centrifugoConfigFromEnv, PACT_CHANNEL } from "@epilove/realtime";
+} from "@atomes/db/repositories/pact";
+import { answersOf } from "@atomes/db/repositories/questionnaire";
+import { centrifugoConfigFromEnv, PACT_CHANNEL } from "@atomes/realtime";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { os, requireViewer } from "../procedures";

@@ -12,17 +12,17 @@ import {
   matchesDeckFilter,
   reciprocalScore,
   swipeBlocksCandidate,
-} from "@epilove/core";
-import type { Database } from "@epilove/db";
-import { DEFAULT_DECK_FILTER, lastSignificantChanges } from "@epilove/db/repositories/discovery";
-import { claimDropRun, deckFiltersOf, saveDrops, swipesBy } from "@epilove/db/repositories/discovery-drop";
+} from "@atomes/core";
+import type { Database } from "@atomes/db";
+import { DEFAULT_DECK_FILTER, lastSignificantChanges } from "@atomes/db/repositories/discovery";
+import { claimDropRun, deckFiltersOf, saveDrops, swipesBy } from "@atomes/db/repositories/discovery-drop";
 import {
   interestIdsOf,
   loadDiscoverableMembers,
   loadRelationsAmong,
   type MemberRow,
-} from "@epilove/db/repositories/members";
-import { answerSheets } from "@epilove/db/repositories/questionnaire";
+} from "@atomes/db/repositories/members";
+import { answerSheets } from "@atomes/db/repositories/questionnaire";
 
 const _DAY_MS = 86_400_000;
 /** No one is excluded from the pre-filter: every discoverable member is both a viewer and a candidate. */

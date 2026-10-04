@@ -1,6 +1,6 @@
 "use client";
 
-import { type Locale, parseSchoolEmail } from "@epilove/core";
+import { type Locale, parseSchoolEmail } from "@atomes/core";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useEffect, useId, useRef, useState } from "react";

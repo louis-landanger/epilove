@@ -1,6 +1,6 @@
-import { blindRevealed } from "@epilove/core";
-import type { Database } from "@epilove/db";
-import { type BlindState, blindStates } from "@epilove/db/repositories/discovery";
+import { blindRevealed } from "@atomes/core";
+import type { Database } from "@atomes/db";
+import { type BlindState, blindStates } from "@atomes/db/repositories/discovery";
 
 /**
  * Blind mode (DEC-10): the members whose photos the viewer must not see yet,

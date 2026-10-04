@@ -6,8 +6,8 @@ import {
   MIN_STATEMENT_LENGTH,
   SANCTIONS,
   type Sanction,
-} from "@epilove/core";
-import { Button, ChoiceGroup, RadioGroupField, TextAreaField, useToast } from "@epilove/ui";
+} from "@atomes/core";
+import { Button, ChoiceGroup, RadioGroupField, TextAreaField, useToast } from "@atomes/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, errorCode } from "@/lib/api-client";

@@ -1,6 +1,6 @@
-import { decryptText, type KeyRing, keyRingFromEnv } from "@epilove/crypto";
-import type { Database } from "@epilove/db";
-import { lastMessagesOf } from "@epilove/db/repositories/messaging";
+import { decryptText, type KeyRing, keyRingFromEnv } from "@atomes/crypto";
+import type { Database } from "@atomes/db";
+import { lastMessagesOf } from "@atomes/db/repositories/messaging";
 
 /**
  * Message bodies are encrypted at rest (docs/05-donnees.md, section 5) and

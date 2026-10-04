@@ -1,4 +1,4 @@
-import { GENDERS, MODES } from "@epilove/core";
+import { GENDERS, MODES } from "@atomes/core";
 import { oc } from "@orpc/contract";
 import { z } from "zod";
 

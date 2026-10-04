@@ -31,7 +31,7 @@ export function mailerConfigFromEnv(env: Record<string, string | undefined> = pr
   if (!env.SMTP_URL) {
     throw new Error("SMTP_URL must be set.");
   }
-  return { smtpUrl: env.SMTP_URL, from: env.EMAIL_FROM ?? "Epilove <no-reply@epilove.local>" };
+  return { smtpUrl: env.SMTP_URL, from: env.EMAIL_FROM ?? "Atomes <no-reply@atomes.local>" };
 }
 
 /** Collects emails in memory, for tests. */
