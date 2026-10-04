@@ -16,11 +16,17 @@ HOST_DIR="$REPO_DIR/infra/dev-host"
 GENERATED="$HOST_DIR/generated"
 RUN_USER=epilove
 RUN_HOME="/home/$RUN_USER"
+# @swc/core unpacks its native addon into a cache it refuses to use when a parent
+# directory is group- or world-writable (some images ship /home that way).
+SWC_CACHE=/var/cache/epilove-swc
 COMPOSE=(docker compose -f "$REPO_DIR/infra/compose/compose.yaml" -f "$HOST_DIR/compose.yaml"
   --env-file "$GENERATED/services.env")
 
 log() { printf '\n\033[1;35m▸ %s\033[0m\n' "$*"; }
-as_user() { sudo -u "$RUN_USER" -H env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 PATH="$RUN_HOME/.local/bin:$PATH" "$@"; }
+as_user() {
+  sudo -u "$RUN_USER" -H env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 SWC_NATIVE_BINDING_CACHE="$SWC_CACHE" \
+    PATH="$RUN_HOME/.local/bin:$PATH" "$@"
+}
 
 [ "$(id -u)" = 0 ] || { echo "Run as root: sudo bash infra/dev-host/setup.sh" >&2; exit 1; }
 . /etc/os-release
@@ -79,6 +85,7 @@ ufw --force enable >/dev/null
 # --- Service user -------------------------------------------------------------
 id "$RUN_USER" >/dev/null 2>&1 || useradd --create-home --shell /bin/bash "$RUN_USER"
 usermod -aG docker "$RUN_USER"
+install -d -o "$RUN_USER" -g "$RUN_USER" -m 700 "$SWC_CACHE"
 chown -R "$RUN_USER:$RUN_USER" "$REPO_DIR"
 if [ ! -x "$RUN_HOME/.local/bin/uv" ]; then
   as_user sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' >/dev/null
@@ -202,7 +209,7 @@ Wants=network-online.target
 User=$RUN_USER
 WorkingDirectory=$REPO_DIR/$2
 EnvironmentFile=$REPO_DIR/.env
-Environment=NODE_ENV=production COREPACK_ENABLE_DOWNLOAD_PROMPT=0 PATH=$RUN_HOME/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=NODE_ENV=production COREPACK_ENABLE_DOWNLOAD_PROMPT=0 SWC_NATIVE_BINDING_CACHE=$SWC_CACHE PATH=$RUN_HOME/.local/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/pnpm start $3
 Restart=always
 RestartSec=3

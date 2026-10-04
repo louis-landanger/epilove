@@ -97,4 +97,5 @@ puis, sur la nouvelle machine : étapes 1 à 3, copier `epilove.sql`, et `docker
 | 502 sur l'app | `journalctl -u epilove-web` ; `systemctl status epilove-web` |
 | Photos qui restent « en traitement » | `journalctl -u epilove-worker` |
 | Messages qui n'arrivent pas en direct | `docker compose … logs centrifugo` ; `CENTRIFUGO_WS_URL` dans `.env` |
+| Build : `ERR_SWC_NATIVE_CACHE`, `cache root has a parent writable by another user` | `@swc/core` refuse un cache dont un dossier parent est modifiable par un groupe (`namei -l /home/epilove`). Les scripts placent ce cache dans `/var/cache/epilove-swc` : relancer `setup.sh` à jour |
 | Build interrompu (mémoire) | `free -h` : vérifier le swap, ou prendre une machine de 8 Go |

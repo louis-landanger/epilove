@@ -11,8 +11,11 @@ BRANCH="${1:-main}"
 [ "$(id -u)" = 0 ] || { echo "Run as root: sudo bash infra/dev-host/update.sh" >&2; exit 1; }
 [ -f "$HOST_DIR/generated/services.env" ] || { echo "Run infra/dev-host/setup.sh first." >&2; exit 1; }
 as_user() {
-  sudo -u "$RUN_USER" -H env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 PATH="/home/$RUN_USER/.local/bin:$PATH" "$@"
+  sudo -u "$RUN_USER" -H env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 SWC_NATIVE_BINDING_CACHE=/var/cache/epilove-swc \
+    PATH="/home/$RUN_USER/.local/bin:$PATH" "$@"
 }
+
+install -d -o "$RUN_USER" -g "$RUN_USER" -m 700 /var/cache/epilove-swc
 
 # Git as root: the clone uses root's deploy key (README); files go back to the service user.
 git_root() { git -c safe.directory="$REPO_DIR" -C "$REPO_DIR" "$@"; }
