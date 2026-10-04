@@ -869,7 +869,8 @@
   margin: 1rem 0 -0.16em;
   color: color-mix(in oklch, var(--color-paper) 94%, transparent);
   font-family: var(--font-display);
-  font-size: 38vw;
+  /* "atomes" is about 3.4 em wide: the word fits on one line, edge to edge. */
+  font-size: 28vw;
   font-weight: 700;
   line-height: 0.8;
   letter-spacing: -0.045em;

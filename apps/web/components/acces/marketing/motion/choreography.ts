@@ -271,13 +271,33 @@ export function startChoreography(root: HTMLElement): () => void {
         duration: 1.3,
         ease: "expo.out",
         stagger: 0.05,
-        scrollTrigger: { trigger: giant, start: "top 95%", once: true },
+        // Clamped: at the very end of the page, the start can never fall past the last scroll position.
+        scrollTrigger: { trigger: giant, start: "clamp(top 95%)", once: true },
       });
     }
   });
 
   setUpPointerEffects(root, cleanups);
   ScrollTrigger.refresh();
+
+  // Sections far below the fold are laid out only when they come near
+  // (`content-visibility: auto`, marketing.css): the page changes height as
+  // they do, so the trigger positions are measured again.
+  let refreshTimer = 0;
+  let lastHeight = document.body.scrollHeight;
+  const heightObserver = new ResizeObserver(() => {
+    if (document.body.scrollHeight === lastHeight) {
+      return;
+    }
+    lastHeight = document.body.scrollHeight;
+    window.clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 120);
+  });
+  heightObserver.observe(document.body);
+  cleanups.push(() => {
+    heightObserver.disconnect();
+    window.clearTimeout(refreshTimer);
+  });
 
   return () => {
     context.revert();

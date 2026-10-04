@@ -195,6 +195,8 @@ interface Contribution {
   glow: number;
   volt: number;
   plasma: number;
+  /** Vertical move of the shape's element since the previous frame (world units). */
+  carry: number;
 }
 
 const point = { x: 0, y: 0 };
@@ -204,6 +206,7 @@ function cardContribution(
   particles: FormationParticles,
   index: number,
   card: CardFormation,
+  previous: CardFormation | null,
   time: number,
   unit: number,
   into: Contribution,
@@ -219,6 +222,7 @@ function cardContribution(
   into.glow = 0;
   into.volt = 0;
   into.plasma = 0;
+  into.carry = previous ? card.box.y - previous.box.y : 0;
 
   if (scan > 0.001) {
     // Verify: one ring that zigzags around the card, swept by two pulses of light.
@@ -269,13 +273,17 @@ function tubeContribution(
   particles: FormationParticles,
   index: number,
   formation: TubeFormation,
+  previous: TubeFormation | null,
   time: number,
   into: Contribution,
 ): boolean {
-  const tube = formation.tubes[particles.schools[index] ?? 0];
+  const school = particles.schools[index] ?? 0;
+  const tube = formation.tubes[school];
   if (!tube) {
     return false;
   }
+  const before = previous?.tubes[school];
+  into.carry = before ? tube.box.y - before.box.y : 0;
   const { box } = tube;
   const level = clamp01(tube.level);
   const rank = particles.ranks[index] ?? 0;
@@ -317,6 +325,7 @@ function pactContribution(
   particles: FormationParticles,
   index: number,
   pact: PactFormation,
+  previous: PactFormation | null,
   time: number,
   into: Contribution,
 ): boolean {
@@ -335,11 +344,12 @@ function pactContribution(
   into.glow = 0.45;
   into.volt = 0;
   into.plasma = 0;
+  into.carry = previous ? pact.y - previous.y : 0;
   return true;
 }
 
-const contribution: Contribution = { x: 0, y: 0, pull: 0, glow: 1, volt: 0, plasma: 0 };
-const sum = { x: 0, y: 0, total: 0, glow: 0, volt: 0, plasma: 0 };
+const contribution: Contribution = { x: 0, y: 0, pull: 0, glow: 1, volt: 0, plasma: 0, carry: 0 };
+const sum = { x: 0, y: 0, total: 0, glow: 0, volt: 0, plasma: 0, carry: 0 };
 
 /** Adds the current `contribution`, weighted by its formation, to `sum`. */
 function accumulate(weight: number): void {
@@ -349,13 +359,18 @@ function accumulate(weight: number): void {
   sum.glow += contribution.glow * w;
   sum.volt += contribution.volt * w;
   sum.plasma += contribution.plasma * w;
+  sum.carry += contribution.carry * w;
   sum.total += w;
 }
 
 /**
  * Writes, for every particle:
- * - `targets`: x, y (world units), pull in [0, 1] (0 drifts freely), 0;
+ * - `targets`: x, y (world units), pull in [0, 1] (0 drifts freely), carry;
  * - `looks`: volt tint, plasma tint, glow multiplier, 0.
+ * The carry is how far the particle's shape moved up or down since
+ * `previous` (the formations of the last frame): the simulation moves the
+ * particle by as much, so shapes stay glued to their element while the page
+ * scrolls, and the springs only animate the motifs.
  * `unit` is one CSS pixel in world units: motifs are designed in pixels.
  */
 export function writeFormations(
@@ -363,6 +378,7 @@ export function writeFormations(
   looks: Float32Array,
   particles: FormationParticles,
   formations: Formations,
+  previous: Formations | null,
   time: number,
   unit: number,
 ): void {
@@ -377,16 +393,17 @@ export function writeFormations(
     sum.glow = 0;
     sum.volt = 0;
     sum.plasma = 0;
-    if (card && cardContribution(particles, index, card, time, unit, contribution)) {
+    sum.carry = 0;
+    if (card && cardContribution(particles, index, card, previous?.card ?? null, time, unit, contribution)) {
       accumulate(card.weight);
     }
-    if (tubes && tubeContribution(particles, index, tubes, time, contribution)) {
+    if (tubes && tubeContribution(particles, index, tubes, previous?.tubes ?? null, time, contribution)) {
       accumulate(tubes.weight);
     }
-    if (pact && pactContribution(particles, index, pact, time, contribution)) {
+    if (pact && pactContribution(particles, index, pact, previous?.pact ?? null, time, contribution)) {
       accumulate(pact.weight);
     }
-    const { x, y, total, glow, volt, plasma } = sum;
+    const { x, y, total, glow, volt, plasma, carry } = sum;
 
     // Between two formations their weights add up to 1: the particle glides
     // from one shape to the next, held all the way, never set free.
@@ -396,11 +413,13 @@ export function writeFormations(
       targets[offset] = x / total;
       targets[offset + 1] = y / total;
       targets[offset + 2] = share;
+      targets[offset + 3] = (carry / total) * share;
       looks[offset] = (volt / total) * share;
       looks[offset + 1] = (plasma / total) * share;
       looks[offset + 2] = 1 + (glow / total - 1) * share;
     } else {
       targets[offset + 2] = 0;
+      targets[offset + 3] = 0;
       looks[offset] = 0;
       looks[offset + 1] = 0;
       looks[offset + 2] = 1;

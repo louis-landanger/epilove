@@ -23,7 +23,7 @@ function run(formations: Formations, count = 2000, time = 3) {
   const layout = createIonFieldLayout(count);
   const targets = new Float32Array(layout.count * FORMATION_STRIDE);
   const looks = new Float32Array(layout.count * FORMATION_STRIDE);
-  writeFormations(targets, looks, layout, formations, time, 2 / 900);
+  writeFormations(targets, looks, layout, formations, null, time, 2 / 900);
   return { layout, targets, looks };
 }
 
@@ -144,6 +144,34 @@ describe("writeFormations", () => {
       expect(
         Math.hypot((targets[a] ?? 0) - (targets[b] ?? 0), (targets[a + 1] ?? 0) - (targets[b + 1] ?? 0)),
       ).toBeLessThan(0.06);
+    }
+  });
+
+  it("carries particles with their shape's element as the page scrolls", () => {
+    const layout = createIonFieldLayout(400);
+    const targets = new Float32Array(layout.count * FORMATION_STRIDE);
+    const looks = new Float32Array(layout.count * FORMATION_STRIDE);
+    const pact = { weight: 1, x: 0.5, y: 0.1, radius: 0.6 };
+    const tubes = SCHOOL_KEYS.map((_, school) => ({
+      box: { x: school * 0.3, y: 0, hw: 0.05, hh: 0.4 },
+      level: 0.5,
+    }));
+    const scrolled = (dy: number) => ({
+      pact: { ...pact, y: pact.y + dy },
+      tubes: {
+        weight: 1,
+        tubes: tubes.map((tube) => ({ ...tube, box: { ...tube.box, y: tube.box.y + dy } })),
+      },
+    });
+    // Without a previous frame there is nothing to carry.
+    writeFormations(targets, looks, layout, scrolled(0), null, 1, 2 / 900);
+    expect(targets[3]).toBe(0);
+    // The page scrolled 0.2 up: the Pact rings and the tubes moved with it.
+    writeFormations(targets, looks, layout, { pact: { ...pact, weight: 0.5, y: 0.3 } }, { pact }, 1, 2 / 900);
+    expect(targets[3]).toBeCloseTo(0.1, 6); // half held by the Pact
+    writeFormations(targets, looks, layout, scrolled(0.2), scrolled(0), 1, 2 / 900);
+    for (let index = 0; index < layout.count; index += 1) {
+      expect(targets[index * FORMATION_STRIDE + 3]).toBeCloseTo(0.2, 6);
     }
   });
 

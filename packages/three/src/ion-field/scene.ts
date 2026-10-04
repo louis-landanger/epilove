@@ -371,7 +371,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
 
     const integrate = Fn(() => {
       const p = positions.element(instanceIndex);
-      p.assign(p.add(velocities.element(instanceIndex).mul(uDelta)));
+      // The carry moves held particles with their shape's element as the page scrolls.
+      const carry = vec2(0, targets.element(instanceIndex).w);
+      p.assign(p.add(velocities.element(instanceIndex).mul(uDelta)).add(carry));
     })().compute(count);
 
     const computeNodes: ComputeNode[] = [forces, integrate];
@@ -541,6 +543,11 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       for (let index = 0; index < count * 2; index += 1) {
         positions[index] = (positions[index] ?? 0) + (velocities[index] ?? 0) * delta;
       }
+      // The carry moves held particles with their shape's element as the page scrolls.
+      for (let index = 0; index < count; index += 1) {
+        positions[index * 2 + 1] =
+          (positions[index * 2 + 1] ?? 0) + (formationTargets[index * FORMATION_STRIDE + 3] ?? 0);
+      }
       write();
     };
   }
@@ -644,7 +651,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const pointerWorld = new Vector2(10, 10);
   const monitor = createFrameMonitor();
   const adaptive = options.adaptiveQuality ?? true;
-  let formations: Formations = {};
+  let formations: Formations | null = null;
   let measured: ViewportFormations = {};
   let formationsOn = false;
 
@@ -654,15 +661,21 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     if (!active && !formationsOn) {
       return;
     }
+    const previous = formations;
     formations = toWorldFormations(measured, width, height);
-    writeFormations(formationTargets, formationLooks, layout, formations, uTime.value, 2 / height);
+    writeFormations(formationTargets, formationLooks, layout, formations, previous, uTime.value, 2 / height);
     uploadFormations();
     formationsOn = active;
+    if (!active) {
+      formations = null;
+    }
   };
 
   const resize = (nextWidth: number, nextHeight: number) => {
     width = Math.max(1, nextWidth);
     height = Math.max(1, nextHeight);
+    // World units change with the size: no carry across a resize.
+    formations = null;
     const aspect = width / height;
     renderer.setSize(width, height, false);
     camera.left = -aspect;

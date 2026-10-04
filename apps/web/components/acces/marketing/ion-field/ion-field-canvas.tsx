@@ -82,7 +82,10 @@ const toBox = (element: Element): PixelBox => {
 /**
  * Reads the page for the field's journey (journey.ts). Elements and their
  * static styles are looked up once (and again on resize); positions are read
- * every frame, so the formations stick to the page while it scrolls.
+ * every frame, so the formations stick to the page while it scrolls. The
+ * sections far below the fold are rendered only when they come near
+ * (`content-visibility: auto`): their contents are read only from then on,
+ * so the field never forces their layout early.
  */
 function createPageMeasurer() {
   let elements = lookUp();
@@ -90,7 +93,11 @@ function createPageMeasurer() {
   function lookUp() {
     const steps = [...document.querySelectorAll<HTMLElement>("[data-step]")];
     const firstCard = steps[0]?.querySelector("article");
+    const rack = document.querySelector("[data-field-rack]");
+    const pact = document.querySelector("[data-field-pact]");
     return {
+      rackSection: rack?.closest("section") ?? null,
+      pactSection: pact?.closest("section") ?? null,
       scope: document.querySelector("[data-field-scope]"),
       cards: steps.flatMap((step) => {
         const card = step.querySelector("article");
@@ -98,14 +105,14 @@ function createPageMeasurer() {
       }),
       cardRadius: firstCard ? Number.parseFloat(getComputedStyle(firstCard).borderTopLeftRadius) || 0 : 0,
       cardList: document.querySelector("[data-steps]"),
-      rack: document.querySelector("[data-field-rack]"),
+      rack,
       tubes: SCHOOL_KEYS.map((school) => {
         const slot = document.querySelector(`[data-tube="${school}"]`);
         const glass = slot?.querySelector(".tube-glass");
         const liquid = slot?.querySelector(".tube-liquid");
         return glass && liquid ? { glass, liquid } : null;
       }),
-      pact: document.querySelector("[data-field-pact]"),
+      pact,
       covers: [...document.querySelectorAll("[data-field-cover]")],
     };
   }
@@ -115,16 +122,25 @@ function createPageMeasurer() {
       elements = lookUp();
     },
     measure(): JourneyMeasures {
+      const height = window.innerHeight;
+      const near = (section: Element | null) => {
+        if (!section) {
+          return true;
+        }
+        const rect = section.getBoundingClientRect();
+        return rect.bottom > -1.5 * height && rect.top < 2.5 * height;
+      };
+      const raceNear = near(elements.rackSection);
       return {
         width: window.innerWidth,
-        height: window.innerHeight,
+        height,
         scope: elements.scope ? toBox(elements.scope) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,
-        rack: elements.rack ? toBox(elements.rack) : null,
+        rack: elements.rack && raceNear ? toBox(elements.rack) : null,
         tubes: elements.tubes.map((tube) => {
-          if (!tube) {
+          if (!tube || !raceNear) {
             return null;
           }
           const box = toBox(tube.glass);
@@ -133,7 +149,7 @@ function createPageMeasurer() {
           const level = Math.min(1, Math.max(0, (box.top + box.height - surface) / Math.max(1, box.height)));
           return { box, level };
         }),
-        pact: elements.pact ? toBox(elements.pact) : null,
+        pact: elements.pact && near(elements.pactSection) ? toBox(elements.pact) : null,
         covers: elements.covers.map(toBox),
       };
     },
