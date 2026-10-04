@@ -242,6 +242,11 @@ cat >/etc/caddy/Caddyfile <<EOF
 	}
 }
 
+# The bare name leads to the app instead of failing the TLS handshake.
+$DOMAIN {
+	redir https://app.$DOMAIN{uri}
+}
+
 app.$DOMAIN {
 	encode zstd gzip
 	# Browsers fetch the web app manifest without credentials.
