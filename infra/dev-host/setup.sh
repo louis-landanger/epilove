@@ -87,6 +87,10 @@ id "$RUN_USER" >/dev/null 2>&1 || useradd --create-home --shell /bin/bash "$RUN_
 usermod -aG docker "$RUN_USER"
 install -d -o "$RUN_USER" -g "$RUN_USER" -m 700 "$SWC_CACHE"
 chown -R "$RUN_USER:$RUN_USER" "$REPO_DIR"
+# The checkout now belongs to the service user; let root keep running git in it
+# (git pull, update.sh) without the "dubious ownership" refusal.
+git config --system --get-all safe.directory 2>/dev/null | grep -qxF "$REPO_DIR" ||
+  git config --system --add safe.directory "$REPO_DIR"
 if [ ! -x "$RUN_HOME/.local/bin/uv" ]; then
   as_user sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' >/dev/null
 fi
