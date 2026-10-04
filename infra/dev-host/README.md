@@ -92,6 +92,7 @@ puis, sur la nouvelle machine : étapes 1 à 3, copier `epilove.sql`, et `docker
 
 | Symptôme | Piste |
 |---|---|
+| `git clone` : `connect to host github.com port 22: Connection timed out` | Port 22 sortant bloqué (hébergeur ou réseau) : passer par le port 443, `ssh://git@ssh.github.com:443/louis-landanger/epilove.git` au lieu de `git@github.com:louis-landanger/epilove.git` |
 | Certificat refusé | `journalctl -u caddy` : limites de Let's Encrypt sur le domaine partagé `sslip.io` → passer à DuckDNS (`DOMAIN=…`) |
 | 502 sur l'app | `journalctl -u epilove-web` ; `systemctl status epilove-web` |
 | Photos qui restent « en traitement » | `journalctl -u epilove-worker` |
