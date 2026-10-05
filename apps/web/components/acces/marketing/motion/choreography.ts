@@ -142,17 +142,18 @@ export function startChoreography(root: HTMLElement): () => void {
   const splits: SplitText[] = [];
 
   const context = gsap.context(() => {
-    // Hero copy drifts up and dims while the two atoms hook together. On narrow
-    // screens the atoms sit right above the copy: it fades before reaching them.
+    // Hero copy drifts up and dims while the two atoms close in: on wide screens
+    // they hook together right behind the title, on narrow ones right above the
+    // copy, which is gone by then.
     const narrow = window.matchMedia("(max-width: 63.99rem), (max-aspect-ratio: 5/4)").matches;
     gsap.to("[data-hero-content]", {
-      yPercent: -14,
+      yPercent: -8,
       opacity: 0,
       ease: "none",
       scrollTrigger: {
         trigger: "#hero",
         start: "top top",
-        end: narrow ? "top -18%" : "bottom 15%",
+        end: narrow ? "top -18%" : "top -22%",
         scrub: true,
       },
     });

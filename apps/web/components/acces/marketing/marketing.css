@@ -99,32 +99,116 @@
 /* ------------------------------------------------------------------- hero */
 
 /*
- * Where the two atoms live (journey.ts reads it every frame): top right on wide
- * screens, clear of the copy; above it on narrow ones. 2.4:1, like the poster.
+ * Where the two atoms live (journey.ts reads it every frame; formations.ts sets
+ * them in opposite corners, as large as fits): across the viewport on wide
+ * screens, level with the title, one atom on either side of it; above the copy
+ * on narrow ones, on a diagonal. Fixed proportions, those of the posters
+ * (hero.tsx sets them).
  */
 .hero-stage {
   position: absolute;
-  top: 13svh;
-  right: 3vw;
-  width: min(54vw, calc(36svh * 2.4));
-  aspect-ratio: 2.4;
+  /*
+   * Level with the title (hero-stage-anchor.tsx measures it); by default the
+   * middle of the title row (.hero-layout: 7rem above, 3.5rem below).
+   */
+  top: var(--hero-title-y, calc(50svh + 1.75rem));
+  left: 50%;
+  width: min(94vw, 175svh);
+  aspect-ratio: var(--stage-wide);
+  translate: -50% -50%;
 }
 
-@media (max-width: 63.99rem), (max-aspect-ratio: 5 / 4) {
-  .hero-stage {
-    top: 14svh;
-    right: 4vw;
-    width: 92vw;
-  }
+.hero-poster-tall {
+  display: none;
+}
+
+/*
+ * Wide screens: the title in the middle of the viewport, between the atoms, the
+ * rest below it. The space above the title and the block below it share the
+ * height equally; on short viewports the block keeps its content's height and
+ * pushes the title up.
+ */
+.hero-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100svh;
+  padding: 7rem 2.5rem 3.5rem;
+  text-align: center;
+}
+
+.hero-layout::before {
+  content: "";
+  flex: 1 1 0;
 }
 
 .hero-title {
   font-family: var(--font-headline), var(--font-display);
-  font-size: clamp(2.9rem, 6.6vw, 7.5rem);
+  font-size: clamp(2.9rem, min(6.8vw, 12svh), 8.5rem);
   line-height: 0.94;
   letter-spacing: -0.035em;
   text-wrap: balance;
+  flex: none;
+  max-width: 14ch;
   animation: focus-pull 1.4s var(--ease-out) both;
+}
+
+.hero-below {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-self: stretch;
+  padding-top: 1.75rem;
+}
+
+.hero-call {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@media (max-width: 63.99rem), (max-aspect-ratio: 5 / 4) {
+  .hero-stage {
+    top: 11svh;
+    width: min(94vw, calc(40svh * var(--stage-tall)));
+    aspect-ratio: var(--stage-tall);
+    translate: -50% 0;
+  }
+
+  .hero-poster-wide {
+    display: none;
+  }
+
+  .hero-poster-tall {
+    display: block;
+  }
+
+  /* Narrow screens: the copy at the bottom, under the atoms. */
+  .hero-layout {
+    align-items: stretch;
+    padding: 7rem 1rem 2.5rem;
+    text-align: start;
+  }
+
+  .hero-title {
+    max-width: none;
+  }
+
+  .hero-below {
+    flex: none;
+    padding-top: 1.5rem;
+  }
+
+  .hero-call {
+    align-items: flex-start;
+  }
+}
+
+@media (min-width: 40rem) and (max-width: 63.99rem), (min-width: 40rem) and (max-aspect-ratio: 5 / 4) {
+  .hero-layout {
+    padding-inline: 2.5rem;
+  }
 }
 
 /* Text is painted from the first frame (no hidden LCP): it only comes into focus. */

@@ -99,7 +99,17 @@ const PACT_RINGS = [1, 0.77, 0.52] as const;
 /** Shares of each atom of the pair: nucleus, electron, field lines (the rest traces the orbit). */
 const PAIR_NUCLEUS = 0.15;
 const PAIR_ELECTRON = 0.21;
-const PAIR_FIELD = 0.29;
+const PAIR_FIELD = 0.35;
+
+/**
+ * Reach of an atom of the pair around its nucleus, in orbit radii: the tilted
+ * orbit spans ±0.89 across and ±0.61 up and down; the electron and the bob
+ * take a little more.
+ */
+const ATOM_REACH_X = 0.96;
+const ATOM_REACH_Y = 0.7;
+/** Half the closest distance between the two atoms while apart, in orbit radii. */
+const ATOM_APART = 1.15;
 
 const TAU = Math.PI * 2;
 const fract = (value: number) => value - Math.floor(value);
@@ -387,7 +397,7 @@ function pactContribution(
 }
 
 /** Point at angle `theta` on an atom's orbit (the logo's ellipse) centred on `center`, tilted by `tilt`. */
-function orbitPoint(
+export function orbitPoint(
   center: { x: number; y: number },
   radius: number,
   tilt: number,
@@ -402,29 +412,97 @@ function orbitPoint(
 
 const shared = { x: 0, y: 0 };
 
-/** Where the two atoms of the pair stand (also draws the static poster). */
-export function pairGeometry(pair: Omit<PairFormation, "weight">, time: number) {
+/**
+ * Orbit radius of the two atoms in a stage of half extents `hw` × `hh`: as
+ * large as fits with both atoms inside it, in opposite corners, apart.
+ * Centred `ATOM_REACH` from the edges, they stand
+ * hypot(hw - ATOM_REACH_X r, hh - ATOM_REACH_Y r) from the centre: the
+ * largest r for which that is still `ATOM_APART r` solves a quadratic.
+ */
+export function pairAtomSize(hw: number, hh: number): number {
+  const a = ATOM_REACH_X ** 2 + ATOM_REACH_Y ** 2 - ATOM_APART ** 2;
+  const d = ATOM_REACH_X * hw + ATOM_REACH_Y * hh;
+  const c = hw * hw + hh * hh;
+  // Smallest positive root of a r² - 2 d r + c, in its stable form.
+  const apart = c / (d + Math.sqrt(Math.max(0, d * d - a * c)));
+  return Math.max(0, Math.min(hw / ATOM_REACH_X, hh / ATOM_REACH_Y, apart));
+}
+
+export interface PairGeometry {
+  /** Orbit radius of each atom. */
+  readonly radius: number;
+  /** Eased merge: 0 two atoms, 1 the logo mark. */
+  readonly merged: number;
+  /** Eased bond: 0 apart, 1 hooked together. */
+  readonly bonded: number;
+  /** Nuclei of the left atom and of its mirror image. */
+  readonly a: { readonly x: number; readonly y: number };
+  readonly b: { readonly x: number; readonly y: number };
+  /** Tilt of the right atom's orbit: the left one's mirror image, until they merge. */
+  readonly tiltB: number;
+}
+
+/**
+ * Where the two atoms of the pair stand (also draws the static posters). Apart,
+ * in opposite corners of their stage: side by side in a wide one, on a diagonal
+ * in a tall one. Bonding, they close in, level with each other, until their
+ * orbits hook together; merging, they melt into the logo mark.
+ */
+export function pairGeometry(pair: Omit<PairFormation, "weight">, time: number): PairGeometry {
   const { box, mark } = pair;
-  const size = Math.min(box.hh * 0.9, box.hw * 0.34);
-  const apart = Math.max(size * 1.1, Math.min(box.hw - size * 1.08, size * 1.85));
+  const size = pairAtomSize(box.hw, box.hh);
+  const spanX = Math.max(0, box.hw - ATOM_REACH_X * size);
+  const spanY = Math.max(0, box.hh - ATOM_REACH_Y * size);
+  const apart = Math.hypot(spanX, spanY) || size * ATOM_APART;
   const hooked = size * 0.62;
-  const eased = smoothstep(0, 1, pair.bond);
+  const bonded = smoothstep(0, 1, pair.bond);
   const merged = smoothstep(0, 1, pair.merge);
-  // Even apart, they lean towards each other: the gap breathes.
-  const half = (apart + (hooked - apart) * eased) * (1 + 0.035 * (1 - eased) * Math.sin(time * 0.7));
+  // From their corners to side by side.
+  const dx = spanX / apart + (1 - spanX / apart) * bonded;
+  const dy = (spanY / apart) * (1 - bonded);
+  const norm = Math.hypot(dx, dy) || 1;
+  // Even apart, they lean towards each other: the gap breathes (inwards, so they stay in their stage).
+  const half =
+    (apart + (hooked - apart) * bonded) * (1 - 0.035 * (1 - bonded) * (0.5 + 0.5 * Math.sin(time * 0.7)));
   const bob = size * 0.04 * (1 - merged);
-  const ax = box.x - half;
-  const ay = box.y + bob * Math.sin(time * 0.8);
-  const bx = box.x + half;
-  const by = box.y + bob * Math.sin(time * 0.8 + 2.1);
+  const ax = box.x - (dx / norm) * half;
+  const ay = box.y + (dy / norm) * half + bob * Math.sin(time * 0.8);
+  const bx = box.x + (dx / norm) * half;
+  const by = box.y - (dy / norm) * half + bob * Math.sin(time * 0.8 + 2.1);
   return {
     radius: size + (mark.radius - size) * merged,
     merged,
+    bonded,
     a: { x: ax + (mark.x - ax) * merged, y: ay + (mark.y - ay) * merged },
     b: { x: bx + (mark.x - bx) * merged, y: by + (mark.y - by) * merged },
-    /** Tilt of the right atom's orbit: the left one's mirror image, until they merge. */
     tiltB: -MARK.tilt + 2 * MARK.tilt * merged,
   };
+}
+
+/** Number of field lines between the two atoms. */
+export const PAIR_FIELD_LINES = 3;
+
+/**
+ * Point at `s` in [0, 1] along field line `line` (0 is the innermost) from
+ * the left atom's nucleus to the right one's, like between opposite charges:
+ * arcs on one side of the pair, from the edge of one nucleus to the edge of the
+ * other, flattening as the atoms hook together.
+ */
+export function pairFieldPoint(
+  geometry: PairGeometry,
+  line: number,
+  s: number,
+  out: { x: number; y: number },
+): void {
+  const { a, b, radius, bonded } = geometry;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const edge = Math.min(0.3, (radius * 0.3) / length);
+  const t = edge + (1 - 2 * edge) * s;
+  const bulge = Math.sin(Math.PI * t) * length * (0.13 + 0.045 * line) * (1 - 0.5 * bonded);
+  out.x = a.x + dx * t - (dy / length) * bulge;
+  out.y = a.y + dy * t + (dx / length) * bulge;
 }
 
 /**
@@ -437,11 +515,12 @@ function pairContribution(
   particles: FormationParticles,
   index: number,
   pair: PairFormation,
+  geometry: PairGeometry,
   previous: PairFormation | null,
   time: number,
   into: Contribution,
 ): boolean {
-  const { radius, merged, a, b, tiltB } = pairGeometry(pair, time);
+  const { radius, merged, a, b, tiltB } = geometry;
   const left = (index & 1) === 0;
   const self = left ? a : b;
   const direction = left ? 1 : -1;
@@ -494,23 +573,21 @@ function pairContribution(
     return true;
   }
   if (lane < PAIR_FIELD) {
-    // Field lines between the two nuclei, like between opposite charges: five
-    // arcs, dust flowing from one atom to the other, a pulse running along.
-    const line = Math.floor(fract(along * 5.1) * 5) - 2;
-    const s = fract(along + time * 0.14);
-    const t = 0.12 + 0.76 * s;
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const length = Math.hypot(dx, dy) || 1;
-    const bulge = Math.sin(Math.PI * t) * line * radius * 0.2 * (1 - 0.6 * smoothstep(0, 1, pair.bond));
-    into.x = a.x + dx * t - (dy / length) * bulge;
-    into.y = a.y + dy * t + (dx / length) * bulge;
-    const pulse = Math.exp(-fract(s - time * 0.35) * 10);
+    // Field lines (over the title on wide screens, into the empty corner on
+    // narrow ones): dust flowing along them, a pulse running across. The line
+    // from the lane, the place along it from `along`: every line evenly covered.
+    const line = Math.min(
+      PAIR_FIELD_LINES - 1,
+      Math.floor(((lane - PAIR_ELECTRON) / (PAIR_FIELD - PAIR_ELECTRON)) * PAIR_FIELD_LINES),
+    );
+    const s = fract(along + time * 0.08);
+    pairFieldPoint(geometry, line, s, shared);
+    const pulse = Math.exp(-fract(s - time * 0.25) * 9);
     // Merging, the field lines join the orbit rather than crush into the nucleus.
     orbitPoint(self, radius, tilt, TAU * fract(along + direction * time * 0.05), point);
-    into.x += (point.x - into.x) * merged;
-    into.y += (point.y - into.y) * merged;
-    into.glow = 0.28 + 0.6 * pulse + (0.55 - 0.28 - 0.6 * pulse) * merged;
+    into.x = shared.x + (point.x - shared.x) * merged;
+    into.y = shared.y + (point.y - shared.y) * merged;
+    into.glow = 0.42 + 0.7 * pulse + (0.55 - 0.42 - 0.7 * pulse) * merged;
     into.paper = 0.7 + 0.15 * merged;
     return true;
   }
@@ -564,6 +641,9 @@ export function writeFormations(
   const tubes = formations.tubes && formations.tubes.weight > 0.001 ? formations.tubes : null;
   const pact = formations.pact && formations.pact.weight > 0.001 ? formations.pact : null;
 
+  // Where the two atoms stand this frame: the same for every particle.
+  const geometry = pair ? pairGeometry(pair, time) : null;
+
   for (let index = 0; index < particles.count; index += 1) {
     sum.x = 0;
     sum.y = 0;
@@ -573,7 +653,11 @@ export function writeFormations(
     sum.plasma = 0;
     sum.paper = 0;
     sum.carry = 0;
-    if (pair && pairContribution(particles, index, pair, previous?.pair ?? null, time, contribution)) {
+    if (
+      pair &&
+      geometry &&
+      pairContribution(particles, index, pair, geometry, previous?.pair ?? null, time, contribution)
+    ) {
       accumulate(pair.weight);
     }
     if (card && cardContribution(particles, index, card, previous?.card ?? null, time, unit, contribution)) {

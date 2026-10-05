@@ -4,11 +4,12 @@ import {
   contourPoint,
   FORMATION_STRIDE,
   type Formations,
+  pairGeometry,
   toWorldBox,
   type WorldBox,
   writeFormations,
 } from "./formations";
-import { createIonFieldLayout, SCHOOL_KEYS } from "./layout";
+import { createIonFieldLayout, MARK, SCHOOL_KEYS } from "./layout";
 
 const box: WorldBox = { x: 0.2, y: -0.1, hw: 0.8, hh: 0.4 };
 
@@ -64,6 +65,61 @@ describe("contourPoint", () => {
       previous.x = point.x;
       previous.y = point.y;
     }
+  });
+});
+
+describe("pairGeometry", () => {
+  /** Horizontal and vertical half extents of a tilted orbit, in orbit radii. */
+  const extentX = Math.hypot(Math.cos(MARK.tilt), MARK.orbitMinor * Math.sin(MARK.tilt));
+  const extentY = Math.hypot(Math.sin(MARK.tilt), MARK.orbitMinor * Math.cos(MARK.tilt));
+  const pair = (stage: WorldBox, bond = 0, merge = 0) => ({
+    box: stage,
+    bond,
+    merge,
+    mark: { x: 1, y: 0.5, radius: 0.3 },
+  });
+  const inside = (stage: WorldBox, atom: { x: number; y: number }, radius: number) => {
+    expect(Math.abs(atom.x - stage.x) + extentX * radius).toBeLessThanOrEqual(stage.hw + 1e-9);
+    expect(Math.abs(atom.y - stage.y) + extentY * radius).toBeLessThanOrEqual(stage.hh + 1e-9);
+  };
+
+  it("sets the two atoms side by side across a wide stage, filling its height", () => {
+    const stage = { x: 0.1, y: 0.05, hw: 1.6, hh: 0.35 };
+    for (const time of [0, 1.3, 2.7, 4.2]) {
+      const { a, b, radius } = pairGeometry(pair(stage), time);
+      inside(stage, a, radius);
+      inside(stage, b, radius);
+      expect(Math.abs(a.y - b.y)).toBeLessThan(radius * 0.1);
+      expect(radius * extentY).toBeGreaterThan(stage.hh * 0.8);
+      expect(b.x - a.x).toBeGreaterThan(stage.hw);
+    }
+  });
+
+  it("sets them on a diagonal in a tall stage, as large as fits without touching", () => {
+    const stage = { x: 0, y: 0.4, hw: 0.9, hh: 0.7 };
+    const { a, b, radius } = pairGeometry(pair(stage), 0);
+    inside(stage, a, radius);
+    inside(stage, b, radius);
+    // Upper left and lower right.
+    expect(a.x).toBeLessThan(stage.x - radius * 0.5);
+    expect(a.y).toBeGreaterThan(stage.y + radius * 0.3);
+    expect(b.x).toBeGreaterThan(stage.x + radius * 0.5);
+    expect(b.y).toBeLessThan(stage.y - radius * 0.3);
+    expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeGreaterThan(radius * 2.2);
+    // Larger than side by side would allow.
+    expect(radius).toBeGreaterThan(stage.hw / (2 * extentX + 0.3));
+  });
+
+  it("hooks them together side by side, then merges them into the logo mark", () => {
+    const stage = { x: 0, y: 0.4, hw: 0.9, hh: 0.7 };
+    const hooked = pairGeometry(pair(stage, 1), 2);
+    expect(hooked.a.y).toBeCloseTo(hooked.b.y, 1);
+    expect(hooked.b.x - hooked.a.x).toBeCloseTo(hooked.radius * 1.24, 5);
+    const merged = pairGeometry(pair(stage, 1, 1), 2);
+    expect(merged.a).toEqual({ x: 1, y: 0.5 });
+    expect(merged.b).toEqual({ x: 1, y: 0.5 });
+    expect(merged.radius).toBeCloseTo(0.3);
+    expect(merged.tiltB).toBeCloseTo(MARK.tilt);
   });
 });
 
