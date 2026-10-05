@@ -4,6 +4,10 @@ import {
   contourPoint,
   FORMATION_STRIDE,
   type Formations,
+  orbitArcPoint,
+  orbitTheta,
+  PAIR_FIELD_LINES,
+  pairFieldPoint,
   pairGeometry,
   toWorldBox,
   type WorldBox,
@@ -123,6 +127,69 @@ describe("pairGeometry", () => {
   });
 });
 
+describe("orbitArcPoint", () => {
+  it("spreads evenly spaced fractions evenly along the ellipse", () => {
+    const center = { x: 0.3, y: -0.2 };
+    const steps = 200;
+    const gaps: number[] = [];
+    const previous = { x: 0, y: 0 };
+    const point = { x: 0, y: 0 };
+    orbitArcPoint(center, 0.5, MARK.tilt, 0, previous);
+    for (let step = 1; step <= steps; step += 1) {
+      orbitArcPoint(center, 0.5, MARK.tilt, step / steps, point);
+      gaps.push(Math.hypot(point.x - previous.x, point.y - previous.y));
+      previous.x = point.x;
+      previous.y = point.y;
+    }
+    const mean = gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length;
+    for (const gap of gaps) {
+      expect(gap).toBeGreaterThan(mean * 0.97);
+      expect(gap).toBeLessThan(mean * 1.03);
+    }
+    // Back where it started after a full turn, from the end of the major axis.
+    expect(orbitTheta(0)).toBe(0);
+    expect(orbitTheta(1)).toBeCloseTo(0);
+    expect(orbitTheta(0.5)).toBeCloseTo(Math.PI);
+  });
+});
+
+describe("pairFieldPoint", () => {
+  const stage = { x: 0, y: 0, hw: 2.3, hh: 0.5 };
+  const pair = (bond: number) =>
+    pairGeometry({ box: stage, bond, merge: 0, mark: { x: 0, y: 0, radius: 1 } }, 0);
+
+  it("arches over the title, from the edge of one nucleus to the other's, higher line by line", () => {
+    const geometry = pair(0);
+    const { a, b, radius } = geometry;
+    const point = { x: 0, y: 0 };
+    let apex = 0;
+    for (let line = 0; line < PAIR_FIELD_LINES; line += 1) {
+      pairFieldPoint(geometry, line, 0, point);
+      expect(Math.hypot(point.x - a.x, point.y - a.y)).toBeCloseTo(radius * 0.32, 2);
+      pairFieldPoint(geometry, line, 1, point);
+      expect(Math.hypot(point.x - b.x, point.y - b.y)).toBeCloseTo(radius * 0.32, 2);
+      pairFieldPoint(geometry, line, 0.5, point);
+      // Above both nuclei, and no higher than one orbit radius and a quarter.
+      expect(point.y).toBeGreaterThan(a.y + radius * 0.9);
+      expect(point.y).toBeLessThan(a.y + radius * 1.25);
+      expect(point.y).toBeGreaterThan(apex);
+      apex = point.y;
+      // Steep enough to leave the middle clear: at a tenth of the way, already well above the nuclei.
+      pairFieldPoint(geometry, line, 0.1, point);
+      expect(point.y).toBeGreaterThan(a.y + radius * 0.45);
+    }
+  });
+
+  it("flattens into a bond between the two nuclei once they hook together", () => {
+    const geometry = pair(1);
+    const point = { x: 0, y: 0 };
+    pairFieldPoint(geometry, 0, 0.5, point);
+    expect(point.y - geometry.a.y).toBeLessThan(geometry.radius * 0.25);
+    // The chord is slightly tilted by the two atoms bobbing out of phase.
+    expect(point.x).toBeCloseTo((geometry.a.x + geometry.b.x) / 2, 2);
+  });
+});
+
 describe("writeFormations", () => {
   it("leaves every particle free, at full light, without formations", () => {
     const { targets, looks, layout } = run({});
@@ -201,6 +268,31 @@ describe("writeFormations", () => {
         Math.hypot((targets[a] ?? 0) - (targets[b] ?? 0), (targets[a + 1] ?? 0) - (targets[b + 1] ?? 0)),
       ).toBeLessThan(0.06);
     }
+  });
+
+  it("keeps the heavy particles in the nuclei and spreads the orbit evenly", () => {
+    const stage = { x: 0, y: 0, hw: 2.3, hh: 0.5 };
+    const pair = { weight: 1, box: stage, bond: 0, merge: 0, mark: { x: 0, y: 0, radius: 1 } };
+    const { layout, targets, looks } = run({ pair });
+    const { a, b, radius } = pairGeometry(pair, 3);
+    let orbitDust = 0;
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      expect(targets[offset + 2]).toBe(1);
+      const nucleus = index % 2 === 0 ? a : b;
+      const distance = Math.hypot((targets[offset] ?? 0) - nucleus.x, (targets[offset + 1] ?? 0) - nucleus.y);
+      if ((layout.sizes[index] ?? 0) >= 0.01) {
+        // A big particle anywhere else would read as a bead on a thread.
+        expect(distance).toBeLessThan(radius * 0.3);
+      }
+      // Orbit dust: paper-tinted, bigger than the nucleus, no colour of its own.
+      if ((looks[offset + 3] ?? 0) > 0.8 && (looks[offset] ?? 0) === 0 && (looks[offset + 1] ?? 0) === 0) {
+        orbitDust += 1;
+        expect(distance).toBeGreaterThan(radius * MARK.orbitMinor * 0.9);
+        expect(distance).toBeLessThan(radius * 1.03);
+      }
+    }
+    expect(orbitDust).toBeGreaterThan(layout.count * 0.6);
   });
 
   it("carries particles with their shape's element as the page scrolls", () => {

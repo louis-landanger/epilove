@@ -176,10 +176,11 @@ export function IonFieldCanvas({ className }: { className?: string }) {
       return;
     }
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // Development only: `?field=live` runs the field on software renderers too, at full quality.
-    const forced =
-      process.env.NODE_ENV !== "production" &&
-      new URLSearchParams(window.location.search).get("field") === "live";
+    // Development only: `?field=live` runs the field on software renderers too, at full
+    // quality, and `&particles=8000` sets the particle count (to preview another device's budget).
+    const query = new URLSearchParams(window.location.search);
+    const forced = process.env.NODE_ENV !== "production" && query.get("field") === "live";
+    const forcedCount = forced ? Number(query.get("particles")) || 0 : 0;
     if (reducedMotion.matches || (!forced && !canAffordLiveField(deviceProfile()))) {
       return;
     }
@@ -202,7 +203,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         let followPage = () => {};
         const field = await createIonField({
           container,
-          particleCount: (backend) => particleBudget(backend, profile),
+          particleCount: (backend) => (forcedCount > 0 ? forcedCount : particleBudget(backend, profile)),
           adaptiveQuality: !forced,
           beforeFrame: () => followPage(),
           // The particles start in the shapes on screen (the hero's two atoms): no jump from the poster.
