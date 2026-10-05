@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { signUp } from "./support/auth";
 import { continueStep, pickGeneratedPhoto, startOnboarding } from "./support/onboarding";
 
@@ -8,6 +8,21 @@ const WCAG = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
 async function expectAccessible(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(results.violations).toEqual([]);
+}
+
+/** Each step fades in (onboarding-flow.tsx): colours are only measured once it is fully opaque. */
+async function expectFadedIn(locator: Locator) {
+  await expect
+    .poll(() =>
+      locator.evaluate((element) => {
+        let opacity = 1;
+        for (let node: Element | null = element; node; node = node.parentElement) {
+          opacity *= Number(getComputedStyle(node).opacity);
+        }
+        return opacity;
+      }),
+    )
+    .toBe(1);
 }
 
 test.describe("onboarding", () => {
@@ -79,6 +94,7 @@ test.describe("onboarding", () => {
     await continueStep(page);
 
     await expect(page.getByRole("heading", { name: "Tout est prêt, Camille." })).toBeVisible();
+    await expectFadedIn(page.getByRole("button", { name: "Activer mon profil" }));
     await expectAccessible(page);
     await page.getByRole("button", { name: "Activer mon profil" }).click();
     await page.getByRole("button", { name: "Plus tard" }).click();
