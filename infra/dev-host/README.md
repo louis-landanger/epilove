@@ -57,6 +57,8 @@ Options : `TEAM_USER` (identifiant, `atomes` par défaut), `SEED_DEV=0` (sans me
 
 ## 4. Au quotidien
 
+Le guide complet (ajouter une clé SSH, déployer une branche, revenir en arrière, variables d'environnement, journaux, base de données, maintenance) est dans [`EXPLOITATION.md`](EXPLOITATION.md). L'essentiel :
+
 ```bash
 sudo bash /opt/atomes/infra/dev-host/update.sh       # déployer le dernier main (ou : update.sh ma-branche)
 journalctl -fu atomes-web                            # journaux (atomes-admin, atomes-worker, caddy)

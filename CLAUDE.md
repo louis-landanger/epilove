@@ -8,6 +8,8 @@ Atomes (nom provisoire, anciennement « Epilove », voir `docs/adr/0015-nom-atom
 
 Statut : phase 0, paliers 1 à 3 des sessions A (Accès) et B (Rencontre) fusionnés dans `main` le 3 octobre 2026 ; le développement continue sur `main`. La stack et l'organisation du monorepo sont décrites dans `docs/03-stack.md`, `docs/04-architecture.md` et `docs/adr/0001-socle-technique-sprint-0.md`. Ce que chaque session a livré, ses choix et ses questions ouvertes : `docs/integration/` (`session-a.md`, `session-b.md`, `fusion.md`).
 
+Guides pas à pas pour les humains : [`CONTRIBUTING.md`](CONTRIBUTING.md) (circuit d'une modification, où modifier quoi) et [`infra/dev-host/EXPLOITATION.md`](infra/dev-host/EXPLOITATION.md) (serveur de dev partagé). Les tenir à jour quand une commande, un chemin ou le déploiement change.
+
 Organisation du code de l'app web : `apps/web/components/acces/` (vitrine, inscription, profil, réglages, sécurité) et `apps/web/components/rencontre/` (découverte, messagerie, Pacte, vie de campus) ; les composants réutilisables vont dans le design system `packages/ui` (catalogue Storybook).
 
 ## Commandes

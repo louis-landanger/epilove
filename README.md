@@ -64,6 +64,8 @@ pnpm dev                  # app http://localhost:3000, back-office http://localh
 
 Vérifications : `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm test:e2e`. Toutes les commandes sont décrites dans [`CLAUDE.md`](CLAUDE.md#commandes).
 
+Faire une modification, de la branche au serveur de dev : [`CONTRIBUTING.md`](CONTRIBUTING.md). Intervenir sur le serveur de dev (accès SSH, déploiement, retour arrière, variables, journaux) : [`infra/dev-host/EXPLOITATION.md`](infra/dev-host/EXPLOITATION.md).
+
 | Dossier | Contenu |
 |---|---|
 | `apps/web` | Next.js 16 : vitrine, application, API montée sous `/api` |
@@ -87,4 +89,4 @@ Vérifications : `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm
 
 ## Contribuer
 
-Le plan est une proposition : ouvrez une issue ou une pull request pour le discuter. Les décisions structurantes sont consignées dans [`docs/adr/`](docs/adr/0000-template.md). Les vulnérabilités se signalent en privé (voir [SECURITY.md](SECURITY.md)).
+Le circuit d'une modification (où trouver quoi, vérifications, commits, pull request, mise en ligne) est décrit pas à pas dans [`CONTRIBUTING.md`](CONTRIBUTING.md). Le plan est une proposition : ouvrez une issue ou une pull request pour le discuter. Les décisions structurantes sont consignées dans [`docs/adr/`](docs/adr/0000-template.md). Les vulnérabilités se signalent en privé (voir [SECURITY.md](SECURITY.md)).
