@@ -23,7 +23,7 @@ interface Poster {
   readonly width: number;
   readonly radius: number;
   readonly atoms: readonly [Atom, Atom];
-  readonly lines: ReadonlyArray<string>;
+  readonly lines: ReadonlyArray<{ readonly line: number; readonly d: string }>;
 }
 
 const posters = new Map<number, Poster>();
@@ -66,7 +66,7 @@ function poster(aspect: number): Poster {
       pairFieldPoint(geometry, line, sample / FIELD_SAMPLES, point);
       points.push(`${round(point.x)} ${round(HEIGHT - point.y)}`);
     }
-    return `M${points.join("L")}`;
+    return { line, d: `M${points.join("L")}` };
   });
   const result: Poster = {
     width,
@@ -118,8 +118,8 @@ export function IonFieldPoster({ aspect, className }: { aspect: number; classNam
         ))}
       </defs>
       <g stroke={colors.paper} opacity="0.6" {...dot(0.9, 3.4)}>
-        {lines.map((path) => (
-          <path key={path} d={path} />
+        {lines.map(({ line, d }) => (
+          <path key={line} d={d} />
         ))}
       </g>
       {atoms.map((atom) => (
@@ -138,7 +138,7 @@ export function IonFieldPoster({ aspect, className }: { aspect: number; classNam
           <circle
             cx={atom.electron.x}
             cy={atom.electron.y}
-            r={round(radius * 0.18)}
+            r={round(radius * 0.14)}
             fill={`url(#${id}-${atom.charge})`}
           />
         </g>

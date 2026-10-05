@@ -88,6 +88,7 @@ export interface FormationParticles {
   readonly along: Float32Array;
   readonly lanes: Float32Array;
   readonly phases: Float32Array;
+  readonly sizes: Float32Array;
 }
 
 /** Floats per particle in each output buffer (both are vec4 on the GPU). */
@@ -97,9 +98,26 @@ export const FORMATION_STRIDE = 4;
 const PACT_RINGS = [1, 0.77, 0.52] as const;
 
 /** Shares of each atom of the pair: nucleus, electron, field lines (the rest traces the orbit). */
-const PAIR_NUCLEUS = 0.15;
+const PAIR_NUCLEUS = 0.16;
 const PAIR_ELECTRON = 0.21;
 const PAIR_FIELD = 0.35;
+/**
+ * Particles at least this big (the "heavy" ones of layout.ts) always sit in
+ * the nucleus, whatever their lane: the orbit and the field lines stay fine
+ * threads of dust rather than strings of beads.
+ */
+const PAIR_HEAVY = 0.01;
+/** Radius of a nucleus and of an electron's head, in orbit radii. */
+const NUCLEUS_REACH = 0.26;
+const ELECTRON_REACH = 0.07;
+/** Length of an electron's tail, as a fraction of the orbit. */
+const ELECTRON_TAIL = 0.11;
+/**
+ * Orbit radius (half the viewport height is 1) the dust's light is tuned
+ * for. A smaller ring packs the same dust tighter, so it glows less, or it
+ * would burn to a solid white band on a phone.
+ */
+const PAIR_LIGHT_RADIUS = 0.5;
 
 /**
  * Reach of an atom of the pair around its nucleus, in orbit radii: the tilted
@@ -412,6 +430,69 @@ export function orbitPoint(
 
 const shared = { x: 0, y: 0 };
 
+const ORBIT_SAMPLES = 1024;
+
+/**
+ * Angle of the orbit's ellipse at every 1/ORBIT_SAMPLES of its arc length
+ * (plus the end). Dust spread evenly in angle bunches up at the ends of the
+ * major axis; spread evenly in arc length it traces an even thread.
+ */
+const ORBIT_THETA = (() => {
+  const fine = 4096;
+  const lengths = new Float64Array(fine + 1);
+  let px = 1;
+  let py = 0;
+  for (let i = 1; i <= fine; i += 1) {
+    const t = (TAU * i) / fine;
+    const x = Math.cos(t);
+    const y = MARK.orbitMinor * Math.sin(t);
+    lengths[i] = (lengths[i - 1] ?? 0) + Math.hypot(x - px, y - py);
+    px = x;
+    py = y;
+  }
+  const total = lengths[fine] ?? 1;
+  const table = new Float32Array(ORBIT_SAMPLES + 1);
+  let i = 0;
+  for (let k = 0; k <= ORBIT_SAMPLES; k += 1) {
+    const target = (total * k) / ORBIT_SAMPLES;
+    while (i < fine - 1 && (lengths[i + 1] ?? total) < target) {
+      i += 1;
+    }
+    const l0 = lengths[i] ?? 0;
+    const l1 = lengths[i + 1] ?? total;
+    const f = l1 > l0 ? (target - l0) / (l1 - l0) : 0;
+    table[k] = (TAU * (i + f)) / fine;
+  }
+  return table;
+})();
+
+/** Angle on the orbit at the fraction `s` of its arc length, counter-clockwise from the major axis. */
+export function orbitTheta(s: number): number {
+  const u = fract(s) * ORBIT_SAMPLES;
+  const k = Math.floor(u);
+  const from = ORBIT_THETA[k] ?? 0;
+  const to = ORBIT_THETA[k + 1] ?? TAU;
+  return from + (to - from) * (u - k);
+}
+
+/** Point at the fraction `s` of the arc length of an atom's orbit (see `orbitPoint`). */
+export function orbitArcPoint(
+  center: { x: number; y: number },
+  radius: number,
+  tilt: number,
+  s: number,
+  out: { x: number; y: number },
+): void {
+  orbitPoint(center, radius, tilt, orbitTheta(s), out);
+}
+
+/**
+ * How close to the viewer a point of the orbit is, in [0, 1]: the ring is a
+ * circle seen at an angle, its lower half (before the tilt) the near one. The
+ * same for an atom and its mirror image, since mirroring keeps the sine.
+ */
+const orbitNear = (theta: number) => 0.5 - 0.5 * Math.sin(theta);
+
 /**
  * Orbit radius of the two atoms in a stage of half extents `hw` × `hh`: as
  * large as fits with both atoms inside it, in opposite corners, apart.
@@ -483,10 +564,13 @@ export function pairGeometry(pair: Omit<PairFormation, "weight">, time: number):
 export const PAIR_FIELD_LINES = 3;
 
 /**
- * Point at `s` in [0, 1] along field line `line` (0 is the innermost) from
- * the left atom's nucleus to the right one's, like between opposite charges:
- * arcs on one side of the pair, from the edge of one nucleus to the edge of the
- * other, flattening as the atoms hook together.
+ * Point at `s` in [0, 1] along field line `line` (0 is the innermost, and it
+ * may be fractional) from the left atom's nucleus to the right one's. The
+ * lines are the field of two opposite charges, which in the plane are circular
+ * arcs through both of them: they leave each nucleus steeply, clear of the
+ * title between the atoms, and arch over it (into the empty corner, when the
+ * atoms stand on a diagonal). As the atoms hook together the arcs flatten
+ * into the bond between the two nuclei.
  */
 export function pairFieldPoint(
   geometry: PairGeometry,
@@ -498,18 +582,34 @@ export function pairFieldPoint(
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const length = Math.hypot(dx, dy) || 1;
-  const edge = Math.min(0.3, (radius * 0.3) / length);
-  const t = edge + (1 - 2 * edge) * s;
-  const bulge = Math.sin(Math.PI * t) * length * (0.13 + 0.045 * line) * (1 - 0.5 * bonded);
-  out.x = a.x + dx * t - (dy / length) * bulge;
-  out.y = a.y + dy * t + (dx / length) * bulge;
+  const ux = dx / length;
+  const uy = dy / length;
+  // The side the arcs bulge to: the chord turned a quarter turn (up, for atoms side by side).
+  const nx = -uy;
+  const ny = ux;
+  // Sagitta: a share of the distance between the atoms, but no higher above
+  // them than their size (they stand under the site header); a bond once hooked.
+  const sagitta = Math.min(length * (0.24 + 0.03 * line), radius * (0.95 + 0.12 * line)) * (1 - 0.8 * bonded);
+  const circle = (length * length * 0.25 + sagitta * sagitta) / (2 * sagitta);
+  const alpha = Math.asin(Math.min(1, length / (2 * circle)));
+  // The visible arc starts at the edge of each nucleus.
+  const trim = Math.min(alpha * 0.45, (radius * 0.32) / circle);
+  const phi = -alpha + trim + 2 * (alpha - trim) * s;
+  const cx = (a.x + b.x) / 2 - nx * (circle - sagitta);
+  const cy = (a.y + b.y) / 2 - ny * (circle - sagitta);
+  const across = Math.cos(phi) * circle;
+  const along = Math.sin(phi) * circle;
+  out.x = cx + across * nx + along * ux;
+  out.y = cy + across * ny + along * uy;
 }
 
 /**
  * The pair: even particles make the left atom (plasma nucleus, volt
  * electron), odd ones its mirror image (volt nucleus, plasma electron).
- * Each traces its tilted orbit, fills its nucleus, rides its electron, or
- * flows along the field lines that bind the two nuclei.
+ * Each fills its nucleus, rides its electron, flows along the field lines
+ * that bind the two nuclei, or traces its tilted orbit. The mirror image of a
+ * point at the arc fraction `s` of the left orbit sits at `0.5 - s` on the
+ * right one, hence the half-turn offsets and the opposite direction.
  */
 function pairContribution(
   particles: FormationParticles,
@@ -527,6 +627,9 @@ function pairContribution(
   const tilt = left ? MARK.tilt : tiltB;
   const lane = particles.lanes[index] ?? 0;
   const along = particles.along[index] ?? 0;
+  const phase = particles.phases[index] ?? 0;
+  const heavy = (particles.sizes[index] ?? 0) >= PAIR_HEAVY;
+  const packed = Math.min(1, Math.max(0.4, radius / PAIR_LIGHT_RADIUS));
   into.volt = 0;
   into.plasma = 0;
   into.paper = 0;
@@ -534,15 +637,18 @@ function pairContribution(
   // The stage moves with the page; once merged, the mark stays put in the viewport.
   into.carry = previous ? (pair.box.y - previous.box.y) * (1 - merged) : 0;
 
-  if (lane < PAIR_NUCLEUS) {
-    // Nucleus: an even disc that breathes.
-    const reach = radius * 0.25 * (1 + 0.06 * Math.sin(time * 1.4 + (left ? 0 : 1.7)));
-    // (along, lane) is a low-discrepancy pair: an even disc, no spiral arms.
-    const r = reach * Math.sqrt(along);
-    const angle = TAU * fract(lane / PAIR_NUCLEUS + time * 0.03);
+  if (heavy || lane < PAIR_NUCLEUS) {
+    // Nucleus: a dense core in a soft corona, breathing and slowly swirling.
+    // The angle comes from the particle's random phase and the radius from its
+    // low-discrepancy `along`: evenly filled, without the lattice of arms that
+    // two correlated sequences would draw. The heavy particles stay in the core.
+    const reach = radius * NUCLEUS_REACH * (1 + 0.05 * Math.sin(time * 1.4 + (left ? 0 : 1.7)));
+    const depth = heavy ? along * 0.4 : along;
+    const r = reach * depth ** 0.7;
+    const angle = TAU * phase + time * (0.14 - 0.1 * depth);
     into.x = self.x + Math.cos(angle) * r;
     into.y = self.y + Math.sin(angle) * r;
-    into.glow = 0.75;
+    into.glow = 0.5 + 0.8 * (1 - depth);
     // Plasma and volt nuclei; once merged, the plasma nucleus of the mark.
     if (left) {
       into.plasma = 0.9;
@@ -553,17 +659,33 @@ function pairContribution(
     return true;
   }
   if (lane < PAIR_ELECTRON) {
-    // Electron: a small cluster that really travels along the orbit; once
+    // Electron: a bright head that really travels along the orbit, trailing
+    // a short tail of fading dust; dimmer on the far side of the ring. Once
     // merged, the right atom's electron joins the left one's: the mark has one.
-    orbitPoint(self, radius, tilt, TAU * fract(direction * time * 0.12 + (left ? 0 : 0.5)), point);
-    orbitPoint(a, radius, MARK.tilt, TAU * fract(time * 0.12), shared);
+    const head = fract(direction * time * 0.12 + (left ? 0 : 0.5));
+    const headMark = fract(time * 0.12);
+    const k = (lane - PAIR_NUCLEUS) / (PAIR_ELECTRON - PAIR_NUCLEUS);
+    const inHead = k < 0.45;
+    // How far back along the tail, 0 at the head: denser near the head.
+    const back = inHead ? 0 : ((k - 0.45) / 0.55) ** 2 * ELECTRON_TAIL;
+    orbitArcPoint(self, radius, tilt, head - direction * back, point);
+    orbitArcPoint(a, radius, MARK.tilt, headMark - back, shared);
     const cx = left ? point.x : point.x + (shared.x - point.x) * merged;
     const cy = left ? point.y : point.y + (shared.y - point.y) * merged;
-    const r = radius * 0.13 * Math.sqrt(along);
-    const angle = TAU * ((lane - PAIR_NUCLEUS) / (PAIR_ELECTRON - PAIR_NUCLEUS));
-    into.x = cx + Math.cos(angle) * r;
-    into.y = cy + Math.sin(angle) * r;
-    into.glow = 1;
+    const angle = TAU * phase;
+    let offset: number;
+    if (inHead) {
+      offset = radius * ELECTRON_REACH * Math.sqrt(k / 0.45);
+      into.glow = 1.25;
+    } else {
+      // The tail widens and fades away from the head.
+      const fade = 1 - back / ELECTRON_TAIL;
+      offset = radius * (0.01 + 0.03 * (1 - fade)) * (phase - 0.5) * 2;
+      into.glow = (0.08 + 0.9 * fade * fade) * packed;
+    }
+    into.glow *= 0.6 + 0.4 * orbitNear(orbitTheta(head - direction * back));
+    into.x = cx + Math.cos(angle) * offset;
+    into.y = cy + Math.sin(angle) * offset;
     if (left) {
       into.volt = 0.9;
     } else {
@@ -573,30 +695,40 @@ function pairContribution(
     return true;
   }
   if (lane < PAIR_FIELD) {
-    // Field lines (over the title on wide screens, into the empty corner on
-    // narrow ones): dust flowing along them, a pulse running across. The line
-    // from the lane, the place along it from `along`: every line evenly covered.
-    const line = Math.min(
-      PAIR_FIELD_LINES - 1,
-      Math.floor(((lane - PAIR_ELECTRON) / (PAIR_FIELD - PAIR_ELECTRON)) * PAIR_FIELD_LINES),
-    );
-    const s = fract(along + time * 0.08);
-    pairFieldPoint(geometry, line, s, shared);
-    const pulse = Math.exp(-fract(s - time * 0.25) * 9);
+    // Field lines: a soft band of three arcs over the title (into the empty
+    // corner on narrow screens). Dim dust drifts along them, one line out of
+    // two the other way, each line scattered a little across its width; a
+    // bright pulse runs down each line, in the colour of the atom it leaves.
+    const share = (lane - PAIR_ELECTRON) / (PAIR_FIELD - PAIR_ELECTRON);
+    const line = Math.min(PAIR_FIELD_LINES - 1, Math.floor(share * PAIR_FIELD_LINES));
+    const flow = line % 2 === 0 ? 1 : -1;
+    const s = fract(along + flow * time * 0.06);
+    pairFieldPoint(geometry, line + (phase - 0.5) * 0.5, s, shared);
+    const pulseHead = fract(flow * time * 0.2 + line * 0.37);
+    const pulse = Math.exp(-fract(flow * (pulseHead - s)) * 11);
     // Merging, the field lines join the orbit rather than crush into the nucleus.
-    orbitPoint(self, radius, tilt, TAU * fract(along + direction * time * 0.05), point);
+    orbitArcPoint(self, radius, tilt, along + direction * time * 0.04, point);
     into.x = shared.x + (point.x - shared.x) * merged;
     into.y = shared.y + (point.y - shared.y) * merged;
-    into.glow = 0.42 + 0.7 * pulse + (0.55 - 0.42 - 0.7 * pulse) * merged;
-    into.paper = 0.7 + 0.15 * merged;
+    const lit = (0.38 + 1.1 * pulse) * packed;
+    into.glow = lit + (0.55 * packed - lit) * merged;
+    into.paper = (0.75 - 0.6 * pulse) * (1 - merged) + 0.85 * merged;
+    if (flow > 0) {
+      into.plasma = 0.9 * pulse * (1 - merged);
+    } else {
+      into.volt = 0.9 * pulse * (1 - merged);
+    }
     return true;
   }
-  // Orbit: a tilted ellipse, mirrored from one atom to the other, turning.
-  const thickness = 1 + (fract(along * 7.31) - 0.5) * 0.06;
-  orbitPoint(self, radius * thickness, tilt, TAU * fract(along + direction * time * 0.05), point);
+  // Orbit: a fine thread of dust evenly spread along the tilted ellipse, a
+  // little thicker in its middle, turning; the near half of the ring a touch
+  // brighter, so it reads as a circle seen at an angle.
+  const s = fract(along + direction * time * 0.04);
+  const spread = (phase - 0.5) * 2;
+  orbitArcPoint(self, radius * (1 + 0.02 * spread * Math.abs(spread)), tilt, s, point);
   into.x = point.x;
   into.y = point.y;
-  into.glow = 0.55;
+  into.glow = (0.42 + 0.3 * orbitNear(orbitTheta(s))) * packed;
   into.paper = 0.85;
   return true;
 }
