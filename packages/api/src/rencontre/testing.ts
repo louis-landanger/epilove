@@ -16,6 +16,8 @@ export function createTestApi(db: Database) {
     version: "test",
     database: () => db,
     resolveViewer: devHeaderResolver({ APP_ENV: "test" }),
+    // The same secret for the services (signed voice URLs, pseudonyms) as for emails.
+    services: { emailHmacSecret: () => TEST_EMAIL_HMAC_SECRET },
   });
   const as = (memberId: string | null): ApiClient =>
     createApiClient({
