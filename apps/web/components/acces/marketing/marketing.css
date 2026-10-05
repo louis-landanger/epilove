@@ -98,59 +98,40 @@
 
 /* ------------------------------------------------------------------- hero */
 
-.hero-vignette {
-  background:
-    radial-gradient(
-      55% 50% at 24% 70%,
-      color-mix(in oklch, var(--color-ink) 62%, transparent),
-      transparent 75%
-    ),
-    radial-gradient(
-      130% 90% at 65% 35%,
-      transparent 45%,
-      color-mix(in oklch, var(--color-ink) 75%, transparent) 100%
-    ),
-    linear-gradient(
-      to top,
-      var(--color-ink) 0%,
-      color-mix(in oklch, var(--color-ink) 62%, transparent) 24%,
-      transparent 52%
-    );
+/*
+ * Where the two atoms live (journey.ts reads it every frame): top right on wide
+ * screens, clear of the copy; above it on narrow ones. 2.4:1, like the poster.
+ */
+.hero-stage {
+  position: absolute;
+  top: 13svh;
+  right: 3vw;
+  width: min(54vw, calc(36svh * 2.4));
+  aspect-ratio: 2.4;
 }
 
-.headline {
-  font-size: clamp(3.5rem, 12.6vw, 13.75rem);
+@media (max-width: 63.99rem), (max-aspect-ratio: 5 / 4) {
+  .hero-stage {
+    top: 14svh;
+    right: 4vw;
+    width: 92vw;
+  }
 }
 
-.headline-word {
-  display: inline-block;
-  translate: var(--dx, 0) var(--dy, 0);
-  animation: focus-pull 1.5s var(--ease-out) both;
-  transition: translate 0.7s var(--ease-out);
-}
-
-.headline {
+.hero-title {
   font-family: var(--font-headline), var(--font-display);
-}
-
-/* Heavier near the pointer, a touch narrower so the advance width barely changes. */
-.headline-kinetic {
-  font-variation-settings:
-    "wdth" calc(100 - var(--pull, 0) * 6),
-    "opsz" 96;
-  font-weight: calc(600 + var(--pull, 0) * 200);
-  text-align: center;
-  transition:
-    font-variation-settings 0.5s var(--ease-out),
-    font-weight 0.5s var(--ease-out),
-    translate 0.7s var(--ease-out);
+  font-size: clamp(2.9rem, 6.6vw, 7.5rem);
+  line-height: 0.94;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  animation: focus-pull 1.4s var(--ease-out) both;
 }
 
 /* Text is painted from the first frame (no hidden LCP): it only comes into focus. */
 @keyframes focus-pull {
   from {
-    filter: blur(16px);
-    transform: translateY(0.16em) scale(1.03);
+    filter: blur(14px);
+    transform: translateY(0.12em);
   }
   to {
     filter: blur(0);
@@ -162,6 +143,13 @@
   animation: rise-in 1.4s var(--ease-out) 0.45s both;
 }
 
+/* A middle dot between the schools, silent for screen readers (empty alternative text). */
+.hero-schools li + li::before {
+  content: "·" / "";
+  padding: 0 0.5rem;
+  color: color-mix(in oklch, var(--color-paper) 30%, transparent);
+}
+
 @keyframes rise-in {
   from {
     transform: translateY(1.25rem);
@@ -169,15 +157,6 @@
   to {
     transform: none;
   }
-}
-
-.field-hint {
-  opacity: 0;
-  transition: opacity 1.2s var(--ease-out) 0.8s;
-}
-
-.marketing:has([data-ion-field][data-live="true"]) .field-hint {
-  opacity: 1;
 }
 
 /* Nothing of the field shows (opaque section, shape off screen): it fades out, then rests. */
@@ -192,47 +171,6 @@
 
 .marketing:has([data-ion-field][data-live="true"]) .ion-field-poster {
   opacity: 0;
-}
-
-.hint-coarse {
-  display: none;
-}
-
-@media (pointer: coarse) {
-  .hint-fine {
-    display: none;
-  }
-
-  .hint-coarse {
-    display: inline;
-  }
-}
-
-.scroll-cue-line {
-  display: block;
-  width: 3rem;
-  height: 1px;
-  background: currentColor;
-  transform-origin: left;
-  animation: cue 2.6s var(--ease-in-out) infinite;
-}
-
-@keyframes cue {
-  0% {
-    transform: scaleX(0);
-    transform-origin: left;
-  }
-  50% {
-    transform: scaleX(1);
-    transform-origin: left;
-  }
-  50.1% {
-    transform-origin: right;
-  }
-  100% {
-    transform: scaleX(0);
-    transform-origin: right;
-  }
 }
 
 .logo-electron {

@@ -4,17 +4,19 @@ import type { WaitlistStats } from "@atomes/contracts";
 import { useTranslations } from "next-intl";
 import { useWaitlistStats } from "./stats-store";
 
-/** "N personnes déjà dans la liste", refreshed with the shared poller. */
+/** Below this, a count would undersell the list: the hero leaves it out. */
+export const LIVE_COUNT_FROM = 100;
+
+/** "N personnes déjà dans la liste", refreshed with the shared poller, once the list is worth showing. */
 export function LiveCount({ initial }: { initial: WaitlistStats | null }) {
   const t = useTranslations("home");
   const stats = useWaitlistStats(initial);
+  if (!stats || stats.total < LIVE_COUNT_FROM) {
+    return null;
+  }
   return (
-    <p className="inline-flex items-center gap-3 font-mono text-paper/80 text-sm" data-testid="live-count">
-      <span aria-hidden="true" className="relative flex size-2">
-        <span className="absolute inset-0 animate-ping rounded-full bg-volt opacity-60" />
-        <span className="relative size-2 rounded-full bg-volt" />
-      </span>
-      {stats ? t("count", { count: stats.total }) : t("countPending")}
+    <p className="text-paper/70 text-sm" data-testid="live-count">
+      {t("count", { count: stats.total })}
     </p>
   );
 }

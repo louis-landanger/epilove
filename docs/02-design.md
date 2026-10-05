@@ -123,7 +123,7 @@ Huit moments concentrent l'effort de design. Ce sont eux qui feront la réputati
 
 | # | Moment | Description | Technique |
 |---|---|---|---|
-| 1 | **Champ d'ions** (accueil du site vitrine) | Des milliers de particules aux couleurs des cinq écoles. Les charges opposées s'attirent et forment des liaisons lumineuses ; le curseur (ou le doigt) agit comme une particule chargée. Au défilement, le champ se condense pour former le logo, puis accompagne toute la page (voir « Le fil des atomes », section 5). | Simulation de particules sur GPU (WebGPU avec repli WebGL2), shaders écrits en TSL, post-traitement léger (bloom). Image fixe de repli sur appareils modestes. |
+| 1 | **Deux atomes** (accueil du site vitrine) | Deux atomes en miroir, faits de milliers de particules (orbite blanche, noyau plasma ou volt, électron qui tourne), reliés par des lignes de champ. Au défilement, ils se rapprochent jusqu'à ce que leurs orbites s'accrochent (« atomes crochus »), puis se fondent en un seul atome : le logo. Le curseur (ou le doigt) les déforme, ils se reforment. Les particules accompagnent ensuite toute la page (voir « Le fil des atomes », section 5). | Simulation de particules sur GPU (WebGPU avec repli WebGL2), shaders écrits en TSL, post-traitement léger (bloom). Image fixe de repli sur appareils modestes. |
 | 2 | **Course des écoles** (liste d'attente) | Cinq éprouvettes qui se remplissent d'un liquide lumineux à mesure que les inscriptions arrivent, en direct. | Liquide simulé par shader (surface ondulante), mises à jour temps réel, chiffres en police mono qui défilent. |
 | 3 | **Deck de cartes** | Cartes physiques : inclinaison selon la vitesse, lancer naturel, reflet holographique au pointeur ou au gyroscope, tampons « Liker » / « Passer » qui apparaissent progressivement. | Motion (glisser, ressorts), vélocité du geste, `DeviceOrientation`, vibration courte sur Android. |
 | 4 | **Liaison établie** (match) | Les deux cartes se rapprochent, un arc électrique les relie, flash de réaction aux couleurs des deux écoles, puis le bouton « Écrire » apparaît. | Rive pour l'arc et le texte, ou React Three Fiber selon le rendu visé ; annonce `aria-live` pour les lecteurs d'écran. |
@@ -136,7 +136,7 @@ Huit moments concentrent l'effort de design. Ce sont eux qui feront la réputati
 
 Structure de la page d'accueil :
 
-1. **Accueil** : champ d'ions, titre cinétique « Trouve tes *atomes crochus*. », bouton « Rejoindre la liste », compteur en direct d'inscrits.
+1. **Accueil** : les deux atomes en haut à droite (au-dessus du texte sur mobile), titre « Trouve tes atomes crochus. » dans une seule famille (le point plasma du logo comme seul accent), une phrase, un seul bouton « Rejoindre la liste », les cinq écoles en une ligne. Le compteur d'inscrits n'apparaît qu'à partir de 100 personnes : en dessous, il desservirait la liste. Volontairement dépouillé : pas de surtitre, de pastilles, d'indices ni de second bouton.
 2. **Manifeste** : un texte court qui se révèle mot à mot au défilement (« Cinq écoles. Une ville. Zéro hasard. »).
 3. **Comment ça marche** : trois étapes en défilement épinglé (vérifie ton email d'école, crée ton profil, laisse la chimie opérer), illustrées par des cartes 3D.
 4. **La course des écoles** : les éprouvettes, le classement, l'objectif collectif.
@@ -145,12 +145,12 @@ Structure de la page d'accueil :
 7. **FAQ** en accordéon.
 8. **Pied de page** : logotype géant, bandeau défilant, liens légaux, mention de non-affiliation.
 
-**Le fil des atomes.** Le champ d'ions ne s'arrête pas à l'accueil : il reste derrière toute la page et chaque section lui donne une forme. Seul l'accueil a des atomes libres ; ensuite, chaque atome appartient toujours à une forme, comme pour le logo.
+**Le fil des atomes.** Le champ d'ions ne s'arrête pas à l'accueil : il reste derrière toute la page et chaque section lui donne une forme. Aucun atome n'est jamais libre : du haut au bas de la page, chacun appartient toujours à une forme.
 
 | Section | Ce que font les atomes |
 |---|---|
-| Accueil | Champ libre, interactif au pointeur. |
-| Manifeste | Ils se condensent en logo. |
+| Accueil | Deux atomes en miroir, reliés par des lignes de champ ; au défilement, leurs orbites s'accrochent. |
+| Manifeste | Les deux atomes se fondent en un seul, le logo : orbites sur une orbite, noyaux en un noyau, électrons en un électron. |
 | Comment ça marche | Ils tracent le contour de la carte du dessus, un motif par étape : anneau de scan balayé d'impulsions (vérification), couches d'électrons (profil), double hélice dont les brins sont reliés par des liaisons (chimie). Le motif change quand la carte suivante recouvre la précédente. |
 | Course des écoles | Chaque atome rejoint l'éprouvette de son école et la remplit jusqu'au niveau réel ; ceux qui n'ont pas encore de place attendent en panache au-dessus. Le liquide CSS devient un verre teinté. |
 | Pacte | Tous les atomes tournent en couples liés sur les trois anneaux. |

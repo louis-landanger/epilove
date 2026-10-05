@@ -67,7 +67,7 @@ async function joinForm(page: Page) {
 }
 
 test.describe("landing", () => {
-  test("presents the headline, the call to action and the live count", async ({ page }) => {
+  test("presents the headline, the call to action and the eligible schools", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle("Atomes");
     const heading = page.getByRole("heading", { level: 1 });
@@ -76,7 +76,11 @@ test.describe("landing", () => {
       "href",
       "#rejoindre",
     );
-    await expect(page.getByTestId("live-count")).toContainText(/dans la liste|Sois la première personne/);
+    // The count only shows once the list is worth it (LIVE_COUNT_FROM sign-ups).
+    const count = page.getByTestId("live-count");
+    if (await count.isVisible()) {
+      await expect(count).toContainText(/\d+ personnes déjà dans la liste/);
+    }
     await expect(page.getByRole("list", { name: "Écoles concernées" }).getByRole("listitem")).toHaveText(
       SCHOOLS,
     );

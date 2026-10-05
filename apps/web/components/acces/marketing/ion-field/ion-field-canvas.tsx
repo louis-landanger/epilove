@@ -99,6 +99,7 @@ function createPageMeasurer() {
       rackSection: rack?.closest("section") ?? null,
       pactSection: pact?.closest("section") ?? null,
       scope: document.querySelector("[data-field-scope]"),
+      pair: document.querySelector("[data-field-pair]"),
       cards: steps.flatMap((step) => {
         const card = step.querySelector("article");
         return card ? [{ card, stuckTop: Number.parseFloat(getComputedStyle(step).top) || 0 }] : [];
@@ -135,6 +136,7 @@ function createPageMeasurer() {
         width: window.innerWidth,
         height,
         scope: elements.scope ? toBox(elements.scope) : null,
+        pair: elements.pair ? toBox(elements.pair) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,
@@ -160,9 +162,9 @@ function createPageMeasurer() {
  * The live ion field (docs/02-design.md, moment 1), behind the whole landing
  * and layered over the hero's static poster. The three.js chunk is imported
  * only after load, when motion is allowed and the device can afford it;
- * otherwise the poster stays. Down the page the field condenses into the
- * logo mark, traces the stacked cards, fills the school race tubes and
- * orbits the Pact (journey.ts).
+ * otherwise the poster stays. The hero's two atoms hook together, merge into
+ * the logo mark, then the particles trace the stacked cards, fill the school
+ * race tubes and orbit the Pact (journey.ts).
  */
 export function IonFieldCanvas({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -197,13 +199,14 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         }
         const profile = deviceProfile();
         const page = createPageMeasurer();
-        const backdrop = document.querySelector<HTMLElement>("[data-field-backdrop]");
         let followPage = () => {};
         const field = await createIonField({
           container,
           particleCount: (backend) => particleBudget(backend, profile),
           adaptiveQuality: !forced,
           beforeFrame: () => followPage(),
+          // The particles start in the shapes on screen (the hero's two atoms): no jump from the poster.
+          initialFormations: journey(page.measure()).formations,
           onFirstFrame: () => setLive(true),
           // The device cannot keep up even at the lowest quality: back to the poster for good.
           onGiveUp: () => {
@@ -259,15 +262,9 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         // Every frame: where the page stands in the journey.
         followPage = () => {
           const state = journey(page.measure());
-          field.setCondense(state.condense);
           field.setFormations(state.formations);
-          // The hero's vignette leaves with the opening.
-          if (backdrop) {
-            backdrop.style.opacity = String(state.opening);
-          }
           setHidden(state.hidden);
         };
-        cleanups.push(() => backdrop?.style.removeProperty("opacity"));
 
         // While the field rests, scrolling wakes it up.
         let scrollFrame = 0;

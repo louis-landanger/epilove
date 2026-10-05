@@ -48,15 +48,8 @@ import {
   type ViewportFormations,
   writeFormations,
 } from "./formations";
-import {
-  createIonFieldLayout,
-  ION_FIELD_SEED,
-  type IonFieldLayout,
-  MARK,
-  MARK_ROLES,
-  SCHOOL_KEYS,
-} from "./layout";
-import { createFrameMonitor, markPlacementFor } from "./quality";
+import { createIonFieldLayout, ION_FIELD_SEED, type IonFieldLayout, SCHOOL_KEYS } from "./layout";
+import { createFrameMonitor } from "./quality";
 
 export type IonFieldBackend = "webgpu" | "webgl2";
 
@@ -85,6 +78,12 @@ export interface IonFieldOptions {
   readonly adaptiveQuality?: boolean;
   /** Called at the start of every frame, before the simulation: the page measures its formations here. */
   readonly beforeFrame?: () => void;
+  /**
+   * Formations on screen when the field starts: particles start right by
+   * their place in them (instead of the scattered starting layout), so the
+   * live field takes over from the static poster without a jump.
+   */
+  readonly initialFormations?: ViewportFormations;
 }
 
 export interface IonField {
@@ -94,12 +93,10 @@ export interface IonField {
   setPointer(x: number, y: number, active: boolean): void;
   /** Flips the pointer's charge with a small shockwave (click or tap). */
   pulse(): void;
-  /** 0: free field, 1: condensed into the logo mark. */
-  setCondense(value: number): void;
   /**
-   * Shapes drawn by the particles around page elements (cards, test tubes,
-   * Pact rings). With the logo mark, their weights add up to at most 1; the
-   * rest of each particle drifts freely.
+   * Shapes drawn by the particles around page elements (the hero's two
+   * atoms and the logo mark, cards, test tubes, Pact rings). Their weights add
+   * up to at most 1; the rest of each particle drifts freely.
    */
   setFormations(formations: ViewportFormations): void;
   setRunning(running: boolean): void;
@@ -114,8 +111,7 @@ const ORBIT = 0.42;
 const POINTER_FORCE = 0.05;
 const CONTAIN = 7;
 const DAMPING_FREE = 1.15;
-const DAMPING_CONDENSED = 9;
-const CONDENSE_SPRING = 26;
+const DAMPING_HELD = 9;
 const MAX_SPEED = 1.6;
 const GLOW_QUAD = 7;
 // Formations follow page elements while they scroll: stiffer, and allowed to move faster.
@@ -123,21 +119,17 @@ const FORMATION_SPRING = 30;
 const FORMATION_MAX_SPEED = 5;
 
 const SCHOOL_RGB: readonly LinearRgb[] = SCHOOL_KEYS.map((key) => tokenToLinearSrgb(schoolColors[key]));
-const MARK_RGB: Record<number, LinearRgb> = {
-  [MARK_ROLES.orbit]: tokenToLinearSrgb(colorTokens.paper),
-  [MARK_ROLES.nucleus]: tokenToLinearSrgb(colorTokens.plasma),
-  [MARK_ROLES.electron]: tokenToLinearSrgb(colorTokens.volt),
-};
 const INK = tokenToLinearSrgb(colorTokens.ink);
 const VOLT = tokenToLinearSrgb(colorTokens.volt);
 const PLASMA = tokenToLinearSrgb(colorTokens.plasma);
+const PAPER = tokenToLinearSrgb(colorTokens.paper);
 
 interface StaticData {
   /** r, g, b, radius */
   readonly color: Float32Array;
-  /** r, g, b, phase */
-  readonly mark: Float32Array;
-  /** target x, target y, charge, phase */
+  /** Twinkle phase. */
+  readonly phase: Float32Array;
+  /** charge, phase (vec2: read by the simulation) */
   readonly props: Float32Array;
   /** Per pair: colour of each end. */
   readonly bondColorA: Float32Array;
@@ -147,24 +139,20 @@ interface StaticData {
 function staticData(layout: IonFieldLayout): StaticData {
   const { count } = layout;
   const color = new Float32Array(count * 4);
-  const mark = new Float32Array(count * 4);
-  const props = new Float32Array(count * 4);
+  const phases = new Float32Array(count);
+  const props = new Float32Array(count * 2);
   const bondColorA = new Float32Array((count / 2) * 3);
   const bondColorB = new Float32Array((count / 2) * 3);
   for (let index = 0; index < count; index += 1) {
     const rgb = SCHOOL_RGB[layout.schools[index] ?? 0] ?? [1, 1, 1];
-    const markRgb = MARK_RGB[layout.roles[index] ?? 0] ?? [1, 1, 1];
     const phase = layout.phases[index] ?? 0;
     color.set([rgb[0], rgb[1], rgb[2], layout.sizes[index] ?? 0.005], index * 4);
-    mark.set([markRgb[0], markRgb[1], markRgb[2], phase], index * 4);
-    props.set(
-      [layout.targets[index * 2] ?? 0, layout.targets[index * 2 + 1] ?? 0, layout.charges[index] ?? 1, phase],
-      index * 4,
-    );
+    phases[index] = phase;
+    props.set([layout.charges[index] ?? 1, phase], index * 2);
     const pair = index >> 1;
     (index % 2 === 0 ? bondColorA : bondColorB).set(rgb, pair * 3);
   }
-  return { color, mark, props, bondColorA, bondColorB };
+  return { color, phase: phases, props, bondColorA, bondColorB };
 }
 
 /** Smooth pseudo-noise flow angle, identical on the CPU and in the shaders. */
@@ -239,9 +227,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const uPointerStrength = uniform(0);
   const uPointerCharge = uniform(1);
   const uPulse = uniform(0);
-  const uCondense = uniform(0);
-  const uMarkScale = uniform(0.5);
-  const uMarkOffset = uniform(new Vector2(0, 0));
 
   // Formations, computed on the CPU every frame (formations.ts): x, y, pull, 0 and volt, plasma, glow, 0.
   const formationTargets = new Float32Array(count * FORMATION_STRIDE);
@@ -255,7 +240,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     new InstancedBufferAttribute(data.color, 4),
     "vec4",
   );
-  const markAttribute = instancedBufferAttribute<"vec4">(new InstancedBufferAttribute(data.mark, 4), "vec4");
+  const phaseAttribute = instancedBufferAttribute<"float">(
+    new InstancedBufferAttribute(data.phase, 1),
+    "float",
+  );
   const bondColorA = instancedBufferAttribute<"vec3">(
     new InstancedBufferAttribute(data.bondColorA, 3),
     "vec3",
@@ -273,6 +261,27 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   for (let index = 0; index < count; index += 1) {
     initialPositions[index * 2] = (layout.positions[index * 2] ?? 0) * initialAspect;
     initialPositions[index * 2 + 1] = layout.positions[index * 2 + 1] ?? 0;
+  }
+  if (options.initialFormations) {
+    // Start right by each particle's place, slightly scattered: the shapes settle in.
+    writeFormations(
+      formationTargets,
+      formationLooks,
+      layout,
+      toWorldFormations(options.initialFormations, initialWidth, initialHeight),
+      null,
+      0,
+      2 / Math.max(1, initialHeight),
+    );
+    for (let index = 0; index < count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      if ((formationTargets[offset + 2] ?? 0) > 0) {
+        initialPositions[index * 2] =
+          (formationTargets[offset] ?? 0) + (layout.positions[index * 2] ?? 0) * 0.08;
+        initialPositions[index * 2 + 1] =
+          (formationTargets[offset + 1] ?? 0) + (layout.positions[index * 2 + 1] ?? 0) * 0.08;
+      }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -292,7 +301,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   if (backend === "webgpu") {
     const positions = instancedArray(initialPositions, "vec2");
     const velocities = instancedArray(new Float32Array(count * 2), "vec2");
-    const props = instancedArray(data.props, "vec4");
+    const props = instancedArray(data.props, "vec2");
     const targets = instancedArray(formationTargets, "vec4");
     const looks = instancedArray(formationLooks, "vec4");
 
@@ -302,12 +311,12 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       const p = positions.element(instanceIndex).toVar();
       const v = velocities.element(instanceIndex).toVar();
       const prop = props.element(instanceIndex);
-      const charge = prop.z;
-      const phase = prop.w;
+      const charge = prop.x;
+      const phase = prop.y;
       const formation = targets.element(instanceIndex);
       const pull = formation.z;
-      // The logo mark and the formations share each particle: whatever they leave drifts freely.
-      const hold = clamp(uCondense.add(pull), 0, 1);
+      // A particle held by the formations; whatever they leave drifts freely.
+      const hold = pull;
       const free = float(1).sub(hold);
 
       // 1. Drift along a smooth flow field.
@@ -354,15 +363,11 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       const overflow = max(abs(p).sub(bounds), vec2(0, 0)).mul(sign(p));
       acc.subAssign(overflow.mul(CONTAIN).mul(float(1).sub(pull)));
 
-      // 5. Condense into the logo mark while scrolling.
-      const target = vec2(prop.x, prop.y).mul(uMarkScale).add(uMarkOffset);
-      acc.addAssign(target.sub(p).mul(uCondense.mul(uCondense).mul(CONDENSE_SPRING)));
-
-      // 6. Formations further down the page (cards, test tubes, Pact rings).
+      // 5. Formations: the hero's two atoms, the logo mark, cards, test tubes, Pact rings.
       acc.addAssign(formation.xy.sub(p).mul(pull.mul(pull).mul(FORMATION_SPRING)));
 
       v.addAssign(acc.mul(uDelta));
-      v.mulAssign(exp(mix(float(DAMPING_FREE), float(DAMPING_CONDENSED), hold).mul(uDelta).negate()));
+      v.mulAssign(exp(mix(float(DAMPING_FREE), float(DAMPING_HELD), hold).mul(uDelta).negate()));
       const speed = length(v);
       const maxSpeed = mix(float(MAX_SPEED), float(FORMATION_MAX_SPEED), pull);
       v.assign(v.mul(clamp(maxSpeed.div(speed.add(0.00001)), 0, 1)));
@@ -450,22 +455,19 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
 
     step = (delta) => {
       const time = uTime.value;
-      const condense = uCondense.value;
       const aspect = uAspect.value;
       const pointer = uPointer.value;
       const pointerStrength = uPointerStrength.value;
       const pointerCharge = uPointerCharge.value;
       const pulse = uPulse.value;
-      const markScale = uMarkScale.value;
-      const markOffset = uMarkOffset.value;
       for (let index = 0; index < count; index += 1) {
         const partner = index ^ 1;
         const px = positions[index * 2] ?? 0;
         const py = positions[index * 2 + 1] ?? 0;
-        const charge = data.props[index * 4 + 2] ?? 1;
-        const phase = data.props[index * 4 + 3] ?? 0;
+        const charge = data.props[index * 2] ?? 1;
+        const phase = data.props[index * 2 + 1] ?? 0;
         const pull = formationTargets[index * FORMATION_STRIDE + 2] ?? 0;
-        const hold = Math.min(1, condense + pull);
+        const hold = pull;
         const free = 1 - hold;
 
         const angle = flowAngle(px, py, time);
@@ -518,17 +520,13 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
           ay -= (Math.abs(py) - 1.04) * Math.sign(py) * contain;
         }
 
-        const pull2 = condense * condense * CONDENSE_SPRING;
-        ax += ((data.props[index * 4] ?? 0) * markScale + markOffset.x - px) * pull2;
-        ay += ((data.props[index * 4 + 1] ?? 0) * markScale + markOffset.y - py) * pull2;
-
         if (pull > 0) {
           const spring = pull * pull * FORMATION_SPRING;
           ax += ((formationTargets[index * FORMATION_STRIDE] ?? 0) - px) * spring;
           ay += ((formationTargets[index * FORMATION_STRIDE + 1] ?? 0) - py) * spring;
         }
 
-        const damping = Math.exp(-(DAMPING_FREE + (DAMPING_CONDENSED - DAMPING_FREE) * hold) * delta);
+        const damping = Math.exp(-(DAMPING_FREE + (DAMPING_HELD - DAMPING_FREE) * hold) * delta);
         let vx = ((velocities[index * 2] ?? 0) + ax * delta) * damping;
         let vy = ((velocities[index * 2 + 1] ?? 0) + ay * delta) * damping;
         const speed = Math.hypot(vx, vy);
@@ -567,35 +565,34 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   // read as fine dust, a few hundred CPU ones as brighter sparks.
   const density = Math.min(1, Math.max(0.45, Math.sqrt(1800 / count)));
   const radius = colorAttribute.w.mul(density);
-  const phase = markAttribute.w;
+  const phase = phaseAttribute;
   const pointerProximity = float(1)
     .sub(smoothstep(0, 0.35, length(uPointer.sub(particleCenter))))
     .mul(uPointerStrength);
-  const twinkle = mix(
-    sin(uTime.mul(1.7).add(phase.mul(40)))
-      .mul(0.14)
-      .add(0.86),
-    float(1),
-    uCondense,
-  );
+  const twinkle = sin(uTime.mul(1.7).add(phase.mul(40)))
+    .mul(0.14)
+    .add(0.86);
   // Depth: the smallest ions are dimmer, like dust further away.
   const depth = mix(float(0.26), float(1), smoothstep(0.003, 0.014, radius));
-  const swell = float(1).add(particleBond.mul(0.45)).add(pointerProximity.mul(0.6)).sub(uCondense.mul(0.3));
+  const swell = float(1).add(particleBond.mul(0.45)).add(pointerProximity.mul(0.6));
   ionMaterial.positionNode = vec3(
     particleCenter.add(positionGeometry.xy.mul(radius.mul(swell).mul(GLOW_QUAD))),
     0,
   );
   // Formations tint some motifs (volt, plasma) and dim the particles that sit them out.
   const tinted = mix(
-    mix(colorAttribute.xyz, vec3(VOLT[0], VOLT[1], VOLT[2]), particleLook.x),
-    vec3(PLASMA[0], PLASMA[1], PLASMA[2]),
-    particleLook.y,
+    mix(
+      mix(colorAttribute.xyz, vec3(VOLT[0], VOLT[1], VOLT[2]), particleLook.x),
+      vec3(PLASMA[0], PLASMA[1], PLASMA[2]),
+      particleLook.y,
+    ),
+    vec3(PAPER[0], PAPER[1], PAPER[2]),
+    particleLook.w,
   );
-  const ionColor = mix(tinted, markAttribute.xyz, uCondense.mul(0.85))
+  const ionColor = tinted
     .mul(twinkle.add(particleBond.mul(0.5)).add(pointerProximity.mul(0.8)))
     .mul(depth)
     .mul(0.5 + density * 0.5)
-    .mul(mix(float(1), float(0.62), uCondense))
     .mul(particleLook.z)
     .toVarying();
   const fromCenter = length(uv().sub(0.5)).mul(2);
@@ -621,7 +618,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   );
   const bondStrength = float(1)
     .sub(smoothstep(0.03, 0.14, segmentLength))
-    .mul(float(1).sub(uCondense))
     .mul(bondGlow)
     .mul(0.75 * density)
     .toVarying();
@@ -682,9 +678,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     camera.right = aspect;
     camera.updateProjectionMatrix();
     uAspect.value = aspect;
-    const placement = markPlacementFor(aspect, MARK);
-    uMarkScale.value = placement.scale;
-    uMarkOffset.value.set(placement.x, placement.y);
   };
 
   const frame = (timestamp: number) => {
@@ -796,9 +789,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     pulse() {
       uPointerCharge.value *= -1;
       uPulse.value = 1;
-    },
-    setCondense(value) {
-      uCondense.value = Math.min(1, Math.max(0, value));
     },
     setFormations(next) {
       measured = next;

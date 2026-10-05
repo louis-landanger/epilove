@@ -30,6 +30,8 @@ function page(scroll: number): JourneyMeasures {
     width,
     height,
     scope: box(0, 2430, 0, width),
+    // Sticky over the hero and the manifesto.
+    pair: { left: 660, top: Math.min(0, 2430 - scroll - 900) + 117, width: 734, height: 306 },
     cards,
     cardList: box(2860, 1620),
     cardRadius: 32,
@@ -44,20 +46,36 @@ function page(scroll: number): JourneyMeasures {
 }
 
 describe("journey", () => {
-  it("drifts freely at the top, then condenses into the logo mark over the manifesto", () => {
+  it("opens on the two atoms, apart, and hooks them together as the hero scrolls", () => {
     const top = journey(page(0));
-    expect(top.condense).toBe(0);
-    expect(top.formations).toEqual({ card: null, tubes: null, pact: null });
+    expect(top.formations.pair?.weight).toBe(1);
+    expect(top.formations.pair?.bond).toBe(0);
+    expect(top.formations.pair?.merge).toBe(0);
+    expect(top.formations.card).toBeNull();
+    const hooked = journey(page(380));
+    expect(hooked.formations.pair?.bond).toBe(1);
+    expect(hooked.formations.pair?.merge).toBeCloseTo(0, 1);
+  });
+
+  it("merges the pair into the logo mark beside the manifesto", () => {
+    const merging = journey(page(600));
+    expect(merging.formations.pair?.merge).toBeGreaterThan(0.1);
+    expect(merging.formations.pair?.merge).toBeLessThan(0.9);
     const manifesto = journey(page(900));
-    expect(manifesto.condense).toBeGreaterThan(0.9);
+    expect(manifesto.formations.pair?.weight).toBe(1);
+    expect(manifesto.formations.pair?.merge).toBe(1);
+    // Beside the manifesto on a wide screen: right half, vertically centred.
+    const mark = manifesto.formations.pair?.mark;
+    expect(mark?.x).toBeGreaterThan(width * 0.6);
+    expect(mark?.y).toBeCloseTo(height / 2, 0);
   });
 
   it("lets go of the mark and gathers around the cards, one motif per card", () => {
     const leaving = journey(page(2200));
-    expect(leaving.condense).toBeLessThan(0.3);
+    expect(leaving.formations.pair?.weight ?? 0).toBeLessThan(0.3);
 
     const first = journey(page(2850));
-    expect(first.condense).toBe(0);
+    expect(first.formations.pair).toBeNull();
     expect(first.formations.card?.weight).toBeGreaterThan(0.95);
     expect(first.formations.card?.step).toBeCloseTo(0, 1);
     expect(first.formations.card?.box.top).toBeCloseTo(88, 0);
@@ -89,15 +107,16 @@ describe("journey", () => {
     expect(pact.formations.pact?.weight).toBeGreaterThan(0.95);
   });
 
-  it("never sets a particle free once the hero is scrolled past", () => {
-    for (let scroll = 800; scroll <= 11000; scroll += 37) {
-      const { condense, formations } = journey(page(scroll));
+  it("never sets a particle free, from the top of the page to the bottom", () => {
+    for (let scroll = 0; scroll <= 11000; scroll += 37) {
+      const { formations } = journey(page(scroll));
       const held =
-        condense +
+        (formations.pair?.weight ?? 0) +
         (formations.card?.weight ?? 0) +
         (formations.tubes?.weight ?? 0) +
         (formations.pact?.weight ?? 0);
-      expect(held, `scrolled ${scroll}px`).toBeCloseTo(1, 5);
+      // Shares under 0.001 are dropped.
+      expect(held, `scrolled ${scroll}px`).toBeCloseTo(1, 2);
     }
   });
 
@@ -123,6 +142,7 @@ describe("journey", () => {
       width,
       height,
       scope: null,
+      pair: null,
       cards: [],
       cardList: null,
       cardRadius: 32,
@@ -131,7 +151,6 @@ describe("journey", () => {
       pact: null,
       covers: [],
     });
-    expect(state.condense).toBe(0);
-    expect(state.formations).toEqual({ card: null, tubes: null, pact: null });
+    expect(state.formations).toEqual({ pair: null, card: null, tubes: null, pact: null });
   });
 });

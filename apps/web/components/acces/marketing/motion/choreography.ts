@@ -126,45 +126,6 @@ function setUpPointerEffects(root: HTMLElement, cleanups: Array<() => void>) {
       gsap.set(element, { clearProps: "transform" });
     });
   }
-
-  // Kinetic headline: words near the pointer gain weight (variable axes) and
-  // drift towards it like charged particles. Whole words keep their kerning;
-  // each keeps its resting layout width and only moves with `translate`, so
-  // nothing around them reflows (no layout shift).
-  const words = gsap.utils.toArray<HTMLElement>("[data-headline] .headline-word");
-  if (words.length > 0) {
-    const variable = words.filter((word) => word.classList.contains("headline-kinetic"));
-    const lockWidths = () => {
-      for (const word of variable) {
-        word.style.width = "";
-        word.style.width = `${word.offsetWidth}px`;
-      }
-    };
-    lockWidths();
-    window.addEventListener("resize", lockWidths);
-    const onPointer = (event: PointerEvent) => {
-      for (const word of words) {
-        const rect = word.getBoundingClientRect();
-        const dx = event.clientX - (rect.left + rect.width / 2);
-        const dy = event.clientY - (rect.top + rect.height / 2);
-        const pull = Math.max(0, 1 - Math.hypot(dx, dy) / 520);
-        word.style.setProperty("--pull", pull.toFixed(3));
-        word.style.setProperty("--dx", `${(dx * pull * 0.045).toFixed(1)}px`);
-        word.style.setProperty("--dy", `${(dy * pull * 0.06).toFixed(1)}px`);
-      }
-    };
-    window.addEventListener("pointermove", onPointer, { passive: true });
-    cleanups.push(() => {
-      window.removeEventListener("pointermove", onPointer);
-      window.removeEventListener("resize", lockWidths);
-      for (const word of words) {
-        word.style.removeProperty("width");
-        word.style.removeProperty("--pull");
-        word.style.removeProperty("--dx");
-        word.style.removeProperty("--dy");
-      }
-    });
-  }
 }
 
 /**
@@ -181,12 +142,19 @@ export function startChoreography(root: HTMLElement): () => void {
   const splits: SplitText[] = [];
 
   const context = gsap.context(() => {
-    // Hero copy drifts up and dims while the field condenses into the mark.
+    // Hero copy drifts up and dims while the two atoms hook together. On narrow
+    // screens the atoms sit right above the copy: it fades before reaching them.
+    const narrow = window.matchMedia("(max-width: 63.99rem), (max-aspect-ratio: 5/4)").matches;
     gsap.to("[data-hero-content]", {
       yPercent: -14,
       opacity: 0,
       ease: "none",
-      scrollTrigger: { trigger: "#hero", start: "top top", end: "bottom 15%", scrub: true },
+      scrollTrigger: {
+        trigger: "#hero",
+        start: "top top",
+        end: narrow ? "top -18%" : "bottom 15%",
+        scrub: true,
+      },
     });
 
     // Manifesto: words light up one after the other.
