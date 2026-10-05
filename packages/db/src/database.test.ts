@@ -1,5 +1,5 @@
 import { SCHOOLS } from "@atomes/core";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { createDatabase } from "./client";
 import { runMigrations } from "./migrations";
@@ -19,6 +19,26 @@ describe.skipIf(!url)("database", () => {
       "select extname from pg_extension where extname in ('vector', 'pg_trgm') order by extname",
     );
     expect(extensions.map((row) => row.extname)).toEqual(["pg_trgm", "vector"]);
+  });
+
+  it("applies the migrations when several runs start at once on an empty database", async () => {
+    // Test files run in parallel: on a fresh database (CI), they all migrate at the same moment.
+    const name = `atomes_migrations_${process.pid}_${Date.now()}`;
+    await db.execute(sql.raw(`create database ${name}`));
+    const target = new URL(url ?? "");
+    target.pathname = `/${name}`;
+    const runs = [0, 1, 2].map(() => createDatabase(target.toString(), { maxConnections: 2 }));
+    try {
+      await Promise.all(runs.map((run) => runMigrations(run.db)));
+      const [first] = runs;
+      const extensions = await first?.db.execute<{ extname: string }>(
+        "select extname from pg_extension where extname in ('vector', 'pg_trgm') order by extname",
+      );
+      expect(extensions?.map((row) => row.extname)).toEqual(["pg_trgm", "vector"]);
+    } finally {
+      await Promise.all(runs.map((run) => run.close()));
+      await db.execute(sql.raw(`drop database if exists ${name} with (force)`));
+    }
   });
 
   it("seeds the campus and its schools idempotently", async () => {
