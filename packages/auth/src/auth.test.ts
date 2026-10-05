@@ -209,27 +209,32 @@ const valkeyUrl = process.env.VALKEY_URL;
 
 /** Sessions live in Valkey: deleting rows is not enough to sign someone out. */
 describe.skipIf(!url || !valkeyUrl)("session revocation", () => {
-  const { db, close } = createDatabase(url ?? "", { maxConnections: 2 });
-  const valkey = valkeyFromEnv({ VALKEY_URL: valkeyUrl });
+  // Vitest runs the body of a skipped describe to collect its tests: the
+  // connections are only opened once it really runs.
+  let database: ReturnType<typeof createDatabase>;
+  let valkey: ReturnType<typeof valkeyFromEnv>;
+  let auth: ReturnType<typeof createAuth>;
   const mailer = createMemoryMailer();
-  const auth = createAuth({
-    env,
-    db,
-    mailer,
-    limiter: createMemoryRateLimiter(),
-    secondaryStorage: valkeySecondaryStorage(valkey),
-  });
   const email = `revoke.${Date.now()}@epita.fr`;
 
   beforeAll(async () => {
-    await runMigrations(db);
-    await seedReferenceData(db);
+    database = createDatabase(url ?? "", { maxConnections: 2 });
+    valkey = valkeyFromEnv({ VALKEY_URL: valkeyUrl });
+    auth = createAuth({
+      env,
+      db: database.db,
+      mailer,
+      limiter: createMemoryRateLimiter(),
+      secondaryStorage: valkeySecondaryStorage(valkey),
+    });
+    await runMigrations(database.db);
+    await seedReferenceData(database.db);
   });
 
   afterAll(async () => {
-    await db.delete(schema.appUser).where(eq(schema.appUser.email, email));
+    await database.db.delete(schema.appUser).where(eq(schema.appUser.email, email));
     valkey.disconnect();
-    await close();
+    await database.close();
   });
 
   it("ends every session of a member at once", async () => {
@@ -246,7 +251,7 @@ describe.skipIf(!url || !valkeyUrl)("session revocation", () => {
       return context.internalAdapter.findSession(token);
     };
     expect(await cookieSession(tokens[0] ?? "")).toBeTruthy();
-    const [user] = await db
+    const [user] = await database.db
       .select({ id: schema.appUser.id })
       .from(schema.appUser)
       .where(eq(schema.appUser.email, email));
