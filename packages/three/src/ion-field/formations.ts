@@ -74,6 +74,10 @@ export interface PairFormation {
 }
 
 export interface Formations {
+  /** Light of the particles no formation holds, in [0, 1] (default 1): the hero's drifting dust is dim. */
+  readonly freeGlow?: number;
+  /** Tint of the free particles towards paper white, in [0, 1] (default 0: their school colour). */
+  readonly freePaper?: number;
   readonly pair?: PairFormation | null;
   readonly card?: CardFormation | null;
   readonly tubes?: TubeFormation | null;
@@ -772,6 +776,8 @@ export function writeFormations(
   const card = formations.card && formations.card.weight > 0.001 ? formations.card : null;
   const tubes = formations.tubes && formations.tubes.weight > 0.001 ? formations.tubes : null;
   const pact = formations.pact && formations.pact.weight > 0.001 ? formations.pact : null;
+  const freeGlow = formations.freeGlow ?? 1;
+  const freePaper = formations.freePaper ?? 0;
 
   // Where the two atoms stand this frame: the same for every particle.
   const geometry = pair ? pairGeometry(pair, time) : null;
@@ -814,22 +820,25 @@ export function writeFormations(
       targets[offset + 3] = (carry / total) * share;
       looks[offset] = (volt / total) * share;
       looks[offset + 1] = (plasma / total) * share;
-      looks[offset + 2] = 1 + (glow / total - 1) * share;
-      looks[offset + 3] = (paper / total) * share;
+      looks[offset + 2] = freeGlow + (glow / total - freeGlow) * share;
+      looks[offset + 3] = freePaper + (paper / total - freePaper) * share;
     } else {
       targets[offset + 2] = 0;
       targets[offset + 3] = 0;
       looks[offset] = 0;
       looks[offset + 1] = 0;
-      looks[offset + 2] = 1;
-      looks[offset + 3] = 0;
+      looks[offset + 2] = freeGlow;
+      looks[offset + 3] = freePaper;
     }
   }
 }
 
 /** Formations as the page measures them: viewport rectangles in CSS pixels. */
 export interface ViewportFormations {
-  /** The hero's stage: the two atoms live in it, and merge into the logo mark (centre and radius in pixels). */
+  /** Light of the particles no formation holds, in [0, 1] (default 1), and their tint towards paper white (default 0). */
+  readonly freeGlow?: number;
+  readonly freePaper?: number;
+  /** The two atoms of the logo mark (centre and radius in pixels), in a stage where they first stand apart. */
   readonly pair?: {
     readonly weight: number;
     readonly box: PixelBox;
@@ -858,6 +867,8 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
   const { pair, card, tubes, pact } = formations;
   const pactBox = pact ? toWorldBox(pact.box, width, height) : null;
   return {
+    ...(formations.freeGlow === undefined ? {} : { freeGlow: formations.freeGlow }),
+    ...(formations.freePaper === undefined ? {} : { freePaper: formations.freePaper }),
     pair: pair
       ? {
           weight: pair.weight,

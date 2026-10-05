@@ -650,17 +650,23 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   let formations: Formations | null = null;
   let measured: ViewportFormations = {};
   let formationsOn = false;
+  let freeLookOn = "1/0";
 
-  /** Recomputes the formation targets for this frame (skipped while the field drifts freely). */
+  /**
+   * Recomputes the formation targets for this frame (skipped while the field
+   * drifts freely, once the free particles' light is set).
+   */
   const updateFormations = () => {
     const active = formationStrength(measured) > 0.001;
-    if (!active && !formationsOn) {
+    const freeLook = `${measured.freeGlow ?? 1}/${measured.freePaper ?? 0}`;
+    if (!active && !formationsOn && freeLook === freeLookOn) {
       return;
     }
     const previous = formations;
     formations = toWorldFormations(measured, width, height);
     writeFormations(formationTargets, formationLooks, layout, formations, previous, uTime.value, 2 / height);
     uploadFormations();
+    freeLookOn = freeLook;
     formationsOn = active;
     if (!active) {
       formations = null;

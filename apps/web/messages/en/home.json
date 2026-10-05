@@ -1,6 +1,8 @@
 {
-  "title": "Find your perfect chemistry",
+  "title": "Find your perfect <em>chemistry</em>",
+  "eyebrow": "IONIS Lyon campus · 5 schools",
   "lead": "The dating and friendship app reserved for verified students on campus. A closed, safe circle, designed to spark the encounters that would never have happened.",
+  "secondary": "How it works",
   "schools": "Eligible schools",
   "cta": "Join the list",
   "count": "{count, plural, =0 {Be the first on the list} one {# person already on the list} other {# people already on the list}}"

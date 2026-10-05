@@ -1,12 +1,12 @@
 import { markPlacementFor, type PixelBox, type ViewportFormations } from "@atomes/three";
 
 /**
- * The ion field's journey down the landing page (docs/02-design.md, moment 1
- * onwards): from the measured position of each section, which shapes the
- * particles draw (the hero's two atoms, the logo mark, the stacked cards, the
- * school race tubes, the Pact rings) and how they share them. Pure, so it can
- * be tested without a browser; the canvas measures the page and applies the
- * result every frame.
+ * The ion field's journey down the landing page (docs/02-design.md, section
+ * 5): from the measured position of each section, which shapes the particles
+ * draw (the logo mark beside the manifesto, the stacked cards, the school
+ * race tubes, the Pact rings) and how they share them. In the hero they drift
+ * freely, dim, behind the molecule. Pure, so it can be tested without a
+ * browser; the canvas measures the page and applies the result every frame.
  */
 
 export interface JourneyMeasures {
@@ -15,8 +15,6 @@ export interface JourneyMeasures {
   readonly height: number;
   /** Hero and manifesto (`[data-field-scope]`): the field condenses into the logo mark there. */
   readonly scope: PixelBox | null;
-  /** The hero's stage (`[data-field-pair]`), where the two atoms live. */
-  readonly pair: PixelBox | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
   readonly cards: ReadonlyArray<{ readonly box: PixelBox; readonly stuckTop: number }>;
   /** The list holding the cards: the formation lets go once it scrolls away. */
@@ -38,9 +36,13 @@ export interface JourneyState {
   readonly opening: number;
   /** Nothing of the field shows: an opaque section fills the viewport, or the shape it holds is off screen. */
   readonly hidden: boolean;
-  /** The weights add up to 1: no particle ever drifts freely. */
+  /** The weights add up to 1 below the hero; in the hero, what they leave drifts freely. */
   readonly formations: ViewportFormations;
 }
+
+/** The hero's drifting dust, behind the molecule: dim and nearly white, a sky rather than confetti. */
+export const HERO_DUST_GLOW = 0.22;
+export const HERO_DUST_PAPER = 0.7;
 
 const ramp = (value: number) => {
   const t = Math.min(1, Math.max(0, value));
@@ -101,28 +103,41 @@ function distanceToMiddle(box: PixelBox, height: number): number {
 }
 
 /**
- * Every particle always belongs to a shape. In the hero, two atoms drawn to
- * each other; scrolling, they close in until their orbits hook together, then
- * merge into the logo mark beside the manifesto; further down come the cards,
- * the tubes and the Pact rings. Neighbouring shapes share the particles while
+ * In the hero the particles drift freely, dim dust behind the molecule;
+ * scrolling, they gather into the logo mark beside the manifesto; further
+ * down come the cards, the tubes and the Pact rings, and from there on every
+ * particle belongs to a shape. Neighbouring shapes share the particles while
  * one section gives way to the next (their weights add up to 1); between
  * sections the nearest shape keeps them, and scrolls away with its section.
  */
 export function journey(measures: JourneyMeasures): JourneyState {
-  const { height, scope, pair, rack, pact } = measures;
+  const { height, scope, rack, pact } = measures;
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
-  // The two atoms hook together over the first 40 % of a viewport…
-  const bond = ramp(scrolled / 0.4);
-  // …then merge into the logo mark beside the manifesto…
-  const merge = ramp((scrolled - 0.4) / 0.5);
-  // …which hands the particles over to the cards as the manifesto leaves.
+  // The dust gathers into the logo mark as the manifesto comes up…
+  const settle = ramp((scrolled - 0.2) / 0.35);
+  // …and the mark hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
+
+  // Where the logo mark stands: beside the manifesto on wide screens, above it on narrow ones.
+  const placement = markPlacementFor(measures.width / height);
+  const mark = {
+    x: measures.width / 2 + (placement.x * height) / 2,
+    y: height / 2 - (placement.y * height) / 2,
+    radius: (placement.scale * height) / 2,
+  };
+  const markBox: PixelBox = {
+    left: mark.x - mark.radius,
+    top: mark.y - mark.radius,
+    width: 2 * mark.radius,
+    height: 2 * mark.radius,
+  };
 
   const card = cardStage(measures);
   const stages: ReadonlyArray<Stage | null> = [
-    pair ? { presence: opening, box: pair } : null,
+    // The mark is pinned in the viewport, but leaves with the hero and the manifesto (the nearest-shape rule).
+    scope ? { presence: opening * settle, box: scope } : null,
     card,
     rack
       ? {
@@ -142,8 +157,10 @@ export function journey(measures: JourneyMeasures): JourneyState {
       : null,
   ];
 
+  // The hero's share, left to drift.
+  const free = scope ? opening * (1 - settle) : 0;
   const weights = stages.map((stage) => stage?.presence ?? 0);
-  let total = weights.reduce((sum, weight) => sum + weight, 0);
+  let total = weights.reduce((sum, weight) => sum + weight, 0) + free;
   if (total < 0.001) {
     // Between sections: the nearest shape keeps the particles.
     let nearest = -1;
@@ -167,28 +184,25 @@ export function journey(measures: JourneyMeasures): JourneyState {
     number,
     number,
   ];
+  const freeShare = total > 0 ? free / total : 0;
 
-  // The pair is pinned in the viewport (then becomes the mark); the other shapes leave with their section.
+  // Free dust and the mark are pinned in the viewport; the other shapes leave with their section.
   const offScreen = (stage: Stage | null) => !stage || bottomOf(stage.box) < 0 || stage.box.top > height;
   const shapesOffScreen =
+    freeShare <= 0.001 &&
     pairShare <= 0.001 &&
     [cardShare, tubesShare, pactShare].every(
       (weight, index) => weight <= 0.001 || offScreen(stages[index + 1] ?? null),
     );
 
-  // Where the logo mark stands: beside the manifesto on wide screens, above it on narrow ones.
-  const placement = markPlacementFor(measures.width / height);
-  const mark = {
-    x: measures.width / 2 + (placement.x * height) / 2,
-    y: height / 2 - (placement.y * height) / 2,
-    radius: (placement.scale * height) / 2,
-  };
-
   return {
     opening,
     hidden: shapesOffScreen || measures.covers.some((cover) => cover.top <= 0 && bottomOf(cover) >= height),
     formations: {
-      pair: pair && pairShare > 0.001 ? { weight: pairShare, box: pair, bond, merge, mark } : null,
+      freeGlow: HERO_DUST_GLOW,
+      freePaper: HERO_DUST_PAPER,
+      // The mark is the two atoms merged (formations.ts): bonded and merged from the start.
+      pair: scope && pairShare > 0.001 ? { weight: pairShare, box: markBox, bond: 1, merge: 1, mark } : null,
       card:
         card && cardShare > 0.001
           ? { weight: cardShare, box: card.box, radius: measures.cardRadius, step: card.step }
