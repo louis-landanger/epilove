@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Instrument_Serif } from "next/font/google";
 import { getLocale, getTranslations } from "next-intl/server";
 import { FaqSection } from "@/components/acces/marketing/faq-section";
-import { Hero, IonFieldBackdrop, IonFieldLayer } from "@/components/acces/marketing/hero";
+import { Hero } from "@/components/acces/marketing/hero";
 import { HowItWorks } from "@/components/acces/marketing/how-it-works";
+import { IonFieldLayer } from "@/components/acces/marketing/ion-field/ion-field-layer";
 import { Manifesto } from "@/components/acces/marketing/manifesto";
 import { LandingMotion } from "@/components/acces/marketing/motion/landing-motion";
 import { PactSection } from "@/components/acces/marketing/pact-section";
@@ -53,7 +54,6 @@ export default async function HomePage() {
       <main id="contenu" tabIndex={-1} className="outline-none">
         <IonFieldLayer />
         <div data-field-scope className="relative">
-          <IonFieldBackdrop />
           <Hero stats={stats} />
           <Manifesto />
         </div>

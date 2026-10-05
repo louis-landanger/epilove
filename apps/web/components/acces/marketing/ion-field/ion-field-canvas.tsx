@@ -2,77 +2,14 @@
 
 import {
   canAffordLiveField,
-  type DeviceProfile,
   isSoftwareRenderer,
   type PixelBox,
   particleBudget,
   SCHOOL_KEYS,
 } from "@atomes/three";
 import { useEffect, useRef, useState } from "react";
+import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
 import { type JourneyMeasures, journey } from "./journey";
-
-function deviceProfile(): DeviceProfile {
-  const nav = navigator as Navigator & {
-    deviceMemory?: number;
-    connection?: { saveData?: boolean };
-  };
-  return {
-    cores: nav.hardwareConcurrency || 4,
-    memoryGb: nav.deviceMemory,
-    coarsePointer: window.matchMedia("(pointer: coarse)").matches,
-    saveData: nav.connection?.saveData === true,
-    viewportArea: window.innerWidth * window.innerHeight,
-  };
-}
-
-/** The GPU behind WebGL, to skip the field on software rasterisers (no acceleration). */
-function rendererName(): string | null {
-  try {
-    const probe = document.createElement("canvas");
-    const gl = probe.getContext("webgl2") ?? probe.getContext("webgl");
-    if (!gl) {
-      return null;
-    }
-    const info = gl.getExtension("WEBGL_debug_renderer_info");
-    const name: unknown = gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
-    gl.getExtension("WEBGL_lose_context")?.loseContext();
-    return typeof name === "string" ? name : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Runs `task` once the page has loaded and the main thread is idle: the 3D never competes with LCP. */
-function afterLoadAndIdle(task: () => void): () => void {
-  let cancelled = false;
-  let idleHandle: number | undefined;
-  const run = () => {
-    if (cancelled) {
-      return;
-    }
-    if (typeof window.requestIdleCallback === "function") {
-      idleHandle = window.requestIdleCallback(task, { timeout: 2500 });
-    } else {
-      idleHandle = window.setTimeout(task, 400);
-    }
-  };
-  if (document.readyState === "complete") {
-    run();
-  } else {
-    window.addEventListener("load", run, { once: true });
-  }
-  return () => {
-    cancelled = true;
-    window.removeEventListener("load", run);
-    if (idleHandle !== undefined) {
-      if (typeof window.cancelIdleCallback === "function") {
-        window.cancelIdleCallback(idleHandle);
-      } else {
-        window.clearTimeout(idleHandle);
-      }
-    }
-  };
-}
 
 const toBox = (element: Element): PixelBox => {
   const rect = element.getBoundingClientRect();
@@ -99,7 +36,6 @@ function createPageMeasurer() {
       rackSection: rack?.closest("section") ?? null,
       pactSection: pact?.closest("section") ?? null,
       scope: document.querySelector("[data-field-scope]"),
-      pair: document.querySelector("[data-field-pair]"),
       cards: steps.flatMap((step) => {
         const card = step.querySelector("article");
         return card ? [{ card, stuckTop: Number.parseFloat(getComputedStyle(step).top) || 0 }] : [];
@@ -136,7 +72,6 @@ function createPageMeasurer() {
         width: window.innerWidth,
         height,
         scope: elements.scope ? toBox(elements.scope) : null,
-        pair: elements.pair ? toBox(elements.pair) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,
@@ -159,12 +94,12 @@ function createPageMeasurer() {
 }
 
 /**
- * The live ion field (docs/02-design.md, moment 1), behind the whole landing
- * and layered over the hero's static poster. The three.js chunk is imported
- * only after load, when motion is allowed and the device can afford it;
- * otherwise the poster stays. The hero's two atoms hook together, merge into
- * the logo mark, then the particles trace the stacked cards, fill the school
- * race tubes and orbit the Pact (journey.ts).
+ * The live ion field (docs/02-design.md, section 5), behind the whole landing.
+ * The three.js chunk is imported only after load, when motion is allowed and
+ * the device can afford it; otherwise there is no field. Dim dust drifting
+ * behind the hero's molecule, the particles gather into the logo mark beside
+ * the manifesto, then trace the stacked cards, fill the school race tubes
+ * and orbit the Pact (journey.ts).
  */
 export function IonFieldCanvas({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -176,11 +111,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
       return;
     }
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // Development only: `?field=live` runs the field on software renderers too, at full
-    // quality, and `&particles=8000` sets the particle count (to preview another device's budget).
-    const query = new URLSearchParams(window.location.search);
-    const forced = process.env.NODE_ENV !== "production" && query.get("field") === "live";
-    const forcedCount = forced ? Number(query.get("particles")) || 0 : 0;
+    const { forced, particles: forcedCount } = forcedLiveScenes();
     if (reducedMotion.matches || (!forced && !canAffordLiveField(deviceProfile()))) {
       return;
     }
@@ -206,7 +137,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           particleCount: (backend) => (forcedCount > 0 ? forcedCount : particleBudget(backend, profile)),
           adaptiveQuality: !forced,
           beforeFrame: () => followPage(),
-          // The particles start in the shapes on screen (the hero's two atoms): no jump from the poster.
+          // The particles start in the shapes on screen (a reload further down the page).
           initialFormations: journey(page.measure()).formations,
           onFirstFrame: () => setLive(true),
           // The device cannot keep up even at the lowest quality: back to the poster for good.

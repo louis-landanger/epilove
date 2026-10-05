@@ -123,7 +123,7 @@ Huit moments concentrent l'effort de design. Ce sont eux qui feront la réputati
 
 | # | Moment | Description | Technique |
 |---|---|---|---|
-| 1 | **Deux atomes** (accueil du site vitrine) | Deux atomes en miroir, faits de milliers de particules (orbite blanche, noyau plasma ou volt, électron qui tourne), de part et d'autre du titre, reliés par des lignes de champ qui forment une arche au-dessus de lui. Au défilement, ils se rapprochent jusqu'à ce que leurs orbites s'accrochent (« atomes crochus »), puis se fondent en un seul atome : le logo. Le curseur (ou le doigt) les déforme, ils se reforment. Les particules accompagnent ensuite toute la page (voir « Le fil des atomes », section 5). | Simulation de particules sur GPU (WebGPU avec repli WebGL2), shaders écrits en TSL, post-traitement léger (bloom). Image vectorielle de repli (même géométrie) sur appareils modestes. |
+| 1 | **La molécule** (accueil du site vitrine) | Deux atomes aux orbites entrelacées (« atomes crochus »), l'un plasma, l'autre volt : noyaux incandescents dans leur halo, trois anneaux de lumière chacun qui précessent lentement, électrons filant sur les anneaux avec une traînée, et entre les deux noyaux une liaison de lumière parcourue d'étincelles. La molécule tourne d'elle-même et se penche vers le curseur. Derrière, le champ d'ions dérive en poussière discrète, puis se rassemble en logo au manifeste (voir « Le fil des atomes », section 5). | Scène three.js (WebGPU avec repli WebGL2), matériaux TSL additifs sur un canvas transparent ; affiche SVG de la même pose (`packages/three/src/molecule/pose.ts`) pendant le chargement, avec le mouvement réduit et sur appareils modestes. Le champ d'ions : simulation de particules sur GPU, shaders TSL. |
 | 2 | **Course des écoles** (liste d'attente) | Cinq éprouvettes qui se remplissent d'un liquide lumineux à mesure que les inscriptions arrivent, en direct. | Liquide simulé par shader (surface ondulante), mises à jour temps réel, chiffres en police mono qui défilent. |
 | 3 | **Deck de cartes** | Cartes physiques : inclinaison selon la vitesse, lancer naturel, reflet holographique au pointeur ou au gyroscope, tampons « Liker » / « Passer » qui apparaissent progressivement. | Motion (glisser, ressorts), vélocité du geste, `DeviceOrientation`, vibration courte sur Android. |
 | 4 | **Liaison établie** (match) | Les deux cartes se rapprochent, un arc électrique les relie, flash de réaction aux couleurs des deux écoles, puis le bouton « Écrire » apparaît. | Rive pour l'arc et le texte, ou React Three Fiber selon le rendu visé ; annonce `aria-live` pour les lecteurs d'écran. |
@@ -136,7 +136,7 @@ Huit moments concentrent l'effort de design. Ce sont eux qui feront la réputati
 
 Structure de la page d'accueil :
 
-1. **Accueil** : composition centrée. Le titre « Trouve tes atomes crochus. » au milieu de l'écran, dans une seule famille (le point plasma du logo comme seul accent), encadré par les deux atomes, aussi grands que la largeur le permet, et surmonté de l'arche de leurs lignes de champ ; dessous, une phrase et un seul bouton « Rejoindre la liste » ; dans les coins du bas, les cinq écoles (à gauche) et le compteur d'inscrits (à droite, seulement à partir de 100 personnes : en dessous, il desservirait la liste). Sur mobile, sur tablette en portrait et sur les écrans presque carrés, les atomes se placent en diagonale au-dessus du texte, aligné à gauche en bas de l'écran. Sur les écrans peu hauts, le texte sous le titre fait remonter le titre et les atomes le suivent. Volontairement sobre : pas de surtitre, de pastilles, d'indices ni de second bouton.
+1. **Accueil** : composition en deux colonnes. À gauche, un surtitre, le titre « Trouve tes *atomes crochus*. » (la locution en italique serif plasma, comme les accents du manifeste), une phrase, le bouton « Rejoindre la liste » et un second accès plus discret, « Comment ça marche » ; dessous, les cinq écoles et le compteur d'inscrits (seulement à partir de 100 personnes : en dessous, il desservirait la liste). À droite, la molécule (moment 1), aussi haute que l'écran le permet, dans un halo plasma. Sur mobile, sur tablette en portrait et sur les écrans presque carrés, la molécule se place au-dessus du texte. Au défilement, texte et molécule s'effacent pendant que le manifeste monte.
 2. **Manifeste** : un texte court qui se révèle mot à mot au défilement (« Cinq écoles. Une ville. Zéro hasard. »).
 3. **Comment ça marche** : trois étapes en défilement épinglé (vérifie ton email d'école, crée ton profil, laisse la chimie opérer), illustrées par des cartes 3D.
 4. **La course des écoles** : les éprouvettes, le classement, l'objectif collectif.
@@ -145,19 +145,19 @@ Structure de la page d'accueil :
 7. **FAQ** en accordéon.
 8. **Pied de page** : logotype géant, bandeau défilant, liens légaux, mention de non-affiliation.
 
-**Le fil des atomes.** Le champ d'ions ne s'arrête pas à l'accueil : il reste derrière toute la page et chaque section lui donne une forme. Aucun atome n'est jamais libre : du haut au bas de la page, chacun appartient toujours à une forme.
+**Le fil des atomes.** Le champ d'ions reste derrière toute la page et chaque section lui donne une forme. Passé l'accueil, aucun atome n'est jamais libre : jusqu'au bas de la page, chacun appartient toujours à une forme.
 
 | Section | Ce que font les atomes |
 |---|---|
-| Accueil | Deux atomes en miroir de part et d'autre du titre, reliés par une arche de lignes de champ ; au défilement, ils se rapprochent derrière le titre qui s'efface, et leurs orbites s'accrochent, les lignes de champ devenues une liaison entre les deux noyaux. |
-| Manifeste | Les deux atomes se fondent en un seul, le logo : orbites sur une orbite, noyaux en un noyau, électrons en un électron. |
+| Accueil | Poussière libre derrière la molécule, discrète (lumière réduite, teintée papier) : elle dérive, se lie par paires, suit le curseur. |
+| Manifeste | La poussière se rassemble en un seul atome, le logo : orbite, noyau plasma, électron volt. |
 | Comment ça marche | Ils tracent le contour de la carte du dessus, un motif par étape : anneau de scan balayé d'impulsions (vérification), couches d'électrons (profil), double hélice dont les brins sont reliés par des liaisons (chimie). Le motif change quand la carte suivante recouvre la précédente. |
 | Course des écoles | Chaque atome rejoint l'éprouvette de son école et la remplit jusqu'au niveau réel ; ceux qui n'ont pas encore de place attendent en panache au-dessus. Le liquide CSS devient un verre teinté. |
 | Pacte | Tous les atomes tournent en couples liés sur les trois anneaux. |
 | Entre deux sections | Les deux formes voisines se partagent les atomes (leurs poids font 1) : ils glissent de l'une à l'autre sans jamais redevenir libres. Là où aucune forme n'est en jeu, la plus proche les garde et s'éloigne avec sa section. |
 | Sections suivantes | Rien : la forme du Pacte est sortie de l'écran avec sa section. Quand plus rien n'est visible (section claire « Sécurité », forme hors écran), le champ s'efface puis la simulation se met en pause. |
 
-Les formes sont calculées à partir de la position réelle des éléments de la page à chaque image (`apps/web/components/acces/marketing/ion-field/journey.ts`, `packages/three/src/ion-field/formations.ts`) : elles suivent le défilement, la taille de l'écran et les données en direct. Sans champ animé (mouvement réduit, appareil modeste, pas de WebGL2), la page reste celle d'avant : image fixe de l'accueil, éprouvettes en liquide CSS.
+Les formes sont calculées à partir de la position réelle des éléments de la page à chaque image (`apps/web/components/acces/marketing/ion-field/journey.ts`, `packages/three/src/ion-field/formations.ts`) : elles suivent le défilement, la taille de l'écran et les données en direct. Sans scènes animées (mouvement réduit, appareil modeste, pas de WebGL2), la page reste celle d'avant : affiche SVG de la molécule, éprouvettes en liquide CSS.
 
 Détails transverses : curseur personnalisé et boutons magnétiques (desktop uniquement), préchargeur de moins de 1,2 s (sauté pour les visiteurs déjà venus), transitions entre pages, interrupteur son, version anglaise.
 

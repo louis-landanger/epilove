@@ -199,6 +199,19 @@ describe("writeFormations", () => {
     }
   });
 
+  it("dims the free particles to the light asked for, and lights them up as a formation takes hold", () => {
+    const { targets, looks, layout } = run({ freeGlow: 0.4 });
+    for (let index = 0; index < layout.count; index += 1) {
+      expect(targets[index * FORMATION_STRIDE + 2]).toBe(0);
+      expect(looks[index * FORMATION_STRIDE + 2]).toBeCloseTo(0.4, 6);
+    }
+    const half = run({ freeGlow: 0.4, pact: { weight: 0.5, x: 0, y: 0, radius: 0.5 } });
+    for (let index = 0; index < half.layout.count; index += 1) {
+      // Halfway between the dust's light and the ring's own glow.
+      expect(half.looks[index * FORMATION_STRIDE + 2]).toBeGreaterThan(0.4);
+    }
+  });
+
   it("puts every particle on the card outline, none left drifting", () => {
     for (const step of [0, 0.5, 1, 1.5, 2]) {
       const { targets, layout } = run({ card: { weight: 1, box, radius: 0.07, step } });

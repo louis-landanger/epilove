@@ -99,115 +99,172 @@
 /* ------------------------------------------------------------------- hero */
 
 /*
- * Where the two atoms live (journey.ts reads it every frame; formations.ts sets
- * them in opposite corners, as large as fits): across the viewport on wide
- * screens, level with the title, one atom on either side of it; above the copy
- * on narrow ones, on a diagonal. Fixed proportions, those of the posters
- * (hero.tsx sets them).
+ * The copy on the left and the molecule on the right, both centred in the
+ * first viewport; on narrow screens (and screens nearly square) the molecule
+ * stands above the copy. The halos spill past the stage: the section clips.
  */
-.hero-stage {
-  position: absolute;
-  /*
-   * Level with the title (hero-stage-anchor.tsx measures it); by default the
-   * middle of the title row (.hero-layout: 7rem above, 3.5rem below).
-   */
-  top: var(--hero-title-y, calc(50svh + 1.75rem));
-  left: 50%;
-  width: min(94vw, 175svh);
-  aspect-ratio: var(--stage-wide);
-  translate: -50% -50%;
-}
-
-.hero-poster-tall {
-  display: none;
-}
-
-/*
- * Wide screens: the title in the middle of the viewport, between the atoms, the
- * rest below it. The space above the title and the block below it share the
- * height equally; on short viewports the block keeps its content's height and
- * pushes the title up.
- */
-.hero-layout {
+.hero {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  justify-content: center;
   min-height: 100svh;
-  padding: 7rem 2.5rem 3.5rem;
-  text-align: center;
+  padding: 6.5rem 1rem 3rem;
+  overflow: hidden;
 }
 
-.hero-layout::before {
+/* A spotlight of plasma behind the molecule, a trace of volt, and film grain over both. */
+.hero-aura {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, #000 60%, transparent);
+  background:
+    radial-gradient(
+      58% 52% at 72% 48%,
+      color-mix(in oklch, var(--color-plasma) 24%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      34% 34% at 84% 28%,
+      color-mix(in oklch, var(--color-volt) 11%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 45% at 18% 90%,
+      color-mix(in oklch, var(--color-plasma) 8%, transparent),
+      transparent 70%
+    );
+}
+
+.hero-aura::after {
   content: "";
-  flex: 1 1 0;
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem 3rem;
+  align-items: center;
+  width: 100%;
+  max-width: 88rem;
+  margin-inline: auto;
+}
+
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .hero-title {
+  margin-top: 1.5rem;
   font-family: var(--font-headline), var(--font-display);
-  font-size: clamp(2.9rem, min(6.8vw, 12svh), 8.5rem);
+  font-size: clamp(2.9rem, min(5.6vw, 11svh), 7.25rem);
   line-height: 0.94;
   letter-spacing: -0.035em;
   text-wrap: balance;
-  flex: none;
-  max-width: 14ch;
+  max-width: 15ch;
   animation: focus-pull 1.4s var(--ease-out) both;
 }
 
-.hero-below {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-self: stretch;
-  padding-top: 1.75rem;
+/* The serif italic runs small next to the grotesque: a touch bigger, a touch tighter. */
+.hero-title em {
+  font-size: 1.08em;
+  letter-spacing: -0.02em;
 }
 
-.hero-call {
+.hero-lead {
+  margin-top: 1.75rem;
+  max-width: 33rem;
+  font-size: clamp(1.05rem, 1.3vw, 1.3rem);
+  line-height: 1.55;
+  color: color-mix(in oklch, var(--color-paper) 80%, transparent);
+}
+
+.hero-actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2.25rem;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 0.75rem 1.5rem;
+  margin-top: 2.5rem;
 }
 
-@media (max-width: 63.99rem), (max-aspect-ratio: 5 / 4) {
-  .hero-stage {
-    top: 11svh;
-    width: min(94vw, calc(40svh * var(--stage-tall)));
-    aspect-ratio: var(--stage-tall);
-    translate: -50% 0;
-  }
-
-  .hero-poster-wide {
-    display: none;
-  }
-
-  .hero-poster-tall {
-    display: block;
-  }
-
-  /* Narrow screens: the copy at the bottom, under the atoms. */
-  .hero-layout {
-    align-items: stretch;
-    padding: 7rem 1rem 2.5rem;
-    text-align: start;
-  }
-
-  .hero-title {
-    max-width: none;
-  }
-
-  .hero-below {
-    flex: none;
-    padding-top: 1.5rem;
-  }
-
-  .hero-call {
-    align-items: flex-start;
-  }
+/* The molecule's stage: square, as tall as the viewport allows. */
+.hero-stage {
+  position: relative;
+  order: -1;
+  width: min(78vw, 42svh);
+  aspect-ratio: 1;
+  justify-self: center;
 }
 
-@media (min-width: 40rem) and (max-width: 63.99rem), (min-width: 40rem) and (max-aspect-ratio: 5 / 4) {
-  .hero-layout {
+.hero-molecule {
+  position: absolute;
+  inset: 0;
+  animation: stage-in 1.8s var(--ease-out) both;
+}
+
+.molecule-poster,
+.molecule-live {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.9s var(--ease-out);
+}
+
+.molecule-poster {
+  overflow: visible;
+}
+
+/* Glows add up, like the light of the live scene. */
+.molecule-glow {
+  mix-blend-mode: screen;
+}
+
+.molecule-live {
+  opacity: 0;
+}
+
+[data-molecule][data-live="true"] .molecule-poster {
+  opacity: 0;
+}
+
+[data-molecule][data-live="true"] .molecule-live {
+  opacity: 1;
+}
+
+@media (min-width: 40rem) {
+  .hero {
     padding-inline: 2.5rem;
+  }
+}
+
+/* Wide screens: side by side. */
+@media (min-width: 64rem) and (min-aspect-ratio: 5 / 4) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
+  }
+
+  .hero-stage {
+    order: 0;
+    width: min(100%, 82svh);
+    justify-self: end;
   }
 }
 
@@ -227,13 +284,6 @@
   animation: rise-in 1.4s var(--ease-out) 0.45s both;
 }
 
-/* A middle dot between the schools, silent for screen readers (empty alternative text). */
-.hero-schools li + li::before {
-  content: "·" / "";
-  padding: 0 0.5rem;
-  color: color-mix(in oklch, var(--color-paper) 30%, transparent);
-}
-
 @keyframes rise-in {
   from {
     transform: translateY(1.25rem);
@@ -243,17 +293,26 @@
   }
 }
 
+@keyframes stage-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A middle dot between the schools, silent for screen readers (empty alternative text). */
+.hero-schools li + li::before {
+  content: "·" / "";
+  padding: 0 0.5rem;
+  color: color-mix(in oklch, var(--color-paper) 30%, transparent);
+}
+
 /* Nothing of the field shows (opaque section, shape off screen): it fades out, then rests. */
 [data-ion-field][data-resting="true"] {
-  opacity: 0;
-}
-
-/* The live field runs behind the whole page: the hero's static poster gives way to it. */
-.ion-field-poster {
-  transition: opacity 1.2s var(--ease-out);
-}
-
-.marketing:has([data-ion-field][data-live="true"]) .ion-field-poster {
   opacity: 0;
 }
 

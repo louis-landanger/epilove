@@ -2,11 +2,12 @@
   "name": "@atomes/three",
   "version": "0.0.0",
   "private": true,
-  "description": "WebGPU/WebGL2 scenes of the marketing site (three.js, TSL): the ion field.",
+  "description": "WebGPU/WebGL2 scenes of the marketing site (three.js, TSL): the hero molecule and the ion field.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./ion-field": "./src/ion-field/scene.ts"
+    "./ion-field": "./src/ion-field/scene.ts",
+    "./molecule": "./src/molecule/scene.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

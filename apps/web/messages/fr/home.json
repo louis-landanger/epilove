@@ -1,6 +1,8 @@
 {
-  "title": "Trouve tes atomes crochus",
+  "title": "Trouve tes <em>atomes crochus</em>",
+  "eyebrow": "Campus IONIS Lyon · 5 écoles",
   "lead": "L’app de rencontre et d’amitié réservée aux étudiantes et étudiants vérifiés du campus. Un cercle fermé, sûr, pensé pour provoquer les rencontres qui n’auraient jamais eu lieu.",
+  "secondary": "Comment ça marche",
   "schools": "Écoles concernées",
   "cta": "Rejoindre la liste",
   "count": "{count, plural, =0 {Sois la première personne de la liste} one {# personne déjà dans la liste} other {# personnes déjà dans la liste}}"
