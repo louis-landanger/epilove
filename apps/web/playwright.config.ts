@@ -50,7 +50,8 @@ export default defineConfig({
     {
       // Background jobs (photo processing) and the outbox relay to Centrifugo (realtime chat).
       command: "cd ../worker && ./node_modules/.bin/tsx --env-file-if-exists=../../.env src/index.ts",
-      env: { WORKER_HEALTH_PORT: "3101" },
+      // Not 3101: the back-office end-to-end tests serve it there, and turbo runs both suites at once.
+      env: { WORKER_HEALTH_PORT: "3103" },
       wait: { stdout: /Worker connected/ },
       reuseExistingServer: !process.env.CI,
       gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
