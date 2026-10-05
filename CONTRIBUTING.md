@@ -112,6 +112,8 @@ Une migration doit rester compatible avec la version précédente du code : ajou
 
 **Toute correction de bug commence par un test qui le reproduit** : le test échoue avant la correction, passe après.
 
+Les images de référence des tests visuels (`packages/ui/visual/__screenshots__/`) sont rendues par le Chromium de Playwright, celui de la CI : l'installer avec `pnpm --filter @atomes/ui exec playwright install chromium` pour comparer à l'identique. Avec une autre version de Chromium, le rendu du texte et de certaines couleurs varie de quelques pour cent. En cas d'écart, la CI fait foi : l'artefact `visual-diffs` du workflow Design system contient les images qu'elle a obtenues.
+
 ## 7. Committer
 
 Format [Conventional Commits](https://www.conventionalcommits.org/), en anglais, imposé par le hook `commit-msg` :
