@@ -142,7 +142,8 @@ export function startChoreography(root: HTMLElement): () => void {
   const splits: SplitText[] = [];
 
   const context = gsap.context(() => {
-    // Hero copy drifts up and dims as the page starts to scroll.
+    // Hero copy drifts up and dims as the page starts to scroll; the particles that
+    // write the title stay a little longer, then leave for the logo mark (journey.ts).
     const narrow = window.matchMedia("(max-width: 63.99rem), (max-aspect-ratio: 5/4)").matches;
     gsap.to(["[data-hero-content]", "[data-hero-aura]"], {
       yPercent: -8,
@@ -152,21 +153,6 @@ export function startChoreography(root: HTMLElement): () => void {
         trigger: "#hero",
         start: "top top",
         end: narrow ? "top -18%" : "top -22%",
-        scrub: true,
-      },
-    });
-
-    // The molecule drifts up and dims with the copy, a little later: it lingers
-    // while the manifesto comes up, then the ion field gathers into the mark.
-    gsap.to("[data-hero-stage]", {
-      yPercent: -10,
-      scale: 0.92,
-      opacity: 0,
-      ease: "none",
-      scrollTrigger: {
-        trigger: "#hero",
-        start: "top top",
-        end: "top -40%",
         scrub: true,
       },
     });

@@ -10,6 +10,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
 import { type JourneyMeasures, journey } from "./journey";
+import { sampleTitle } from "./title-glyphs";
 
 const toBox = (element: Element): PixelBox => {
   const rect = element.getBoundingClientRect();
@@ -32,7 +33,11 @@ function createPageMeasurer() {
     const firstCard = steps[0]?.querySelector("article");
     const rack = document.querySelector("[data-field-rack]");
     const pact = document.querySelector("[data-field-pact]");
+    const title = document.querySelector<HTMLElement>("[data-field-title]");
+    // The title's glyphs are sampled once, then again on resize (its lines may break differently).
+    const glyphs = title ? sampleTitle(title) : null;
     return {
+      title: title && glyphs ? { element: title, glyphs } : null,
       rackSection: rack?.closest("section") ?? null,
       pactSection: pact?.closest("section") ?? null,
       scope: document.querySelector("[data-field-scope]"),
@@ -72,6 +77,7 @@ function createPageMeasurer() {
         width: window.innerWidth,
         height,
         scope: elements.scope ? toBox(elements.scope) : null,
+        title: elements.title ? { box: toBox(elements.title.element), glyphs: elements.title.glyphs } : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,
@@ -96,10 +102,10 @@ function createPageMeasurer() {
 /**
  * The live ion field (docs/02-design.md, section 5), behind the whole landing.
  * The three.js chunk is imported only after load, when motion is allowed and
- * the device can afford it; otherwise there is no field. Dim dust drifting
- * behind the hero's molecule, the particles gather into the logo mark beside
- * the manifesto, then trace the stacked cards, fill the school race tubes
- * and orbit the Pact (journey.ts).
+ * the device can afford it; otherwise there is no field, and the hero's title
+ * stays plain text. The particles write the hero's title, break up into the
+ * logo mark beside the manifesto, then trace the stacked cards, fill the
+ * school race tubes and orbit the Pact (journey.ts).
  */
 export function IonFieldCanvas({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,11 +127,13 @@ export function IonFieldCanvas({ className }: { className?: string }) {
 
     const start = async (forceWebGL = false) => {
       if (!forced && isSoftwareRenderer(rendererName())) {
-        // No GPU acceleration: the poster stays rather than hogging the main thread.
+        // No GPU acceleration: the title stays plain text rather than hogging the main thread.
         return;
       }
       try {
         const { createIonField } = await import("@atomes/three/ion-field");
+        // The title is sampled from its web fonts: wait for them, or the letters would be the fallback's.
+        await document.fonts?.ready;
         if (disposed) {
           return;
         }
@@ -140,14 +148,14 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           // The particles start in the shapes on screen (a reload further down the page).
           initialFormations: journey(page.measure()).formations,
           onFirstFrame: () => setLive(true),
-          // The device cannot keep up even at the lowest quality: back to the poster for good.
+          // The device cannot keep up even at the lowest quality: back to the plain title for good.
           onGiveUp: () => {
             setLive(false);
             for (const cleanup of cleanups.splice(0)) {
               cleanup();
             }
           },
-          // A frame failed after start-up: back to the poster.
+          // A frame failed after start-up: back to the plain title.
           forceWebGL,
           onError: () => {
             setLive(false);
@@ -262,7 +270,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           window.removeEventListener("click", onClick);
         });
       } catch {
-        // No WebGPU and no WebGL2, or the chunk failed to load: the poster stays.
+        // No WebGPU and no WebGL2, or the chunk failed to load: the title stays plain text.
         setLive(false);
       }
     };

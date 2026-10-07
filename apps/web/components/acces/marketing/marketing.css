@@ -99,41 +99,38 @@
 /* ------------------------------------------------------------------- hero */
 
 /*
- * The copy on the left and the molecule on the right, both centred in the
- * first viewport; on narrow screens (and screens nearly square) the molecule
- * stands above the copy. The halos spill past the stage: the section clips.
+ * The title is the visual: its lead on one line, then its last words across
+ * the whole width, written by the particles once the ion field is live
+ * (hero.tsx). The copy sits underneath: the lead and the calls to action on
+ * the left, the schools and the count on the right.
  */
 .hero {
+  --hero-gutter: 1rem;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-height: 100svh;
-  padding: 6.5rem 1rem 3rem;
+  padding: 6.5rem var(--hero-gutter) 2.5rem;
   overflow: hidden;
 }
 
-/* A spotlight of plasma behind the molecule, a trace of volt, and film grain over both. */
+/* A spotlight of plasma behind the giant words, a trace of volt, and film grain. */
 .hero-aura {
   position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  mask-image: linear-gradient(to bottom, #000 60%, transparent);
+  mask-image: linear-gradient(to bottom, #000 65%, transparent);
   background:
     radial-gradient(
-      58% 52% at 72% 48%,
-      color-mix(in oklch, var(--color-plasma) 24%, transparent),
+      52% 40% at 58% 52%,
+      color-mix(in oklch, var(--color-plasma) 16%, transparent),
       transparent 70%
     ),
     radial-gradient(
-      34% 34% at 84% 28%,
-      color-mix(in oklch, var(--color-volt) 11%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      50% 45% at 18% 90%,
-      color-mix(in oklch, var(--color-plasma) 8%, transparent),
+      30% 30% at 22% 46%,
+      color-mix(in oklch, var(--color-volt) 7%, transparent),
       transparent 70%
     );
 }
@@ -142,49 +139,90 @@
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.16;
+  opacity: 0.14;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 160px 160px;
 }
 
-.hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.5rem 3rem;
-  align-items: center;
-  width: 100%;
-  max-width: 88rem;
-  margin-inline: auto;
-}
-
-.hero-copy {
+.hero-inner {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  width: 100%;
+  max-width: 92rem;
+  margin-inline: auto;
 }
 
 .hero-title {
   margin-top: 1.5rem;
   font-family: var(--font-headline), var(--font-display);
-  font-size: clamp(2.9rem, min(5.6vw, 11svh), 7.25rem);
-  line-height: 0.94;
-  letter-spacing: -0.035em;
-  text-wrap: balance;
-  max-width: 15ch;
+  font-weight: 650;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  color: var(--color-paper);
   animation: focus-pull 1.4s var(--ease-out) both;
 }
 
-/* The serif italic runs small next to the grotesque: a touch bigger, a touch tighter. */
-.hero-title em {
+.hero-title-lead {
+  display: block;
+  font-size: clamp(2.4rem, min(5.2vw, 9svh), 6rem);
+}
+
+/*
+ * The giant words: as wide as the column allows (hero.tsx estimates their
+ * width in ems, one line or two), never taller than a quarter of the screen.
+ */
+.hero-word {
+  display: block;
+  margin-top: 0.04em;
+  font-size: min(
+    15rem,
+    26svh,
+    calc((min(100vw, 92rem + 2 * var(--hero-gutter)) - 2 * var(--hero-gutter)) / var(--word-ems))
+  );
+  font-weight: 800;
+  font-variation-settings: "opsz" 96;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  transition: color 0.9s var(--ease-out);
+}
+
+.hero-word-accent {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
   font-size: 1.08em;
   letter-spacing: -0.02em;
+  color: var(--color-plasma);
+  transition: color 0.9s var(--ease-out);
+}
+
+/* Live: the particles write the giant words; the text stays for screen readers and search engines. */
+.marketing:has([data-ion-field][data-live="true"]) :is(.hero-word, .hero-word-accent) {
+  color: transparent;
+}
+
+.hero-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.75rem 3rem;
+  margin-top: clamp(1.5rem, 4svh, 3rem);
+}
+
+.hero-call {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.75rem;
+  min-width: 0;
 }
 
 .hero-lead {
-  margin-top: 1.75rem;
-  max-width: 33rem;
-  font-size: clamp(1.05rem, 1.3vw, 1.3rem);
+  max-width: 36rem;
+  font-size: clamp(1.05rem, 1.25vw, 1.25rem);
   line-height: 1.55;
   color: color-mix(in oklch, var(--color-paper) 80%, transparent);
 }
@@ -193,78 +231,37 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 2.25rem;
 }
 
 .hero-meta {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.5rem;
-  margin-top: 2.5rem;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+  text-align: right;
 }
 
-/* The molecule's stage: square, as tall as the viewport allows. */
-.hero-stage {
-  position: relative;
-  order: -1;
-  width: min(78vw, 42svh);
-  aspect-ratio: 1;
-  justify-self: center;
-}
+/* Narrow screens: the giant words on two lines, the copy stacked. */
+@media (max-width: 39.99rem) {
+  .hero-word {
+    white-space: normal;
+    font-size: min(15rem, 30svh, calc((100vw - 2 * var(--hero-gutter)) / var(--word-ems-stacked)));
+  }
 
-.hero-molecule {
-  position: absolute;
-  inset: 0;
-  animation: stage-in 1.8s var(--ease-out) both;
-}
+  .hero-word-main,
+  .hero-word-accent {
+    display: block;
+  }
 
-.molecule-poster,
-.molecule-live {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transition: opacity 0.9s var(--ease-out);
-}
-
-.molecule-poster {
-  overflow: visible;
-}
-
-/* Glows add up, like the light of the live scene. */
-.molecule-glow {
-  mix-blend-mode: screen;
-}
-
-.molecule-live {
-  opacity: 0;
-}
-
-[data-molecule][data-live="true"] .molecule-poster {
-  opacity: 0;
-}
-
-[data-molecule][data-live="true"] .molecule-live {
-  opacity: 1;
+  .hero-meta {
+    align-items: flex-start;
+    text-align: left;
+  }
 }
 
 @media (min-width: 40rem) {
   .hero {
-    padding-inline: 2.5rem;
-  }
-}
-
-/* Wide screens: side by side. */
-@media (min-width: 64rem) and (min-aspect-ratio: 5 / 4) {
-  .hero-grid {
-    grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
-  }
-
-  .hero-stage {
-    order: 0;
-    width: min(100%, 82svh);
-    justify-self: end;
+    --hero-gutter: 2.5rem;
   }
 }
 
@@ -289,17 +286,6 @@
     transform: translateY(1.25rem);
   }
   to {
-    transform: none;
-  }
-}
-
-@keyframes stage-in {
-  from {
-    opacity: 0;
-    transform: scale(0.94);
-  }
-  to {
-    opacity: 1;
     transform: none;
   }
 }

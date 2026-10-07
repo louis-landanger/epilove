@@ -9,6 +9,8 @@ import {
   PAIR_FIELD_LINES,
   pairFieldPoint,
   pairGeometry,
+  TITLE_TONES,
+  type TitleFormation,
   toWorldBox,
   type WorldBox,
   writeFormations,
@@ -68,6 +70,144 @@ describe("contourPoint", () => {
       expect(Math.hypot(point.x - previous.x, point.y - previous.y)).toBeLessThanOrEqual(length / 200 + 1e-9);
       previous.x = point.x;
       previous.y = point.y;
+    }
+  });
+});
+
+describe("title formation", () => {
+  // A two-word title: the left half paper, the right half plasma, a few volt points.
+  const points = new Float32Array(2 * 600);
+  const tones = new Uint8Array(600);
+  for (let index = 0; index < 600; index += 1) {
+    const x = (index % 30) / 29;
+    const y = Math.floor(index / 30) / 19;
+    points[index * 2] = x;
+    points[index * 2 + 1] = y;
+    tones[index] = index % 41 === 0 ? TITLE_TONES.volt : x < 0.5 ? TITLE_TONES.paper : TITLE_TONES.plasma;
+  }
+  const title: TitleFormation = { weight: 1, box: { x: -0.2, y: 0.3, hw: 1.2, hh: 0.25 }, points, tones };
+  const unit = 2 / 900;
+
+  it("puts every particle on a point of the glyphs, inside the title's box", () => {
+    const { targets, layout } = run({ title }, 2000, 2.5);
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      expect(targets[offset + 2]).toBe(1);
+      const x = targets[offset] ?? 0;
+      const y = targets[offset + 1] ?? 0;
+      // A partner may stand a step (3 px) beside its point, plus the shimmer.
+      expect(Math.abs(x - title.box.x)).toBeLessThanOrEqual(title.box.hw + 4 * unit);
+      expect(Math.abs(y - title.box.y)).toBeLessThanOrEqual(title.box.hh + 4 * unit);
+    }
+  });
+
+  it("spreads the particles over the whole title", () => {
+    const { targets, layout } = run({ title }, 2000, 0);
+    const columns = new Set<number>();
+    for (let index = 0; index < layout.count; index += 1) {
+      const x = targets[index * FORMATION_STRIDE] ?? 0;
+      columns.add(Math.round(((x - (title.box.x - title.box.hw)) / (2 * title.box.hw)) * 29));
+    }
+    expect(columns.size).toBe(30);
+  });
+
+  it("colours each word with its tone", () => {
+    const { targets, looks, layout } = run({ title }, 2000, 0);
+    let volt = 0;
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      const x = ((targets[offset] ?? 0) - (title.box.x - title.box.hw)) / (2 * title.box.hw);
+      const [v, plasma, , paper] = [looks[offset], looks[offset + 1], looks[offset + 2], looks[offset + 3]];
+      if ((v ?? 0) > 0.5) {
+        volt += 1;
+        continue;
+      }
+      if (x < 0.45) {
+        expect(paper).toBeGreaterThan(0.5);
+        expect(plasma).toBe(0);
+      } else if (x > 0.55) {
+        expect(plasma).toBeGreaterThan(0.5);
+      }
+    }
+    expect(volt).toBeGreaterThan(0);
+  });
+
+  it("sweeps a sheen of light across the letters", () => {
+    // Halfway through its 7 s cycle, the sheen crosses the middle of the title.
+    const { targets, looks, layout } = run({ title }, 2000, 3.5);
+    let lit = 0;
+    let dim = 0;
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      const x = ((targets[offset] ?? 0) - (title.box.x - title.box.hw)) / (2 * title.box.hw);
+      const glow = looks[offset + 2] ?? 0;
+      if (Math.abs(x - 0.5) < 0.02) {
+        lit = Math.max(lit, glow);
+      } else if (Math.abs(x - 0.5) > 0.3) {
+        dim = Math.max(dim, glow);
+      }
+    }
+    expect(lit).toBeGreaterThan(1.4);
+    expect(dim).toBeLessThan(0.85);
+  });
+
+  it("hands the letters over to the logo mark one after another, from the right", () => {
+    const mark = { x: 1.1, y: 0, radius: 0.35 };
+    const pair = { weight: 0.5, box: { x: 1.1, y: 0, hw: 0.35, hh: 0.35 }, bond: 1, merge: 1, mark };
+    const { targets, layout } = run({ title: { ...title, weight: 0.5 }, pair }, 2000, 1);
+    const left = title.box.x - title.box.hw;
+    let written = 0;
+    let gone = 0;
+    let writtenX = 0;
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      // Fully held all along: the two shapes share each particle, never set free.
+      expect(targets[offset + 2]).toBeCloseTo(1, 5);
+      const x = targets[offset] ?? 0;
+      const y = targets[offset + 1] ?? 0;
+      const nearMark = Math.hypot(x - mark.x, y - mark.y) < mark.radius * 1.2;
+      const inTitle =
+        Math.abs(y - title.box.y) <= title.box.hh + unit && Math.abs(x - title.box.x) <= title.box.hw;
+      if (nearMark) {
+        gone += 1;
+      } else if (inTitle) {
+        written += 1;
+        writtenX += (x - left) / (2 * title.box.hw);
+      }
+    }
+    // Halfway: most particles are either still in a letter or already in the mark, not squashed in between.
+    expect(written + gone).toBeGreaterThan(layout.count * 0.75);
+    expect(written).toBeGreaterThan(layout.count * 0.2);
+    expect(gone).toBeGreaterThan(layout.count * 0.2);
+    // The right of the title has left first.
+    expect(writtenX / written).toBeLessThan(0.45);
+  });
+
+  it("keeps partners side by side in the letters", () => {
+    const { targets, layout } = run({ title }, 2000, 0);
+    let far = 0;
+    for (let index = 0; index < layout.count; index += 2) {
+      const a = index * FORMATION_STRIDE;
+      const b = (index + 1) * FORMATION_STRIDE;
+      const distance = Math.hypot(
+        (targets[a] ?? 0) - (targets[b] ?? 0),
+        (targets[a + 1] ?? 0) - (targets[b + 1] ?? 0),
+      );
+      if (distance > 12 * unit) {
+        far += 1;
+      }
+    }
+    expect(far).toBe(0);
+  });
+
+  it("is carried with the title while the page scrolls", () => {
+    const layout = createIonFieldLayout(400);
+    const targets = new Float32Array(layout.count * FORMATION_STRIDE);
+    const looks = new Float32Array(layout.count * FORMATION_STRIDE);
+    const moved = { ...title, box: { ...title.box, y: title.box.y + 0.15 } };
+    writeFormations(targets, looks, layout, { title: moved }, { title }, 1, unit);
+    for (let index = 0; index < layout.count; index += 1) {
+      expect(targets[index * FORMATION_STRIDE + 3]).toBeCloseTo(0.15, 6);
     }
   });
 });

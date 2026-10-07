@@ -109,6 +109,9 @@ const FLOW = 0.11;
 const BOND_SPRING = 1.6;
 const ORBIT = 0.42;
 const POINTER_FORCE = 0.05;
+/** Held particles make way for the pointer, then go back to their shape: strength and reach (world units). */
+const POINTER_PUSH = 7;
+const POINTER_REACH = 0.1;
 const CONTAIN = 7;
 const DAMPING_FREE = 1.15;
 const DAMPING_HELD = 9;
@@ -353,9 +356,19 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         -3.5,
         3.5,
       );
-      acc.addAssign(pointerDirection.mul(pointerPull).mul(float(1).sub(hold.mul(0.75))));
-      const swirl = max(pointerPull, 0).mul(0.35);
+      acc.addAssign(pointerDirection.mul(pointerPull).mul(free));
+      const swirl = max(pointerPull, 0).mul(0.35).mul(free);
       acc.addAssign(vec2(pointerDirection.y.negate(), pointerDirection.x).mul(swirl));
+      // Held particles part around the pointer instead, and their shape pulls them back.
+      const reach = pointerDistance.div(POINTER_REACH);
+      acc.subAssign(
+        pointerDirection.mul(
+          hold
+            .mul(uPointerStrength)
+            .mul(POINTER_PUSH)
+            .mul(exp(reach.mul(reach).negate())),
+        ),
+      );
       acc.subAssign(pointerDirection.mul(uPulse.mul(2.4).mul(exp(pointerDistance.mul(-3.5)))));
 
       // 4. Stay on screen (formations may lead off screen while their element scrolls away).
@@ -501,12 +514,16 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
               (pointerDistance * pointerDistance + 0.012),
           ),
         );
-        const pointerWeight = 1 - hold * 0.75;
-        ax += qx * pointerPull * pointerWeight;
-        ay += qy * pointerPull * pointerWeight;
-        const swirl = Math.max(pointerPull, 0) * 0.35;
+        ax += qx * pointerPull * free;
+        ay += qy * pointerPull * free;
+        const swirl = Math.max(pointerPull, 0) * 0.35 * free;
         ax += -qy * swirl;
         ay += qx * swirl;
+        // Held particles part around the pointer instead, and their shape pulls them back.
+        const reach = pointerDistance / POINTER_REACH;
+        const push = hold * pointerStrength * POINTER_PUSH * Math.exp(-reach * reach);
+        ax -= qx * push;
+        ay -= qy * push;
         const shock = pulse * 2.4 * Math.exp(-pointerDistance * 3.5);
         ax -= qx * shock;
         ay -= qy * shock;

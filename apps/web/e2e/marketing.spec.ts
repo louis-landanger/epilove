@@ -292,7 +292,7 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
   test.describe("with reduced motion", () => {
     test.use({ reducedMotion: "reduce" });
 
-    test("keeps the static poster, native scrolling and no violations", async ({ page }) => {
+    test("keeps the plain title, native scrolling and no violations", async ({ page }) => {
       await page.goto("/");
       await page.waitForLoadState("load");
       await page.waitForTimeout(1500);

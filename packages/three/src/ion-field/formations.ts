@@ -73,11 +73,26 @@ export interface PairFormation {
   readonly mark: { readonly x: number; readonly y: number; readonly radius: number };
 }
 
+/**
+ * The hero's title, written by the particles: points sampled from its glyphs
+ * (in the app, from the real text on the page), relative to the title's box,
+ * with the tone of the word each point belongs to.
+ */
+export interface TitleFormation {
+  readonly weight: number;
+  readonly box: WorldBox;
+  /** x, y pairs in [0, 1] across the box, y down as on the page. */
+  readonly points: Float32Array;
+  /** Tone of each point: 0 paper, 1 plasma, 2 volt. */
+  readonly tones: Uint8Array;
+}
+
 export interface Formations {
   /** Light of the particles no formation holds, in [0, 1] (default 1): the hero's drifting dust is dim. */
   readonly freeGlow?: number;
   /** Tint of the free particles towards paper white, in [0, 1] (default 0: their school colour). */
   readonly freePaper?: number;
+  readonly title?: TitleFormation | null;
   readonly pair?: PairFormation | null;
   readonly card?: CardFormation | null;
   readonly tubes?: TubeFormation | null;
@@ -239,12 +254,14 @@ function arcPoint(
 
 /** Largest weight among the formations: 0 when the field drifts freely. */
 export function formationStrength(formations: {
+  readonly title?: { readonly weight: number } | null;
   readonly pair?: { readonly weight: number } | null;
   readonly card?: { readonly weight: number } | null;
   readonly tubes?: { readonly weight: number } | null;
   readonly pact?: { readonly weight: number } | null;
 }): number {
   return Math.max(
+    formations.title?.weight ?? 0,
     formations.pair?.weight ?? 0,
     formations.card?.weight ?? 0,
     formations.tubes?.weight ?? 0,
@@ -737,6 +754,88 @@ function pairContribution(
   return true;
 }
 
+/** Tones of the title's points, in `TitleFormation.tones`. */
+export const TITLE_TONES = { paper: 0, plasma: 1, volt: 2 } as const;
+
+/** Where a particle stands in the title: its point, and the point its pair is anchored to (in [0, 1] of the box). */
+const titleSpot = { x: 0, y: 0, point: 0, anchorX: 0 };
+
+/**
+ * The point of the glyphs a particle takes. `along` is a low-discrepancy
+ * sequence, so however many particles there are, the pairs spread evenly over
+ * the letters; partners take neighbouring points (the app orders them along a
+ * Hilbert curve) so their bond is a short link along a stroke, or, where the
+ * next point lies in another letter, a step beside each other.
+ */
+function locateInTitle(
+  particles: FormationParticles,
+  index: number,
+  title: TitleFormation,
+  unit: number,
+): void {
+  const count = title.tones.length;
+  const base = Math.min(count - 1, Math.floor((particles.along[index & ~1] ?? 0) * (count - 1)));
+  let x = title.points[base * 2] ?? 0;
+  let y = title.points[base * 2 + 1] ?? 0;
+  let point = base;
+  titleSpot.anchorX = x;
+  if ((index & 1) === 1) {
+    const next = Math.min(count - 1, base + 1);
+    const nx = title.points[next * 2] ?? 0;
+    const ny = title.points[next * 2 + 1] ?? 0;
+    if (Math.hypot((nx - x) * 2 * title.box.hw, (ny - y) * 2 * title.box.hh) <= 8 * unit) {
+      point = next;
+      x = nx;
+      y = ny;
+    } else {
+      const angle = (particles.phases[index] ?? 0) * TAU;
+      x += (Math.cos(angle) * 3 * unit) / (2 * title.box.hw);
+      y += (Math.sin(angle) * 3 * unit) / (2 * title.box.hh);
+    }
+  }
+  titleSpot.x = x;
+  titleSpot.y = y;
+  titleSpot.point = point;
+}
+
+/**
+ * Title: each particle on its point of the glyphs (`locateInTitle`, called
+ * first). The letters shimmer in place, and a sheen of light sweeps across
+ * the title every few seconds.
+ */
+function titleContribution(
+  particles: FormationParticles,
+  index: number,
+  title: TitleFormation,
+  previous: TitleFormation | null,
+  time: number,
+  unit: number,
+  into: Contribution,
+): boolean {
+  if (title.tones.length === 0) {
+    return false;
+  }
+  const phase = particles.phases[index] ?? 0;
+  const { x: px, y: py, point } = titleSpot;
+  const { box } = title;
+  const shimmer = 0.9 * unit;
+  into.x = box.x - box.hw + px * 2 * box.hw + Math.sin(time * 0.9 + phase * 13) * shimmer;
+  into.y = box.y + box.hh - py * 2 * box.hh + Math.cos(time * 0.7 + phase * 17) * shimmer;
+  // The sheen: a narrow band of light crossing the title from left to right.
+  const sweep = fract(time / 7) * 1.8 - 0.4;
+  const sheen = Math.exp(-((px - sweep) ** 2) / 0.003);
+  const tone = title.tones[point] ?? TITLE_TONES.paper;
+  // The heavy particles would blot the strokes: dimmer in the letters.
+  const heavy = (particles.sizes[index] ?? 0) >= PAIR_HEAVY;
+  into.glow = (heavy ? 0.42 : 0.82) + 0.95 * sheen;
+  into.paper = tone === TITLE_TONES.paper ? 0.88 : 0;
+  into.plasma = tone === TITLE_TONES.plasma ? 0.92 : 0;
+  into.volt = tone === TITLE_TONES.volt ? 0.92 : 0;
+  into.pull = 1;
+  into.carry = previous ? box.y - previous.box.y : 0;
+  return true;
+}
+
 const contribution: Contribution = { x: 0, y: 0, pull: 0, glow: 1, volt: 0, plasma: 0, paper: 0, carry: 0 };
 const sum = { x: 0, y: 0, total: 0, glow: 0, volt: 0, plasma: 0, paper: 0, carry: 0 };
 
@@ -772,6 +871,7 @@ export function writeFormations(
   time: number,
   unit: number,
 ): void {
+  const title = formations.title && formations.title.weight > 0.001 ? formations.title : null;
   const pair = formations.pair && formations.pair.weight > 0.001 ? formations.pair : null;
   const card = formations.card && formations.card.weight > 0.001 ? formations.card : null;
   const tubes = formations.tubes && formations.tubes.weight > 0.001 ? formations.tubes : null;
@@ -791,12 +891,34 @@ export function writeFormations(
     sum.plasma = 0;
     sum.paper = 0;
     sum.carry = 0;
+    let titleWeight = title?.weight ?? 0;
+    let pairWeight = pair?.weight ?? 0;
+    if (title) {
+      locateInTitle(particles, index, title, unit);
+      if (pair) {
+        // The letters leave for the logo mark one after another, from the right: each pair
+        // of particles switches over at its own moment rather than the whole title squashing.
+        const both = title.weight + pair.weight;
+        const order = 0.8 * (1 - titleSpot.anchorX) + 0.2 * fract((particles.phases[index & ~1] ?? 0) * 7.31);
+        const gone = smoothstep(order * 0.72, order * 0.72 + 0.28, pair.weight / both);
+        titleWeight = both * (1 - gone);
+        pairWeight = both * gone;
+      }
+    }
+    if (
+      title &&
+      titleWeight > 0 &&
+      titleContribution(particles, index, title, previous?.title ?? null, time, unit, contribution)
+    ) {
+      accumulate(titleWeight);
+    }
     if (
       pair &&
       geometry &&
+      pairWeight > 0 &&
       pairContribution(particles, index, pair, geometry, previous?.pair ?? null, time, contribution)
     ) {
-      accumulate(pair.weight);
+      accumulate(pairWeight);
     }
     if (card && cardContribution(particles, index, card, previous?.card ?? null, time, unit, contribution)) {
       accumulate(card.weight);
@@ -838,6 +960,13 @@ export interface ViewportFormations {
   /** Light of the particles no formation holds, in [0, 1] (default 1), and their tint towards paper white (default 0). */
   readonly freeGlow?: number;
   readonly freePaper?: number;
+  /** The hero's title: its box on the page and the points of its glyphs (see `TitleFormation`). */
+  readonly title?: {
+    readonly weight: number;
+    readonly box: PixelBox;
+    readonly points: Float32Array;
+    readonly tones: Uint8Array;
+  } | null;
   /** The two atoms of the logo mark (centre and radius in pixels), in a stage where they first stand apart. */
   readonly pair?: {
     readonly weight: number;
@@ -864,11 +993,19 @@ export interface ViewportFormations {
 /** Converts measured formations to world units for a canvas of `width` × `height` CSS pixels. */
 export function toWorldFormations(formations: ViewportFormations, width: number, height: number): Formations {
   const unit = 2 / height;
-  const { pair, card, tubes, pact } = formations;
+  const { title, pair, card, tubes, pact } = formations;
   const pactBox = pact ? toWorldBox(pact.box, width, height) : null;
   return {
     ...(formations.freeGlow === undefined ? {} : { freeGlow: formations.freeGlow }),
     ...(formations.freePaper === undefined ? {} : { freePaper: formations.freePaper }),
+    title: title
+      ? {
+          weight: title.weight,
+          box: toWorldBox(title.box, width, height),
+          points: title.points,
+          tones: title.tones,
+        }
+      : null,
     pair: pair
       ? {
           weight: pair.weight,

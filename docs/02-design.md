@@ -123,7 +123,7 @@ Huit moments concentrent l'effort de design. Ce sont eux qui feront la réputati
 
 | # | Moment | Description | Technique |
 |---|---|---|---|
-| 1 | **La molécule** (accueil du site vitrine) | Deux atomes aux orbites entrelacées (« atomes crochus »), l'un plasma, l'autre volt : noyaux incandescents dans leur halo, trois anneaux de lumière chacun qui précessent lentement, électrons filant sur les anneaux avec une traînée, et entre les deux noyaux une liaison de lumière parcourue d'étincelles. La molécule tourne d'elle-même et se penche vers le curseur. Derrière, le champ d'ions dérive en poussière discrète, puis se rassemble en logo au manifeste (voir « Le fil des atomes », section 5). | Scène three.js (WebGPU avec repli WebGL2), matériaux TSL additifs sur un canvas transparent ; affiche SVG de la même pose (`packages/three/src/molecule/pose.ts`) pendant le chargement, avec le mouvement réduit et sur appareils modestes. Le champ d'ions : simulation de particules sur GPU, shaders TSL. |
+| 1 | **Le titre vivant** (accueil du site vitrine) | Les atomes écrivent le titre : « atomes crochus. », en lettres géantes sur toute la largeur, est tracé par des milliers de particules liées par paires, le mot en papier, la locution en plasma, quelques étincelles volt. Un reflet balaie les lettres de temps en temps ; le curseur écarte les atomes, qui reviennent à leur place derrière lui. Au défilement, les lettres se défont de la droite vers la gauche et filent former le logo au manifeste (voir « Le fil des atomes », section 5) : ce sont les mêmes atomes du titre jusqu'au Pacte. | Champ d'ions : simulation de particules sur GPU (WebGPU avec repli WebGL2), shaders TSL. Les points du titre sont échantillonnés dans les vrais glyphes de la page (`ion-field/title-glyphs.ts`), ordonnés le long d'une courbe de Hilbert pour que les paires restent voisines. Le titre reste du vrai texte (référencement, lecteurs d'écran) : il est affiché tel quel pendant le chargement, avec le mouvement réduit et sur appareils modestes, et devient transparent quand le champ prend le relais. |
 | 2 | **Course des écoles** (liste d'attente) | Cinq éprouvettes qui se remplissent d'un liquide lumineux à mesure que les inscriptions arrivent, en direct. | Liquide simulé par shader (surface ondulante), mises à jour temps réel, chiffres en police mono qui défilent. |
 | 3 | **Deck de cartes** | Cartes physiques : inclinaison selon la vitesse, lancer naturel, reflet holographique au pointeur ou au gyroscope, tampons « Liker » / « Passer » qui apparaissent progressivement. | Motion (glisser, ressorts), vélocité du geste, `DeviceOrientation`, vibration courte sur Android. |
 | 4 | **Liaison établie** (match) | Les deux cartes se rapprochent, un arc électrique les relie, flash de réaction aux couleurs des deux écoles, puis le bouton « Écrire » apparaît. | Rive pour l'arc et le texte, ou React Three Fiber selon le rendu visé ; annonce `aria-live` pour les lecteurs d'écran. |
@@ -136,7 +136,7 @@ Huit moments concentrent l'effort de design. Ce sont eux qui feront la réputati
 
 Structure de la page d'accueil :
 
-1. **Accueil** : composition en deux colonnes. À gauche, un surtitre, le titre « Trouve tes *atomes crochus*. » (la locution en italique serif plasma, comme les accents du manifeste), une phrase, le bouton « Rejoindre la liste » et un second accès plus discret, « Comment ça marche » ; dessous, les cinq écoles et le compteur d'inscrits (seulement à partir de 100 personnes : en dessous, il desservirait la liste). À droite, la molécule (moment 1), aussi haute que l'écran le permet, dans un halo plasma. Sur mobile, sur tablette en portrait et sur les écrans presque carrés, la molécule se place au-dessus du texte. Au défilement, texte et molécule s'effacent pendant que le manifeste monte.
+1. **Accueil** : le titre est le visuel. Un surtitre, puis « Trouve tes » et, en dessous, « atomes *crochus*. » en lettres géantes sur toute la largeur de la colonne (le mot en grotesque très grasse, la locution en italique serif plasma, comme les accents du manifeste) ; ce sont les atomes du champ qui l'écrivent (moment 1). Dessous, sur une ligne : à gauche une phrase, le bouton « Rejoindre la liste » et un second accès plus discret, « Comment ça marche » ; à droite les cinq écoles et le compteur d'inscrits (seulement à partir de 100 personnes : en dessous, il desservirait la liste). Sur mobile, le mot et la locution passent sur deux lignes et le bas s'empile. Au défilement, le texte s'efface pendant que le manifeste monte et que les lettres partent former le logo.
 2. **Manifeste** : un texte court qui se révèle mot à mot au défilement (« Cinq écoles. Une ville. Zéro hasard. »).
 3. **Comment ça marche** : trois étapes en défilement épinglé (vérifie ton email d'école, crée ton profil, laisse la chimie opérer), illustrées par des cartes 3D.
 4. **La course des écoles** : les éprouvettes, le classement, l'objectif collectif.
@@ -145,19 +145,19 @@ Structure de la page d'accueil :
 7. **FAQ** en accordéon.
 8. **Pied de page** : logotype géant, bandeau défilant, liens légaux, mention de non-affiliation.
 
-**Le fil des atomes.** Le champ d'ions reste derrière toute la page et chaque section lui donne une forme. Passé l'accueil, aucun atome n'est jamais libre : jusqu'au bas de la page, chacun appartient toujours à une forme.
+**Le fil des atomes.** Le champ d'ions reste derrière toute la page et chaque section lui donne une forme. Aucun atome n'est jamais libre : du titre au bas de la page, chacun appartient toujours à une forme.
 
 | Section | Ce que font les atomes |
 |---|---|
-| Accueil | Poussière libre derrière la molécule, discrète (lumière réduite, teintée papier) : elle dérive, se lie par paires, suit le curseur. |
-| Manifeste | La poussière se rassemble en un seul atome, le logo : orbite, noyau plasma, électron volt. |
+| Accueil | Ils écrivent le titre, chaque atome sur un point d'une lettre, son partenaire juste à côté. Le curseur les écarte ; ils reviennent derrière lui. |
+| Manifeste | Les lettres se défont de la droite vers la gauche (« crochus. » d'abord) et les atomes se rassemblent en un seul atome, le logo : orbite, noyau plasma, électron volt. |
 | Comment ça marche | Ils tracent le contour de la carte du dessus, un motif par étape : anneau de scan balayé d'impulsions (vérification), couches d'électrons (profil), double hélice dont les brins sont reliés par des liaisons (chimie). Le motif change quand la carte suivante recouvre la précédente. |
 | Course des écoles | Chaque atome rejoint l'éprouvette de son école et la remplit jusqu'au niveau réel ; ceux qui n'ont pas encore de place attendent en panache au-dessus. Le liquide CSS devient un verre teinté. |
 | Pacte | Tous les atomes tournent en couples liés sur les trois anneaux. |
 | Entre deux sections | Les deux formes voisines se partagent les atomes (leurs poids font 1) : ils glissent de l'une à l'autre sans jamais redevenir libres. Là où aucune forme n'est en jeu, la plus proche les garde et s'éloigne avec sa section. |
 | Sections suivantes | Rien : la forme du Pacte est sortie de l'écran avec sa section. Quand plus rien n'est visible (section claire « Sécurité », forme hors écran), le champ s'efface puis la simulation se met en pause. |
 
-Les formes sont calculées à partir de la position réelle des éléments de la page à chaque image (`apps/web/components/acces/marketing/ion-field/journey.ts`, `packages/three/src/ion-field/formations.ts`) : elles suivent le défilement, la taille de l'écran et les données en direct. Sans scènes animées (mouvement réduit, appareil modeste, pas de WebGL2), la page reste celle d'avant : affiche SVG de la molécule, éprouvettes en liquide CSS.
+Les formes sont calculées à partir de la position réelle des éléments de la page à chaque image (`apps/web/components/acces/marketing/ion-field/journey.ts`, `packages/three/src/ion-field/formations.ts`) : elles suivent le défilement, la taille de l'écran et les données en direct. Sans scènes animées (mouvement réduit, appareil modeste, pas de WebGL2), la page reste celle d'avant : titre en texte, éprouvettes en liquide CSS.
 
 Détails transverses : curseur personnalisé et boutons magnétiques (desktop uniquement), préchargeur de moins de 1,2 s (sauté pour les visiteurs déjà venus), transitions entre pages, interrupteur son, version anglaise.
 

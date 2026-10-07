@@ -1,9 +1,8 @@
 import type { DeviceProfile } from "@atomes/three";
 
 /**
- * What the live 3D scenes of the landing (the hero's molecule, the ion field)
- * need to know before starting: the device, its GPU, and a moment when the
- * page is ready for them.
+ * What the landing's live ion field needs to know before starting: the
+ * device, its GPU, and a moment when the page is ready for it.
  */
 
 export function deviceProfile(): DeviceProfile {

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { HERO_DUST_GLOW, HERO_DUST_PAPER, type JourneyMeasures, journey } from "./journey";
+import { type JourneyMeasures, journey } from "./journey";
 
 const width = 1440;
 const height = 900;
+const glyphs = { points: new Float32Array([0.1, 0.5, 0.9, 0.5]), tones: new Uint8Array([0, 1]) };
 
 /**
  * A page laid out like the landing (hero + manifesto, three stacked cards,
@@ -30,6 +31,8 @@ function page(scroll: number): JourneyMeasures {
     width,
     height,
     scope: box(0, 2430, 0, width),
+    // The giant line of the title, scrolling with the hero.
+    title: { box: box(250, 230, 40, 1360), glyphs },
     cards,
     cardList: box(2860, 1620),
     cardRadius: 32,
@@ -44,30 +47,45 @@ function page(scroll: number): JourneyMeasures {
 }
 
 describe("journey", () => {
-  it("opens on free dust, dim behind the molecule, that the field keeps drawing", () => {
+  it("opens on the title, written by the particles", () => {
     const top = journey(page(0));
+    expect(top.formations.title?.weight).toBe(1);
+    expect(top.formations.title?.box).toEqual(page(0).title?.box);
+    expect(top.formations.title?.points).toBe(glyphs.points);
     expect(top.formations.pair).toBeNull();
     expect(top.formations.card).toBeNull();
-    expect(top.formations.freeGlow).toBe(HERO_DUST_GLOW);
-    expect(top.formations.freePaper).toBe(HERO_DUST_PAPER);
     expect(top.hidden).toBe(false);
     expect(top.opening).toBe(1);
   });
 
-  it("gathers the dust into the logo mark beside the manifesto", () => {
-    const gathering = journey(page(300));
-    expect(gathering.formations.pair?.weight).toBeGreaterThan(0.1);
-    expect(gathering.formations.pair?.weight).toBeLessThan(0.9);
+  it("keeps the letters with the title while the hero starts to scroll", () => {
+    const early = journey(page(80));
+    expect(early.formations.title?.weight).toBe(1);
+    expect(early.formations.title?.box.top).toBe(250 - 80);
+  });
+
+  it("breaks the letters up into the logo mark beside the manifesto", () => {
+    const leaving = journey(page(260));
+    const title = leaving.formations.title?.weight ?? 0;
+    expect(title).toBeGreaterThan(0.1);
+    expect(title).toBeLessThan(0.9);
+    expect((leaving.formations.pair?.weight ?? 0) + title).toBeCloseTo(1, 5);
     // The mark is the two atoms already merged.
-    expect(gathering.formations.pair?.bond).toBe(1);
-    expect(gathering.formations.pair?.merge).toBe(1);
+    expect(leaving.formations.pair?.bond).toBe(1);
+    expect(leaving.formations.pair?.merge).toBe(1);
     const manifesto = journey(page(900));
+    expect(manifesto.formations.title).toBeNull();
     expect(manifesto.formations.pair?.weight).toBe(1);
-    expect(manifesto.formations.pair?.merge).toBe(1);
     // Beside the manifesto on a wide screen: right half, vertically centred.
     const mark = manifesto.formations.pair?.mark;
     expect(mark?.x).toBeGreaterThan(width * 0.6);
     expect(mark?.y).toBeCloseTo(height / 2, 0);
+  });
+
+  it("lets the mark hold the hero when the title cannot be written", () => {
+    const top = journey({ ...page(0), title: null });
+    expect(top.formations.title).toBeNull();
+    expect(top.formations.pair?.weight).toBe(1);
   });
 
   it("lets go of the mark and gathers around the cards, one motif per card", () => {
@@ -107,10 +125,11 @@ describe("journey", () => {
     expect(pact.formations.pact?.weight).toBeGreaterThan(0.95);
   });
 
-  it("never sets a particle free once the dust has gathered, down to the bottom of the page", () => {
-    for (let scroll = 600; scroll <= 11000; scroll += 37) {
+  it("never sets a particle free, from the top of the page to the bottom", () => {
+    for (let scroll = 0; scroll <= 11000; scroll += 37) {
       const { formations } = journey(page(scroll));
       const held =
+        (formations.title?.weight ?? 0) +
         (formations.pair?.weight ?? 0) +
         (formations.card?.weight ?? 0) +
         (formations.tubes?.weight ?? 0) +
@@ -142,6 +161,7 @@ describe("journey", () => {
       width,
       height,
       scope: null,
+      title: null,
       cards: [],
       cardList: null,
       cardRadius: 32,
@@ -151,8 +171,7 @@ describe("journey", () => {
       covers: [],
     });
     expect(state.formations).toEqual({
-      freeGlow: HERO_DUST_GLOW,
-      freePaper: HERO_DUST_PAPER,
+      title: null,
       pair: null,
       card: null,
       tubes: null,
