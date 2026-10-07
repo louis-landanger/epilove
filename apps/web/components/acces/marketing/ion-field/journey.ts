@@ -198,10 +198,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
     opening,
     hidden: shapesOffScreen || measures.covers.some((cover) => cover.top <= 0 && bottomOf(cover) >= height),
     formations: {
-      title:
-        title && titleShare > 0.001
-          ? { weight: titleShare, box: title.box, points: title.glyphs.points, tones: title.glyphs.tones }
-          : null,
+      title: title && titleShare > 0.001 ? { weight: titleShare, box: title.box, ...title.glyphs } : null,
       // The mark is the two atoms merged (formations.ts): bonded and merged from the start.
       pair: scope && pairShare > 0.001 ? { weight: pairShare, box: markBox, bond: 1, merge: 1, mark } : null,
       card:

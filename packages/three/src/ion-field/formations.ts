@@ -76,7 +76,9 @@ export interface PairFormation {
 /**
  * The hero's title, written by the particles: points sampled from its glyphs
  * (in the app, from the real text on the page), relative to the title's box,
- * with the tone of the word each point belongs to.
+ * with the tone of the word each point belongs to. The first `outline`
+ * points follow the letters' outlines, evenly spaced, in the order a pen
+ * would trace them; the others fill the letters.
  */
 export interface TitleFormation {
   readonly weight: number;
@@ -85,6 +87,8 @@ export interface TitleFormation {
   readonly points: Float32Array;
   /** Tone of each point: 0 paper, 1 plasma, 2 volt. */
   readonly tones: Uint8Array;
+  /** How many of the points, at the start, trace the outlines. */
+  readonly outline: number;
 }
 
 export interface Formations {
@@ -281,6 +285,8 @@ interface Contribution {
   paper: number;
   /** Vertical move of the shape's element since the previous frame (world units). */
   carry: number;
+  /** Size of the particle's light (1: its own); only the title sets it, finer. */
+  grain: number;
 }
 
 const point = { x: 0, y: 0 };
@@ -757,51 +763,116 @@ function pairContribution(
 /** Tones of the title's points, in `TitleFormation.tones`. */
 export const TITLE_TONES = { paper: 0, plasma: 1, volt: 2 } as const;
 
-/** Where a particle stands in the title: its point, and the point its pair is anchored to (in [0, 1] of the box). */
-const titleSpot = { x: 0, y: 0, point: 0, anchorX: 0 };
+/** Two points of a stroke are never further apart than this (CSS pixels): beyond, the stroke has ended. */
+const TITLE_STROKE_GAP = 8;
+/** Spacing of the atoms along the outlines the title asks for (CSS pixels): a near-continuous line. */
+const TITLE_OUTLINE_SPACING = 4;
+
+/**
+ * Share of the particles that trace the letters' outlines: as many as a
+ * near-continuous line needs, between half and nine tenths of them. With few
+ * particles (a modest device, the WebGL fallback), the outlines take nearly
+ * all: the letters stay crisp, only less filled.
+ */
+export function titleOutlineShare(title: TitleFormation, count: number, unit: number): number {
+  const outline = Math.min(title.tones.length, Math.max(0, title.outline));
+  if (outline === 0) {
+    return 0;
+  }
+  if (outline === title.tones.length) {
+    return 1;
+  }
+  const toX = 2 * title.box.hw;
+  const toY = 2 * title.box.hh;
+  let length = 0;
+  for (let point = 1; point < outline; point += 1) {
+    const step = Math.hypot(
+      ((title.points[point * 2] ?? 0) - (title.points[point * 2 - 2] ?? 0)) * toX,
+      ((title.points[point * 2 + 1] ?? 0) - (title.points[point * 2 - 1] ?? 0)) * toY,
+    );
+    if (step <= TITLE_STROKE_GAP * unit) {
+      length += step;
+    }
+  }
+  const atoms = length / (TITLE_OUTLINE_SPACING * unit);
+  return Math.min(0.9, Math.max(0.5, atoms / Math.max(1, count)));
+}
+
+/**
+ * Where a particle stands in the title: its point, the point its pair is
+ * anchored to (in [0, 1] of the box), and whether it traces an outline.
+ */
+const titleSpot = { x: 0, y: 0, point: 0, anchorX: 0, outline: false };
 
 /**
  * The point of the glyphs a particle takes. `along` is a low-discrepancy
- * sequence, so however many particles there are, the pairs spread evenly over
- * the letters; partners take neighbouring points (the app orders them along a
- * Hilbert curve) so their bond is a short link along a stroke, or, where the
- * next point lies in another letter, a step beside each other.
+ * sequence, so however many particles there are (and however many the
+ * adaptive quality still draws: the first ones), the pairs spread evenly.
+ * Most pairs follow the outlines, evenly spaced, each partner halfway to the
+ * next pair: the letters are drawn as chains of bonded atoms. The others
+ * fill the letters, partners on neighbouring points (the app orders them
+ * along a Hilbert curve). Where a stroke ends before the partner's point, it
+ * steps beside its anchor instead, so no bond ever jumps between letters.
  */
 function locateInTitle(
   particles: FormationParticles,
   index: number,
   title: TitleFormation,
+  share: number,
   unit: number,
 ): void {
   const count = title.tones.length;
-  const base = Math.min(count - 1, Math.floor((particles.along[index & ~1] ?? 0) * (count - 1)));
+  const outline = Math.min(count, Math.max(0, title.outline));
+  const fill = count - outline;
+  const along = particles.along[index & ~1] ?? 0;
+  const onOutline = along < share;
+  // The points of this pair's part, and how far the partner goes along them.
+  const first = onOutline ? 0 : outline;
+  const size = onOutline ? outline : fill;
+  const position = onOutline ? along / share : (along - share) / (1 - share);
+  const base = first + Math.min(size - 1, Math.floor(position * (size - 1)));
+  const reach = onOutline ? Math.max(1, Math.round(outline / Math.max(1, particles.count * share))) : 1;
   let x = title.points[base * 2] ?? 0;
   let y = title.points[base * 2 + 1] ?? 0;
   let point = base;
   titleSpot.anchorX = x;
   if ((index & 1) === 1) {
-    const next = Math.min(count - 1, base + 1);
-    const nx = title.points[next * 2] ?? 0;
-    const ny = title.points[next * 2 + 1] ?? 0;
-    if (Math.hypot((nx - x) * 2 * title.box.hw, (ny - y) * 2 * title.box.hh) <= 8 * unit) {
+    const toX = 2 * title.box.hw;
+    const toY = 2 * title.box.hh;
+    const last = first + size - 1;
+    let next = base;
+    for (let step = 0; step < Math.min(reach, 32) && next < last; step += 1) {
+      const gap = Math.hypot(
+        ((title.points[(next + 1) * 2] ?? 0) - (title.points[next * 2] ?? 0)) * toX,
+        ((title.points[(next + 1) * 2 + 1] ?? 0) - (title.points[next * 2 + 1] ?? 0)) * toY,
+      );
+      if (gap > TITLE_STROKE_GAP * unit) {
+        next = base;
+        break;
+      }
+      next += 1;
+    }
+    if (next !== base) {
       point = next;
-      x = nx;
-      y = ny;
+      x = title.points[next * 2] ?? 0;
+      y = title.points[next * 2 + 1] ?? 0;
     } else {
       const angle = (particles.phases[index] ?? 0) * TAU;
-      x += (Math.cos(angle) * 3 * unit) / (2 * title.box.hw);
-      y += (Math.sin(angle) * 3 * unit) / (2 * title.box.hh);
+      x += (Math.cos(angle) * 3 * unit) / toX;
+      y += (Math.sin(angle) * 3 * unit) / toY;
     }
   }
   titleSpot.x = x;
   titleSpot.y = y;
   titleSpot.point = point;
+  titleSpot.outline = onOutline;
 }
 
 /**
  * Title: each particle on its point of the glyphs (`locateInTitle`, called
- * first). The letters shimmer in place, and a sheen of light sweeps across
- * the title every few seconds.
+ * first). The outlines are bright and fine, the fill a dim, finer dust: the
+ * letters read crisply whatever the particle count. They shimmer in place,
+ * and a sheen of light sweeps across the title every few seconds.
  */
 function titleContribution(
   particles: FormationParticles,
@@ -816,18 +887,19 @@ function titleContribution(
     return false;
   }
   const phase = particles.phases[index] ?? 0;
-  const { x: px, y: py, point } = titleSpot;
+  const { x: px, y: py, point, outline } = titleSpot;
   const { box } = title;
-  const shimmer = 0.9 * unit;
+  const shimmer = (outline ? 0.6 : 1.2) * unit;
   into.x = box.x - box.hw + px * 2 * box.hw + Math.sin(time * 0.9 + phase * 13) * shimmer;
   into.y = box.y + box.hh - py * 2 * box.hh + Math.cos(time * 0.7 + phase * 17) * shimmer;
   // The sheen: a narrow band of light crossing the title from left to right.
   const sweep = fract(time / 7) * 1.8 - 0.4;
   const sheen = Math.exp(-((px - sweep) ** 2) / 0.003);
   const tone = title.tones[point] ?? TITLE_TONES.paper;
-  // The heavy particles would blot the strokes: dimmer in the letters.
+  // Fine grains: the heavy particles stay a little larger, sparks along the strokes.
   const heavy = (particles.sizes[index] ?? 0) >= PAIR_HEAVY;
-  into.glow = (heavy ? 0.42 : 0.82) + 0.95 * sheen;
+  into.grain = outline ? (heavy ? 0.34 : 0.55) : 0.45;
+  into.glow = (outline ? (heavy ? 0.75 : 1) : 0.22) + 0.95 * sheen;
   into.paper = tone === TITLE_TONES.paper ? 0.88 : 0;
   into.plasma = tone === TITLE_TONES.plasma ? 0.92 : 0;
   into.volt = tone === TITLE_TONES.volt ? 0.92 : 0;
@@ -836,8 +908,18 @@ function titleContribution(
   return true;
 }
 
-const contribution: Contribution = { x: 0, y: 0, pull: 0, glow: 1, volt: 0, plasma: 0, paper: 0, carry: 0 };
-const sum = { x: 0, y: 0, total: 0, glow: 0, volt: 0, plasma: 0, paper: 0, carry: 0 };
+const contribution: Contribution = {
+  x: 0,
+  y: 0,
+  pull: 0,
+  glow: 1,
+  volt: 0,
+  plasma: 0,
+  paper: 0,
+  carry: 0,
+  grain: 1,
+};
+const sum = { x: 0, y: 0, total: 0, glow: 0, volt: 0, plasma: 0, paper: 0, carry: 0, grain: 0 };
 
 /** Adds the current `contribution`, weighted by its formation, to `sum`. */
 function accumulate(weight: number): void {
@@ -849,13 +931,17 @@ function accumulate(weight: number): void {
   sum.plasma += contribution.plasma * w;
   sum.paper += contribution.paper * w;
   sum.carry += contribution.carry * w;
+  sum.grain += contribution.grain * w;
   sum.total += w;
+  // The grain is the title's: back to the default for the next formation.
+  contribution.grain = 1;
 }
 
 /**
  * Writes, for every particle:
  * - `targets`: x, y (world units), pull in [0, 1] (0 drifts freely), carry;
- * - `looks`: volt tint, plasma tint, glow multiplier, paper tint.
+ * - `looks`: volt tint, plasma tint, glow multiplier, paper tint;
+ * - `grains` (optional): size of each particle's light (1: its own).
  * The carry is how far the particle's shape moved up or down since
  * `previous` (the formations of the last frame): the simulation moves the
  * particle by as much, so shapes stay glued to their element while the page
@@ -870,6 +956,7 @@ export function writeFormations(
   previous: Formations | null,
   time: number,
   unit: number,
+  grains?: Float32Array,
 ): void {
   const title = formations.title && formations.title.weight > 0.001 ? formations.title : null;
   const pair = formations.pair && formations.pair.weight > 0.001 ? formations.pair : null;
@@ -881,6 +968,7 @@ export function writeFormations(
 
   // Where the two atoms stand this frame: the same for every particle.
   const geometry = pair ? pairGeometry(pair, time) : null;
+  const outlineShare = title ? titleOutlineShare(title, particles.count, unit) : 0;
 
   for (let index = 0; index < particles.count; index += 1) {
     sum.x = 0;
@@ -891,10 +979,11 @@ export function writeFormations(
     sum.plasma = 0;
     sum.paper = 0;
     sum.carry = 0;
+    sum.grain = 0;
     let titleWeight = title?.weight ?? 0;
     let pairWeight = pair?.weight ?? 0;
     if (title) {
-      locateInTitle(particles, index, title, unit);
+      locateInTitle(particles, index, title, outlineShare, unit);
       if (pair) {
         // The letters leave for the logo mark one after another, from the right: each pair
         // of particles switches over at its own moment rather than the whole title squashing.
@@ -929,7 +1018,7 @@ export function writeFormations(
     if (pact && pactContribution(particles, index, pact, previous?.pact ?? null, time, contribution)) {
       accumulate(pact.weight);
     }
-    const { x, y, total, glow, volt, plasma, paper, carry } = sum;
+    const { x, y, total, glow, volt, plasma, paper, carry, grain } = sum;
 
     // Between two formations their weights add up to 1: the particle glides
     // from one shape to the next, held all the way, never set free.
@@ -944,6 +1033,9 @@ export function writeFormations(
       looks[offset + 1] = (plasma / total) * share;
       looks[offset + 2] = freeGlow + (glow / total - freeGlow) * share;
       looks[offset + 3] = freePaper + (paper / total - freePaper) * share;
+      if (grains) {
+        grains[index] = 1 + (grain / total - 1) * share;
+      }
     } else {
       targets[offset + 2] = 0;
       targets[offset + 3] = 0;
@@ -951,6 +1043,9 @@ export function writeFormations(
       looks[offset + 1] = 0;
       looks[offset + 2] = freeGlow;
       looks[offset + 3] = freePaper;
+      if (grains) {
+        grains[index] = 1;
+      }
     }
   }
 }
@@ -966,6 +1061,7 @@ export interface ViewportFormations {
     readonly box: PixelBox;
     readonly points: Float32Array;
     readonly tones: Uint8Array;
+    readonly outline: number;
   } | null;
   /** The two atoms of the logo mark (centre and radius in pixels), in a stage where they first stand apart. */
   readonly pair?: {
@@ -1004,6 +1100,7 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
           box: toWorldBox(title.box, width, height),
           points: title.points,
           tones: title.tones,
+          outline: title.outline,
         }
       : null,
     pair: pair

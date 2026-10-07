@@ -2,15 +2,19 @@ import { TITLE_TONES } from "@atomes/three";
 
 /** Points sampled from the glyphs of the hero's title, for the particles to write it (formations.ts). */
 export interface TitleGlyphs {
-  /** x, y pairs in [0, 1] across the title's box, y down. */
+  /** x, y pairs in [0, 1] across the title's box, y down: the outlines first, then the fill. */
   readonly points: Float32Array;
   /** Tone of each point (`TITLE_TONES`). */
   readonly tones: Uint8Array;
+  /** How many points, at the start, trace the outlines. */
+  readonly outline: number;
 }
 
-/** More points than the largest particle budget: every particle finds its own. */
-const SAMPLES = 9000;
-/** Pixels drawn to sample from: plenty for 9,000 points, cheap to read back. */
+/** Points along the outlines, evenly spaced: more than the particles that trace them. */
+const OUTLINE_SAMPLES = 6000;
+/** Points inside the letters. */
+const FILL_SAMPLES = 4000;
+/** Pixels drawn to sample from: about one per CSS pixel on a desktop, cheap to read back. */
 const CANVAS_AREA = 420_000;
 /** A few points of every word take the volt accent: sparks in the letters. */
 const VOLT_SHARE = 0.05;
@@ -42,6 +46,64 @@ export function hilbert(size: number, x: number, y: number): number {
   return distance;
 }
 
+/** The eight neighbours of a pixel, the four sides first: a walk keeps to the outline. */
+const NEIGHBOURS = [
+  [1, 0],
+  [0, 1],
+  [-1, 0],
+  [0, -1],
+  [1, 1],
+  [-1, 1],
+  [-1, -1],
+  [1, -1],
+] as const;
+
+/**
+ * The pixels on the outlines of a mask (`inside`: 1 for the letters), in the
+ * order a pen would trace them: from each outline pixel not yet visited, walk
+ * to a neighbouring one until the stroke closes, then start the next. Two
+ * consecutive pixels are neighbours, except where a new stroke starts.
+ */
+export function traceOutlines(inside: Uint8Array, width: number, height: number): Int32Array {
+  const isInside = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < width && y < height && inside[y * width + x] === 1;
+  const edge = new Uint8Array(width * height);
+  let edges = 0;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (
+        isInside(x, y) &&
+        (!isInside(x - 1, y) || !isInside(x + 1, y) || !isInside(x, y - 1) || !isInside(x, y + 1))
+      ) {
+        edge[y * width + x] = 1;
+        edges += 1;
+      }
+    }
+  }
+  const order = new Int32Array(edges);
+  let traced = 0;
+  for (let start = 0; start < edge.length; start += 1) {
+    let current = edge[start] === 1 ? start : -1;
+    while (current >= 0) {
+      edge[current] = 2;
+      order[traced] = current;
+      traced += 1;
+      const x = current % width;
+      const y = Math.floor(current / width);
+      current = -1;
+      for (const [dx, dy] of NEIGHBOURS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= 0 && ny >= 0 && nx < width && ny < height && edge[ny * width + nx] === 1) {
+          current = ny * width + nx;
+          break;
+        }
+      }
+    }
+  }
+  return order;
+}
+
 /** Small deterministic generator: the same title always gives the same points. */
 function random(seed: number) {
   let state = seed >>> 0;
@@ -55,8 +117,9 @@ function random(seed: number) {
  * Samples the title as the page draws it. Each run (`[data-tone]`, a word or
  * a punctuation mark that never wraps) is drawn again on a canvas with its
  * own computed font, stretched to the box the browser gave it, so the points
- * fall on the visible letters whatever the font's variation axes. Returns
- * null when nothing can be drawn (no canvas, title not laid out).
+ * fall on the visible letters whatever the font's variation axes. The
+ * outlines are sampled evenly along their strokes, the fill at random.
+ * Returns null when nothing can be drawn (no canvas, title not laid out).
  */
 export function sampleTitle(root: HTMLElement): TitleGlyphs | null {
   const frame = root.getBoundingClientRect();
@@ -99,9 +162,11 @@ export function sampleTitle(root: HTMLElement): TitleGlyphs | null {
   }
 
   const pixels = context.getImageData(0, 0, width, height).data;
+  const inside = new Uint8Array(width * height);
   const filled: number[] = [];
   for (let index = 0; index < width * height; index += 1) {
     if ((pixels[index * 4 + 3] ?? 0) > 140) {
+      inside[index] = 1;
       filled.push(index);
     }
   }
@@ -110,22 +175,29 @@ export function sampleTitle(root: HTMLElement): TitleGlyphs | null {
   }
 
   const next = random(filled.length);
-  const count = SAMPLES;
-  // Along a Hilbert curve: the particles take evenly spaced points of the list (formations.ts),
-  // so the letters fill evenly, and partners take neighbouring points, so their bond stays short.
+  // The outlines, evenly spaced along each stroke: the particles take evenly spaced points
+  // of the list (formations.ts), so the atoms are evenly spaced along the letters.
+  const strokes = traceOutlines(inside, width, height);
+  const outline = strokes.length > 0 ? OUTLINE_SAMPLES : 0;
+  const traced = Array.from(
+    { length: outline },
+    (_, index) => strokes[Math.floor(((index + 0.5) * strokes.length) / outline)] ?? 0,
+  );
+  // The fill along a Hilbert curve: partners take neighbouring points, so their bond stays short.
   let grid = 1;
   while (grid < Math.max(width, height)) {
     grid *= 2;
   }
   const order = (pixel: number) => hilbert(grid, pixel % width, Math.floor(pixel / width));
-  const picked = Array.from({ length: count }, () => filled[Math.floor(next() * filled.length)] ?? 0)
+  const filling = Array.from({ length: FILL_SAMPLES }, () => filled[Math.floor(next() * filled.length)] ?? 0)
     .map((pixel) => ({ pixel, key: order(pixel) }))
     .sort((a, b) => a.key - b.key)
     .map(({ pixel }) => pixel);
-  const points = new Float32Array(count * 2);
-  const tones = new Uint8Array(count);
-  for (let index = 0; index < count; index += 1) {
-    const pixel = picked[index] ?? 0;
+
+  const picked = [...traced, ...filling];
+  const points = new Float32Array(picked.length * 2);
+  const tones = new Uint8Array(picked.length);
+  picked.forEach((pixel, index) => {
     const x = pixel % width;
     const y = Math.floor(pixel / width);
     // Anywhere inside the pixel, so points never line up on the sampling grid.
@@ -135,6 +207,6 @@ export function sampleTitle(root: HTMLElement): TitleGlyphs | null {
     const green = pixels[pixel * 4 + 1] ?? 0;
     const tone = red > 127 ? TITLE_TONES.paper : green > 127 ? TITLE_TONES.plasma : TITLE_TONES.volt;
     tones[index] = next() < VOLT_SHARE ? TITLE_TONES.volt : tone;
-  }
-  return { points, tones };
+  });
+  return { points, tones, outline };
 }

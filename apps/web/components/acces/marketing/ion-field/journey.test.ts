@@ -3,7 +3,7 @@ import { type JourneyMeasures, journey } from "./journey";
 
 const width = 1440;
 const height = 900;
-const glyphs = { points: new Float32Array([0.1, 0.5, 0.9, 0.5]), tones: new Uint8Array([0, 1]) };
+const glyphs = { points: new Float32Array([0.1, 0.5, 0.9, 0.5]), tones: new Uint8Array([0, 1]), outline: 1 };
 
 /**
  * A page laid out like the landing (hero + manifesto, three stacked cards,

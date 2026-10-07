@@ -75,18 +75,66 @@ describe("contourPoint", () => {
 });
 
 describe("title formation", () => {
-  // A two-word title: the left half paper, the right half plasma, a few volt points.
-  const points = new Float32Array(2 * 600);
-  const tones = new Uint8Array(600);
-  for (let index = 0; index < 600; index += 1) {
-    const x = (index % 30) / 29;
-    const y = Math.floor(index / 30) / 19;
+  // A two-word title: the left word paper, the right one plasma, a few volt points. Each word's
+  // outline is traced around its box (one stroke per word, points about 6 px apart), then a grid
+  // fills the whole title.
+  const box = { x: -0.2, y: 0.3, hw: 1.2, hh: 0.25 };
+  const words = [
+    { left: 0, right: 0.45 },
+    { left: 0.55, right: 1 },
+  ];
+  const perWord = 240;
+  const outline = words.length * perWord;
+  const count = outline + 600;
+  const points = new Float32Array(2 * count);
+  const tones = new Uint8Array(count);
+  const toneAt = (index: number, x: number) =>
+    index % 41 === 0 ? TITLE_TONES.volt : x < 0.5 ? TITLE_TONES.paper : TITLE_TONES.plasma;
+  words.forEach(({ left, right }, word) => {
+    // Lengths in world units, so the points are evenly spaced on screen.
+    const width = (right - left) * 2 * box.hw;
+    const height = 2 * box.hh;
+    const perimeter = 2 * (width + height);
+    for (let step = 0; step < perWord; step += 1) {
+      const d = (step / perWord) * perimeter;
+      let x: number;
+      let y: number;
+      if (d < width) {
+        [x, y] = [d, 0];
+      } else if (d < width + height) {
+        [x, y] = [width, d - width];
+      } else if (d < 2 * width + height) {
+        [x, y] = [2 * width + height - d, height];
+      } else {
+        [x, y] = [0, perimeter - d];
+      }
+      const index = word * perWord + step;
+      points[index * 2] = left + x / (2 * box.hw);
+      points[index * 2 + 1] = y / height;
+      tones[index] = toneAt(index, points[index * 2] ?? 0);
+    }
+  });
+  for (let cell = 0; cell < 600; cell += 1) {
+    const index = outline + cell;
+    const x = (cell % 30) / 29;
     points[index * 2] = x;
-    points[index * 2 + 1] = y;
-    tones[index] = index % 41 === 0 ? TITLE_TONES.volt : x < 0.5 ? TITLE_TONES.paper : TITLE_TONES.plasma;
+    points[index * 2 + 1] = Math.floor(cell / 30) / 19;
+    tones[index] = toneAt(index, x);
   }
-  const title: TitleFormation = { weight: 1, box: { x: -0.2, y: 0.3, hw: 1.2, hh: 0.25 }, points, tones };
+  const title: TitleFormation = { weight: 1, box, points, tones, outline };
   const unit = 2 / 900;
+  /** Distance from a target to the nearest word outline, in CSS pixels. */
+  const fromOutline = (x: number, y: number) =>
+    Math.min(
+      ...words.map(({ left, right }) => {
+        const xl = box.x - box.hw + left * 2 * box.hw;
+        const xr = box.x - box.hw + right * 2 * box.hw;
+        const [yb, yt] = [box.y - box.hh, box.y + box.hh];
+        const inside = Math.min(x - xl, xr - x, yt - y, y - yb);
+        const outside = Math.hypot(Math.max(xl - x, 0, x - xr), Math.max(yb - y, 0, y - yt));
+        return (inside > 0 ? inside : outside) / unit;
+      }),
+    );
 
   it("puts every particle on a point of the glyphs, inside the title's box", () => {
     const { targets, layout } = run({ title }, 2000, 2.5);
@@ -133,22 +181,96 @@ describe("title formation", () => {
   });
 
   it("sweeps a sheen of light across the letters", () => {
-    // Halfway through its 7 s cycle, the sheen crosses the middle of the title.
-    const { targets, looks, layout } = run({ title }, 2000, 3.5);
+    // About a third of the way through its 7 s cycle, the sheen crosses the first word.
+    const { targets, looks, layout } = run({ title }, 2000, 2.528);
     let lit = 0;
     let dim = 0;
     for (let index = 0; index < layout.count; index += 1) {
       const offset = index * FORMATION_STRIDE;
       const x = ((targets[offset] ?? 0) - (title.box.x - title.box.hw)) / (2 * title.box.hw);
       const glow = looks[offset + 2] ?? 0;
-      if (Math.abs(x - 0.5) < 0.02) {
+      if (Math.abs(x - 0.25) < 0.02) {
         lit = Math.max(lit, glow);
-      } else if (Math.abs(x - 0.5) > 0.3) {
+      } else if (Math.abs(x - 0.25) > 0.3) {
         dim = Math.max(dim, glow);
       }
     }
-    expect(lit).toBeGreaterThan(1.4);
-    expect(dim).toBeLessThan(0.85);
+    expect(lit).toBeGreaterThan(1.6);
+    expect(dim).toBeLessThan(1.05);
+  });
+
+  /** Share of the pairs on the outlines, and the mean glow of those and of the others. */
+  function traced(count: number) {
+    const { targets, looks, layout } = run({ title }, count, 0);
+    let onOutline = 0;
+    let outlineGlow = 0;
+    let fillGlow = 0;
+    for (let index = 0; index < layout.count; index += 2) {
+      const offset = index * FORMATION_STRIDE;
+      const glow = looks[offset + 2] ?? 0;
+      if (fromOutline(targets[offset] ?? 0, targets[offset + 1] ?? 0) <= 1.5) {
+        onOutline += 1;
+        outlineGlow += glow;
+      } else {
+        fillGlow += glow;
+      }
+    }
+    const pairs = layout.count / 2;
+    return {
+      share: onOutline / pairs,
+      outlineGlow: outlineGlow / onOutline,
+      fillGlow: fillGlow / Math.max(1, pairs - onOutline),
+    };
+  }
+
+  it("traces the outlines first, and fills the letters with the other particles", () => {
+    // About 2,800 px of outline, an atom every 4 px: 710 particles, a little over a third of 2,000.
+    const many = traced(2000);
+    expect(many.share).toBeGreaterThan(0.45);
+    expect(many.share).toBeLessThan(0.6);
+    // Bright outlines, a dim fill: the letters read crisply.
+    expect(many.outlineGlow).toBeGreaterThan(3 * many.fillGlow);
+  });
+
+  it("gives the outlines nearly all the particles when there are few", () => {
+    expect(traced(400).share).toBeGreaterThan(0.82);
+  });
+
+  it("spaces the atoms of an outline evenly, each partner halfway to the next pair", () => {
+    // Few particles for a long outline: the partner goes several points along the stroke.
+    const { targets, layout } = run({ title }, 200, 0);
+    let spaced = 0;
+    let traced = 0;
+    for (let index = 0; index < layout.count; index += 2) {
+      const a = index * FORMATION_STRIDE;
+      const b = a + FORMATION_STRIDE;
+      if (fromOutline(targets[a] ?? 0, targets[a + 1] ?? 0) > 1.5) {
+        continue;
+      }
+      traced += 1;
+      const distance = Math.hypot(
+        (targets[a] ?? 0) - (targets[b] ?? 0),
+        (targets[a + 1] ?? 0) - (targets[b + 1] ?? 0),
+      );
+      // 480 outline points for 62 pairs: about 4 points, some 24 px, apart.
+      if (distance > 12 * unit && distance < 40 * unit) {
+        spaced += 1;
+      }
+    }
+    expect(spaced / traced).toBeGreaterThan(0.7);
+  });
+
+  it("draws the letters with finer grains than the other shapes", () => {
+    const layout = createIonFieldLayout(400);
+    const targets = new Float32Array(layout.count * FORMATION_STRIDE);
+    const looks = new Float32Array(layout.count * FORMATION_STRIDE);
+    const grains = new Float32Array(layout.count);
+    writeFormations(targets, looks, layout, { title }, null, 0, unit, grains);
+    expect(Math.max(...grains)).toBeLessThan(0.6);
+    const mark = { x: 1.1, y: 0, radius: 0.35 };
+    const pair = { weight: 1, box: { x: 1.1, y: 0, hw: 0.35, hh: 0.35 }, bond: 1, merge: 1, mark };
+    writeFormations(targets, looks, layout, { pair }, null, 0, unit, grains);
+    expect(Math.min(...grains)).toBe(1);
   });
 
   it("hands the letters over to the logo mark one after another, from the right", () => {
@@ -183,7 +305,7 @@ describe("title formation", () => {
     expect(writtenX / written).toBeLessThan(0.45);
   });
 
-  it("keeps partners side by side in the letters", () => {
+  it("keeps partners side by side in the letters, never bonded across two words", () => {
     const { targets, layout } = run({ title }, 2000, 0);
     let far = 0;
     for (let index = 0; index < layout.count; index += 2) {

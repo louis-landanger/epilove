@@ -237,6 +237,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   for (let index = 0; index < count; index += 1) {
     formationLooks[index * FORMATION_STRIDE + 2] = 1;
   }
+  // And the size of each particle's light (the title draws finer grains).
+  const formationGrains = new Float32Array(count).fill(1);
 
   // Static per-particle attributes, usable by both backends.
   const colorAttribute = instancedBufferAttribute<"vec4">(
@@ -275,6 +277,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       null,
       0,
       2 / Math.max(1, initialHeight),
+      formationGrains,
     );
     for (let index = 0; index < count; index += 1) {
       const offset = index * FORMATION_STRIDE;
@@ -293,8 +296,12 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   let particleCenter: Node<"vec2">;
   let particleBond: Node<"float">;
   let particleLook: Node<"vec4">;
-  /** Glow of each bond: the dimmer of its two ends (formations dim the particles that sit them out). */
-  let bondGlow: Node<"float">;
+  let particleGrain: Node<"float">;
+  /**
+   * Look of each bond: the tints of its first end, and the glow of the dimmer
+   * one (formations dim the particles that sit them out).
+   */
+  let bondLook: Node<"vec4">;
   /** Uploads the formation buffers after `writeFormations`. */
   let uploadFormations: () => void;
   let bondA: Node<"vec2">;
@@ -307,6 +314,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const props = instancedArray(data.props, "vec2");
     const targets = instancedArray(formationTargets, "vec4");
     const looks = instancedArray(formationLooks, "vec4");
+    const grains = instancedArray(formationGrains, "float");
 
     const partnerOf = (index: Node<"uint">) => index.add(1).sub(index.mod(2).mul(2));
 
@@ -402,10 +410,17 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     bondA = positions.element(instanceIndex.mul(2));
     bondB = positions.element(instanceIndex.mul(2).add(1));
     particleLook = looks.element(instanceIndex);
-    bondGlow = min(looks.element(instanceIndex.mul(2)).z, looks.element(instanceIndex.mul(2).add(1)).z);
+    particleGrain = grains.element(instanceIndex);
+    const firstLook = looks.element(instanceIndex.mul(2));
+    bondLook = vec4(
+      firstLook.xy,
+      min(firstLook.z, looks.element(instanceIndex.mul(2).add(1)).z),
+      firstLook.w,
+    );
     uploadFormations = () => {
       targets.value.needsUpdate = true;
       looks.value.needsUpdate = true;
+      grains.value.needsUpdate = true;
     };
 
     step = () => {
@@ -426,19 +441,27 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const lookBuffer = new InstancedBufferAttribute(formationLooks, 4);
     lookBuffer.setUsage(DynamicDrawUsage);
     particleLook = instancedDynamicBufferAttribute<"vec4">(lookBuffer, "vec4");
-    const bondGlowState = new Float32Array(count / 2).fill(1);
-    const bondGlowBuffer = new InstancedBufferAttribute(bondGlowState, 1);
-    bondGlowBuffer.setUsage(DynamicDrawUsage);
-    bondGlow = instancedDynamicBufferAttribute<"float">(bondGlowBuffer, "float");
+    const grainBuffer = new InstancedBufferAttribute(formationGrains, 1);
+    grainBuffer.setUsage(DynamicDrawUsage);
+    particleGrain = instancedDynamicBufferAttribute<"float">(grainBuffer, "float");
+    const bondLookState = new Float32Array((count / 2) * 4);
+    const bondLookBuffer = new InstancedBufferAttribute(bondLookState, 4);
+    bondLookBuffer.setUsage(DynamicDrawUsage);
+    bondLook = instancedDynamicBufferAttribute<"vec4">(bondLookBuffer, "vec4");
     uploadFormations = () => {
       for (let pair = 0; pair < count / 2; pair += 1) {
-        bondGlowState[pair] = Math.min(
-          formationLooks[pair * 2 * FORMATION_STRIDE + 2] ?? 1,
-          formationLooks[(pair * 2 + 1) * FORMATION_STRIDE + 2] ?? 1,
+        const first = pair * 2 * FORMATION_STRIDE;
+        bondLookState[pair * 4] = formationLooks[first] ?? 0;
+        bondLookState[pair * 4 + 1] = formationLooks[first + 1] ?? 0;
+        bondLookState[pair * 4 + 2] = Math.min(
+          formationLooks[first + 2] ?? 1,
+          formationLooks[first + FORMATION_STRIDE + 2] ?? 1,
         );
+        bondLookState[pair * 4 + 3] = formationLooks[first + 3] ?? 0;
       }
       lookBuffer.needsUpdate = true;
-      bondGlowBuffer.needsUpdate = true;
+      grainBuffer.needsUpdate = true;
+      bondLookBuffer.needsUpdate = true;
     };
 
     particleCenter = particleNode.xy;
@@ -593,19 +616,17 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const depth = mix(float(0.26), float(1), smoothstep(0.003, 0.014, radius));
   const swell = float(1).add(particleBond.mul(0.45)).add(pointerProximity.mul(0.6));
   ionMaterial.positionNode = vec3(
-    particleCenter.add(positionGeometry.xy.mul(radius.mul(swell).mul(GLOW_QUAD))),
+    particleCenter.add(positionGeometry.xy.mul(radius.mul(swell).mul(GLOW_QUAD).mul(particleGrain))),
     0,
   );
-  // Formations tint some motifs (volt, plasma) and dim the particles that sit them out.
-  const tinted = mix(
+  // Formations tint some motifs (volt, plasma, paper) and dim the particles that sit them out.
+  const tint = (color: Node<"vec3">, look: Node<"vec4">) =>
     mix(
-      mix(colorAttribute.xyz, vec3(VOLT[0], VOLT[1], VOLT[2]), particleLook.x),
-      vec3(PLASMA[0], PLASMA[1], PLASMA[2]),
-      particleLook.y,
-    ),
-    vec3(PAPER[0], PAPER[1], PAPER[2]),
-    particleLook.w,
-  );
+      mix(mix(color, vec3(VOLT[0], VOLT[1], VOLT[2]), look.x), vec3(PLASMA[0], PLASMA[1], PLASMA[2]), look.y),
+      vec3(PAPER[0], PAPER[1], PAPER[2]),
+      look.w,
+    );
+  const tinted = tint(colorAttribute.xyz, particleLook);
   const ionColor = tinted
     .mul(twinkle.add(particleBond.mul(0.5)).add(pointerProximity.mul(0.8)))
     .mul(depth)
@@ -635,10 +656,11 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   );
   const bondStrength = float(1)
     .sub(smoothstep(0.03, 0.14, segmentLength))
-    .mul(bondGlow)
+    .mul(bondLook.z)
     .mul(0.75 * density)
     .toVarying();
-  const bondColor = mix(bondColorA, bondColorB, along).toVarying();
+  // Bonds take the tint of their atoms: the title's letters stay white and plasma.
+  const bondColor = tint(mix(bondColorA, bondColorB, along), bondLook).toVarying();
   const across = abs(uv().y.sub(0.5)).mul(2);
   const beam = exp(across.mul(across).mul(-42)).add(exp(across.mul(across).mul(-5)).mul(0.14));
   bondMaterial.colorNode = vec4(bondColor.mul(beam).mul(bondStrength).mul(0.9), 1);
@@ -681,7 +703,16 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     }
     const previous = formations;
     formations = toWorldFormations(measured, width, height);
-    writeFormations(formationTargets, formationLooks, layout, formations, previous, uTime.value, 2 / height);
+    writeFormations(
+      formationTargets,
+      formationLooks,
+      layout,
+      formations,
+      previous,
+      uTime.value,
+      2 / height,
+      formationGrains,
+    );
     uploadFormations();
     freeLookOn = freeLook;
     formationsOn = active;
