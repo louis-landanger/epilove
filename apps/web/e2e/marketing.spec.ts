@@ -457,6 +457,25 @@ test.describe("hero under study: people", () => {
   });
 });
 
+test.describe("hero under study: glass", () => {
+  test("shows the whole title, and draws no glass without a GPU", async ({ page }) => {
+    await page.goto("/apercu/verre");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
+    await expect(page.getByRole("link", { name: "Rejoindre la liste" })).toBeVisible();
+    await page.waitForLoadState("load");
+    await page.waitForTimeout(1500);
+    // The test browser renders in software: the title stays as it is, with no glass over it.
+    await expect(page.locator(".verre-canvas")).not.toHaveAttribute("data-live", /.*/);
+  });
+
+  test("has no detectable violations", async ({ page }) => {
+    await page.goto("/apercu/verre");
+    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
+    await page.waitForTimeout(2000);
+    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
+  });
+});
+
 test.describe("accessibility (WCAG 2.2 AA)", () => {
   test("the landing has no detectable violations", async ({ page }) => {
     await page.goto("/");
