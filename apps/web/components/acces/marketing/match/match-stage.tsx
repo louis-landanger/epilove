@@ -9,18 +9,15 @@ import { MATCHES, PEOPLE, type PersonKey } from "./people";
 import { createSparks } from "./sparks";
 
 /**
- * The loop of the hero: the cards come in, wait apart, bond (a spark,
- * "Liaison établie"), then dissolve into atoms, and the next two come in.
+ * The loop of the hero: the two cards bond (a spark, "Liaison établie"),
+ * turn over like playing cards, and show the next two people, who wait
+ * apart, then bond in turn. The new people come in while the cards are
+ * edge-on.
  */
-type Phase = "materialize" | "apart" | "bond" | "dissolve";
-const DURATION: Record<Phase, number> = { materialize: 700, apart: 1700, bond: 3000, dissolve: 1100 };
-const NEXT: Record<Phase, Phase> = {
-  materialize: "apart",
-  apart: "bond",
-  bond: "dissolve",
-  dissolve: "materialize",
-};
-/** Past this scroll the loop holds on the bonded cards: they dissolve into the logo mark instead (journey.ts). */
+type Phase = "bond" | "turn" | "apart";
+const DURATION: Record<Phase, number> = { bond: 3200, turn: 440, apart: 1600 };
+const NEXT: Record<Phase, Phase> = { bond: "turn", turn: "apart", apart: "bond" };
+/** Past this scroll the loop holds on the bonded cards, which fade with the hero's text. */
 const HOLD_SCROLL = 40;
 /** When the two cards meet, after the bond starts (their spring takes a moment). */
 const SPARK_DELAY = 380;
@@ -34,9 +31,45 @@ const SCHOOL_NAMES: Record<string, string> = Object.fromEntries(
   SCHOOLS.map((school) => [school.slug, school.name]),
 );
 
-/** A profile card as the app draws it: picture, name and age, school, mode and one prompt. */
-function ProfileCard({ person: key, side }: { person: PersonKey; side: "first" | "second" }) {
+/** The people who come in turn on each side of the stage. */
+const SIDES = {
+  first: MATCHES.map((match) => match.people[0]),
+  second: MATCHES.map((match) => match.people[1]),
+} as const;
+
+/** Name and age, school, mode and one prompt. */
+function ProfileBody({ person: key, shown }: { person: PersonKey; shown: boolean }) {
   const t = useTranslations("home.match");
+  const person = PEOPLE[key];
+  return (
+    <div className="profile-body" data-shown={shown || undefined}>
+      <p className="profile-name">
+        {person.name} <span>{person.age}</span>
+      </p>
+      <p className="profile-tags">
+        <span>
+          <SchoolGlyph slug={person.school} className="size-3" />
+          {SCHOOL_NAMES[person.school]}
+        </span>
+        <span className="profile-mode" data-mode={person.mode}>
+          {t(person.mode)}
+        </span>
+      </p>
+      <div className="profile-prompt">
+        <span>{t(`people.${key}.prompt`)}</span>
+        <p>{t(`people.${key}.answer`)}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A profile card as the app draws it: picture, name and age, school, mode and
+ * one prompt. It holds the text of everyone who comes on its side, one over
+ * the other, and shows the current person's: the card keeps the height of the
+ * longest, so nothing around it moves when the next person comes in.
+ */
+function ProfileCard({ side, current: key }: { side: keyof typeof SIDES; current: PersonKey }) {
   const person = PEOPLE[key];
   return (
     <article
@@ -55,23 +88,10 @@ function ProfileCard({ person: key, side }: { person: PersonKey; side: "first" |
         <i className="profile-orbit" />
         <span className="profile-symbol">{person.symbol}</span>
       </div>
-      <div className="profile-body">
-        <p className="profile-name">
-          {person.name} <span>{person.age}</span>
-        </p>
-        <p className="profile-tags">
-          <span>
-            <SchoolGlyph slug={person.school} className="size-3" />
-            {SCHOOL_NAMES[person.school]}
-          </span>
-          <span className="profile-mode" data-mode={person.mode}>
-            {t(person.mode)}
-          </span>
-        </p>
-        <div className="profile-prompt">
-          <span>{t(`people.${key}.prompt`)}</span>
-          <p>{t(`people.${key}.answer`)}</p>
-        </div>
+      <div className="profile-bodies">
+        {SIDES[side].map((other) => (
+          <ProfileBody key={other} person={other} shown={other === key} />
+        ))}
       </div>
     </article>
   );
@@ -81,9 +101,9 @@ function ProfileCard({ person: key, side }: { person: PersonKey; side: "first" |
  * The hero's stage (docs/02-design.md, section 5): two fictional students of
  * the campus, as profile cards of the app, bond; then the next two. It is an
  * illustration, kept out of reach of assistive technologies (`inert`): the
- * hero's text says it all. The cards are made of atoms: once the ion field is
- * live, its particles sit right behind them (`data-field-profiles`), show when
- * the cards dissolve, and stream into the logo mark when the page scrolls.
+ * hero's text says it all. Once the ion field is live, its particles wait
+ * behind the cards (`data-field-profiles`), unlit, and gather into the logo
+ * mark beside the manifesto when the page scrolls.
  */
 export function MatchStage() {
   const t = useTranslations("home.match");
@@ -112,7 +132,7 @@ export function MatchStage() {
       phase = NEXT[phase];
       const next = phase;
       setStep((current) => ({
-        match: next === "materialize" ? (current.match + 1) % MATCHES.length : current.match,
+        match: next === "apart" ? (current.match + 1) % MATCHES.length : current.match,
         phase: next,
         at: Math.round(performance.now()),
       }));
@@ -181,22 +201,15 @@ export function MatchStage() {
 
   const [first, second] = match.people;
   return (
-    <div
-      ref={stageRef}
-      className="match"
-      data-field-profiles
-      data-phase={step.phase}
-      data-phase-at={step.at}
-      inert
-    >
+    <div ref={stageRef} className="match" data-field-profiles data-phase={step.phase} inert>
       <div className="match-tilt">
         <p className="match-bond">
           <b>{t("bond")}</b>
           <span>{t(match.mode === "love" ? "score" : "scoreFriends", { score: match.score })}</span>
         </p>
         <span className="match-flash" />
-        <ProfileCard key="first" person={first} side="first" />
-        <ProfileCard key="second" person={second} side="second" />
+        <ProfileCard key="first" side="first" current={first} />
+        <ProfileCard key="second" side="second" current={second} />
       </div>
       <canvas ref={canvasRef} className="match-sparks" />
       <p className="match-fiction">{t("fiction")}</p>

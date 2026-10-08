@@ -292,11 +292,7 @@
     0 30px 70px -30px rgb(0 0 0 / 0.9),
     0 0 0 1px rgb(0 0 0 / 0.3);
   transform: var(--bond);
-  transition:
-    transform 1s cubic-bezier(0.34, 1.56, 0.64, 1),
-    opacity 0.45s var(--ease-out),
-    filter 0.45s var(--ease-out),
-    scale 0.45s var(--ease-out);
+  transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Holographic sheen following the pointer. */
@@ -331,20 +327,25 @@
   z-index: 2;
 }
 
-.match:is([data-phase="apart"], [data-phase="materialize"]) .profile-card {
+/*
+ * Between two matches the cards turn over where they stand, like playing
+ * cards, and the next two people come in while they are edge-on. Their right
+ * side goes away from the viewer: where the cards overlap, the second one
+ * stays in front.
+ */
+.match[data-phase="turn"] .profile-card {
+  transform: var(--bond) rotateY(90deg);
+  transition: transform 0.36s cubic-bezier(0.55, 0, 1, 0.45);
+}
+
+.match[data-phase="turn"] .profile-card[data-profile-card="second"] {
+  transition-delay: 0.06s;
+}
+
+/* The new cards face forward again as they part, without overshooting (they still overlap a little). */
+.match[data-phase="apart"] .profile-card {
   transform: var(--apart);
-}
-
-/* The cards dissolve (their atoms show in their place, ion-field/journey.ts)… */
-.match[data-phase="dissolve"] .profile-card {
-  opacity: 0;
-  filter: blur(6px);
-  scale: 1.04;
-}
-
-/* …and the next two take shape where the cards wait apart. */
-.match[data-phase="materialize"] .profile-card {
-  transition: opacity 0.55s var(--ease-out) 0.12s;
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .profile-picture {
@@ -423,10 +424,22 @@
   text-shadow: 0 6px 30px rgb(0 0 0 / 0.35);
 }
 
+/* Everyone's text on this side, one over the other: the card keeps the height of the longest. */
+.profile-bodies {
+  display: grid;
+}
+
 .profile-body {
   display: grid;
+  grid-area: 1 / 1;
+  grid-template-rows: auto auto 1fr;
   gap: 0.5rem;
   padding: 0.75rem 0.875rem 0.875rem;
+  visibility: hidden;
+}
+
+.profile-body[data-shown] {
+  visibility: visible;
 }
 
 .profile-name {

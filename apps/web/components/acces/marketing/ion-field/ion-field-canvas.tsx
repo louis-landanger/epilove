@@ -17,9 +17,12 @@ const toBox = (element: Element): PixelBox => {
   return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 };
 
-/** The rotation an element is drawn with, in degrees clockwise, from its computed transform. */
+/**
+ * The rotation an element is drawn with, in degrees clockwise, from its
+ * computed transform (3D while a card turns over).
+ */
 function rotationOf(element: Element): number {
-  const matrix = /^matrix\(([^,]+),\s*([^,]+)/.exec(getComputedStyle(element).transform);
+  const matrix = /^matrix(?:3d)?\(([^,]+),\s*([^,]+)/.exec(getComputedStyle(element).transform);
   return matrix ? (Math.atan2(Number(matrix[2]), Number(matrix[1])) * 180) / Math.PI : 0;
 }
 
@@ -36,21 +39,13 @@ function readCard(card: HTMLElement): ViewportProfileCard {
   };
 }
 
-/** The hero's two profile cards and where their loop stands (match-stage.tsx). */
+/** The hero's two profile cards (match-stage.tsx). */
 function readProfiles(stage: HTMLElement, cards: readonly HTMLElement[]): JourneyMeasures["profiles"] {
   const [first, second] = cards;
   if (!first || !second) {
     return null;
   }
-  const at = Number(stage.dataset.phaseAt);
-  const opacity = Number.parseFloat(getComputedStyle(stage).opacity);
-  return {
-    box: toBox(stage),
-    cards: [readCard(first), readCard(second)],
-    phase: stage.dataset.phase,
-    age: at ? (performance.now() - at) / 1000 : Number.POSITIVE_INFINITY,
-    opacity: Number.isNaN(opacity) ? 1 : opacity,
-  };
+  return { box: toBox(stage), cards: [readCard(first), readCard(second)] };
 }
 
 /**
@@ -140,9 +135,9 @@ function createPageMeasurer() {
  * The live ion field (docs/02-design.md, section 5), behind the whole landing.
  * The three.js chunk is imported only after load, when motion is allowed and
  * the device can afford it; otherwise there is no field, and the hero stays
- * as it is, without atoms. The particles make up the hero's two profile
- * cards, gather into the logo mark beside the manifesto as the cards
- * dissolve, then trace the stacked cards, fill the school race tubes and
+ * as it is, without atoms. The particles wait, unlit, behind the hero's two
+ * profile cards, gather into the logo mark beside the manifesto as the
+ * cards fade, then trace the stacked cards, fill the school race tubes and
  * orbit the Pact (journey.ts).
  */
 export function IonFieldCanvas({ className }: { className?: string }) {

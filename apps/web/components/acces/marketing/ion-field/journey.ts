@@ -21,18 +21,10 @@ export interface JourneyMeasures {
   readonly height: number;
   /** Hero and manifesto (`[data-field-scope]`): the field condenses into the logo mark there. */
   readonly scope: PixelBox | null;
-  /**
-   * The hero's two profile cards (`[data-field-profiles]`): the stage, each
-   * card, where the match loop stands (match-stage.tsx: its phase, and how
-   * long ago it started, in seconds) and the stage's opacity (it fades as
-   * the page scrolls, choreography.ts).
-   */
+  /** The hero's two profile cards (`[data-field-profiles]`): the stage and each card. */
   readonly profiles: {
     readonly box: PixelBox;
     readonly cards: readonly [ViewportProfileCard, ViewportProfileCard];
-    readonly phase: string | undefined;
-    readonly age: number;
-    readonly opacity: number;
   } | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
   readonly cards: ReadonlyArray<{ readonly box: PixelBox; readonly stuckTop: number }>;
@@ -118,32 +110,10 @@ function distanceToMiddle(box: PixelBox, height: number): number {
 }
 
 /**
- * How the atoms of the profile cards follow the match loop: they show when
- * the cards dissolve and drift away as dust, then gather again behind the
- * next two cards while they fade in. Unlit while the cards show: the atoms
- * follow the cards with a slight delay, and would peek out as they move.
- */
-export function profileLight(phase: string | undefined, age: number): { spread: number; glow: number } {
-  if (phase === "dissolve") {
-    const t = age / 1.1;
-    return { spread: ramp((t - 0.12) / 0.88), glow: 1 - ramp((t - 0.4) / 0.6) };
-  }
-  if (phase === "materialize") {
-    return { spread: 1 - ramp(age / 0.35), glow: 0 };
-  }
-  return { spread: 0, glow: 0 };
-}
-
-/** The atoms light up as the stage fades on scroll, in the cards' place. */
-function light(profiles: NonNullable<JourneyMeasures["profiles"]>): { spread: number; glow: number } {
-  const { spread, glow } = profileLight(profiles.phase, profiles.age);
-  return { spread, glow: Math.max(glow, 1 - profiles.opacity) };
-}
-
-/**
- * In the hero the particles make up the two profile cards; scrolling, the
- * cards dissolve and their atoms gather into the logo mark beside the
- * manifesto; further down come the stacked cards, the tubes and the Pact
+ * In the hero the particles wait behind the two profile cards, unlit: the
+ * hero shows no atom. Scrolling, the cards fade with the hero's text and the
+ * particles gather into the logo mark beside the manifesto, lighting up as
+ * they join it; further down come the stacked cards, the tubes and the Pact
  * rings. Every particle always belongs to a shape:
  * neighbouring shapes share the particles while one section gives way to the
  * next (their weights add up to 1); between sections the nearest shape keeps
@@ -154,7 +124,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
-  // The atoms of the cards hold while the cards fade, then leave for the logo mark…
+  // The atoms hold behind the cards while they fade, then leave for the logo mark…
   const settle = profiles ? ramp((scrolled - 0.12) / 0.38) : 1;
   // …which hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
@@ -240,7 +210,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
     formations: {
       profiles:
         profiles && profilesShare > 0.001
-          ? { weight: profilesShare, cards: profiles.cards, ...light(profiles) }
+          ? { weight: profilesShare, cards: profiles.cards, spread: 0, glow: 0 }
           : null,
       // The mark is the two atoms merged (formations.ts): bonded and merged from the start.
       pair: scope && pairShare > 0.001 ? { weight: pairShare, box: markBox, bond: 1, merge: 1, mark } : null,

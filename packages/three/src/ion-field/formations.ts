@@ -88,9 +88,9 @@ export interface ProfileCardShape {
  * The hero's two profile cards, made of atoms: each pair of particles holds a
  * point of one card (its outline, its picture, the orbit drawn on it, the
  * lines of its text) right behind the card, so nothing shows while the card
- * is there. When a card fades, its atoms show in its place; `spread` blows
- * them away in a soft cloud (a match ends, the next profiles come in), and
- * scrolling hands them over to the logo mark, from the top of the cards down.
+ * is there; `glow` lights them (the landing keeps them unlit) and `spread`
+ * blows them away in a soft cloud around the cards. Scrolling hands them over
+ * to the logo mark, from the top of the cards down.
  */
 export interface ProfilesFormation {
   readonly weight: number;
@@ -787,7 +787,7 @@ const PROFILE_LINES = [
 /**
  * Where a particle stands on its profile card: its target before the spread,
  * its region and how far down the card it sits (0 at the top, for the order
- * in which the cards dissolve into the mark).
+ * in which the atoms leave the cards for the mark).
  */
 const profileSpot = { x: 0, y: 0, region: 0, depth: 0 };
 const local = { x: 0, y: 0 };
@@ -990,8 +990,8 @@ export function writeFormations(
     if (profiles) {
       locateOnProfile(particles, index, profiles, unit);
       if (pair) {
-        // The cards dissolve into the logo mark from the top down: each pair switches over
-        // at its own moment rather than the whole cards squashing.
+        // The atoms leave the cards for the logo mark from the top down: each pair switches
+        // over at its own moment rather than the whole cards squashing.
         const both = profiles.weight + pair.weight;
         const order = 0.75 * profileSpot.depth + 0.25 * fract((particles.phases[index & ~1] ?? 0) * 7.31);
         const gone = smoothstep(order * 0.72, order * 0.72 + 0.28, pair.weight / both);
