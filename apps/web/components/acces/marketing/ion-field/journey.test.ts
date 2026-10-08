@@ -34,8 +34,8 @@ function page(scroll: number): JourneyMeasures {
     profiles: {
       box: box(140, 600, 760, 600),
       cards: [
-        { x: 980, y: 440 - scroll, width: 260, height: 400, rotation: -4, school: 3 },
-        { x: 1180, y: 440 - scroll, width: 260, height: 400, rotation: 4, school: 4 },
+        { x: 980, y: 440 - scroll, width: 260, height: 400 },
+        { x: 1180, y: 440 - scroll, width: 260, height: 400 },
       ],
     },
     cards,
@@ -52,49 +52,52 @@ function page(scroll: number): JourneyMeasures {
 }
 
 describe("journey", () => {
-  it("opens with the atoms waiting behind the two profile cards, unlit", () => {
+  it("opens on the logo mark drawn large around the two profile cards, its nucleus dark behind them", () => {
     const top = journey(page(0));
-    expect(top.formations.profiles?.weight).toBe(1);
-    expect(top.formations.profiles?.cards).toEqual(page(0).profiles?.cards);
-    expect(top.formations.profiles?.spread).toBe(0);
-    expect(top.formations.profiles?.glow).toBe(0);
-    expect(top.formations.pair).toBeNull();
+    const pair = top.formations.pair;
+    expect(pair?.weight).toBe(1);
+    // The mark is the two atoms already merged.
+    expect(pair?.bond).toBe(1);
+    expect(pair?.merge).toBe(1);
+    // Centred between the cards, its orbit wider than the pair (230 px each side) but inside the stage.
+    expect(pair?.mark.x).toBe(1080);
+    expect(pair?.mark.y).toBe(440);
+    const halfWidth =
+      (pair?.mark.radius ?? 0) * Math.hypot(Math.cos(Math.PI / 6), (9 / 22) * Math.sin(Math.PI / 6));
+    expect(halfWidth).toBeGreaterThan(240);
+    expect(halfWidth).toBeLessThanOrEqual(300);
+    // Dimmer than the logo, and the nucleus, behind the cards, dark.
+    expect(pair?.glow).toBeLessThan(1);
+    expect(pair?.core).toBe(0);
     expect(top.formations.card).toBeNull();
     expect(top.hidden).toBe(false);
     expect(top.opening).toBe(1);
   });
 
-  it("keeps the atoms behind the cards, unlit, while the hero starts to scroll", () => {
-    const early = journey(page(80));
-    expect(early.formations.profiles?.weight).toBe(1);
-    expect(early.formations.profiles?.cards[0].y).toBe(440 - 80);
-    expect(early.formations.profiles?.glow).toBe(0);
+  it("shrinks the atom into the logo mark beside the manifesto as the cards fade, lighting its nucleus", () => {
+    const top = journey(page(0)).formations.pair;
+    const manifesto = journey(page(900)).formations.pair;
+    // Beside the manifesto on a wide screen: right half, vertically centred, at full light.
+    expect(manifesto?.weight).toBe(1);
+    expect(manifesto?.mark.x).toBeGreaterThan(width * 0.6);
+    expect(manifesto?.mark.y).toBeCloseTo(height / 2, 0);
+    expect(manifesto?.mark.radius).toBeLessThan(top?.mark.radius ?? 0);
+    expect(manifesto?.glow).toBe(1);
+    expect(manifesto?.core).toBe(1);
+    // It holds around the cards while they start to scroll, then shrinks on its way.
+    expect(journey(page(10)).formations.pair?.mark.y).toBe(440 - 10);
+    const midway = journey(page(200)).formations.pair;
+    expect(midway?.mark.radius).toBeLessThan(top?.mark.radius ?? 0);
+    expect(midway?.mark.radius).toBeGreaterThan(manifesto?.mark.radius ?? 0);
+    expect(midway?.core).toBeGreaterThan(0.5);
   });
 
-  it("gathers the atoms into the logo mark beside the manifesto as the cards fade", () => {
-    const leaving = journey(page(260));
-    const profiles = leaving.formations.profiles?.weight ?? 0;
-    expect(profiles).toBeGreaterThan(0.1);
-    expect(profiles).toBeLessThan(0.9);
-    // No card ever shows its atoms: they light up only as they join the mark.
-    expect(leaving.formations.profiles?.glow).toBe(0);
-    expect((leaving.formations.pair?.weight ?? 0) + profiles).toBeCloseTo(1, 5);
-    // The mark is the two atoms already merged.
-    expect(leaving.formations.pair?.bond).toBe(1);
-    expect(leaving.formations.pair?.merge).toBe(1);
-    const manifesto = journey(page(900));
-    expect(manifesto.formations.profiles).toBeNull();
-    expect(manifesto.formations.pair?.weight).toBe(1);
-    // Beside the manifesto on a wide screen: right half, vertically centred.
-    const mark = manifesto.formations.pair?.mark;
-    expect(mark?.x).toBeGreaterThan(width * 0.6);
-    expect(mark?.y).toBeCloseTo(height / 2, 0);
-  });
-
-  it("lets the mark hold the hero when there are no cards", () => {
-    const top = journey({ ...page(0), profiles: null });
-    expect(top.formations.profiles).toBeNull();
-    expect(top.formations.pair?.weight).toBe(1);
+  it("puts the mark beside the manifesto from the start when there are no cards", () => {
+    const top = journey({ ...page(0), profiles: null }).formations.pair;
+    expect(top?.weight).toBe(1);
+    expect(top?.mark).toEqual(journey(page(900)).formations.pair?.mark);
+    expect(top?.glow).toBe(1);
+    expect(top?.core).toBe(1);
   });
 
   it("lets go of the mark and gathers around the cards, one motif per card", () => {
@@ -138,7 +141,6 @@ describe("journey", () => {
     for (let scroll = 0; scroll <= 11000; scroll += 37) {
       const { formations } = journey(page(scroll));
       const held =
-        (formations.profiles?.weight ?? 0) +
         (formations.pair?.weight ?? 0) +
         (formations.card?.weight ?? 0) +
         (formations.tubes?.weight ?? 0) +
@@ -180,7 +182,6 @@ describe("journey", () => {
       covers: [],
     });
     expect(state.formations).toEqual({
-      profiles: null,
       pair: null,
       card: null,
       tubes: null,

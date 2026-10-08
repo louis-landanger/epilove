@@ -1,19 +1,21 @@
-import {
-  markPlacementFor,
-  type PixelBox,
-  type ViewportFormations,
-  type ViewportProfileCard,
-} from "@atomes/three";
+import { MARK, markPlacementFor, type PixelBox, type ViewportFormations } from "@atomes/three";
 
 /**
  * The ion field's journey down the landing page (docs/02-design.md, section
  * 5): from the measured position of each section, which shapes the particles
- * draw (the hero's two profile cards, the logo mark beside the manifesto, the
- * stacked cards, the school race tubes, the Pact rings) and how they share
- * them. Pure,
- * so it can be tested without a browser; the canvas measures the page and
- * applies the result every frame.
+ * draw (the logo mark, around the hero's two profile cards then beside the
+ * manifesto, the stacked cards, the school race tubes, the Pact rings) and how
+ * they share them. Pure, so it can be tested without a browser; the canvas
+ * measures the page and applies the result every frame.
  */
+
+/** A profile card of the hero, as the page draws it: centre, and size standing straight (CSS pixels). */
+export interface HeroCard {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
 
 export interface JourneyMeasures {
   /** Viewport size, in CSS pixels. */
@@ -24,7 +26,7 @@ export interface JourneyMeasures {
   /** The hero's two profile cards (`[data-field-profiles]`): the stage and each card. */
   readonly profiles: {
     readonly box: PixelBox;
-    readonly cards: readonly [ViewportProfileCard, ViewportProfileCard];
+    readonly cards: readonly [HeroCard, HeroCard];
   } | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
   readonly cards: ReadonlyArray<{ readonly box: PixelBox; readonly stuckTop: number }>;
@@ -109,12 +111,40 @@ function distanceToMiddle(box: PixelBox, height: number): number {
   return Math.min(Math.abs(box.top - middle), Math.abs(bottomOf(box) - middle));
 }
 
+/** Orbit radius of the hero's atom, in card widths, and how much of the stage's width it may take. */
+const HERO_ORBIT = 1.38;
+const HERO_ORBIT_REACH = 0.92;
+/** Light of the hero's atom, next to the cards (the logo mark beside the manifesto: 1). */
+const HERO_GLOW = 0.6;
+/** Half the width of the logo mark's orbit, in orbit radii (tilted ellipse). */
+const ORBIT_HALF_WIDTH = Math.hypot(Math.cos(MARK.tilt), MARK.orbitMinor * Math.sin(MARK.tilt));
+
 /**
- * In the hero the particles wait behind the two profile cards, unlit: the
- * hero shows no atom. Scrolling, the cards fade with the hero's text and the
- * particles gather into the logo mark beside the manifesto, lighting up as
- * they join it; further down come the stacked cards, the tubes and the Pact
- * rings. Every particle always belongs to a shape:
+ * The hero's atom: the logo mark drawn large around the two profile cards.
+ * The couple stands for its nucleus (behind the cards, and dark); its orbit
+ * is a fine ring passing behind them, a little wider than the pair, and never
+ * wider than the stage.
+ */
+function heroAtom(profiles: NonNullable<JourneyMeasures["profiles"]>): {
+  x: number;
+  y: number;
+  radius: number;
+} {
+  const [first, second] = profiles.cards;
+  const radius = Math.min(
+    HERO_ORBIT * Math.max(first.width, second.width),
+    (HERO_ORBIT_REACH * profiles.box.width) / 2 / ORBIT_HALF_WIDTH,
+  );
+  return { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2, radius };
+}
+
+/**
+ * In the hero the particles draw the logo mark, large, around the two profile
+ * cards: the couple is its nucleus, the orbit passes behind them. Scrolling,
+ * the cards fade with the hero's text and the atom shrinks into the logo mark
+ * beside the manifesto, where its nucleus lights up; further down come the
+ * stacked cards, the tubes and the Pact rings. Every particle always belongs
+ * to a shape:
  * neighbouring shapes share the particles while one section gives way to the
  * next (their weights add up to 1); between sections the nearest shape keeps
  * them, and scrolls away with its section.
@@ -124,8 +154,8 @@ export function journey(measures: JourneyMeasures): JourneyState {
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
-  // The atoms hold behind the cards while they fade, then leave for the logo mark…
-  const settle = profiles ? ramp((scrolled - 0.12) / 0.38) : 1;
+  // The atom shrinks into the logo mark as soon as the cards start to fade…
+  const settle = profiles ? ramp((scrolled - 0.02) / 0.4) : 1;
   // …which hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
 
@@ -143,12 +173,20 @@ export function journey(measures: JourneyMeasures): JourneyState {
     height: 2 * mark.radius,
   };
 
+  // Around the cards first, then beside the manifesto, pinned in the viewport.
+  const around = profiles ? heroAtom(profiles) : null;
+  const atom = around
+    ? {
+        x: around.x + (mark.x - around.x) * settle,
+        y: around.y + (mark.y - around.y) * settle,
+        radius: around.radius + (mark.radius - around.radius) * settle,
+      }
+    : mark;
+
   const card = cardStage(measures);
   const stages: ReadonlyArray<Stage | null> = [
-    // The cards scroll with the hero; the mark is pinned in the viewport, but leaves with the
-    // hero and the manifesto (the nearest-shape rule).
-    scope && profiles ? { presence: opening * (1 - settle), box: profiles.box } : null,
-    scope ? { presence: opening * settle, box: scope } : null,
+    // The atom leaves with the hero and the manifesto (the nearest-shape rule).
+    scope ? { presence: opening, box: scope } : null,
     card,
     rack
       ? {
@@ -187,8 +225,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
     }
   }
   const share = (index: number) => (total > 0 ? (weights[index] ?? 0) / total : 0);
-  const [profilesShare, pairShare, cardShare, tubesShare, pactShare] = [0, 1, 2, 3, 4].map(share) as [
-    number,
+  const [pairShare, cardShare, tubesShare, pactShare] = [0, 1, 2, 3].map(share) as [
     number,
     number,
     number,
@@ -199,21 +236,28 @@ export function journey(measures: JourneyMeasures): JourneyState {
   const offScreen = (stage: Stage | null) => !stage || bottomOf(stage.box) < 0 || stage.box.top > height;
   const shapesOffScreen =
     pairShare <= 0.001 &&
-    [profilesShare, cardShare, tubesShare, pactShare].every((weight, index) => {
-      const stage = stages[index === 0 ? 0 : index + 1] ?? null;
-      return weight <= 0.001 || offScreen(stage);
-    });
+    [cardShare, tubesShare, pactShare].every(
+      (weight, index) => weight <= 0.001 || offScreen(stages[index + 1] ?? null),
+    );
 
   return {
     opening,
     hidden: shapesOffScreen || measures.covers.some((cover) => cover.top <= 0 && bottomOf(cover) >= height),
     formations: {
-      profiles:
-        profiles && profilesShare > 0.001
-          ? { weight: profilesShare, cards: profiles.cards, spread: 0, glow: 0 }
+      // The mark is the two atoms merged (formations.ts): bonded and merged from the start. Dimmer
+      // around the cards, its nucleus dark behind them; it lights up as it leaves them.
+      pair:
+        scope && pairShare > 0.001
+          ? {
+              weight: pairShare,
+              box: markBox,
+              bond: 1,
+              merge: 1,
+              mark: atom,
+              glow: HERO_GLOW + (1 - HERO_GLOW) * settle,
+              core: ramp(settle / 0.5),
+            }
           : null,
-      // The mark is the two atoms merged (formations.ts): bonded and merged from the start.
-      pair: scope && pairShare > 0.001 ? { weight: pairShare, box: markBox, bond: 1, merge: 1, mark } : null,
       card:
         card && cardShare > 0.001
           ? { weight: cardShare, box: card.box, radius: measures.cardRadius, step: card.step }

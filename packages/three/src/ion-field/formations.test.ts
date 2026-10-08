@@ -7,7 +7,6 @@ import {
   orbitArcPoint,
   orbitTheta,
   PAIR_FIELD_LINES,
-  type ProfilesFormation,
   pairFieldPoint,
   pairGeometry,
   toWorldBox,
@@ -69,164 +68,6 @@ describe("contourPoint", () => {
       expect(Math.hypot(point.x - previous.x, point.y - previous.y)).toBeLessThanOrEqual(length / 200 + 1e-9);
       previous.x = point.x;
       previous.y = point.y;
-    }
-  });
-});
-
-describe("profiles formation", () => {
-  // Two cards tilted towards each other, of two schools (ISG and IPSA in `SCHOOL_KEYS` order).
-  const left = { x: -0.32, y: 0.1, hw: 0.28, hh: 0.42, angle: 0.12, school: 3 };
-  const right = { x: 0.26, y: 0.04, hw: 0.28, hh: 0.42, angle: -0.1, school: 4 };
-  const profiles: ProfilesFormation = { weight: 1, cards: [left, right], spread: 0, glow: 1 };
-  const unit = 2 / 900;
-  /** A target in the frame of its card standing straight: x right, y up, from the card's centre. */
-  const onCard = (targets: Float32Array, index: number) => {
-    const card = (index >> 1) & 1 ? right : left;
-    const dx = (targets[index * FORMATION_STRIDE] ?? 0) - card.x;
-    const dy = (targets[index * FORMATION_STRIDE + 1] ?? 0) - card.y;
-    const cos = Math.cos(-card.angle);
-    const sin = Math.sin(-card.angle);
-    return { card, x: dx * cos - dy * sin, y: dx * sin + dy * cos };
-  };
-  const pictureBottom = (card: typeof left) => card.hh - 2 * card.hw * 1.05;
-
-  it("puts every pair on one of the two cards, right inside it, half on each", () => {
-    const { targets, layout } = run({ profiles }, 1600, 1);
-    const onLeft = { count: 0 };
-    for (let index = 0; index < layout.count; index += 1) {
-      expect(targets[index * FORMATION_STRIDE + 2]).toBe(1);
-      const { card, x, y } = onCard(targets, index);
-      expect(Math.abs(x)).toBeLessThan(card.hw);
-      expect(Math.abs(y)).toBeLessThan(card.hh);
-      if (card === left) {
-        onLeft.count += 1;
-      }
-    }
-    expect(onLeft.count).toBe(layout.count / 2);
-  });
-
-  it("draws the outline, the picture and the lines of text of each card", () => {
-    const { targets, layout } = run({ profiles }, 1600, 1);
-    let edge = 0;
-    let picture = 0;
-    let text = 0;
-    for (let index = 0; index < layout.count; index += 1) {
-      const { card, x, y } = onCard(targets, index);
-      const fromEdge = Math.min(card.hw - Math.abs(x), card.hh - Math.abs(y)) / unit;
-      if (fromEdge < 10) {
-        edge += 1;
-      } else if (y > pictureBottom(card)) {
-        picture += 1;
-      } else {
-        text += 1;
-      }
-    }
-    expect(edge / layout.count).toBeGreaterThan(0.2);
-    expect(picture / layout.count).toBeGreaterThan(0.35);
-    expect(text / layout.count).toBeGreaterThan(0.05);
-  });
-
-  it("colours each picture with the atoms of the person's school, the rest plasma, the text paper white", () => {
-    const { targets, looks, layout } = run({ profiles }, 1600, 1);
-    let ownSchool = 0;
-    for (let index = 0; index < layout.count; index += 1) {
-      const offset = index * FORMATION_STRIDE;
-      const [plasma, paper] = [looks[offset + 1] ?? 0, looks[offset + 3] ?? 0];
-      if (paper > 0.5) {
-        continue;
-      }
-      // Untinted or plasma: the picture.
-      const { card, y } = onCard(targets, index);
-      expect(y).toBeGreaterThan(pictureBottom(card) - 2 * unit);
-      const sameSchool = layout.schools[index] === card.school;
-      expect(plasma > 0.5).toBe(!sameSchool);
-      if (sameSchool) {
-        ownSchool += 1;
-      }
-    }
-    expect(ownSchool).toBeGreaterThan(0);
-  });
-
-  it("lights the atoms as much as asked, in fine grains", () => {
-    const layout = createIonFieldLayout(800);
-    const targets = new Float32Array(layout.count * FORMATION_STRIDE);
-    const looks = new Float32Array(layout.count * FORMATION_STRIDE);
-    const grains = new Float32Array(layout.count);
-    writeFormations(targets, looks, layout, { profiles: { ...profiles, glow: 0 } }, null, 1, unit, grains);
-    expect(
-      Math.max(
-        ...Array.from({ length: layout.count }, (_, index) => looks[index * FORMATION_STRIDE + 2] ?? 0),
-      ),
-    ).toBe(0);
-    expect(Math.max(...grains)).toBeLessThan(0.6);
-    writeFormations(targets, looks, layout, { profiles }, null, 1, unit, grains);
-    expect(
-      Math.min(
-        ...Array.from({ length: layout.count }, (_, index) => looks[index * FORMATION_STRIDE + 2] ?? 0),
-      ),
-    ).toBeGreaterThan(0.4);
-  });
-
-  it("blows the atoms away around the cards when they spread, still held", () => {
-    const { targets, layout } = run({ profiles: { ...profiles, spread: 1 } }, 1600, 1);
-    let outside = 0;
-    let rise = 0;
-    const resting = run({ profiles }, 1600, 1).targets;
-    for (let index = 0; index < layout.count; index += 1) {
-      expect(targets[index * FORMATION_STRIDE + 2]).toBe(1);
-      const { card, x, y } = onCard(targets, index);
-      if (Math.abs(x) > card.hw || Math.abs(y) > card.hh) {
-        outside += 1;
-      }
-      rise += (targets[index * FORMATION_STRIDE + 1] ?? 0) - (resting[index * FORMATION_STRIDE + 1] ?? 0);
-    }
-    expect(outside / layout.count).toBeGreaterThan(0.4);
-    expect(rise / layout.count).toBeGreaterThan(0);
-  });
-
-  it("hands the cards over to the logo mark from the top down", () => {
-    const mark = { x: 1.1, y: 0, radius: 0.35 };
-    const pair = { weight: 0.5, box: { x: 1.1, y: 0, hw: 0.35, hh: 0.35 }, bond: 1, merge: 1, mark };
-    const { targets, layout } = run({ profiles: { ...profiles, weight: 0.5 }, pair }, 1600, 1);
-    let resting = 0;
-    let gone = 0;
-    let depth = 0;
-    for (let index = 0; index < layout.count; index += 1) {
-      // Fully held all along: the two shapes share each particle, never set free.
-      expect(targets[index * FORMATION_STRIDE + 2]).toBeCloseTo(1, 5);
-      const x = targets[index * FORMATION_STRIDE] ?? 0;
-      const y = targets[index * FORMATION_STRIDE + 1] ?? 0;
-      if (Math.hypot(x - mark.x, y - mark.y) < mark.radius * 1.2) {
-        gone += 1;
-        continue;
-      }
-      const spot = onCard(targets, index);
-      if (Math.abs(spot.x) < spot.card.hw && Math.abs(spot.y) < spot.card.hh) {
-        resting += 1;
-        depth += (spot.card.hh - spot.y) / (2 * spot.card.hh);
-      }
-    }
-    expect(resting + gone).toBeGreaterThan(layout.count * 0.6);
-    expect(resting).toBeGreaterThan(layout.count * 0.15);
-    expect(gone).toBeGreaterThan(layout.count * 0.15);
-    // The tops of the cards have left first: what is left sits low.
-    expect(depth / resting).toBeGreaterThan(0.55);
-  });
-
-  it("is carried with the cards while the page scrolls", () => {
-    const layout = createIonFieldLayout(400);
-    const targets = new Float32Array(layout.count * FORMATION_STRIDE);
-    const looks = new Float32Array(layout.count * FORMATION_STRIDE);
-    const moved: ProfilesFormation = {
-      ...profiles,
-      cards: [
-        { ...left, y: left.y + 0.15 },
-        { ...right, y: right.y + 0.15 },
-      ],
-    };
-    writeFormations(targets, looks, layout, { profiles: moved }, { profiles }, 1, unit);
-    for (let index = 0; index < layout.count; index += 1) {
-      expect(targets[index * FORMATION_STRIDE + 3]).toBeCloseTo(0.15, 6);
     }
   });
 });
@@ -465,6 +306,45 @@ describe("writeFormations", () => {
       }
     }
     expect(orbitDust).toBeGreaterThan(layout.count * 0.6);
+  });
+
+  it("dims the logo mark as asked, and leaves its nucleus dark behind what it surrounds", () => {
+    const mark = { x: 0.3, y: -0.1, radius: 0.5 };
+    const pair = { weight: 1, box: { x: 0, y: 0, hw: 1, hh: 0.5 }, bond: 1, merge: 1, mark };
+    const lit = run({ pair });
+    const dim = run({ pair: { ...pair, glow: 0.5, core: 0 } });
+    let nuclei = 0;
+    for (let index = 0; index < lit.layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      const distance = Math.hypot(
+        (lit.targets[offset] ?? 0) - mark.x,
+        (lit.targets[offset + 1] ?? 0) - mark.y,
+      );
+      if (distance < mark.radius * 0.3) {
+        nuclei += 1;
+        expect(dim.looks[offset + 2]).toBe(0);
+      } else {
+        expect(dim.looks[offset + 2]).toBeCloseTo((lit.looks[offset + 2] ?? 0) * 0.5, 5);
+      }
+    }
+    expect(nuclei).toBeGreaterThan(lit.layout.count * 0.1);
+  });
+
+  it("carries the logo mark with what it surrounds as the page scrolls", () => {
+    const layout = createIonFieldLayout(400);
+    const targets = new Float32Array(layout.count * FORMATION_STRIDE);
+    const looks = new Float32Array(layout.count * FORMATION_STRIDE);
+    const pair = (y: number) => ({
+      weight: 1,
+      box: { x: 0, y: 0, hw: 1, hh: 0.5 },
+      bond: 1,
+      merge: 1,
+      mark: { x: 0.2, y, radius: 0.6 },
+    });
+    writeFormations(targets, looks, layout, { pair: pair(0.1) }, { pair: pair(-0.05) }, 1, 2 / 900);
+    for (let index = 0; index < layout.count; index += 1) {
+      expect(targets[index * FORMATION_STRIDE + 3]).toBeCloseTo(0.15, 6);
+    }
   });
 
   it("carries particles with their shape's element as the page scrolls", () => {

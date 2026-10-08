@@ -6,36 +6,24 @@ import {
   type PixelBox,
   particleBudget,
   SCHOOL_KEYS,
-  type ViewportProfileCard,
 } from "@atomes/three";
 import { useEffect, useRef, useState } from "react";
 import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
-import { type JourneyMeasures, journey } from "./journey";
+import { type HeroCard, type JourneyMeasures, journey } from "./journey";
 
 const toBox = (element: Element): PixelBox => {
   const rect = element.getBoundingClientRect();
   return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 };
 
-/**
- * The rotation an element is drawn with, in degrees clockwise, from its
- * computed transform (3D while a card turns over).
- */
-function rotationOf(element: Element): number {
-  const matrix = /^matrix(?:3d)?\(([^,]+),\s*([^,]+)/.exec(getComputedStyle(element).transform);
-  return matrix ? (Math.atan2(Number(matrix[2]), Number(matrix[1])) * 180) / Math.PI : 0;
-}
-
-/** A profile card of the hero as the page draws it: centre, size standing straight, tilt and school. */
-function readCard(card: HTMLElement): ViewportProfileCard {
+/** A profile card of the hero as the page draws it: its centre, and its size standing straight. */
+function readCard(card: HTMLElement): HeroCard {
   const box = card.getBoundingClientRect();
   return {
     x: box.left + box.width / 2,
     y: box.top + box.height / 2,
     width: card.offsetWidth,
     height: card.offsetHeight,
-    rotation: rotationOf(card),
-    school: Math.max(0, SCHOOL_KEYS.indexOf(card.dataset.school as (typeof SCHOOL_KEYS)[number])),
   };
 }
 
@@ -135,8 +123,8 @@ function createPageMeasurer() {
  * The live ion field (docs/02-design.md, section 5), behind the whole landing.
  * The three.js chunk is imported only after load, when motion is allowed and
  * the device can afford it; otherwise there is no field, and the hero stays
- * as it is, without atoms. The particles wait, unlit, behind the hero's two
- * profile cards, gather into the logo mark beside the manifesto as the
+ * as it is, without atoms. The particles draw the logo mark, large, around
+ * the hero's two profile cards, shrink into it beside the manifesto as the
  * cards fade, then trace the stacked cards, fill the school race tubes and
  * orbit the Pact (journey.ts).
  */
