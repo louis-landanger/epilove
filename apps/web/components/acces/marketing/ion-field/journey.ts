@@ -28,6 +28,12 @@ export interface JourneyMeasures {
     readonly box: PixelBox;
     readonly cards: readonly [HeroCard, HeroCard];
   } | null;
+  /**
+   * What the hero's atom surrounds when the hero has no profile cards
+   * (`[data-field-atom]`): its orbit spans the element's width, and follows
+   * it when it moves or changes size.
+   */
+  readonly anchor: PixelBox | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
   readonly cards: ReadonlyArray<{ readonly box: PixelBox; readonly stuckTop: number }>;
   /** The list holding the cards: the formation lets go once it scrolls away. */
@@ -118,6 +124,8 @@ const HERO_ORBIT_REACH = 0.92;
 const HERO_GLOW = 0.6;
 /** Half the width of the logo mark's orbit, in orbit radii (tilted ellipse). */
 const ORBIT_HALF_WIDTH = Math.hypot(Math.cos(MARK.tilt), MARK.orbitMinor * Math.sin(MARK.tilt));
+/** Half its height, in orbit radii. */
+const ORBIT_HALF_HEIGHT = Math.hypot(Math.sin(MARK.tilt), MARK.orbitMinor * Math.cos(MARK.tilt));
 
 /**
  * The hero's atom: the logo mark drawn large around the two profile cards.
@@ -139,6 +147,18 @@ function heroAtom(profiles: NonNullable<JourneyMeasures["profiles"]>): {
 }
 
 /**
+ * The hero's atom around an element (`[data-field-atom]`): as wide as it,
+ * never wider or taller than the screen.
+ */
+function atomAround(box: PixelBox, width: number, height: number): { x: number; y: number; radius: number } {
+  const radius = Math.min(
+    Math.min(box.width / 2, (HERO_ORBIT_REACH * width) / 2) / ORBIT_HALF_WIDTH,
+    (HERO_ORBIT_REACH * height) / 2 / ORBIT_HALF_HEIGHT,
+  );
+  return { x: box.left + box.width / 2, y: box.top + box.height / 2, radius };
+}
+
+/**
  * In the hero the particles draw the logo mark, large, around the two profile
  * cards: the couple is its nucleus, the orbit passes behind them. Scrolling,
  * the cards fade with the hero's text and the atom shrinks into the logo mark
@@ -150,12 +170,12 @@ function heroAtom(profiles: NonNullable<JourneyMeasures["profiles"]>): {
  * them, and scrolls away with its section.
  */
 export function journey(measures: JourneyMeasures): JourneyState {
-  const { height, scope, profiles, rack, pact } = measures;
+  const { height, scope, profiles, anchor, rack, pact } = measures;
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
   // The atom shrinks into the logo mark as soon as the cards start to fade…
-  const settle = profiles ? ramp((scrolled - 0.02) / 0.4) : 1;
+  const settle = profiles || anchor ? ramp((scrolled - 0.02) / 0.4) : 1;
   // …which hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
 
@@ -174,7 +194,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
   };
 
   // Around the cards first, then beside the manifesto, pinned in the viewport.
-  const around = profiles ? heroAtom(profiles) : null;
+  const around = profiles ? heroAtom(profiles) : anchor ? atomAround(anchor, measures.width, height) : null;
   const atom = around
     ? {
         x: around.x + (mark.x - around.x) * settle,

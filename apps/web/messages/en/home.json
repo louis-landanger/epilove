@@ -48,5 +48,116 @@
         "answer": "Playlists that save any tram ride."
       }
     }
+  },
+  "game": {
+    "label": "Chemistry test",
+    "lead": "The dating and friendship app for verified students of the campus. Until launch: three questions to find your atom, and who you would spark with.",
+    "start": "Find your atom",
+    "progress": "Question {current} of {total}",
+    "questions": {
+      "spot": {
+        "ask": "Your Lyon hangout?",
+        "quais": "The banks of the Rhône",
+        "croixRousse": "A bar in Croix-Rousse",
+        "bu": "The library at 11 p.m.",
+        "guill": "A kebab in La Guill’"
+      },
+      "flag": {
+        "ask": "Your proud red flag?",
+        "vocal": "Four-minute voice notes",
+        "spoiler": "Spoilers",
+        "late": "Always 10 minutes late",
+        "startup": "I talk about my start-up"
+      },
+      "seek": {
+        "ask": "You are looking for…",
+        "love": "Love",
+        "friends": "Friends",
+        "teammate": "A project teammate",
+        "open": "We’ll see"
+      }
+    },
+    "seekTag": {
+      "love": "Love",
+      "friends": "Friends",
+      "teammate": "Teammate",
+      "open": "Open to anything"
+    },
+    "yourAtom": "Your atom",
+    "elements": {
+      "vocaline": {
+        "name": "Vocaline",
+        "line": "Four-minute voice notes, recorded facing the Rhône."
+      },
+      "spoilium": {
+        "name": "Spoilium",
+        "line": "You tell everyone how the show ends, with a river view."
+      },
+      "crepusculium": {
+        "name": "Crepusculium",
+        "line": "Always late, except for the sunset."
+      },
+      "pitchene": {
+        "name": "Pitchene",
+        "line": "You pitch your start-up to the passing barges."
+      },
+      "traboulium": {
+        "name": "Traboulium",
+        "line": "You know every traboule, and you tell their story in voice notes."
+      },
+      "aperium": {
+        "name": "Aperium",
+        "line": "A spoiler between two rounds, and nobody minds."
+      },
+      "retardine": {
+        "name": "Retardine",
+        "line": "You show up as the bar closes, and everyone was waiting for you."
+      },
+      "networkium": {
+        "name": "Networkium",
+        "line": "Three new LinkedIn contacts a night, at least."
+      },
+      "chuchotine": {
+        "name": "Whisperine",
+        "line": "Whispered voice notes between two chapters."
+      },
+      "revisium": {
+        "name": "Revisium",
+        "line": "You revise for exams, and for season finales."
+      },
+      "noctambulium": {
+        "name": "Noctambulium",
+        "line": "In at 10.55 p.m., out at closing time."
+      },
+      "businessplanium": {
+        "name": "Businessplanium",
+        "line": "Your business plan is 40 slides long, and you proofread it at the library."
+      },
+      "kebabium": {
+        "name": "Kebabium",
+        "line": "A voice note, a white sauce, a fit of laughter."
+      },
+      "samouraine": {
+        "name": "Samouraine",
+        "line": "You spoil the show while picking your sauce."
+      },
+      "minuitium": {
+        "name": "Midnightium",
+        "line": "The midnight kebab: the only date you are on time for."
+      },
+      "dronium": {
+        "name": "Dronium",
+        "line": "Your next start-up: kebabs delivered by drone."
+      }
+    },
+    "searching": "Looking for your perfect atom…",
+    "verdict": "Your perfect atom: <b>{name}</b>, {school}.",
+    "fiction": "Fictional profile: the real ones arrive at launch.",
+    "join": "Join the list",
+    "share": "Share my atom",
+    "shareText": "My atom: {element} ({symbol}, no. {number}), and {score}% chemistry with my perfect atom. What about you?",
+    "copied": "Link copied",
+    "replay": "Play again",
+    "privacy": "Your answers stay on your device."
   }
 }

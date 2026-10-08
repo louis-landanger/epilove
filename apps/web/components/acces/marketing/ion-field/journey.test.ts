@@ -38,6 +38,7 @@ function page(scroll: number): JourneyMeasures {
         { x: 1180, y: 440 - scroll, width: 260, height: 400 },
       ],
     },
+    anchor: null,
     cards,
     cardList: box(2860, 1620),
     cardRadius: 32,
@@ -90,6 +91,39 @@ describe("journey", () => {
     expect(midway?.mark.radius).toBeLessThan(top?.mark.radius ?? 0);
     expect(midway?.mark.radius).toBeGreaterThan(manifesto?.mark.radius ?? 0);
     expect(midway?.core).toBeGreaterThan(0.5);
+  });
+
+  it("draws the atom around whatever the hero anchors it to, as wide as it", () => {
+    const anchor = { left: 320, top: 170, width: 800, height: 300 };
+    const top = journey({ ...page(0), profiles: null, anchor }).formations.pair;
+    expect(top?.mark.x).toBe(720);
+    expect(top?.mark.y).toBe(320);
+    const halfWidth =
+      (top?.mark.radius ?? 0) * Math.hypot(Math.cos(Math.PI / 6), (9 / 22) * Math.sin(Math.PI / 6));
+    expect(halfWidth).toBeCloseTo(400, 5);
+    expect(top?.core).toBe(0);
+    // Never wider than the screen.
+    const wide = journey({
+      ...page(0),
+      profiles: null,
+      anchor: { left: -200, top: 0, width: 2000, height: 300 },
+    });
+    const wideHalf =
+      (wide.formations.pair?.mark.radius ?? 0) *
+      Math.hypot(Math.cos(Math.PI / 6), (9 / 22) * Math.sin(Math.PI / 6));
+    expect(wideHalf).toBeLessThanOrEqual(width / 2);
+    // Nor taller: on a short screen, the orbit of a wide title stays within its height.
+    const short = journey({
+      ...page(0),
+      height: 600,
+      profiles: null,
+      anchor: { left: 120, top: 150, width: 1200, height: 300 },
+    });
+    const shortHalfHeight =
+      (short.formations.pair?.mark.radius ?? 0) *
+      Math.hypot(Math.sin(Math.PI / 6), (9 / 22) * Math.cos(Math.PI / 6));
+    expect(shortHalfHeight).toBeLessThanOrEqual(300);
+    expect(shortHalfHeight).toBeGreaterThan(250);
   });
 
   it("puts the mark beside the manifesto from the start when there are no cards", () => {
@@ -173,6 +207,7 @@ describe("journey", () => {
       height,
       scope: null,
       profiles: null,
+      anchor: null,
       cards: [],
       cardList: null,
       cardRadius: 32,

@@ -1,11 +1,9 @@
 "use client";
 
-import { SCHOOLS } from "@atomes/core";
-import { schoolColors } from "@atomes/tokens";
 import { useTranslations } from "next-intl";
-import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { SchoolGlyph } from "../school-glyph";
+import { useEffect, useRef, useState } from "react";
 import { MATCHES, PEOPLE, type PersonKey } from "./people";
+import { cardStyle, ProfileBody, ProfilePicture } from "./profile-parts";
 import { createSparks } from "./sparks";
 
 /**
@@ -22,46 +20,11 @@ const HOLD_SCROLL = 40;
 /** When the two cards meet, after the bond starts (their spring takes a moment). */
 const SPARK_DELAY = 380;
 
-const ACCENTS = {
-  plasma: "var(--color-plasma)",
-  volt: "var(--color-volt)",
-  violet: "oklch(0.6 0.2 295)",
-} as const;
-const SCHOOL_NAMES: Record<string, string> = Object.fromEntries(
-  SCHOOLS.map((school) => [school.slug, school.name]),
-);
-
 /** The people who come in turn on each side of the stage. */
 const SIDES = {
   first: MATCHES.map((match) => match.people[0]),
   second: MATCHES.map((match) => match.people[1]),
 } as const;
-
-/** Name and age, school, mode and one prompt. */
-function ProfileBody({ person: key, shown }: { person: PersonKey; shown: boolean }) {
-  const t = useTranslations("home.match");
-  const person = PEOPLE[key];
-  return (
-    <div className="profile-body" data-shown={shown || undefined}>
-      <p className="profile-name">
-        {person.name} <span>{person.age}</span>
-      </p>
-      <p className="profile-tags">
-        <span>
-          <SchoolGlyph slug={person.school} className="size-3" />
-          {SCHOOL_NAMES[person.school]}
-        </span>
-        <span className="profile-mode" data-mode={person.mode}>
-          {t(person.mode)}
-        </span>
-      </p>
-      <div className="profile-prompt">
-        <span>{t(`people.${key}.prompt`)}</span>
-        <p>{t(`people.${key}.answer`)}</p>
-      </div>
-    </div>
-  );
-}
 
 /**
  * A profile card as the app draws it: picture, name and age, school, mode and
@@ -70,24 +33,14 @@ function ProfileBody({ person: key, shown }: { person: PersonKey; shown: boolean
  * longest, so nothing around it moves when the next person comes in.
  */
 function ProfileCard({ side, current: key }: { side: keyof typeof SIDES; current: PersonKey }) {
-  const person = PEOPLE[key];
   return (
     <article
       className="profile-card"
       data-profile-card={side}
-      data-school={person.school}
-      style={
-        {
-          "--glow-a": schoolColors[person.school],
-          "--glow-b": ACCENTS[person.accent],
-        } as CSSProperties
-      }
+      data-school={PEOPLE[key].school}
+      style={cardStyle(key)}
     >
-      <div className="profile-picture">
-        <span className="profile-promo">{person.promo}</span>
-        <i className="profile-orbit" />
-        <span className="profile-symbol">{person.symbol}</span>
-      </div>
+      <ProfilePicture person={key} />
       <div className="profile-bodies">
         {SIDES[side].map((other) => (
           <ProfileBody key={other} person={other} shown={other === key} />
@@ -201,7 +154,7 @@ export function MatchStage() {
 
   const [first, second] = match.people;
   return (
-    <div ref={stageRef} className="match" data-field-profiles data-phase={step.phase} inert>
+    <div ref={stageRef} className="match" data-field-profiles data-hero-stage data-phase={step.phase} inert>
       <div className="match-tilt">
         <p className="match-bond">
           <b>{t("bond")}</b>

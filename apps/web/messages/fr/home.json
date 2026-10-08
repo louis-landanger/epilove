@@ -48,5 +48,116 @@
         "answer": "Les playlists qui sauvent n’importe quel trajet en tram."
       }
     }
+  },
+  "game": {
+    "label": "Test de chimie",
+    "lead": "L’app de rencontre et d’amitié réservée aux étudiantes et étudiants vérifiés du campus. En attendant le lancement : trois questions pour trouver ton atome, et avec qui tu ferais des étincelles.",
+    "start": "Trouve ton atome",
+    "progress": "Question {current} sur {total}",
+    "questions": {
+      "spot": {
+        "ask": "Ton QG à Lyon ?",
+        "quais": "Les quais du Rhône",
+        "croixRousse": "Un bar à la Croix-Rousse",
+        "bu": "La BU à 23 h",
+        "guill": "Un kebab à la Guill’"
+      },
+      "flag": {
+        "ask": "Ton red flag assumé ?",
+        "vocal": "Les vocaux de 4 minutes",
+        "spoiler": "Les spoilers",
+        "late": "10 minutes de retard, toujours",
+        "startup": "Je parle de ma start-up"
+      },
+      "seek": {
+        "ask": "Tu cherches…",
+        "love": "L’amour",
+        "friends": "Des amis",
+        "teammate": "Un binôme de projet",
+        "open": "On verra bien"
+      }
+    },
+    "seekTag": {
+      "love": "Love",
+      "friends": "Amis",
+      "teammate": "Binôme",
+      "open": "Tout est possible"
+    },
+    "yourAtom": "Ton atome",
+    "elements": {
+      "vocaline": {
+        "name": "Vocaline",
+        "line": "Des vocaux de quatre minutes, enregistrés face au Rhône."
+      },
+      "spoilium": {
+        "name": "Spoïlium",
+        "line": "Tu racontes la fin de la série, mais avec vue sur les quais."
+      },
+      "crepusculium": {
+        "name": "Crépusculium",
+        "line": "Toujours en retard, sauf pour le coucher du soleil."
+      },
+      "pitchene": {
+        "name": "Pitchène",
+        "line": "Tu pitches ta start-up aux péniches qui passent."
+      },
+      "traboulium": {
+        "name": "Traboulium",
+        "line": "Tu connais toutes les traboules, et tu les racontes en vocal."
+      },
+      "aperium": {
+        "name": "Apérium",
+        "line": "Un spoiler entre deux tournées, et personne ne t’en veut."
+      },
+      "retardine": {
+        "name": "Retardine",
+        "line": "Tu arrives quand le bar ferme, et tout le monde t’attendait."
+      },
+      "networkium": {
+        "name": "Networkium",
+        "line": "Trois contacts LinkedIn par soirée, minimum."
+      },
+      "chuchotine": {
+        "name": "Chuchotine",
+        "line": "Des vocaux chuchotés entre deux chapitres."
+      },
+      "revisium": {
+        "name": "Révisium",
+        "line": "Tu révises les partiels, et les fins de séries."
+      },
+      "noctambulium": {
+        "name": "Noctambulium",
+        "line": "Arrivée à 22 h 55, départ à la fermeture."
+      },
+      "businessplanium": {
+        "name": "Businessplanium",
+        "line": "Ton business plan fait 40 slides, et tu l’as relu à la BU."
+      },
+      "kebabium": {
+        "name": "Kebabium",
+        "line": "Un vocal, une sauce blanche, un fou rire."
+      },
+      "samouraine": {
+        "name": "Samouraïne",
+        "line": "Tu spoiles la série en choisissant ta sauce."
+      },
+      "minuitium": {
+        "name": "Minuitium",
+        "line": "Le kebab de minuit : ton seul rendez-vous à l’heure."
+      },
+      "dronium": {
+        "name": "Dronium",
+        "line": "Ta prochaine start-up : livrer des kebabs en drone."
+      }
+    },
+    "searching": "Recherche de ton atome crochu…",
+    "verdict": "Ton atome crochu : <b>{name}</b>, {school}.",
+    "fiction": "Profil fictif : les vrais arrivent au lancement.",
+    "join": "Rejoindre la liste",
+    "share": "Partager mon atome",
+    "shareText": "Mon atome : {element} ({symbol}, n° {number}), et {score} % de chimie avec mon atome crochu. Et toi ?",
+    "copied": "Lien copié",
+    "replay": "Rejouer",
+    "privacy": "Tes réponses restent sur ton appareil."
   }
 }

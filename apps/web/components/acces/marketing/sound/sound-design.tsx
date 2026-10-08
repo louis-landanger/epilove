@@ -6,8 +6,9 @@ import { useSoundEnabled } from "./sound-store";
 
 /**
  * Plays the landing's sounds while the switch is on: a tick over links and
- * buttons (mouse only), a bell when the ion field is touched, a breath when a
- * section comes into view. Silent in background tabs.
+ * buttons (mouse only), a bell when the ion field is touched or a hero asks
+ * for one (an `atomes:chime` event), a breath when a section comes into view.
+ * Silent in background tabs.
  */
 export function SoundDesign() {
   const enabled = useSoundEnabled();
@@ -38,10 +39,13 @@ export function SoundDesign() {
         if (interactive && interactive !== from) engine.tick();
       };
       let step = 0;
+      const ring = () => {
+        step += 1 + Math.floor(Math.random() * 3);
+        engine.chime(step);
+      };
       const onDown = (event: PointerEvent) => {
         if ((event.target as Element | null)?.closest("[data-ion-field]")) {
-          step += 1 + Math.floor(Math.random() * 3);
-          engine.chime(step);
+          ring();
         }
       };
       const onVisibility = () => engine.setAudible(document.visibilityState === "visible");
@@ -60,11 +64,13 @@ export function SoundDesign() {
       for (const section of document.querySelectorAll("main section")) observer.observe(section);
       document.addEventListener("pointerover", onOver);
       document.addEventListener("pointerdown", onDown);
+      document.addEventListener("atomes:chime", ring);
       document.addEventListener("visibilitychange", onVisibility);
       cleanups.push(() => {
         observer.disconnect();
         document.removeEventListener("pointerover", onOver);
         document.removeEventListener("pointerdown", onDown);
+        document.removeEventListener("atomes:chime", ring);
         document.removeEventListener("visibilitychange", onVisibility);
       });
     };

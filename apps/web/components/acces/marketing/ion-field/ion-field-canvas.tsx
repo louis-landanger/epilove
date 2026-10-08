@@ -53,10 +53,12 @@ function createPageMeasurer() {
     const rack = document.querySelector("[data-field-rack]");
     const pact = document.querySelector("[data-field-pact]");
     const stage = document.querySelector<HTMLElement>("[data-field-profiles]");
+    const anchor = document.querySelector("[data-field-atom]");
     return {
       profiles: stage
         ? { stage, cards: [...stage.querySelectorAll<HTMLElement>("[data-profile-card]")] }
         : null,
+      anchor,
       rackSection: rack?.closest("section") ?? null,
       pactSection: pact?.closest("section") ?? null,
       scope: document.querySelector("[data-field-scope]"),
@@ -83,6 +85,14 @@ function createPageMeasurer() {
       elements = lookUp();
     },
     measure(): JourneyMeasures {
+      // What the hero's atom surrounds can change while the page stays (the steps of a game).
+      if (
+        elements.anchor &&
+        !(elements.anchor.isConnected && elements.anchor.hasAttribute("data-field-atom"))
+      ) {
+        elements.anchor = document.querySelector("[data-field-atom]") ?? elements.anchor;
+      }
+      const anchor = elements.anchor?.isConnected ? elements.anchor : null;
       const height = window.innerHeight;
       const near = (section: Element | null) => {
         if (!section) {
@@ -98,6 +108,7 @@ function createPageMeasurer() {
         height,
         scope: elements.scope ? toBox(elements.scope) : null,
         profiles: profiles ? readProfiles(profiles.stage, profiles.cards) : null,
+        anchor: anchor ? toBox(anchor) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,

@@ -642,6 +642,626 @@
   }
 }
 
+/* -------------------------------------------------------------- game hero */
+
+/*
+ * Hero under study (jeu/atom-game.tsx): a chemistry test in three questions.
+ * The title stands in the middle, then waits at the top while the visitor
+ * plays; the answers are tiles; the visitor's element is a tile of the
+ * periodic table, which bonds with a fictional student's profile card.
+ * `.game-orbit` marks what the logo's atom orbits (ion-field/journey.ts).
+ */
+.game-aura {
+  background:
+    radial-gradient(
+      46% 50% at 50% 46%,
+      color-mix(in oklch, var(--color-plasma) 14%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      30% 32% at 18% 80%,
+      color-mix(in oklch, var(--color-volt) 6%, transparent),
+      transparent 70%
+    );
+}
+
+.game {
+  container-type: inline-size;
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.25rem, 3.4svh, 2.25rem);
+  width: 100%;
+  max-width: 84rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.game-head {
+  display: grid;
+  justify-items: center;
+  gap: clamp(1rem, 3svh, 1.75rem);
+}
+
+.game-title {
+  --orbit: 84%;
+  position: relative;
+  font-family: var(--font-headline), var(--font-display);
+  font-size: clamp(3.25rem, min(12.5cqi, 21svh), 11.5rem);
+  font-weight: 700;
+  font-variation-settings:
+    "wdth" 84,
+    "opsz" 96;
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+  color: var(--color-paper);
+  transform-origin: 50% 0;
+  animation: focus-pull 1.4s var(--ease-out) both;
+}
+
+.game-title em {
+  display: block;
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  color: var(--color-plasma);
+}
+
+/* While the visitor plays, the title waits at the top. */
+.game:not([data-stage="intro"]) .game-title {
+  font-size: clamp(1.375rem, 2.6cqi, 2.25rem);
+}
+
+/* What the logo's atom orbits: the title, the answers, then the two cards. */
+.game-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--orbit, 100%);
+  height: 1px;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+.game-intro {
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.25rem, 3svh, 1.75rem);
+}
+
+.game-intro > * {
+  animation: rise-in 1.4s var(--ease-out) 0.45s backwards;
+}
+
+.game-lead {
+  max-width: 40rem;
+  font-size: clamp(1.05rem, 1.5cqi, 1.2rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+  color: color-mix(in oklch, var(--color-paper) 80%, transparent);
+}
+
+.game-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.game-meta {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+}
+
+/* A question: how far along, the question itself, four tiles. */
+.game-question {
+  --orbit: 96%;
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.25rem, 3.6svh, 2.25rem);
+  width: min(100%, 58rem);
+}
+
+.game-steps {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.game-steps li {
+  width: 2.25rem;
+  height: 3px;
+  border-radius: 3px;
+  background: color-mix(in oklch, var(--color-paper) 18%, transparent);
+  transition: background-color 0.4s var(--ease-out);
+}
+
+.game-steps li[data-done] {
+  background: var(--color-volt);
+  box-shadow: 0 0 10px var(--color-volt);
+}
+
+.game-ask {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  outline: none;
+  animation: game-in 0.7s var(--ease-out) backwards;
+}
+
+.game-progress {
+  font: 500 0.75rem / 1 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-volt);
+}
+
+.game-ask-text {
+  font:
+    700 clamp(2.25rem, 6.2cqi, 5.25rem) / 0.95 var(--font-headline),
+    var(--font-display);
+  font-variation-settings:
+    "wdth" 88,
+    "opsz" 72;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+  color: var(--color-paper);
+}
+
+.game-answers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.game-answers li {
+  animation: game-in 0.6s var(--ease-out) calc(0.12s + var(--index) * 0.06s) backwards;
+}
+
+.game-answer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: 4.75rem;
+  padding: 0.875rem 1.25rem 0.875rem 0.875rem;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 16%, transparent);
+  border-radius: 1.25rem;
+  background: color-mix(in oklch, var(--color-ink2) 72%, transparent);
+  color: var(--color-paper);
+  font:
+    600 clamp(1.05rem, 1.7cqi, 1.3rem) / 1.2 var(--font-headline),
+    var(--font-display);
+  letter-spacing: -0.01em;
+  text-align: left;
+  backdrop-filter: blur(12px);
+  transition:
+    border-color 0.25s var(--ease-out),
+    background-color 0.25s var(--ease-out),
+    box-shadow 0.35s var(--ease-out),
+    transform 0.35s var(--ease-out),
+    opacity 0.3s var(--ease-out);
+}
+
+/* Hover only where there is a pointer to hover with: a tap would leave the next question's tile lit. */
+@media (hover: hover) {
+  .game-answer:hover {
+    border-color: color-mix(in oklch, var(--color-plasma) 70%, transparent);
+    box-shadow: 0 18px 50px -24px var(--color-plasma);
+    transform: translateY(-2px);
+  }
+}
+
+.game-answer:focus-visible {
+  outline: 2px solid var(--color-volt);
+  outline-offset: 3px;
+}
+
+/* The key that answers, set like an atomic number. */
+.game-answer-key {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 22%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--color-paper) 5%, transparent);
+  font: 500 0.875rem / 1 var(--font-mono);
+  color: var(--color-volt);
+}
+
+.game-answer[data-picked] {
+  border-color: var(--color-plasma);
+  background: var(--color-plasma);
+  color: var(--color-ink);
+  box-shadow:
+    0 0 0 6px color-mix(in oklch, var(--color-plasma) 25%, transparent),
+    0 24px 60px -16px var(--color-plasma);
+  transform: scale(1.02);
+}
+
+.game-answer[data-picked] .game-answer-key {
+  border-color: color-mix(in oklch, var(--color-ink) 35%, transparent);
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.game-question[data-picking] .game-answer:not([data-picked]) {
+  opacity: 0.4;
+}
+
+/* The result: the two cards on one side, what they say on the other. */
+.game-result {
+  display: grid;
+  grid-template-columns: auto minmax(0, 30rem);
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem clamp(2.5rem, 7cqi, 7rem);
+  width: 100%;
+  text-align: left;
+}
+
+/* The badge above the cards; the cards one over the other, posed by their transform. */
+.game-pair {
+  --card-w: clamp(9.5rem, min(16cqi, 30svh), 15rem);
+  --orbit: calc(var(--card-w) * 2.5);
+  position: relative;
+  padding-top: 4.5rem;
+}
+
+.game-cards {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: calc(var(--card-w) * 2.15);
+  perspective: 1400px;
+}
+
+/* The visitor's element: a tile of the periodic table. */
+.element-card {
+  --element: var(--color-plasma);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
+  width: var(--card-w);
+  padding: 0.875rem 0.95rem 0.95rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 16%, transparent);
+  border-radius: 1.375rem;
+  background:
+    radial-gradient(70% 50% at 50% 44%, color-mix(in oklch, var(--element) 34%, transparent), transparent 72%),
+    linear-gradient(160deg, var(--color-ink2), var(--color-ink));
+  box-shadow:
+    0 30px 70px -30px rgb(0 0 0 / 0.9),
+    0 0 0 1px rgb(0 0 0 / 0.3),
+    inset 0 1px 0 color-mix(in oklch, white 12%, transparent);
+  grid-area: 1 / 1;
+  color: var(--color-paper);
+  text-align: left;
+  transform: var(--pose, none);
+  transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: element-in 1s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+.element-card[data-seek="friends"],
+.element-card[data-seek="teammate"] {
+  --element: var(--color-volt);
+}
+
+.element-card[data-seek="open"] {
+  --element: oklch(0.6 0.2 295);
+}
+
+/* An orbit behind the symbol, as on the logo mark. */
+.element-card::before {
+  content: "";
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  width: 92%;
+  aspect-ratio: 22 / 9;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 22%, transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+}
+
+.element-number {
+  font: 500 calc(var(--card-w) * 0.08) / 1 var(--font-mono);
+  color: color-mix(in oklch, var(--color-paper) 82%, transparent);
+}
+
+.element-tag {
+  align-self: start;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: var(--element);
+  color: var(--color-ink);
+  font: 600 0.6rem / 1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.element-symbol {
+  position: relative;
+  grid-column: 1 / -1;
+  align-self: center;
+  justify-self: center;
+  font:
+    700 calc(var(--card-w) * 0.46) / 0.9 var(--font-headline),
+    var(--font-display);
+  letter-spacing: -0.06em;
+  text-shadow: 0 0 40px var(--element);
+}
+
+.element-name {
+  grid-column: 1 / -1;
+  justify-self: center;
+  font:
+    italic 400 calc(var(--card-w) * 0.13) / 1.1 var(--font-instrument),
+    ui-serif,
+    Georgia,
+    serif;
+}
+
+.element-foot {
+  grid-column: 1 / -1;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
+  font: 500 0.55rem / 1 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--color-paper) 62%, transparent);
+}
+
+/* The match waits out of sight, then comes in against the element. */
+.game-match {
+  --card-w: inherit;
+  grid-area: 1 / 1;
+  position: relative;
+  top: auto;
+  left: auto;
+  z-index: 2;
+  opacity: 0;
+  transform: translate(70%, 4%) rotate(14deg) scale(0.9);
+  transition:
+    transform 1s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.4s var(--ease-out);
+}
+
+/* Side by side, leaning on each other: they only touch at the bottom, so neither hides the other's text. */
+.game-result[data-bonded] .element-card {
+  --pose: translate(-47%, 3%) rotate(-7deg);
+}
+
+.game-result[data-bonded] .game-match {
+  opacity: 1;
+  transform: translate(47%, -2%) rotate(6deg);
+}
+
+.game-result[data-bonded] .match-bond {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.game-result[data-bonded] .match-flash {
+  animation: bond-ring 1s var(--ease-out) 0.3s forwards;
+}
+
+/* While the match is being looked for: a ring of light leaves the element, again and again. */
+.game-result:not([data-bonded]) .game-cards::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--card-w);
+  aspect-ratio: 1;
+  margin: calc(var(--card-w) / -2) 0 0 calc(var(--card-w) / -2);
+  border: 1px solid color-mix(in oklch, var(--color-plasma) 70%, transparent);
+  border-radius: 50%;
+  opacity: 0;
+  animation: game-scan 1.3s var(--ease-out) 0.7s infinite;
+}
+
+.game-reading {
+  display: grid;
+  justify-items: start;
+  gap: 0.875rem;
+}
+
+.game-element {
+  display: grid;
+  gap: 0.5rem;
+  outline: none;
+  animation: game-in 0.8s var(--ease-out) 0.2s backwards;
+}
+
+.game-kicker {
+  font: 500 0.75rem / 1 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-volt);
+}
+
+.game-element-name {
+  font:
+    italic 400 clamp(2.75rem, 6cqi, 5rem) / 0.92 var(--font-instrument),
+    ui-serif,
+    Georgia,
+    serif;
+  letter-spacing: -0.02em;
+  color: var(--color-paper);
+}
+
+.game-line {
+  max-width: 26rem;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: color-mix(in oklch, var(--color-paper) 78%, transparent);
+  animation: game-in 0.8s var(--ease-out) 0.3s backwards;
+}
+
+.game-verdict {
+  display: grid;
+  align-content: start;
+  justify-items: inherit;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 6.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
+}
+
+.game-verdict > * {
+  animation: game-in 0.6s var(--ease-out) backwards;
+}
+
+.game-verdict > :nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.game-verdict > :nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.game-verdict-text {
+  font:
+    600 clamp(1.15rem, 1.8cqi, 1.45rem) / 1.3 var(--font-headline),
+    var(--font-display);
+}
+
+.game-verdict-text b {
+  font-weight: 700;
+  color: var(--color-plasma);
+}
+
+.game-score {
+  font: 500 0.75rem / 1 var(--font-mono);
+  letter-spacing: 0.06em;
+  color: var(--color-volt);
+}
+
+.game-fiction {
+  font: 400 0.625rem / 1.3 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--color-paper) 62%, transparent);
+}
+
+.game-searching {
+  font: 500 0.8125rem / 1.3 var(--font-mono);
+  letter-spacing: 0.04em;
+  color: color-mix(in oklch, var(--color-paper) 75%, transparent);
+  animation: game-blink 1.2s ease-in-out infinite;
+}
+
+.game-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: inherit;
+  gap: 0.75rem;
+  opacity: 0;
+  transform: translateY(0.75rem);
+  transition:
+    opacity 0.5s var(--ease-out),
+    transform 0.6s var(--ease-out);
+}
+
+.game-result[data-bonded] .game-result-actions {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.6s;
+}
+
+.game-privacy {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: color-mix(in oklch, var(--color-paper) 65%, transparent);
+}
+
+.game-replay {
+  color: var(--color-paper);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--color-paper) 40%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.game-replay:hover {
+  text-decoration-color: var(--color-plasma);
+}
+
+/* Narrow screens: the cards above what they say, the answers one under the other. */
+@container (max-width: 51.99rem) {
+  .game-result {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    text-align: center;
+  }
+
+  .game-reading {
+    justify-items: center;
+  }
+
+  .game-result-actions {
+    justify-content: center;
+  }
+
+  .game-pair {
+    --card-w: clamp(8.5rem, 38cqi, 12rem);
+    padding-top: 4rem;
+  }
+}
+
+@container (max-width: 39.99rem) {
+  .game-answers {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .game-answer {
+    min-height: 3.75rem;
+  }
+
+  .game-answer-key {
+    width: 2.25rem;
+  }
+}
+
+@keyframes game-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+
+@keyframes element-in {
+  from {
+    opacity: 0;
+    transform: rotateY(-100deg) scale(0.8);
+  }
+}
+
+@keyframes game-scan {
+  from {
+    opacity: 0.9;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+@keyframes game-blink {
+  50% {
+    opacity: 0.45;
+  }
+}
+
 /* Text is painted from the first frame (no hidden LCP): it only comes into focus. */
 @keyframes focus-pull {
   from {

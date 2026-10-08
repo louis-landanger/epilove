@@ -290,6 +290,59 @@ test.describe("legal pages", () => {
   });
 });
 
+test.describe("hero under study: the chemistry test", () => {
+  test("plays with the keyboard, then bonds with a fictional profile", async ({ page }) => {
+    await page.goto("/apercu/jeu");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
+    await page.getByRole("button", { name: "Trouve ton atome" }).click();
+    // Focus follows the game: each question, then the result.
+    await expect(
+      page.getByRole("heading", { level: 2, name: /Question 1 sur 3 Ton QG à Lyon/ }),
+    ).toBeFocused();
+    await expect(page.getByRole("button", { name: "Un bar à la Croix-Rousse" })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "2",
+    );
+    await page.keyboard.press("2");
+    await expect(page.getByRole("heading", { level: 2, name: /Question 2 sur 3/ })).toBeFocused();
+    await page.keyboard.press("3");
+    await expect(page.getByRole("heading", { level: 2, name: /Question 3 sur 3/ })).toBeFocused();
+    await page.getByRole("button", { name: "L’amour" }).click();
+    // A bar in Croix-Rousse and always 10 minutes late: Retardine.
+    await expect(page.getByRole("heading", { level: 2, name: "Ton atome Retardine" })).toBeFocused();
+    await expect(page.getByText(/^Ton atome crochu : .+\.$/)).toBeVisible();
+    await expect(page.getByText("Profil fictif : les vrais arrivent au lancement.")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Rejoindre la liste" }).first()).toHaveAttribute(
+      "href",
+      "#rejoindre",
+    );
+    // The answers stay in the browser: replaying starts over.
+    await page.getByRole("button", { name: "Rejouer" }).click();
+    await expect(page.getByRole("heading", { level: 2, name: /Question 1 sur 3/ })).toBeFocused();
+  });
+
+  test("stays out of search engines, and only the heroes under study have an address", async ({ page }) => {
+    await page.goto("/apercu/jeu");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
+    const response = await page.goto("/apercu/inconnu");
+    expect(response?.status()).toBe(404);
+  });
+
+  test("has no detectable violations, before and after playing", async ({ page }) => {
+    await page.goto("/apercu/jeu");
+    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
+    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
+    await page.getByRole("button", { name: "Trouve ton atome" }).click();
+    for (const key of ["1", "4", "4"]) {
+      await page.keyboard.press(key);
+      await page.waitForTimeout(600);
+    }
+    await expect(page.getByText(/^Ton atome crochu : /)).toBeVisible();
+    await page.waitForTimeout(1500);
+    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
+  });
+});
+
 test.describe("accessibility (WCAG 2.2 AA)", () => {
   test("the landing has no detectable violations", async ({ page }) => {
     await page.goto("/");
