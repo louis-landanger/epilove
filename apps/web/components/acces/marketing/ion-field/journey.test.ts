@@ -9,7 +9,7 @@ const height = 900;
  * the tube rack, the Pact, the safety section), seen with the viewport
  * scrolled to `scroll` pixels.
  */
-function page(scroll: number, phase = "bond", age = 2): JourneyMeasures {
+function page(scroll: number, phase = "bond", age = 2, opacity = 1): JourneyMeasures {
   const box = (top: number, boxHeight: number, left = 80, boxWidth = 1280) => ({
     left,
     top: top - scroll,
@@ -39,6 +39,7 @@ function page(scroll: number, phase = "bond", age = 2): JourneyMeasures {
       ],
       phase,
       age,
+      opacity,
     },
     cards,
     cardList: box(2860, 1620),
@@ -59,23 +60,31 @@ describe("journey", () => {
     expect(top.formations.profiles?.weight).toBe(1);
     expect(top.formations.profiles?.cards).toEqual(page(0).profiles?.cards);
     expect(top.formations.profiles?.spread).toBe(0);
-    expect(top.formations.profiles?.glow).toBe(1);
     expect(top.formations.pair).toBeNull();
     expect(top.formations.card).toBeNull();
     expect(top.hidden).toBe(false);
     expect(top.opening).toBe(1);
   });
 
+  it("keeps the atoms unlit behind the cards while they show, so none peeks out as they move", () => {
+    for (const phase of ["bond", "apart", "materialize"]) {
+      expect(journey(page(0, phase, 0.8)).formations.profiles?.glow).toBe(0);
+    }
+    // The cards fade as the page scrolls: their atoms light up in their place.
+    expect(journey(page(20, "bond", 2, 0.4)).formations.profiles?.glow).toBeCloseTo(0.6);
+    expect(journey(page(60, "bond", 2, 0)).formations.profiles?.glow).toBe(1);
+  });
+
   it("shows the atoms when the cards dissolve, blows them away, and gathers them again unlit", () => {
-    expect(profileLight("bond", 1)).toEqual({ spread: 0, glow: 1 });
+    expect(profileLight("bond", 1)).toEqual({ spread: 0, glow: 0 });
     // Dissolving: still lit while the card fades, blown away, then out.
     expect(profileLight("dissolve", 0.2).glow).toBe(1);
     expect(profileLight("dissolve", 0.6).spread).toBeGreaterThan(0.3);
     expect(profileLight("dissolve", 1.1)).toEqual({ spread: 1, glow: 0 });
-    // The next cards: the atoms rush back behind them unlit, and light up once covered.
+    // The next cards: the atoms rush back behind them, unlit.
     expect(profileLight("materialize", 0.1).glow).toBe(0);
     expect(profileLight("materialize", 0.4).spread).toBe(0);
-    expect(profileLight("materialize", 0.8).glow).toBe(1);
+    expect(profileLight("materialize", 0.8).glow).toBe(0);
     const dissolving = journey(page(0, "dissolve", 0.6)).formations.profiles;
     expect(dissolving?.spread).toBeGreaterThan(0.3);
   });

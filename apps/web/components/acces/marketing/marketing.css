@@ -166,7 +166,7 @@
     "call match"
     ". match";
   grid-template-rows: 1fr auto auto 1fr;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   column-gap: 3cqi;
   row-gap: 1.6rem;
 }
@@ -262,19 +262,24 @@
   pointer-events: none;
 }
 
+/* The label sits at the top: on short screens the cards reach the bottom of the stage. */
 .match-fiction {
   position: absolute;
+  top: 0;
   right: 0;
-  bottom: 0;
   font: 400 0.625rem / 1 var(--font-mono);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: color-mix(in oklch, var(--color-paper) 60%, transparent);
 }
 
-/* A profile card, as in the app: picture, name and age, school, mode, one prompt. */
+/*
+ * A profile card, as in the app: picture, name and age, school, mode, one
+ * prompt. Smaller on short screens, so the two cards and the badge above them
+ * still fit the stage.
+ */
 .profile-card {
-  --card-w: clamp(11rem, 21cqi, 17.5rem);
+  --card-w: clamp(11rem, min(21cqi, 31svh), 17.5rem);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -317,12 +322,12 @@
 
 .profile-card[data-profile-card="first"] {
   --bond: translate(-91%, -41%) rotate(-4deg);
-  --apart: translate(-122%, -40%) rotate(-8deg);
+  --apart: translate(-112%, -40%) rotate(-7deg);
 }
 
 .profile-card[data-profile-card="second"] {
   --bond: translate(-9%, -41%) rotate(4deg);
-  --apart: translate(22%, -44%) rotate(8deg);
+  --apart: translate(12%, -44%) rotate(7deg);
   z-index: 2;
 }
 
@@ -558,7 +563,13 @@
   }
 }
 
-/* Narrow screens: the copy first, the cards under it, overlapping a little more. */
+/*
+ * Narrow screens: the copy first, the cards under it, overlapping a little
+ * more. The cards are laid out in the flow, one over the other, so the stage
+ * takes the height of the taller one (their texts differ in length) and never
+ * runs into the copy: the badge in the space above them, the label under the
+ * first card, which stands a little higher.
+ */
 @container (max-width: 63.99rem) {
   .hero-layout {
     grid-template-areas:
@@ -574,25 +585,47 @@
   }
 
   .match {
-    height: clamp(19rem, 96cqi, 32rem);
+    height: auto;
+  }
+
+  .match-tilt {
+    position: relative;
+    inset: auto;
+    display: grid;
+    align-items: start;
+    justify-items: center;
+    padding-block: 4.25rem 1.5rem;
   }
 
   .profile-card {
-    --card-w: min(42cqi, 14rem);
+    --card-w: clamp(7.5rem, 41cqi, 13rem);
+    position: relative;
+    top: auto;
+    left: auto;
+    grid-area: 1 / 1;
+  }
+
+  /* The ring and the spark where the cards meet, in the middle of the cards rather than of the stage. */
+  .match-flash,
+  .match-sparks {
+    translate: 0 1.375rem;
   }
 
   .match-fiction {
-    bottom: -1.1rem;
+    top: auto;
+    right: auto;
+    bottom: 0;
+    left: 0;
   }
 
   .profile-card[data-profile-card="first"] {
-    --bond: translate(-82%, -38%) rotate(-5deg);
-    --apart: translate(-100%, -42%) rotate(-8deg);
+    --bond: translate(-32%, -3%) rotate(-5deg);
+    --apart: translate(-46%, -6%) rotate(-8deg);
   }
 
   .profile-card[data-profile-card="second"] {
-    --bond: translate(-18%, -32%) rotate(5deg);
-    --apart: translate(0%, -28%) rotate(8deg);
+    --bond: translate(32%, 3%) rotate(5deg);
+    --apart: translate(46%, 3%) rotate(8deg);
   }
 }
 

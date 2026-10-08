@@ -23,14 +23,16 @@ export interface JourneyMeasures {
   readonly scope: PixelBox | null;
   /**
    * The hero's two profile cards (`[data-field-profiles]`): the stage, each
-   * card, and where the match loop stands (match-stage.tsx: its phase, and
-   * how long ago it started, in seconds).
+   * card, where the match loop stands (match-stage.tsx: its phase, and how
+   * long ago it started, in seconds) and the stage's opacity (it fades as
+   * the page scrolls, choreography.ts).
    */
   readonly profiles: {
     readonly box: PixelBox;
     readonly cards: readonly [ViewportProfileCard, ViewportProfileCard];
     readonly phase: string | undefined;
     readonly age: number;
+    readonly opacity: number;
   } | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
   readonly cards: ReadonlyArray<{ readonly box: PixelBox; readonly stuckTop: number }>;
@@ -116,9 +118,10 @@ function distanceToMiddle(box: PixelBox, height: number): number {
 }
 
 /**
- * How the atoms of the profile cards follow the match loop: hidden behind
- * the cards, they show when the cards dissolve and drift away as dust, then
- * gather again, unlit, behind the next two cards while they fade in.
+ * How the atoms of the profile cards follow the match loop: they show when
+ * the cards dissolve and drift away as dust, then gather again behind the
+ * next two cards while they fade in. Unlit while the cards show: the atoms
+ * follow the cards with a slight delay, and would peek out as they move.
  */
 export function profileLight(phase: string | undefined, age: number): { spread: number; glow: number } {
   if (phase === "dissolve") {
@@ -126,9 +129,15 @@ export function profileLight(phase: string | undefined, age: number): { spread: 
     return { spread: ramp((t - 0.12) / 0.88), glow: 1 - ramp((t - 0.4) / 0.6) };
   }
   if (phase === "materialize") {
-    return { spread: 1 - ramp(age / 0.35), glow: ramp((age - 0.5) / 0.25) };
+    return { spread: 1 - ramp(age / 0.35), glow: 0 };
   }
-  return { spread: 0, glow: 1 };
+  return { spread: 0, glow: 0 };
+}
+
+/** The atoms light up as the stage fades on scroll, in the cards' place. */
+function light(profiles: NonNullable<JourneyMeasures["profiles"]>): { spread: number; glow: number } {
+  const { spread, glow } = profileLight(profiles.phase, profiles.age);
+  return { spread, glow: Math.max(glow, 1 - profiles.opacity) };
 }
 
 /**
@@ -231,7 +240,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
     formations: {
       profiles:
         profiles && profilesShare > 0.001
-          ? { weight: profilesShare, cards: profiles.cards, ...profileLight(profiles.phase, profiles.age) }
+          ? { weight: profilesShare, cards: profiles.cards, ...light(profiles) }
           : null,
       // The mark is the two atoms merged (formations.ts): bonded and merged from the start.
       pair: scope && pairShare > 0.001 ? { weight: pairShare, box: markBox, bond: 1, merge: 1, mark } : null,

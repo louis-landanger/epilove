@@ -43,11 +43,13 @@ function readProfiles(stage: HTMLElement, cards: readonly HTMLElement[]): Journe
     return null;
   }
   const at = Number(stage.dataset.phaseAt);
+  const opacity = Number.parseFloat(getComputedStyle(stage).opacity);
   return {
     box: toBox(stage),
     cards: [readCard(first), readCard(second)],
     phase: stage.dataset.phase,
     age: at ? (performance.now() - at) / 1000 : Number.POSITIVE_INFINITY,
+    opacity: Number.isNaN(opacity) ? 1 : opacity,
   };
 }
 
