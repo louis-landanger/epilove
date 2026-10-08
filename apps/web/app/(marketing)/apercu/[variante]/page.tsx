@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { HoloHero } from "@/components/acces/marketing/holo/holo-hero";
 import { GameHero } from "@/components/acces/marketing/jeu/game-hero";
 import { type HeroComponent, Landing } from "@/components/acces/marketing/landing";
 
@@ -10,6 +11,7 @@ import { type HeroComponent, Landing } from "@/components/acces/marketing/landin
  */
 const HEROES: Record<string, HeroComponent> = {
   jeu: GameHero,
+  holo: HoloHero,
 };
 
 export const dynamicParams = false;

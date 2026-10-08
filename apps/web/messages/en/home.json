@@ -159,5 +159,24 @@
     "copied": "Link copied",
     "replay": "Play again",
     "privacy": "Your answers stay on your device."
+  },
+  "holo": {
+    "lead": "The dating and friendship app for verified students of the campus. Until launch, get your hand in with these fictional profiles.",
+    "hint": "Swipe a card: right to like, left to pass.",
+    "hand": "Fictional profiles",
+    "like": "Like {name}, {school}",
+    "likeStamp": "Like",
+    "passStamp": "Pass",
+    "matchTitle": "It’s mutual!",
+    "matchText": "{name} liked you too. A fictional bond: the real profiles arrive at launch.",
+    "you": {
+      "name": "You",
+      "school": "Your school",
+      "soon": "Soon",
+      "prompt": "What makes you unique",
+      "answer": "To be revealed at launch."
+    },
+    "join": "Join the list",
+    "continue": "Continue"
   }
 }

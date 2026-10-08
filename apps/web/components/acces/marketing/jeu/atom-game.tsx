@@ -229,7 +229,7 @@ export function AtomGame({ eyebrow, meta }: { eyebrow: ReactNode; meta: ReactNod
         {stage === "intro" ? eyebrow : null}
         <h1 id="hero-title" ref={titleRef} className="game-title">
           {t("titleLead")} <em>{t("titleAccent")}</em>
-          {stage === "intro" ? <span aria-hidden="true" className="game-orbit" data-field-atom /> : null}
+          {stage === "intro" ? <span aria-hidden="true" className="field-orbit" data-field-atom /> : null}
         </h1>
       </div>
 
@@ -251,7 +251,7 @@ export function AtomGame({ eyebrow, meta }: { eyebrow: ReactNode; meta: ReactNod
 
       {question ? (
         <div className="game-question" data-picking={picked !== null || undefined}>
-          <span aria-hidden="true" className="game-orbit" data-field-atom />
+          <span aria-hidden="true" className="field-orbit" data-field-atom />
           <ol aria-hidden="true" className="game-steps">
             {QUESTION_ORDER.map((key, index) => (
               <li key={key} data-done={index <= answers.length || undefined} />
@@ -294,7 +294,7 @@ export function AtomGame({ eyebrow, meta }: { eyebrow: ReactNode; meta: ReactNod
               </span>
             </p>
             <div className="game-cards">
-              <span className="game-orbit" data-field-atom />
+              <span className="field-orbit" data-field-atom />
               <span className="match-flash" />
               <div className="element-card" data-seek={result.seek}>
                 <span className="element-number">{result.element.number}</span>

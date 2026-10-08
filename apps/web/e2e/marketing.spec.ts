@@ -343,6 +343,80 @@ test.describe("hero under study: the chemistry test", () => {
   });
 });
 
+test.describe("hero under study: the holographic hand", () => {
+  test("likes a card from the keyboard, then deals it back after the match", async ({ page }) => {
+    await page.goto("/apercu/holo");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
+    const hand = page.getByRole("list", { name: "Profils fictifs" });
+    await expect(hand.getByRole("button")).toHaveCount(5);
+    const lea = hand.getByRole("button", { name: "Liker Léa, ISG" });
+    await lea.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 2, name: "C’est réciproque !" })).toBeFocused();
+    await expect(page.getByText(/^Léa t’a liké aussi\. Une liaison fictive/)).toBeVisible();
+    // Behind the match, the hand and the title are out of reach.
+    await expect(page.locator(".holo-stage")).toHaveAttribute("inert", "");
+    await page.getByRole("button", { name: "Continuer" }).click();
+    await expect(lea).toBeFocused();
+  });
+
+  test("likes one card at a time", async ({ page }) => {
+    await page.goto("/apercu/holo");
+    await expect(page.getByRole("list", { name: "Profils fictifs" }).getByRole("button")).toHaveCount(5);
+    // A second like while the first card is still flying is ignored (both clicks in one go).
+    await page.evaluate(() => {
+      for (const name of ["Liker Léa, ISG", "Liker Yanis, IPSA"]) {
+        document.querySelector<HTMLButtonElement>(`[aria-label="${name}"]`)?.click();
+      }
+    });
+    await expect(page.getByText(/^Léa t’a liké aussi/)).toBeVisible();
+    await page.getByRole("button", { name: "Continuer" }).click();
+    await expect(page.locator(".holo-card[data-away]")).toHaveCount(0);
+  });
+
+  test("passes a card thrown to the left, likes one thrown to the right", async ({ page, isMobile }) => {
+    test.skip(isMobile, "Thrown with a mouse; a tap likes the card like a click");
+    await page.goto("/apercu/holo");
+    const cards = page.locator(".holo-card");
+    const fling = async (index: number, direction: 1 | -1) => {
+      const box = await cards.nth(index).boundingBox();
+      if (!box) {
+        throw new Error("No card to throw");
+      }
+      const x = box.x + box.width / 2;
+      const y = box.y + 40;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      for (let step = 1; step <= 8; step += 1) {
+        await page.mouse.move(x + direction * step * 30, y - step * 4);
+      }
+      await page.mouse.up();
+    };
+    const match = page.getByRole("heading", { level: 2, name: "C’est réciproque !" });
+    await page.waitForTimeout(2000);
+    await fling(0, -1);
+    await expect(cards.nth(0)).toHaveAttribute("data-flying", "");
+    // Passed: no match, and the card comes back into the hand.
+    await expect(cards.nth(0)).not.toHaveAttribute("data-flying");
+    await expect(cards.nth(0)).not.toHaveAttribute("data-dealing");
+    await expect(match).toHaveCount(0);
+    await fling(4, 1);
+    await expect(match).toBeVisible();
+    await expect(page.getByText(/^Yanis t’a liké aussi/)).toBeVisible();
+  });
+
+  test("has no detectable violations, in the hand and in the match", async ({ page }) => {
+    await page.goto("/apercu/holo");
+    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
+    await page.waitForTimeout(2000);
+    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
+    await page.getByRole("button", { name: "Liker Inès, Sup'Biotech" }).click();
+    await expect(page.getByRole("heading", { level: 2, name: "C’est réciproque !" })).toBeVisible();
+    await page.waitForTimeout(1500);
+    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
+  });
+});
+
 test.describe("accessibility (WCAG 2.2 AA)", () => {
   test("the landing has no detectable violations", async ({ page }) => {
     await page.goto("/");

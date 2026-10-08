@@ -159,5 +159,24 @@
     "copied": "Lien copié",
     "replay": "Rejouer",
     "privacy": "Tes réponses restent sur ton appareil."
+  },
+  "holo": {
+    "lead": "L’app de rencontre et d’amitié réservée aux étudiantes et étudiants vérifiés du campus. En attendant le lancement, fais-toi la main avec ces profils fictifs.",
+    "hint": "Glisse une carte : à droite tu likes, à gauche tu passes.",
+    "hand": "Profils fictifs",
+    "like": "Liker {name}, {school}",
+    "likeStamp": "Liker",
+    "passStamp": "Passer",
+    "matchTitle": "C’est réciproque !",
+    "matchText": "{name} t’a liké aussi. Une liaison fictive : les vrais profils arrivent au lancement.",
+    "you": {
+      "name": "Toi",
+      "school": "Ton école",
+      "soon": "Bientôt",
+      "prompt": "Ce qui te rend unique",
+      "answer": "À découvrir au lancement."
+    },
+    "join": "Rejoindre la liste",
+    "continue": "Continuer"
   }
 }
