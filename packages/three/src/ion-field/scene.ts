@@ -601,9 +601,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     depthTest: false,
     blending: AdditiveBlending,
   });
-  // Constant overall light whatever the particle count: thousands of GPU ions
-  // read as fine dust, a few hundred CPU ones as brighter sparks.
-  const density = Math.min(1, Math.max(0.45, Math.sqrt(1800 / count)));
+  // About the same overall light whatever the particle count: the more ions,
+  // the finer each one. A desktop's 1,600 read as fine dust, a phone's 900 as
+  // slightly brighter sparks.
+  const density = Math.min(1, Math.max(0.45, Math.sqrt(1000 / count)));
   const radius = colorAttribute.w.mul(density);
   const phase = phaseAttribute;
   const pointerProximity = float(1)

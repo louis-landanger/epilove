@@ -74,21 +74,30 @@ export interface PairFormation {
 }
 
 /**
- * The hero's title, written by the particles: points sampled from its glyphs
- * (in the app, from the real text on the page), relative to the title's box,
- * with the tone of the word each point belongs to. The first `outline`
- * points follow the letters' outlines, evenly spaced, in the order a pen
- * would trace them; the others fill the letters.
+ * The hero's periodic table as a crystal lattice: particles rest on the
+ * nodes of its grid, where the tiles meet, one bonded pair per node, fine
+ * and dim, quivering a little as if warm; now and then a soft wave of light
+ * crosses it. The pairs the nodes cannot hold wait on them unlit: they draw
+ * the reactions (`LinkFormation`) and, further down, the other shapes.
  */
-export interface TitleFormation {
+export interface LatticeFormation {
   readonly weight: number;
   readonly box: WorldBox;
   /** x, y pairs in [0, 1] across the box, y down as on the page. */
-  readonly points: Float32Array;
-  /** Tone of each point: 0 paper, 1 plasma, 2 volt. */
-  readonly tones: Uint8Array;
-  /** How many of the points, at the start, trace the outlines. */
-  readonly outline: number;
+  readonly nodes: Float32Array;
+}
+
+/**
+ * A reaction between two elements of the table: a chain of bonded atoms
+ * from one to the other, plasma where it starts, volt where it ends, with a
+ * pulse of light running along it. Drawn by pairs the lattice keeps unlit,
+ * and only as much as the lattice holds them (`weight` is the reaction's
+ * own fade in and out).
+ */
+export interface LinkFormation {
+  readonly weight: number;
+  readonly from: { readonly x: number; readonly y: number };
+  readonly to: { readonly x: number; readonly y: number };
 }
 
 export interface Formations {
@@ -96,7 +105,8 @@ export interface Formations {
   readonly freeGlow?: number;
   /** Tint of the free particles towards paper white, in [0, 1] (default 0: their school colour). */
   readonly freePaper?: number;
-  readonly title?: TitleFormation | null;
+  readonly lattice?: LatticeFormation | null;
+  readonly link?: LinkFormation | null;
   readonly pair?: PairFormation | null;
   readonly card?: CardFormation | null;
   readonly tubes?: TubeFormation | null;
@@ -258,14 +268,14 @@ function arcPoint(
 
 /** Largest weight among the formations: 0 when the field drifts freely. */
 export function formationStrength(formations: {
-  readonly title?: { readonly weight: number } | null;
+  readonly lattice?: { readonly weight: number } | null;
   readonly pair?: { readonly weight: number } | null;
   readonly card?: { readonly weight: number } | null;
   readonly tubes?: { readonly weight: number } | null;
   readonly pact?: { readonly weight: number } | null;
 }): number {
   return Math.max(
-    formations.title?.weight ?? 0,
+    formations.lattice?.weight ?? 0,
     formations.pair?.weight ?? 0,
     formations.card?.weight ?? 0,
     formations.tubes?.weight ?? 0,
@@ -285,7 +295,7 @@ interface Contribution {
   paper: number;
   /** Vertical move of the shape's element since the previous frame (world units). */
   carry: number;
-  /** Size of the particle's light (1: its own); only the title sets it, finer. */
+  /** Size of the particle's light (1: its own); the hero's lattice and links set it, finer. */
   grain: number;
 }
 
@@ -760,151 +770,107 @@ function pairContribution(
   return true;
 }
 
-/** Tones of the title's points, in `TitleFormation.tones`. */
-export const TITLE_TONES = { paper: 0, plasma: 1, volt: 2 } as const;
-
-/** Two points of a stroke are never further apart than this (CSS pixels): beyond, the stroke has ended. */
-const TITLE_STROKE_GAP = 8;
-/** Spacing of the atoms along the outlines the title asks for (CSS pixels): a near-continuous line. */
-const TITLE_OUTLINE_SPACING = 4;
+/** Pairs drawing the chain of a reaction (`LinkFormation`). */
+export const LINK_PAIRS = 36;
 
 /**
- * Share of the particles that trace the letters' outlines: as many as a
- * near-continuous line needs, between half and nine tenths of them. With few
- * particles (a modest device, the WebGL fallback), the outlines take nearly
- * all: the letters stay crisp, only less filled.
+ * Where a particle stands in the lattice: its node (in [0, 1] of the box),
+ * whether its pair is lit, and its place in a reaction's chain (-1: none).
  */
-export function titleOutlineShare(title: TitleFormation, count: number, unit: number): number {
-  const outline = Math.min(title.tones.length, Math.max(0, title.outline));
-  if (outline === 0) {
-    return 0;
-  }
-  if (outline === title.tones.length) {
-    return 1;
-  }
-  const toX = 2 * title.box.hw;
-  const toY = 2 * title.box.hh;
-  let length = 0;
-  for (let point = 1; point < outline; point += 1) {
-    const step = Math.hypot(
-      ((title.points[point * 2] ?? 0) - (title.points[point * 2 - 2] ?? 0)) * toX,
-      ((title.points[point * 2 + 1] ?? 0) - (title.points[point * 2 - 1] ?? 0)) * toY,
-    );
-    if (step <= TITLE_STROKE_GAP * unit) {
-      length += step;
-    }
-  }
-  const atoms = length / (TITLE_OUTLINE_SPACING * unit);
-  return Math.min(0.9, Math.max(0.5, atoms / Math.max(1, count)));
+const latticeSpot = { x: 0, y: 0, lit: false, chain: -1 };
+
+/**
+ * The node of the lattice a particle rests on: pair `k` on node `k`, so the
+ * first pairs are the lit ones (the adaptive quality, which draws only the
+ * first particles, never thins the lattice out). The next `LINK_PAIRS` pairs
+ * draw the reactions; the others wait unlit, spread over the nodes.
+ */
+function locateInLattice(index: number, lattice: LatticeFormation): void {
+  const nodes = lattice.nodes.length / 2;
+  const pair = index >> 1;
+  const node = nodes > 0 ? pair % nodes : 0;
+  latticeSpot.x = lattice.nodes[node * 2] ?? 0.5;
+  latticeSpot.y = lattice.nodes[node * 2 + 1] ?? 0.5;
+  latticeSpot.lit = pair < nodes;
+  const chain = pair - nodes;
+  latticeSpot.chain = chain >= 0 && chain < LINK_PAIRS ? chain : -1;
 }
 
 /**
- * Where a particle stands in the title: its point, the point its pair is
- * anchored to (in [0, 1] of the box), and whether it traces an outline.
+ * Lattice: each pair on its node (`locateInLattice`, called first), the two
+ * atoms a hair apart and slowly turning, the whole quivering a little.
  */
-const titleSpot = { x: 0, y: 0, point: 0, anchorX: 0, outline: false };
-
-/**
- * The point of the glyphs a particle takes. `along` is a low-discrepancy
- * sequence, so however many particles there are (and however many the
- * adaptive quality still draws: the first ones), the pairs spread evenly.
- * Most pairs follow the outlines, evenly spaced, each partner halfway to the
- * next pair: the letters are drawn as chains of bonded atoms. The others
- * fill the letters, partners on neighbouring points (the app orders them
- * along a Hilbert curve). Where a stroke ends before the partner's point, it
- * steps beside its anchor instead, so no bond ever jumps between letters.
- */
-function locateInTitle(
+function latticeContribution(
   particles: FormationParticles,
   index: number,
-  title: TitleFormation,
-  share: number,
-  unit: number,
-): void {
-  const count = title.tones.length;
-  const outline = Math.min(count, Math.max(0, title.outline));
-  const fill = count - outline;
-  const along = particles.along[index & ~1] ?? 0;
-  const onOutline = along < share;
-  // The points of this pair's part, and how far the partner goes along them.
-  const first = onOutline ? 0 : outline;
-  const size = onOutline ? outline : fill;
-  const position = onOutline ? along / share : (along - share) / (1 - share);
-  const base = first + Math.min(size - 1, Math.floor(position * (size - 1)));
-  const reach = onOutline ? Math.max(1, Math.round(outline / Math.max(1, particles.count * share))) : 1;
-  let x = title.points[base * 2] ?? 0;
-  let y = title.points[base * 2 + 1] ?? 0;
-  let point = base;
-  titleSpot.anchorX = x;
-  if ((index & 1) === 1) {
-    const toX = 2 * title.box.hw;
-    const toY = 2 * title.box.hh;
-    const last = first + size - 1;
-    let next = base;
-    for (let step = 0; step < Math.min(reach, 32) && next < last; step += 1) {
-      const gap = Math.hypot(
-        ((title.points[(next + 1) * 2] ?? 0) - (title.points[next * 2] ?? 0)) * toX,
-        ((title.points[(next + 1) * 2 + 1] ?? 0) - (title.points[next * 2 + 1] ?? 0)) * toY,
-      );
-      if (gap > TITLE_STROKE_GAP * unit) {
-        next = base;
-        break;
-      }
-      next += 1;
-    }
-    if (next !== base) {
-      point = next;
-      x = title.points[next * 2] ?? 0;
-      y = title.points[next * 2 + 1] ?? 0;
-    } else {
-      const angle = (particles.phases[index] ?? 0) * TAU;
-      x += (Math.cos(angle) * 3 * unit) / toX;
-      y += (Math.sin(angle) * 3 * unit) / toY;
-    }
-  }
-  titleSpot.x = x;
-  titleSpot.y = y;
-  titleSpot.point = point;
-  titleSpot.outline = onOutline;
-}
-
-/**
- * Title: each particle on its point of the glyphs (`locateInTitle`, called
- * first). The outlines are bright and fine, the fill a dim, finer dust: the
- * letters read crisply whatever the particle count. They shimmer in place,
- * and a sheen of light sweeps across the title every few seconds.
- */
-function titleContribution(
-  particles: FormationParticles,
-  index: number,
-  title: TitleFormation,
-  previous: TitleFormation | null,
+  lattice: LatticeFormation,
+  previous: LatticeFormation | null,
   time: number,
   unit: number,
   into: Contribution,
 ): boolean {
-  if (title.tones.length === 0) {
-    return false;
-  }
-  const phase = particles.phases[index] ?? 0;
-  const { x: px, y: py, point, outline } = titleSpot;
-  const { box } = title;
-  const shimmer = (outline ? 0.6 : 1.2) * unit;
-  into.x = box.x - box.hw + px * 2 * box.hw + Math.sin(time * 0.9 + phase * 13) * shimmer;
-  into.y = box.y + box.hh - py * 2 * box.hh + Math.cos(time * 0.7 + phase * 17) * shimmer;
-  // The sheen: a narrow band of light crossing the title from left to right.
-  const sweep = fract(time / 7) * 1.8 - 0.4;
-  const sheen = Math.exp(-((px - sweep) ** 2) / 0.003);
-  const tone = title.tones[point] ?? TITLE_TONES.paper;
-  // Fine grains: the heavy particles stay a little larger, sparks along the strokes.
+  const { box } = lattice;
+  const phase = particles.phases[index & ~1] ?? 0;
+  const own = particles.phases[index] ?? 0;
+  const turn = TAU * phase + time * (0.25 + 0.2 * phase);
+  const side = (index & 1) === 0 ? 1 : -1;
+  const reach = 1.3 * unit;
+  const quiver = 0.4 * unit;
+  const offsetX = side * Math.cos(turn) * reach + Math.sin(time * 2.3 + own * 31) * quiver;
+  const offsetY = side * Math.sin(turn) * reach + Math.cos(time * 1.9 + own * 17) * quiver;
+  into.x = box.x - box.hw + latticeSpot.x * 2 * box.hw + offsetX;
+  into.y = box.y + box.hh - latticeSpot.y * 2 * box.hh + offsetY;
+  // A soft wave of light crosses the lattice diagonally every nine seconds.
+  const sweep = fract(time / 9) * 2 - 0.5;
+  const wave = Math.exp(-((latticeSpot.x * 0.75 + latticeSpot.y * 0.25 - sweep) ** 2) / 0.008);
   const heavy = (particles.sizes[index] ?? 0) >= PAIR_HEAVY;
-  into.grain = outline ? (heavy ? 0.34 : 0.55) : 0.45;
-  into.glow = (outline ? (heavy ? 0.75 : 1) : 0.22) + 0.95 * sheen;
-  into.paper = tone === TITLE_TONES.paper ? 0.88 : 0;
-  into.plasma = tone === TITLE_TONES.plasma ? 0.92 : 0;
-  into.volt = tone === TITLE_TONES.volt ? 0.92 : 0;
+  into.glow = latticeSpot.lit ? (heavy ? 0.3 : 0.42) + 0.55 * wave : 0;
+  into.grain = heavy ? 0.3 : 0.42;
+  // Paper white, a few volt sparks.
+  const spark = phase < 0.07;
+  into.paper = spark ? 0 : 0.85;
+  into.volt = spark ? 0.9 : 0;
+  into.plasma = 0;
   into.pull = 1;
   into.carry = previous ? box.y - previous.box.y : 0;
+  return true;
+}
+
+/**
+ * Link: the pairs of a reaction's chain (`latticeSpot.chain`) evenly spaced
+ * along a gentle arc from one element to the other, partners side by side.
+ */
+function linkContribution(
+  particles: FormationParticles,
+  index: number,
+  link: LinkFormation,
+  previous: LinkFormation | null,
+  time: number,
+  unit: number,
+  into: Contribution,
+): boolean {
+  const { from, to } = link;
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  if (length < 1e-6 || latticeSpot.chain < 0) {
+    return false;
+  }
+  const s = (latticeSpot.chain + 0.5 + ((index & 1) === 1 ? 0.34 : 0)) / LINK_PAIRS;
+  const bulge = 0.12 * length * Math.sin(Math.PI * s);
+  const own = particles.phases[index] ?? 0;
+  into.x = from.x + dx * s - (dy / length) * bulge + Math.sin(time * 2.1 + own * 23) * 0.5 * unit;
+  into.y = from.y + dy * s + (dx / length) * bulge + Math.cos(time * 1.7 + own * 29) * 0.5 * unit;
+  // A pulse of light runs from the first element to the second; the chain fades at its ends.
+  const head = fract(time * 0.5) * 1.3 - 0.15;
+  const pulse = Math.exp(-((s - head) ** 2) / 0.006);
+  into.glow = (0.6 + 1.1 * pulse) * Math.sin(Math.PI * s) ** 0.35;
+  into.grain = 0.55;
+  into.plasma = 0.9 * (1 - s);
+  into.volt = 0.9 * s;
+  into.paper = 0;
+  into.pull = 1;
+  into.carry = previous ? (from.y + to.y - previous.from.y - previous.to.y) / 2 : 0;
   return true;
 }
 
@@ -933,7 +899,7 @@ function accumulate(weight: number): void {
   sum.carry += contribution.carry * w;
   sum.grain += contribution.grain * w;
   sum.total += w;
-  // The grain is the title's: back to the default for the next formation.
+  // The grain is opt-in: back to the default for the next formation.
   contribution.grain = 1;
 }
 
@@ -958,7 +924,8 @@ export function writeFormations(
   unit: number,
   grains?: Float32Array,
 ): void {
-  const title = formations.title && formations.title.weight > 0.001 ? formations.title : null;
+  const lattice = formations.lattice && formations.lattice.weight > 0.001 ? formations.lattice : null;
+  const link = lattice && formations.link && formations.link.weight > 0.001 ? formations.link : null;
   const pair = formations.pair && formations.pair.weight > 0.001 ? formations.pair : null;
   const card = formations.card && formations.card.weight > 0.001 ? formations.card : null;
   const tubes = formations.tubes && formations.tubes.weight > 0.001 ? formations.tubes : null;
@@ -968,7 +935,6 @@ export function writeFormations(
 
   // Where the two atoms stand this frame: the same for every particle.
   const geometry = pair ? pairGeometry(pair, time) : null;
-  const outlineShare = title ? titleOutlineShare(title, particles.count, unit) : 0;
 
   for (let index = 0; index < particles.count; index += 1) {
     sum.x = 0;
@@ -980,26 +946,39 @@ export function writeFormations(
     sum.paper = 0;
     sum.carry = 0;
     sum.grain = 0;
-    let titleWeight = title?.weight ?? 0;
+    let latticeWeight = lattice?.weight ?? 0;
     let pairWeight = pair?.weight ?? 0;
-    if (title) {
-      locateInTitle(particles, index, title, outlineShare, unit);
+    let linkWeight = 0;
+    if (lattice) {
+      locateInLattice(index, lattice);
       if (pair) {
-        // The letters leave for the logo mark one after another, from the right: each pair
-        // of particles switches over at its own moment rather than the whole title squashing.
-        const both = title.weight + pair.weight;
-        const order = 0.8 * (1 - titleSpot.anchorX) + 0.2 * fract((particles.phases[index & ~1] ?? 0) * 7.31);
+        // The lattice leaves for the logo mark node after node, from the right: each pair
+        // switches over at its own moment rather than the whole table squashing.
+        const both = lattice.weight + pair.weight;
+        const order = 0.8 * (1 - latticeSpot.x) + 0.2 * fract((particles.phases[index & ~1] ?? 0) * 7.31);
         const gone = smoothstep(order * 0.72, order * 0.72 + 0.28, pair.weight / both);
-        titleWeight = both * (1 - gone);
+        latticeWeight = both * (1 - gone);
         pairWeight = both * gone;
+      }
+      if (link && latticeSpot.chain >= 0) {
+        // A reaction borrows its chain from the lattice, and gives it back.
+        linkWeight = latticeWeight * link.weight;
+        latticeWeight -= linkWeight;
       }
     }
     if (
-      title &&
-      titleWeight > 0 &&
-      titleContribution(particles, index, title, previous?.title ?? null, time, unit, contribution)
+      lattice &&
+      latticeWeight > 0 &&
+      latticeContribution(particles, index, lattice, previous?.lattice ?? null, time, unit, contribution)
     ) {
-      accumulate(titleWeight);
+      accumulate(latticeWeight);
+    }
+    if (
+      link &&
+      linkWeight > 0 &&
+      linkContribution(particles, index, link, previous?.link ?? null, time, unit, contribution)
+    ) {
+      accumulate(linkWeight);
     }
     if (
       pair &&
@@ -1055,13 +1034,13 @@ export interface ViewportFormations {
   /** Light of the particles no formation holds, in [0, 1] (default 1), and their tint towards paper white (default 0). */
   readonly freeGlow?: number;
   readonly freePaper?: number;
-  /** The hero's title: its box on the page and the points of its glyphs (see `TitleFormation`). */
-  readonly title?: {
+  /** The hero's periodic table: its box on the page and the nodes of its grid (see `LatticeFormation`). */
+  readonly lattice?: { readonly weight: number; readonly box: PixelBox; readonly nodes: Float32Array } | null;
+  /** A reaction between two of its elements: the centres of the two tiles, in viewport pixels. */
+  readonly link?: {
     readonly weight: number;
-    readonly box: PixelBox;
-    readonly points: Float32Array;
-    readonly tones: Uint8Array;
-    readonly outline: number;
+    readonly from: { readonly x: number; readonly y: number };
+    readonly to: { readonly x: number; readonly y: number };
   } | null;
   /** The two atoms of the logo mark (centre and radius in pixels), in a stage where they first stand apart. */
   readonly pair?: {
@@ -1089,20 +1068,19 @@ export interface ViewportFormations {
 /** Converts measured formations to world units for a canvas of `width` × `height` CSS pixels. */
 export function toWorldFormations(formations: ViewportFormations, width: number, height: number): Formations {
   const unit = 2 / height;
-  const { title, pair, card, tubes, pact } = formations;
+  const { lattice, link, pair, card, tubes, pact } = formations;
+  const toWorldPoint = (point: { readonly x: number; readonly y: number }) => ({
+    x: (point.x - width / 2) * unit,
+    y: (height / 2 - point.y) * unit,
+  });
   const pactBox = pact ? toWorldBox(pact.box, width, height) : null;
   return {
     ...(formations.freeGlow === undefined ? {} : { freeGlow: formations.freeGlow }),
     ...(formations.freePaper === undefined ? {} : { freePaper: formations.freePaper }),
-    title: title
-      ? {
-          weight: title.weight,
-          box: toWorldBox(title.box, width, height),
-          points: title.points,
-          tones: title.tones,
-          outline: title.outline,
-        }
+    lattice: lattice
+      ? { weight: lattice.weight, box: toWorldBox(lattice.box, width, height), nodes: lattice.nodes }
       : null,
+    link: link ? { weight: link.weight, from: toWorldPoint(link.from), to: toWorldPoint(link.to) } : null,
     pair: pair
       ? {
           weight: pair.weight,

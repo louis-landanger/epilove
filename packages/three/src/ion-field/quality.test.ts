@@ -25,17 +25,17 @@ const phone: DeviceProfile = {
 };
 
 describe("particle budget", () => {
-  it("gives GPU compute many more ions than the CPU fallback", () => {
-    expect(particleBudget("webgpu", laptop)).toBe(8000);
-    expect(particleBudget("webgl2", laptop)).toBe(1800);
-    expect(particleBudget("webgpu", phone)).toBeLessThan(particleBudget("webgpu", laptop));
-    expect(particleBudget("webgl2", { ...phone, cores: 2, memoryGb: 2 })).toBeGreaterThanOrEqual(400);
+  it("draws the same number of particles whatever the backend, fewer on small and modest devices", () => {
+    expect(particleBudget(laptop)).toBe(1600);
+    expect(particleBudget(phone)).toBeLessThan(particleBudget(laptop));
+    expect(particleBudget({ ...laptop, cores: 4 })).toBeLessThan(particleBudget(laptop));
+    // Never fewer than the hero's lattice needs.
+    expect(particleBudget({ ...phone, cores: 2, memoryGb: 2 })).toBeGreaterThanOrEqual(640);
   });
 
   it("always returns pairs", () => {
-    for (const profile of [laptop, phone, { ...phone, cores: 3 }]) {
-      expect(particleBudget("webgl2", profile) % 2).toBe(0);
-      expect(particleBudget("webgpu", profile) % 2).toBe(0);
+    for (const profile of [laptop, phone, { ...phone, cores: 3 }, { ...laptop, memoryGb: 3 }]) {
+      expect(particleBudget(profile) % 2).toBe(0);
     }
   });
 

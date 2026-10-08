@@ -1,11 +1,11 @@
 import { markPlacementFor, type PixelBox, type ViewportFormations } from "@atomes/three";
-import type { TitleGlyphs } from "./title-glyphs";
 
 /**
  * The ion field's journey down the landing page (docs/02-design.md, section
  * 5): from the measured position of each section, which shapes the particles
- * draw (the hero's title, the logo mark beside the manifesto, the stacked
- * cards, the school race tubes, the Pact rings) and how they share them. Pure,
+ * draw (the lattice of the hero's periodic table and its reactions, the logo
+ * mark beside the manifesto, the stacked cards, the school race tubes, the
+ * Pact rings) and how they share them. Pure,
  * so it can be tested without a browser; the canvas measures the page and
  * applies the result every frame.
  */
@@ -16,8 +16,14 @@ export interface JourneyMeasures {
   readonly height: number;
   /** Hero and manifesto (`[data-field-scope]`): the field condenses into the logo mark there. */
   readonly scope: PixelBox | null;
-  /** The giant line of the hero's title (`[data-field-title]`) and the points of its glyphs. */
-  readonly title: { readonly box: PixelBox; readonly glyphs: TitleGlyphs } | null;
+  /** The hero's periodic table (`[data-field-lattice]`) and the nodes of its grid, in [0, 1] of its box. */
+  readonly lattice: { readonly box: PixelBox; readonly nodes: Float32Array } | null;
+  /** The reaction under way in the table: the centres of its two elements, and its age in seconds. */
+  readonly reaction: {
+    readonly from: { readonly x: number; readonly y: number };
+    readonly to: { readonly x: number; readonly y: number };
+    readonly age: number;
+  } | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
   readonly cards: ReadonlyArray<{ readonly box: PixelBox; readonly stuckTop: number }>;
   /** The list holding the cards: the formation lets go once it scrolls away. */
@@ -101,21 +107,25 @@ function distanceToMiddle(box: PixelBox, height: number): number {
   return Math.min(Math.abs(box.top - middle), Math.abs(bottomOf(box) - middle));
 }
 
+/** A reaction's bond: drawn in half a second, held, then given back to the lattice. */
+const LINK_LIFE = 4.2;
+
 /**
- * In the hero the particles write the title; scrolling, its letters break up
- * into the logo mark beside the manifesto; further down come the cards, the
- * tubes and the Pact rings. Every particle always belongs to a shape:
+ * In the hero the particles rest on the nodes of the periodic table and bond
+ * the elements that react; scrolling, the lattice breaks up into the logo
+ * mark beside the manifesto; further down come the cards, the tubes and the
+ * Pact rings. Every particle always belongs to a shape:
  * neighbouring shapes share the particles while one section gives way to the
  * next (their weights add up to 1); between sections the nearest shape keeps
  * them, and scrolls away with its section.
  */
 export function journey(measures: JourneyMeasures): JourneyState {
-  const { height, scope, title, rack, pact } = measures;
+  const { height, scope, lattice, reaction, rack, pact } = measures;
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
-  // The letters hold while the hero copy fades, then leave for the logo mark…
-  const settle = title ? ramp((scrolled - 0.12) / 0.38) : 1;
+  // The lattice holds while the hero copy fades, then leaves for the logo mark…
+  const settle = lattice ? ramp((scrolled - 0.12) / 0.38) : 1;
   // …which hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
 
@@ -135,9 +145,9 @@ export function journey(measures: JourneyMeasures): JourneyState {
 
   const card = cardStage(measures);
   const stages: ReadonlyArray<Stage | null> = [
-    // The title scrolls with the hero; the mark is pinned in the viewport, but leaves with the
+    // The table scrolls with the hero; the mark is pinned in the viewport, but leaves with the
     // hero and the manifesto (the nearest-shape rule).
-    scope && title ? { presence: opening * (1 - settle), box: title.box } : null,
+    scope && lattice ? { presence: opening * (1 - settle), box: lattice.box } : null,
     scope ? { presence: opening * settle, box: scope } : null,
     card,
     rack
@@ -177,7 +187,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
     }
   }
   const share = (index: number) => (total > 0 ? (weights[index] ?? 0) / total : 0);
-  const [titleShare, pairShare, cardShare, tubesShare, pactShare] = [0, 1, 2, 3, 4].map(share) as [
+  const [latticeShare, pairShare, cardShare, tubesShare, pactShare] = [0, 1, 2, 3, 4].map(share) as [
     number,
     number,
     number,
@@ -189,7 +199,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
   const offScreen = (stage: Stage | null) => !stage || bottomOf(stage.box) < 0 || stage.box.top > height;
   const shapesOffScreen =
     pairShare <= 0.001 &&
-    [titleShare, cardShare, tubesShare, pactShare].every((weight, index) => {
+    [latticeShare, cardShare, tubesShare, pactShare].every((weight, index) => {
       const stage = stages[index === 0 ? 0 : index + 1] ?? null;
       return weight <= 0.001 || offScreen(stage);
     });
@@ -198,7 +208,18 @@ export function journey(measures: JourneyMeasures): JourneyState {
     opening,
     hidden: shapesOffScreen || measures.covers.some((cover) => cover.top <= 0 && bottomOf(cover) >= height),
     formations: {
-      title: title && titleShare > 0.001 ? { weight: titleShare, box: title.box, ...title.glyphs } : null,
+      lattice:
+        lattice && latticeShare > 0.001
+          ? { weight: latticeShare, box: lattice.box, nodes: lattice.nodes }
+          : null,
+      link:
+        lattice && reaction && latticeShare > 0.001
+          ? {
+              weight: ramp(reaction.age / 0.45) * ramp((LINK_LIFE - reaction.age) / 0.6),
+              from: reaction.from,
+              to: reaction.to,
+            }
+          : null,
       // The mark is the two atoms merged (formations.ts): bonded and merged from the start.
       pair: scope && pairShare > 0.001 ? { weight: pairShare, box: markBox, bond: 1, merge: 1, mark } : null,
       card:

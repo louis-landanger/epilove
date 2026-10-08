@@ -142,8 +142,9 @@ export function startChoreography(root: HTMLElement): () => void {
   const splits: SplitText[] = [];
 
   const context = gsap.context(() => {
-    // Hero copy drifts up and dims as the page starts to scroll; the particles that
-    // write the title stay a little longer, then leave for the logo mark (journey.ts).
+    // Hero copy drifts up and dims as the page starts to scroll, while the periodic table goes
+    // out tile by tile, towards the right where the logo mark forms; the atoms that rest on its
+    // nodes stay a little longer, then leave for the mark too (journey.ts).
     const narrow = window.matchMedia("(max-width: 63.99rem), (max-aspect-ratio: 5/4)").matches;
     gsap.to(["[data-hero-content]", "[data-hero-aura]"], {
       yPercent: -8,
@@ -154,6 +155,21 @@ export function startChoreography(root: HTMLElement): () => void {
         start: "top top",
         end: narrow ? "top -18%" : "top -22%",
         scrub: true,
+      },
+    });
+    const tiles = gsap.utils.toArray<Element>(".ptable .el, .ptable-bond, .ptable-shade");
+    gsap.to(tiles, {
+      opacity: 0,
+      scale: 0.82,
+      ease: "none",
+      stagger: { grid: "auto", from: [1, 0.5], amount: 0.6 },
+      scrollTrigger: {
+        trigger: "#hero",
+        start: "top top",
+        end: narrow ? "top -26%" : "top -34%",
+        scrub: true,
+        // Back at the top, the tiles get their own styles back (their hover lift).
+        onLeaveBack: () => gsap.set(tiles, { clearProps: "opacity,transform" }),
       },
     });
 

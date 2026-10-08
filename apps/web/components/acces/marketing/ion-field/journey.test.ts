@@ -3,14 +3,14 @@ import { type JourneyMeasures, journey } from "./journey";
 
 const width = 1440;
 const height = 900;
-const glyphs = { points: new Float32Array([0.1, 0.5, 0.9, 0.5]), tones: new Uint8Array([0, 1]), outline: 1 };
+const nodes = new Float32Array([0, 0, 0.5, 0, 1, 0, 0, 1, 0.5, 1, 1, 1]);
 
 /**
  * A page laid out like the landing (hero + manifesto, three stacked cards,
  * the tube rack, the Pact, the safety section), seen with the viewport
  * scrolled to `scroll` pixels.
  */
-function page(scroll: number): JourneyMeasures {
+function page(scroll: number, reactionAge: number | null = null): JourneyMeasures {
   const box = (top: number, boxHeight: number, left = 80, boxWidth = 1280) => ({
     left,
     top: top - scroll,
@@ -31,8 +31,12 @@ function page(scroll: number): JourneyMeasures {
     width,
     height,
     scope: box(0, 2430, 0, width),
-    // The giant line of the title, scrolling with the hero.
-    title: { box: box(250, 230, 40, 1360), glyphs },
+    // The periodic table, scrolling with the hero; a reaction between two of its elements.
+    lattice: { box: box(110, 600, 140, 1000), nodes },
+    reaction:
+      reactionAge === null
+        ? null
+        : { from: { x: 300, y: 400 - scroll }, to: { x: 700, y: 300 - scroll }, age: reactionAge },
     cards,
     cardList: box(2860, 1620),
     cardRadius: 32,
@@ -47,34 +51,44 @@ function page(scroll: number): JourneyMeasures {
 }
 
 describe("journey", () => {
-  it("opens on the title, written by the particles", () => {
+  it("opens on the periodic table, its atoms resting on the nodes", () => {
     const top = journey(page(0));
-    expect(top.formations.title?.weight).toBe(1);
-    expect(top.formations.title?.box).toEqual(page(0).title?.box);
-    expect(top.formations.title?.points).toBe(glyphs.points);
+    expect(top.formations.lattice?.weight).toBe(1);
+    expect(top.formations.lattice?.box).toEqual(page(0).lattice?.box);
+    expect(top.formations.lattice?.nodes).toBe(nodes);
+    expect(top.formations.link).toBeNull();
     expect(top.formations.pair).toBeNull();
     expect(top.formations.card).toBeNull();
     expect(top.hidden).toBe(false);
     expect(top.opening).toBe(1);
   });
 
-  it("keeps the letters with the title while the hero starts to scroll", () => {
-    const early = journey(page(80));
-    expect(early.formations.title?.weight).toBe(1);
-    expect(early.formations.title?.box.top).toBe(250 - 80);
+  it("bonds the elements that react, then gives the atoms back to the lattice", () => {
+    expect(journey(page(0, 0)).formations.link?.weight).toBe(0);
+    const bonded = journey(page(0, 2));
+    expect(bonded.formations.link).toEqual({ weight: 1, from: { x: 300, y: 400 }, to: { x: 700, y: 300 } });
+    expect(journey(page(0, 4.2)).formations.link?.weight).toBe(0);
+    // Leaving the hero, no reaction outlives the lattice.
+    expect(journey(page(900, 2)).formations.link).toBeNull();
   });
 
-  it("breaks the letters up into the logo mark beside the manifesto", () => {
+  it("keeps the atoms on the table while the hero starts to scroll", () => {
+    const early = journey(page(80));
+    expect(early.formations.lattice?.weight).toBe(1);
+    expect(early.formations.lattice?.box.top).toBe(110 - 80);
+  });
+
+  it("breaks the lattice up into the logo mark beside the manifesto", () => {
     const leaving = journey(page(260));
-    const title = leaving.formations.title?.weight ?? 0;
-    expect(title).toBeGreaterThan(0.1);
-    expect(title).toBeLessThan(0.9);
-    expect((leaving.formations.pair?.weight ?? 0) + title).toBeCloseTo(1, 5);
+    const lattice = leaving.formations.lattice?.weight ?? 0;
+    expect(lattice).toBeGreaterThan(0.1);
+    expect(lattice).toBeLessThan(0.9);
+    expect((leaving.formations.pair?.weight ?? 0) + lattice).toBeCloseTo(1, 5);
     // The mark is the two atoms already merged.
     expect(leaving.formations.pair?.bond).toBe(1);
     expect(leaving.formations.pair?.merge).toBe(1);
     const manifesto = journey(page(900));
-    expect(manifesto.formations.title).toBeNull();
+    expect(manifesto.formations.lattice).toBeNull();
     expect(manifesto.formations.pair?.weight).toBe(1);
     // Beside the manifesto on a wide screen: right half, vertically centred.
     const mark = manifesto.formations.pair?.mark;
@@ -82,9 +96,9 @@ describe("journey", () => {
     expect(mark?.y).toBeCloseTo(height / 2, 0);
   });
 
-  it("lets the mark hold the hero when the title cannot be written", () => {
-    const top = journey({ ...page(0), title: null });
-    expect(top.formations.title).toBeNull();
+  it("lets the mark hold the hero when there is no table", () => {
+    const top = journey({ ...page(0), lattice: null });
+    expect(top.formations.lattice).toBeNull();
     expect(top.formations.pair?.weight).toBe(1);
   });
 
@@ -129,7 +143,7 @@ describe("journey", () => {
     for (let scroll = 0; scroll <= 11000; scroll += 37) {
       const { formations } = journey(page(scroll));
       const held =
-        (formations.title?.weight ?? 0) +
+        (formations.lattice?.weight ?? 0) +
         (formations.pair?.weight ?? 0) +
         (formations.card?.weight ?? 0) +
         (formations.tubes?.weight ?? 0) +
@@ -161,7 +175,8 @@ describe("journey", () => {
       width,
       height,
       scope: null,
-      title: null,
+      lattice: null,
+      reaction: null,
       cards: [],
       cardList: null,
       cardRadius: 32,
@@ -171,7 +186,8 @@ describe("journey", () => {
       covers: [],
     });
     expect(state.formations).toEqual({
-      title: null,
+      lattice: null,
+      link: null,
       pair: null,
       card: null,
       tubes: null,

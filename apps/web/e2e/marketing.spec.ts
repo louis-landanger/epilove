@@ -86,6 +86,15 @@ test.describe("landing", () => {
     );
   });
 
+  test("makes two elements of the periodic table react, from the keyboard too", async ({ page }) => {
+    await page.goto("/");
+    const again = page.getByRole("button", { name: "Nouvelle réaction" });
+    await again.focus();
+    await page.keyboard.press("Enter");
+    // Announced politely, only when someone asked for it.
+    await expect(page.locator(".readout [aria-live]")).toContainText(/\d+\s?% de chimie/);
+  });
+
   test("tells the story section by section", async ({ page }) => {
     await page.goto("/");
     for (const name of [

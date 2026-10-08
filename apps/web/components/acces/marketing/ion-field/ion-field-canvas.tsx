@@ -10,12 +10,71 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
 import { type JourneyMeasures, journey } from "./journey";
-import { sampleTitle } from "./title-glyphs";
 
 const toBox = (element: Element): PixelBox => {
   const rect = element.getBoundingClientRect();
   return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 };
+
+/** Where a tile of the periodic table stands, in [0, 1] of the table, from its layout box (transforms aside). */
+function tileBox(tile: HTMLElement, table: HTMLElement) {
+  return {
+    left: tile.offsetLeft / table.offsetWidth,
+    top: tile.offsetTop / table.offsetHeight,
+    right: (tile.offsetLeft + tile.offsetWidth) / table.offsetWidth,
+    bottom: (tile.offsetTop + tile.offsetHeight) / table.offsetHeight,
+  };
+}
+
+/**
+ * The nodes of the periodic table's grid, where the tiles meet (in the
+ * middle of the gaps), in [0, 1] of the table; and the centre of each tile,
+ * by atomic number. The nodes come shuffled, always the same way: the atoms
+ * the lattice keeps unlit for the reactions wait all over it.
+ */
+function readTable(table: HTMLElement) {
+  const tiles = [...table.querySelectorAll<HTMLElement>("[data-z]")];
+  const width = Math.max(1, table.offsetWidth);
+  const height = Math.max(1, table.offsetHeight);
+  const gap = Number.parseFloat(getComputedStyle(table).columnGap) || 0;
+  const halfX = gap / 2 / width;
+  const halfY = gap / 2 / height;
+  const nodes = new Map<string, [number, number]>();
+  const centres = new Map<number, { x: number; y: number }>();
+  for (const tile of tiles) {
+    const box = tileBox(tile, table);
+    centres.set(Number(tile.dataset.z), { x: (box.left + box.right) / 2, y: (box.top + box.bottom) / 2 });
+    for (const x of [box.left - halfX, box.right + halfX]) {
+      for (const y of [box.top - halfY, box.bottom + halfY]) {
+        nodes.set(`${Math.round(x * width)}:${Math.round(y * height)}`, [x, y]);
+      }
+    }
+  }
+  const shuffled = [...nodes.values()]
+    .map((node, index) => ({ node, key: (Math.sin(index * 12.9898) * 43758.5453) % 1 }))
+    .sort((a, b) => a.key - b.key);
+  return { nodes: new Float32Array(shuffled.flatMap(({ node }) => node)), centres };
+}
+
+/** The reaction under way in the table (`data-reaction`, `data-reaction-at`), in viewport pixels. */
+function readReaction(
+  table: HTMLElement,
+  centres: ReadonlyMap<number, { x: number; y: number }>,
+  box: PixelBox,
+): JourneyMeasures["reaction"] {
+  const at = Number(table.dataset.reactionAt);
+  const [first, second] = (table.dataset.reaction ?? "").split("-").map(Number);
+  const from = centres.get(first ?? 0);
+  const to = centres.get(second ?? 0);
+  if (!at || !from || !to) {
+    return null;
+  }
+  const toViewport = (point: { x: number; y: number }) => ({
+    x: box.left + point.x * box.width,
+    y: box.top + point.y * box.height,
+  });
+  return { from: toViewport(from), to: toViewport(to), age: (performance.now() - at) / 1000 };
+}
 
 /**
  * Reads the page for the field's journey (journey.ts). Elements and their
@@ -33,11 +92,10 @@ function createPageMeasurer() {
     const firstCard = steps[0]?.querySelector("article");
     const rack = document.querySelector("[data-field-rack]");
     const pact = document.querySelector("[data-field-pact]");
-    const title = document.querySelector<HTMLElement>("[data-field-title]");
-    // The title's glyphs are sampled once, then again on resize (its lines may break differently).
-    const glyphs = title ? sampleTitle(title) : null;
+    const table = document.querySelector<HTMLElement>("[data-field-lattice]");
+    // The table's grid is read once, then again on resize.
     return {
-      title: title && glyphs ? { element: title, glyphs } : null,
+      table: table ? { element: table, ...readTable(table) } : null,
       rackSection: rack?.closest("section") ?? null,
       pactSection: pact?.closest("section") ?? null,
       scope: document.querySelector("[data-field-scope]"),
@@ -73,11 +131,14 @@ function createPageMeasurer() {
         return rect.bottom > -1.5 * height && rect.top < 2.5 * height;
       };
       const raceNear = near(elements.rackSection);
+      const { table } = elements;
+      const lattice = table ? { box: toBox(table.element), nodes: table.nodes } : null;
       return {
         width: window.innerWidth,
         height,
         scope: elements.scope ? toBox(elements.scope) : null,
-        title: elements.title ? { box: toBox(elements.title.element), glyphs: elements.title.glyphs } : null,
+        lattice,
+        reaction: table && lattice ? readReaction(table.element, table.centres, lattice.box) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,
@@ -102,10 +163,11 @@ function createPageMeasurer() {
 /**
  * The live ion field (docs/02-design.md, section 5), behind the whole landing.
  * The three.js chunk is imported only after load, when motion is allowed and
- * the device can afford it; otherwise there is no field, and the hero's title
- * stays plain text. The particles write the hero's title, break up into the
- * logo mark beside the manifesto, then trace the stacked cards, fill the
- * school race tubes and orbit the Pact (journey.ts).
+ * the device can afford it; otherwise there is no field, and the hero stays
+ * as it is, without atoms. The particles rest on the nodes of the hero's
+ * periodic table and bond the elements that react, break up into the logo
+ * mark beside the manifesto, then trace the stacked cards, fill the school
+ * race tubes and orbit the Pact (journey.ts).
  */
 export function IonFieldCanvas({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -127,13 +189,11 @@ export function IonFieldCanvas({ className }: { className?: string }) {
 
     const start = async (forceWebGL = false) => {
       if (!forced && isSoftwareRenderer(rendererName())) {
-        // No GPU acceleration: the title stays plain text rather than hogging the main thread.
+        // No GPU acceleration: no field, rather than hogging the main thread.
         return;
       }
       try {
         const { createIonField } = await import("@atomes/three/ion-field");
-        // The title is sampled from its web fonts: wait for them, or the letters would be the fallback's.
-        await document.fonts?.ready;
         if (disposed) {
           return;
         }
@@ -142,20 +202,20 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         let followPage = () => {};
         const field = await createIonField({
           container,
-          particleCount: (backend) => (forcedCount > 0 ? forcedCount : particleBudget(backend, profile)),
+          particleCount: () => (forcedCount > 0 ? forcedCount : particleBudget(profile)),
           adaptiveQuality: !forced,
           beforeFrame: () => followPage(),
           // The particles start in the shapes on screen (a reload further down the page).
           initialFormations: journey(page.measure()).formations,
           onFirstFrame: () => setLive(true),
-          // The device cannot keep up even at the lowest quality: back to the plain title for good.
+          // The device cannot keep up even at the lowest quality: no field, for good.
           onGiveUp: () => {
             setLive(false);
             for (const cleanup of cleanups.splice(0)) {
               cleanup();
             }
           },
-          // A frame failed after start-up: back to the plain title.
+          // A frame failed after start-up: no field.
           forceWebGL,
           onError: () => {
             setLive(false);
@@ -270,7 +330,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           window.removeEventListener("click", onClick);
         });
       } catch {
-        // No WebGPU and no WebGL2, or the chunk failed to load: the title stays plain text.
+        // No WebGPU and no WebGL2, or the chunk failed to load: no field.
         setLive(false);
       }
     };

@@ -141,7 +141,7 @@ export function createIonFieldLayout(count: number, seed: number = ION_FIELD_SEE
     schools[index] = Math.floor(random() * SCHOOL_KEYS.length);
     charges[index] = isSecondOfPair ? -1 : 1;
     const heavy = random() < 0.06;
-    sizes[index] = heavy ? 0.011 + random() * 0.008 : 0.0035 + random() * 0.0055;
+    sizes[index] = heavy ? 0.01 + random() * 0.005 : 0.0035 + random() * 0.0055;
     phases[index] = random();
 
     const role = roleOf(index);

@@ -30,20 +30,19 @@ export function canAffordLiveField(profile: DeviceProfile): boolean {
   return profile.cores >= 2;
 }
 
-/** GPU compute (WebGPU) handles thousands of ions; the CPU fallback stays modest. */
-export function particleBudget(backend: "webgpu" | "webgl2", profile: DeviceProfile): number {
+/**
+ * How many particles the field draws: the same whatever the backend (WebGPU
+ * or the WebGL2 fallback), so the landing looks the same on every device.
+ * The particles are fine, and a few hundred are enough for each shape; touch
+ * screens and small windows get fewer, modest machines fewer still. Never
+ * fewer than the hero's lattice needs (a pair on each of its nodes, and a
+ * reaction's chain).
+ */
+export function particleBudget(profile: DeviceProfile): number {
   const modest = profile.cores <= 4 || (profile.memoryGb !== undefined && profile.memoryGb <= 4);
   const small = profile.coarsePointer || profile.viewportArea < 900 * 700;
-  let budget: number;
-  if (backend === "webgpu") {
-    budget = small ? 4000 : 8000;
-  } else {
-    budget = small ? 1000 : 1800;
-  }
-  if (modest) {
-    budget *= 0.6;
-  }
-  return Math.max(400, Math.floor(budget / 2) * 2);
+  const budget = (small ? 900 : 1600) * (modest ? 0.75 : 1);
+  return Math.max(640, Math.floor(budget / 2) * 2);
 }
 
 /** Horizontal half-extent of the tilted orbit, in units of its major radius. */

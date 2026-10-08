@@ -99,10 +99,12 @@
 /* ------------------------------------------------------------------- hero */
 
 /*
- * The title is the visual: its lead on one line, then its last words across
- * the whole width, written by the particles once the ion field is live
- * (hero.tsx). The copy sits underneath: the lead and the calls to action on
- * the left, the schools and the count on the right.
+ * The campus periodic table (hero.tsx, periodic/periodic-table.tsx): the
+ * title sits in the gap at the top of the table, the reaction panel beside
+ * it on wide screens; the lead, the calls to action and the schools below.
+ * A cell is as wide as the column allows, and never so tall that the hero
+ * outgrows the screen. The tiles are decoration: their labels are generated
+ * content (`data-*`), the reaction panel says what reacts.
  */
 .hero {
   --hero-gutter: 1rem;
@@ -111,11 +113,17 @@
   flex-direction: column;
   justify-content: center;
   min-height: 100svh;
-  padding: 6.5rem var(--hero-gutter) 2.5rem;
+  padding: 6rem var(--hero-gutter) 1.5rem;
   overflow: hidden;
 }
 
-/* A spotlight of plasma behind the giant words, a trace of volt, and film grain. */
+@media (min-width: 40rem) {
+  .hero {
+    --hero-gutter: 2.5rem;
+  }
+}
+
+/* A spotlight of plasma behind the table, a trace of volt, and film grain. */
 .hero-aura {
   position: absolute;
   inset: 0;
@@ -124,13 +132,13 @@
   mask-image: linear-gradient(to bottom, #000 65%, transparent);
   background:
     radial-gradient(
-      52% 40% at 58% 52%,
-      color-mix(in oklch, var(--color-plasma) 16%, transparent),
+      48% 42% at 46% 44%,
+      color-mix(in oklch, var(--color-plasma) 13%, transparent),
       transparent 70%
     ),
     radial-gradient(
-      30% 30% at 22% 46%,
-      color-mix(in oklch, var(--color-volt) 7%, transparent),
+      26% 30% at 84% 30%,
+      color-mix(in oklch, var(--color-volt) 6%, transparent),
       transparent 70%
     );
 }
@@ -146,84 +154,403 @@
 }
 
 .hero-inner {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
+  gap: clamp(1.25rem, 3svh, 2rem);
   width: 100%;
   max-width: 92rem;
   margin-inline: auto;
 }
 
-.hero-title {
-  margin-top: 1.5rem;
+/* The table and, on wide screens, the reaction panel beside it. */
+.periodic {
+  --readout: 15rem;
+  --g: max(2px, 0.28cqi);
+  --cell: min(
+    calc((100cqi - var(--readout) - 2.5rem - 17 * var(--g)) / 18),
+    calc((100svh - 17.5rem - 9 * var(--g)) / 9.35)
+  );
+  display: grid;
+  grid-template-columns: auto var(--readout);
+  justify-content: center;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.ptable {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(18, var(--cell));
+  grid-template-rows: repeat(7, var(--cell)) calc(var(--cell) * 0.35) repeat(2, var(--cell));
+  gap: var(--g);
   font-family: var(--font-headline), var(--font-display);
-  font-weight: 650;
-  line-height: 0.92;
-  letter-spacing: -0.04em;
+}
+
+/* A tile: atomic number, symbol, and what it stands for on campus. */
+.el {
+  position: relative;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: calc(var(--cell) * 0.06);
+  border: 1px solid color-mix(in oklch, var(--color-paper) 11%, transparent);
+  border-radius: calc(var(--cell) * 0.1);
+  background: color-mix(in oklch, var(--color-paper) 1.5%, transparent);
+  color: color-mix(in oklch, var(--color-paper) 34%, transparent);
+  line-height: 1;
+  transition:
+    border-color 0.25s var(--ease-out),
+    background-color 0.25s var(--ease-out),
+    color 0.25s var(--ease-out),
+    transform 0.4s var(--ease-out);
+  animation: tile-in 0.8s var(--ease-out) calc(var(--wave) * 26ms) backwards;
+}
+
+.el::before {
+  content: attr(data-z);
+  position: absolute;
+  top: calc(var(--cell) * 0.08);
+  left: calc(var(--cell) * 0.1);
+  font: 400 calc(var(--cell) * 0.16) / 1 var(--font-mono);
+  opacity: 0.8;
+}
+
+.el::after {
+  content: attr(data-symbol);
+  order: -1;
+  font-size: calc(var(--cell) * 0.4);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.el-name {
+  max-width: 92%;
+  overflow: hidden;
+  font: 400 calc(var(--cell) * 0.15) / 1.1 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The names only where the cells are large enough to read them. */
+@media (max-width: 85.99rem), (max-height: 51.99rem) {
+  .el-name {
+    display: none;
+  }
+}
+
+.el-name::before {
+  content: attr(data-name);
+}
+
+[data-family="outing"] {
+  --fam: var(--color-plasma);
+}
+
+[data-family="sport"] {
+  --fam: var(--color-volt);
+}
+
+[data-family="study"] {
+  --fam: var(--color-paper);
+}
+
+[data-family="heart"] {
+  --fam: color-mix(in oklch, var(--color-plasma) 45%, var(--color-paper));
+}
+
+.el[data-family] {
+  color: color-mix(in oklch, var(--color-paper) 82%, transparent);
+  cursor: pointer;
+}
+
+.el[data-family]::after {
+  color: var(--fam);
+}
+
+.el[data-family]:hover {
+  border-color: var(--fam);
+  background: color-mix(in oklch, var(--fam) 12%, transparent);
+  transform: translateY(-3px);
+}
+
+.el[data-state] {
+  border-color: var(--fam);
+  background: color-mix(in oklch, var(--fam) 22%, transparent);
+}
+
+/* The two elements of the title, in its colours. */
+.el[data-title] {
+  --fam: var(--color-plasma);
+  border-color: var(--fam);
+  background: color-mix(in oklch, var(--fam) 12%, transparent);
+  color: var(--fam);
+}
+
+.el[data-title="second"] {
+  --fam: var(--color-volt);
+}
+
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+}
+
+/*
+ * The lamp: a pool of light around the pointer (or wandering on its own),
+ * shade elsewhere; the shade fades out towards the edges of the table.
+ */
+.ptable-shade {
+  position: absolute;
+  inset: -1.5rem;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image:
+    linear-gradient(to right, transparent, #000 1.5rem, #000 calc(100% - 1.5rem), transparent),
+    linear-gradient(to bottom, transparent, #000 1.5rem, #000 calc(100% - 1.5rem), transparent);
+  mask-composite: intersect;
+}
+
+.ptable-lamp {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  width: 0;
+  height: 0;
+  transform: translate3d(62cqi, 12cqi, 0);
+  will-change: transform;
+}
+
+.ptable-lamp::before {
+  content: "";
+  position: absolute;
+  top: -150cqi;
+  left: -150cqi;
+  width: 300cqi;
+  height: 300cqi;
+  background: radial-gradient(
+    circle,
+    transparent 0,
+    transparent 9cqi,
+    color-mix(in oklch, var(--color-ink) 60%, transparent) 24cqi
+  );
+}
+
+/* The bond of a reaction; once the ion field is live, its atoms draw it instead. */
+.ptable-bond {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  transition: opacity 0.6s var(--ease-out);
+}
+
+.ptable-bond line {
+  stroke: var(--color-paper);
+  stroke-width: 2;
+  stroke-dasharray: 4 6;
+  stroke-linecap: round;
+  opacity: 0.85;
+  animation: bond-march 0.8s linear infinite;
+}
+
+@keyframes bond-march {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.marketing:has([data-ion-field][data-live="true"]) .ptable-bond {
+  opacity: 0;
+}
+
+/* The gap at the top of the table, between hydrogen and helium: the title's place. */
+.ptable-hole {
+  position: relative;
+  z-index: 3;
+  grid-area: 1 / 3 / 4 / 13;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-inline: calc(var(--cell) * 0.3);
+}
+
+.hero-heading {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--cell) * 0.3);
+}
+
+.hero-title {
+  font-family: var(--font-headline), var(--font-display);
+  font-size: calc(var(--cell) * 1.02);
+  font-weight: 700;
+  font-variation-settings:
+    "wdth" 88,
+    "opsz" 96;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
   color: var(--color-paper);
   animation: focus-pull 1.4s var(--ease-out) both;
 }
 
-.hero-title-lead {
-  display: block;
-  font-size: clamp(2.4rem, min(5.2vw, 9svh), 6rem);
+/* An element tile set in the title: the atomic number in its corner. */
+.title-tile {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 1.12em;
+  height: 1.12em;
+  margin-right: 0.04em;
+  border: 0.045em solid currentColor;
+  border-radius: 0.1em;
+  font-size: 0.86em;
+  letter-spacing: -0.04em;
+  vertical-align: -0.12em;
 }
 
-/*
- * The giant words: as wide as the column allows (hero.tsx estimates their
- * width in ems, one line or two), never taller than a quarter of the screen.
- */
-.hero-word {
-  display: block;
-  margin-top: 0.04em;
-  font-size: min(
-    15rem,
-    26svh,
-    calc((min(100vw, 92rem + 2 * var(--hero-gutter)) - 2 * var(--hero-gutter)) / var(--word-ems))
-  );
-  font-weight: 800;
-  font-variation-settings: "opsz" 96;
-  line-height: 1;
-  letter-spacing: -0.05em;
-  white-space: nowrap;
-  transition: color 0.9s var(--ease-out);
+.title-tile::before {
+  content: attr(data-number);
+  position: absolute;
+  top: 0.12em;
+  left: 0.14em;
+  font: 400 0.18em / 1 var(--font-mono);
+  letter-spacing: 0;
 }
 
-.hero-word-accent {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 1.08em;
-  letter-spacing: -0.02em;
+.title-tile[data-tile="first"] {
+  background: color-mix(in oklch, var(--color-plasma) 12%, transparent);
   color: var(--color-plasma);
-  transition: color 0.9s var(--ease-out);
 }
 
-/* Live: the particles write the giant words; the text stays for screen readers and search engines. */
-.marketing:has([data-ion-field][data-live="true"]) :is(.hero-word, .hero-word-accent) {
-  color: transparent;
+.title-tile[data-tile="second"] {
+  background: color-mix(in oklch, var(--color-volt) 10%, transparent);
+  color: var(--color-volt);
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
+/* The reaction panel. */
+.readout {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.25rem;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in oklch, var(--color-ink) 82%, var(--color-paper));
+  font-family: var(--font-mono);
+}
+
+.readout-label,
+.readout-help,
+.readout-legend {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: color-mix(in oklch, var(--color-paper) 64%, transparent);
+}
+
+.readout-label {
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.readout-equation {
+  min-height: 2.4em;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-paper);
+}
+
+.readout-score {
+  font-family: var(--font-headline), var(--font-display);
+  font-size: 3rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-volt);
+}
+
+.readout-score small {
+  font-size: 0.3em;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--color-paper);
+}
+
+.readout-verdict {
+  min-height: 2.9em;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: color-mix(in oklch, var(--color-paper) 82%, transparent);
+}
+
+.readout-again {
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: 0 1.1rem;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 30%, transparent);
+  border-radius: 999px;
+  font: 500 0.72rem / 1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-paper);
+  transition:
+    border-color 0.25s var(--ease-out),
+    color 0.25s var(--ease-out);
+}
+
+.readout-again:hover {
+  border-color: var(--color-volt);
+  color: var(--color-volt);
+}
+
+.readout-legend {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.readout-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.readout-legend li::before {
+  content: "";
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+  background: var(--fam);
+}
+
+/* Below the table: the lead, the calls to action, the schools and the count. */
 .hero-bottom {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 1.75rem 3rem;
-  margin-top: clamp(1.5rem, 4svh, 3rem);
+  gap: 1.25rem 2.5rem;
 }
 
-.hero-call {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1.75rem;
-  min-width: 0;
+.hero-bottom > * {
+  animation: rise-in 1.4s var(--ease-out) 0.45s backwards;
 }
 
 .hero-lead {
-  max-width: 36rem;
-  font-size: clamp(1.05rem, 1.25vw, 1.25rem);
-  line-height: 1.55;
+  max-width: 34rem;
+  font-size: 1rem;
+  line-height: 1.5;
   color: color-mix(in oklch, var(--color-paper) 80%, transparent);
 }
 
@@ -237,31 +564,106 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.6rem;
+  gap: 0.5rem;
   text-align: right;
 }
 
-/* Narrow screens: the giant words on two lines, the copy stacked. */
-@media (max-width: 39.99rem) {
-  .hero-word {
-    white-space: normal;
-    font-size: min(15rem, 30svh, calc((100vw - 2 * var(--hero-gutter)) / var(--word-ems-stacked)));
+/* A middle dot between the schools, silent for screen readers (empty alternative text). */
+.hero-schools li + li::before {
+  content: "·" / "";
+  padding: 0 0.5rem;
+  color: color-mix(in oklch, var(--color-paper) 30%, transparent);
+}
+
+/* Medium widths: the panel under the table, on one line. */
+@container (max-width: 63.99rem) {
+  .periodic {
+    --cell: min(calc((100cqi - 17 * var(--g)) / 18), calc((100svh - 25rem - 9 * var(--g)) / 9.35));
+    grid-template-columns: auto;
+    gap: 1.25rem;
   }
 
-  .hero-word-main,
-  .hero-word-accent {
-    display: block;
+  .readout {
+    grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1.6fr) auto;
+    align-items: center;
+    gap: 0.6rem 1.25rem;
+    padding: 0.9rem 1.1rem;
+  }
+
+  .readout-label,
+  .readout-help,
+  .readout-legend {
+    display: none;
+  }
+
+  .readout-equation,
+  .readout-verdict {
+    min-height: 0;
+  }
+
+  .readout-score {
+    font-size: 2.25rem;
+  }
+}
+
+/* Narrow screens: the table as a thumbnail, the title under it, the panel compact. */
+@container (max-width: 47.99rem) {
+  .periodic {
+    --g: 2px;
+    --cell: calc((100cqi - 17 * var(--g)) / 18);
+  }
+
+  .ptable {
+    grid-template-rows: repeat(7, var(--cell)) calc(var(--cell) * 0.35) repeat(2, var(--cell)) auto;
+  }
+
+  .ptable-hole {
+    grid-area: 11 / 1 / 12 / -1;
+    padding: 1.5rem 0 0;
+  }
+
+  .hero-title {
+    font-size: min(3.75rem, 12.5cqi);
+  }
+
+  .el {
+    border-radius: 2px;
+  }
+
+  .el::before,
+  .el-name {
+    display: none;
+  }
+
+  .el::after {
+    font-size: calc(var(--cell) * 0.46);
+  }
+
+  .ptable-lamp::before {
+    background: radial-gradient(
+      circle,
+      transparent 0,
+      transparent 14cqi,
+      color-mix(in oklch, var(--color-ink) 45%, transparent) 36cqi
+    );
+  }
+
+  .readout {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .readout-verdict {
+    grid-column: 1 / -1;
+  }
+
+  .readout-again {
+    grid-row: 1;
+    grid-column: 2;
   }
 
   .hero-meta {
     align-items: flex-start;
     text-align: left;
-  }
-}
-
-@media (min-width: 40rem) {
-  .hero {
-    --hero-gutter: 2.5rem;
   }
 }
 
@@ -277,10 +679,6 @@
   }
 }
 
-.hero-fade {
-  animation: rise-in 1.4s var(--ease-out) 0.45s both;
-}
-
 @keyframes rise-in {
   from {
     transform: translateY(1.25rem);
@@ -288,13 +686,6 @@
   to {
     transform: none;
   }
-}
-
-/* A middle dot between the schools, silent for screen readers (empty alternative text). */
-.hero-schools li + li::before {
-  content: "·" / "";
-  padding: 0 0.5rem;
-  color: color-mix(in oklch, var(--color-paper) 30%, transparent);
 }
 
 /* Nothing of the field shows (opaque section, shape off screen): it fades out, then rests. */

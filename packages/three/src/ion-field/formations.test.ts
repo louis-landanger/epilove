@@ -4,13 +4,13 @@ import {
   contourPoint,
   FORMATION_STRIDE,
   type Formations,
+  type LatticeFormation,
+  LINK_PAIRS,
   orbitArcPoint,
   orbitTheta,
   PAIR_FIELD_LINES,
   pairFieldPoint,
   pairGeometry,
-  TITLE_TONES,
-  type TitleFormation,
   toWorldBox,
   type WorldBox,
   writeFormations,
@@ -74,263 +74,171 @@ describe("contourPoint", () => {
   });
 });
 
-describe("title formation", () => {
-  // A two-word title: the left word paper, the right one plasma, a few volt points. Each word's
-  // outline is traced around its box (one stroke per word, points about 6 px apart), then a grid
-  // fills the whole title.
-  const box = { x: -0.2, y: 0.3, hw: 1.2, hh: 0.25 };
-  const words = [
-    { left: 0, right: 0.45 },
-    { left: 0.55, right: 1 },
-  ];
-  const perWord = 240;
-  const outline = words.length * perWord;
-  const count = outline + 600;
-  const points = new Float32Array(2 * count);
-  const tones = new Uint8Array(count);
-  const toneAt = (index: number, x: number) =>
-    index % 41 === 0 ? TITLE_TONES.volt : x < 0.5 ? TITLE_TONES.paper : TITLE_TONES.plasma;
-  words.forEach(({ left, right }, word) => {
-    // Lengths in world units, so the points are evenly spaced on screen.
-    const width = (right - left) * 2 * box.hw;
-    const height = 2 * box.hh;
-    const perimeter = 2 * (width + height);
-    for (let step = 0; step < perWord; step += 1) {
-      const d = (step / perWord) * perimeter;
-      let x: number;
-      let y: number;
-      if (d < width) {
-        [x, y] = [d, 0];
-      } else if (d < width + height) {
-        [x, y] = [width, d - width];
-      } else if (d < 2 * width + height) {
-        [x, y] = [2 * width + height - d, height];
-      } else {
-        [x, y] = [0, perimeter - d];
-      }
-      const index = word * perWord + step;
-      points[index * 2] = left + x / (2 * box.hw);
-      points[index * 2 + 1] = y / height;
-      tones[index] = toneAt(index, points[index * 2] ?? 0);
-    }
-  });
-  for (let cell = 0; cell < 600; cell += 1) {
-    const index = outline + cell;
-    const x = (cell % 30) / 29;
-    points[index * 2] = x;
-    points[index * 2 + 1] = Math.floor(cell / 30) / 19;
-    tones[index] = toneAt(index, x);
+describe("lattice formation", () => {
+  // The nodes of a 19 × 11 grid, row after row, across the table's box.
+  const columns = 19;
+  const rows = 11;
+  const nodes = new Float32Array(2 * columns * rows);
+  for (let node = 0; node < columns * rows; node += 1) {
+    nodes[node * 2] = (node % columns) / (columns - 1);
+    nodes[node * 2 + 1] = Math.floor(node / columns) / (rows - 1);
   }
-  const title: TitleFormation = { weight: 1, box, points, tones, outline };
+  const count = columns * rows;
+  const table = { x: -0.1, y: 0.2, hw: 1.1, hh: 0.6 };
+  const lattice: LatticeFormation = { weight: 1, box: table, nodes };
   const unit = 2 / 900;
-  /** Distance from a target to the nearest word outline, in CSS pixels. */
-  const fromOutline = (x: number, y: number) =>
-    Math.min(
-      ...words.map(({ left, right }) => {
-        const xl = box.x - box.hw + left * 2 * box.hw;
-        const xr = box.x - box.hw + right * 2 * box.hw;
-        const [yb, yt] = [box.y - box.hh, box.y + box.hh];
-        const inside = Math.min(x - xl, xr - x, yt - y, y - yb);
-        const outside = Math.hypot(Math.max(xl - x, 0, x - xr), Math.max(yb - y, 0, y - yt));
-        return (inside > 0 ? inside : outside) / unit;
-      }),
-    );
-
-  it("puts every particle on a point of the glyphs, inside the title's box", () => {
-    const { targets, layout } = run({ title }, 2000, 2.5);
-    for (let index = 0; index < layout.count; index += 1) {
-      const offset = index * FORMATION_STRIDE;
-      expect(targets[offset + 2]).toBe(1);
-      const x = targets[offset] ?? 0;
-      const y = targets[offset + 1] ?? 0;
-      // A partner may stand a step (3 px) beside its point, plus the shimmer.
-      expect(Math.abs(x - title.box.x)).toBeLessThanOrEqual(title.box.hw + 4 * unit);
-      expect(Math.abs(y - title.box.y)).toBeLessThanOrEqual(title.box.hh + 4 * unit);
-    }
+  /** Where node `node` stands, in world units. */
+  const nodeAt = (node: number) => ({
+    x: table.x - table.hw + (nodes[node * 2] ?? 0) * 2 * table.hw,
+    y: table.y + table.hh - (nodes[node * 2 + 1] ?? 0) * 2 * table.hh,
+  });
+  const targetOf = (targets: Float32Array, index: number) => ({
+    x: targets[index * FORMATION_STRIDE] ?? 0,
+    y: targets[index * FORMATION_STRIDE + 1] ?? 0,
   });
 
-  it("spreads the particles over the whole title", () => {
-    const { targets, layout } = run({ title }, 2000, 0);
-    const columns = new Set<number>();
+  it("rests one lit pair on every node, a hair apart, and holds every particle", () => {
+    const { targets, looks, layout } = run({ lattice }, 1600, 2);
     for (let index = 0; index < layout.count; index += 1) {
-      const x = targets[index * FORMATION_STRIDE] ?? 0;
-      columns.add(Math.round(((x - (title.box.x - title.box.hw)) / (2 * title.box.hw)) * 29));
-    }
-    expect(columns.size).toBe(30);
-  });
-
-  it("colours each word with its tone", () => {
-    const { targets, looks, layout } = run({ title }, 2000, 0);
-    let volt = 0;
-    for (let index = 0; index < layout.count; index += 1) {
-      const offset = index * FORMATION_STRIDE;
-      const x = ((targets[offset] ?? 0) - (title.box.x - title.box.hw)) / (2 * title.box.hw);
-      const [v, plasma, , paper] = [looks[offset], looks[offset + 1], looks[offset + 2], looks[offset + 3]];
-      if ((v ?? 0) > 0.5) {
-        volt += 1;
-        continue;
-      }
-      if (x < 0.45) {
-        expect(paper).toBeGreaterThan(0.5);
-        expect(plasma).toBe(0);
-      } else if (x > 0.55) {
-        expect(plasma).toBeGreaterThan(0.5);
-      }
-    }
-    expect(volt).toBeGreaterThan(0);
-  });
-
-  it("sweeps a sheen of light across the letters", () => {
-    // About a third of the way through its 7 s cycle, the sheen crosses the first word.
-    const { targets, looks, layout } = run({ title }, 2000, 2.528);
-    let lit = 0;
-    let dim = 0;
-    for (let index = 0; index < layout.count; index += 1) {
-      const offset = index * FORMATION_STRIDE;
-      const x = ((targets[offset] ?? 0) - (title.box.x - title.box.hw)) / (2 * title.box.hw);
-      const glow = looks[offset + 2] ?? 0;
-      if (Math.abs(x - 0.25) < 0.02) {
-        lit = Math.max(lit, glow);
-      } else if (Math.abs(x - 0.25) > 0.3) {
-        dim = Math.max(dim, glow);
-      }
-    }
-    expect(lit).toBeGreaterThan(1.6);
-    expect(dim).toBeLessThan(1.05);
-  });
-
-  /** Share of the pairs on the outlines, and the mean glow of those and of the others. */
-  function traced(count: number) {
-    const { targets, looks, layout } = run({ title }, count, 0);
-    let onOutline = 0;
-    let outlineGlow = 0;
-    let fillGlow = 0;
-    for (let index = 0; index < layout.count; index += 2) {
-      const offset = index * FORMATION_STRIDE;
-      const glow = looks[offset + 2] ?? 0;
-      if (fromOutline(targets[offset] ?? 0, targets[offset + 1] ?? 0) <= 1.5) {
-        onOutline += 1;
-        outlineGlow += glow;
+      expect(targets[index * FORMATION_STRIDE + 2]).toBe(1);
+      const node = nodeAt((index >> 1) % count);
+      const { x, y } = targetOf(targets, index);
+      expect(Math.hypot(x - node.x, y - node.y)).toBeLessThan(2.5 * unit);
+      const glow = looks[index * FORMATION_STRIDE + 2] ?? 0;
+      if (index >> 1 < count) {
+        expect(glow).toBeGreaterThan(0.25);
       } else {
-        fillGlow += glow;
+        // The pairs the nodes cannot hold wait there unlit.
+        expect(glow).toBe(0);
       }
     }
-    const pairs = layout.count / 2;
-    return {
-      share: onOutline / pairs,
-      outlineGlow: outlineGlow / onOutline,
-      fillGlow: fillGlow / Math.max(1, pairs - onOutline),
-    };
-  }
-
-  it("traces the outlines first, and fills the letters with the other particles", () => {
-    // About 2,800 px of outline, an atom every 4 px: 710 particles, a little over a third of 2,000.
-    const many = traced(2000);
-    expect(many.share).toBeGreaterThan(0.45);
-    expect(many.share).toBeLessThan(0.6);
-    // Bright outlines, a dim fill: the letters read crisply.
-    expect(many.outlineGlow).toBeGreaterThan(3 * many.fillGlow);
   });
 
-  it("gives the outlines nearly all the particles when there are few", () => {
-    expect(traced(400).share).toBeGreaterThan(0.82);
-  });
-
-  it("spaces the atoms of an outline evenly, each partner halfway to the next pair", () => {
-    // Few particles for a long outline: the partner goes several points along the stroke.
-    const { targets, layout } = run({ title }, 200, 0);
-    let spaced = 0;
-    let traced = 0;
-    for (let index = 0; index < layout.count; index += 2) {
-      const a = index * FORMATION_STRIDE;
-      const b = a + FORMATION_STRIDE;
-      if (fromOutline(targets[a] ?? 0, targets[a + 1] ?? 0) > 1.5) {
-        continue;
-      }
-      traced += 1;
-      const distance = Math.hypot(
-        (targets[a] ?? 0) - (targets[b] ?? 0),
-        (targets[a + 1] ?? 0) - (targets[b + 1] ?? 0),
-      );
-      // 480 outline points for 62 pairs: about 4 points, some 24 px, apart.
-      if (distance > 12 * unit && distance < 40 * unit) {
-        spaced += 1;
-      }
-    }
-    expect(spaced / traced).toBeGreaterThan(0.7);
-  });
-
-  it("draws the letters with finer grains than the other shapes", () => {
-    const layout = createIonFieldLayout(400);
+  it("draws the nodes with fine grains, paper white with a few volt sparks", () => {
+    const layout = createIonFieldLayout(800);
     const targets = new Float32Array(layout.count * FORMATION_STRIDE);
     const looks = new Float32Array(layout.count * FORMATION_STRIDE);
     const grains = new Float32Array(layout.count);
-    writeFormations(targets, looks, layout, { title }, null, 0, unit, grains);
-    expect(Math.max(...grains)).toBeLessThan(0.6);
-    const mark = { x: 1.1, y: 0, radius: 0.35 };
-    const pair = { weight: 1, box: { x: 1.1, y: 0, hw: 0.35, hh: 0.35 }, bond: 1, merge: 1, mark };
-    writeFormations(targets, looks, layout, { pair }, null, 0, unit, grains);
-    expect(Math.min(...grains)).toBe(1);
+    writeFormations(targets, looks, layout, { lattice }, null, 2, unit, grains);
+    expect(Math.max(...grains)).toBeLessThanOrEqual(0.42);
+    let sparks = 0;
+    for (let index = 0; index < 2 * count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      if ((looks[offset] ?? 0) > 0.5) {
+        sparks += 1;
+      } else {
+        expect(looks[offset + 3]).toBeGreaterThan(0.5);
+      }
+    }
+    expect(sparks).toBeGreaterThan(0);
+    expect(sparks).toBeLessThan(0.2 * 2 * count);
   });
 
-  it("hands the letters over to the logo mark one after another, from the right", () => {
+  it("sends a soft wave of light across the lattice", () => {
+    // Halfway through its nine-second cycle, the wave crosses the middle of the table.
+    const { looks } = run({ lattice }, 1600, 4.5);
+    let lit = 0;
+    let dim = 0;
+    for (let index = 0; index < 2 * count; index += 1) {
+      const node = (index >> 1) % count;
+      const along = (nodes[node * 2] ?? 0) * 0.75 + (nodes[node * 2 + 1] ?? 0) * 0.25;
+      const glow = looks[index * FORMATION_STRIDE + 2] ?? 0;
+      if (Math.abs(along - 0.5) < 0.02) {
+        lit = Math.max(lit, glow);
+      } else if (Math.abs(along - 0.5) > 0.3) {
+        dim = Math.max(dim, glow);
+      }
+    }
+    expect(lit).toBeGreaterThan(0.8);
+    expect(dim).toBeLessThan(0.44);
+  });
+
+  it("hands the nodes over to the logo mark one after another, from the right", () => {
     const mark = { x: 1.1, y: 0, radius: 0.35 };
     const pair = { weight: 0.5, box: { x: 1.1, y: 0, hw: 0.35, hh: 0.35 }, bond: 1, merge: 1, mark };
-    const { targets, layout } = run({ title: { ...title, weight: 0.5 }, pair }, 2000, 1);
-    const left = title.box.x - title.box.hw;
-    let written = 0;
+    const { targets, layout } = run({ lattice: { ...lattice, weight: 0.5 }, pair }, 1600, 1);
+    let resting = 0;
     let gone = 0;
-    let writtenX = 0;
-    for (let index = 0; index < layout.count; index += 1) {
-      const offset = index * FORMATION_STRIDE;
-      // Fully held all along: the two shapes share each particle, never set free.
-      expect(targets[offset + 2]).toBeCloseTo(1, 5);
-      const x = targets[offset] ?? 0;
-      const y = targets[offset + 1] ?? 0;
-      const nearMark = Math.hypot(x - mark.x, y - mark.y) < mark.radius * 1.2;
-      const inTitle =
-        Math.abs(y - title.box.y) <= title.box.hh + unit && Math.abs(x - title.box.x) <= title.box.hw;
-      if (nearMark) {
-        gone += 1;
-      } else if (inTitle) {
-        written += 1;
-        writtenX += (x - left) / (2 * title.box.hw);
-      }
-    }
-    // Halfway: most particles are either still in a letter or already in the mark, not squashed in between.
-    expect(written + gone).toBeGreaterThan(layout.count * 0.75);
-    expect(written).toBeGreaterThan(layout.count * 0.2);
-    expect(gone).toBeGreaterThan(layout.count * 0.2);
-    // The right of the title has left first.
-    expect(writtenX / written).toBeLessThan(0.45);
-  });
-
-  it("keeps partners side by side in the letters, never bonded across two words", () => {
-    const { targets, layout } = run({ title }, 2000, 0);
-    let far = 0;
+    let restingX = 0;
     for (let index = 0; index < layout.count; index += 2) {
-      const a = index * FORMATION_STRIDE;
-      const b = (index + 1) * FORMATION_STRIDE;
-      const distance = Math.hypot(
-        (targets[a] ?? 0) - (targets[b] ?? 0),
-        (targets[a + 1] ?? 0) - (targets[b + 1] ?? 0),
-      );
-      if (distance > 12 * unit) {
-        far += 1;
+      // Fully held all along: the two shapes share each particle, never set free.
+      expect(targets[index * FORMATION_STRIDE + 2]).toBeCloseTo(1, 5);
+      const node = (index >> 1) % count;
+      const { x, y } = targetOf(targets, index);
+      if (Math.hypot(x - mark.x, y - mark.y) < mark.radius * 1.2) {
+        gone += 1;
+      } else {
+        const at = nodeAt(node);
+        if (Math.hypot(x - at.x, y - at.y) < 3 * unit) {
+          resting += 1;
+          restingX += nodes[node * 2] ?? 0;
+        }
       }
     }
-    expect(far).toBe(0);
+    const pairs = layout.count / 2;
+    // Halfway: most pairs are on their node or in the mark, not squashed in between.
+    expect(resting + gone).toBeGreaterThan(pairs * 0.65);
+    expect(resting).toBeGreaterThan(pairs * 0.2);
+    expect(gone).toBeGreaterThan(pairs * 0.2);
+    // The right of the table has left first.
+    expect(restingX / resting).toBeLessThan(0.45);
   });
 
-  it("is carried with the title while the page scrolls", () => {
+  it("is carried with the table while the page scrolls", () => {
     const layout = createIonFieldLayout(400);
     const targets = new Float32Array(layout.count * FORMATION_STRIDE);
     const looks = new Float32Array(layout.count * FORMATION_STRIDE);
-    const moved = { ...title, box: { ...title.box, y: title.box.y + 0.15 } };
-    writeFormations(targets, looks, layout, { title: moved }, { title }, 1, unit);
+    const moved = { ...lattice, box: { ...table, y: table.y + 0.15 } };
+    writeFormations(targets, looks, layout, { lattice: moved }, { lattice }, 1, unit);
     for (let index = 0; index < layout.count; index += 1) {
       expect(targets[index * FORMATION_STRIDE + 3]).toBeCloseTo(0.15, 6);
     }
+  });
+
+  describe("reactions", () => {
+    const from = { x: -0.6, y: 0.3 };
+    const to = { x: 0.4, y: -0.1 };
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const isChain = (index: number) => index >> 1 >= count && index >> 1 < count + LINK_PAIRS;
+
+    it("draws a chain of bonded atoms from one element to the other, plasma to volt", () => {
+      const { targets, looks, layout } = run({ lattice, link: { weight: 1, from, to } }, 1600, 0.5);
+      let previous = -1;
+      for (let index = 0; index < layout.count; index += 1) {
+        if (!isChain(index)) {
+          continue;
+        }
+        const { x, y } = targetOf(targets, index);
+        // Along the segment, at most a gentle arc away from it.
+        const s = ((x - from.x) * (to.x - from.x) + (y - from.y) * (to.y - from.y)) / length ** 2;
+        const away = Math.abs((x - from.x) * (to.y - from.y) - (y - from.y) * (to.x - from.x)) / length;
+        expect(s).toBeGreaterThan(0);
+        expect(s).toBeLessThan(1);
+        expect(away).toBeLessThan(0.13 * length);
+        if (index % 2 === 0) {
+          // Pair after pair, from the first element to the second.
+          expect(s).toBeGreaterThan(previous);
+          previous = s;
+          const partner = targetOf(targets, index + 1);
+          expect(Math.hypot(partner.x - x, partner.y - y)).toBeLessThan(length / LINK_PAIRS);
+        }
+        const offset = index * FORMATION_STRIDE;
+        const [volt, plasma] = [looks[offset] ?? 0, looks[offset + 1] ?? 0];
+        expect(s < 0.3 ? plasma > volt : s > 0.7 ? volt > plasma : true).toBe(true);
+        expect(looks[offset + 2]).toBeGreaterThan(0);
+      }
+    });
+
+    it("borrows only its chain from the lattice, as far as it has faded in", () => {
+      const { targets, layout } = run({ lattice, link: { weight: 0.5, from, to } }, 1600, 0.5);
+      const resting = run({ lattice }, 1600, 0.5).targets;
+      for (let index = 0; index < layout.count; index += 1) {
+        expect(targets[index * FORMATION_STRIDE + 2]).toBe(1);
+        if (!isChain(index)) {
+          expect(targetOf(targets, index)).toEqual(targetOf(resting, index));
+        }
+      }
+    });
   });
 });
 
