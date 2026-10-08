@@ -417,6 +417,46 @@ test.describe("hero under study: the holographic hand", () => {
   });
 });
 
+test.describe("hero under study: people", () => {
+  test("follows the photographs one after the other, and the visitor can pause them", async ({ page }) => {
+    await page.clock.install();
+    await page.goto("/apercu/gens");
+    // The title stays whole for assistive technologies; its last words change on screen.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
+    await expect(page.getByText("Photos d’illustration, pas des membres")).toBeVisible();
+    const scene = page.locator(".gens-photo[data-active]");
+    await expect(scene).toHaveAttribute("data-scene", "crochus");
+    await page.clock.runFor(5300);
+    await expect(scene).toHaveAttribute("data-scene", "amour");
+    await page.getByRole("button", { name: "Mettre le diaporama en pause" }).click();
+    await page.clock.runFor(12_000);
+    await expect(scene).toHaveAttribute("data-scene", "amour");
+    await page.getByRole("button", { name: "Relancer le diaporama" }).click();
+    await page.clock.runFor(5300);
+    await expect(scene).toHaveAttribute("data-scene", "potes");
+  });
+
+  test("has no detectable violations", async ({ page }) => {
+    await page.goto("/apercu/gens");
+    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
+    await page.waitForTimeout(2500);
+    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
+  });
+
+  test.describe("with reduced motion", () => {
+    test.use({ reducedMotion: "reduce" });
+
+    test("keeps the first photograph, with no slideshow to pause", async ({ page }) => {
+      await page.clock.install();
+      await page.goto("/apercu/gens");
+      await expect(page.locator(".gens-photo[data-active]")).toHaveAttribute("data-scene", "crochus");
+      await page.clock.runFor(12_000);
+      await expect(page.locator(".gens-photo[data-active]")).toHaveAttribute("data-scene", "crochus");
+      await expect(page.getByRole("button", { name: "Mettre le diaporama en pause" })).toHaveCount(0);
+    });
+  });
+});
+
 test.describe("accessibility (WCAG 2.2 AA)", () => {
   test("the landing has no detectable violations", async ({ page }) => {
     await page.goto("/");

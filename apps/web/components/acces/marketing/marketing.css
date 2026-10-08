@@ -1785,6 +1785,371 @@
   }
 }
 
+/* -------------------------------------------------------------- gens hero */
+
+/*
+ * Hero under study (gens/gens-stage.tsx): photographs of people, full screen,
+ * graded towards the night of the brand (darker, a plasma wash, grain), the
+ * title at the top, the call at the bottom, the people in between. A bond
+ * of light draws itself between two of them, an atom at each end.
+ */
+.gens-hero {
+  justify-content: space-between;
+  gap: 2rem;
+  padding-bottom: clamp(1.25rem, 4svh, 2.75rem);
+}
+
+.gens-photos {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--color-ink);
+}
+
+.gens-photo {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.3s var(--ease-in-out);
+}
+
+.gens-photo[data-active] {
+  opacity: 1;
+}
+
+/* A slow zoom out while the photograph shows. */
+.gens-photo img {
+  filter: saturate(0.88) contrast(1.06) brightness(0.8);
+  transform: scale(1.07);
+  transition: transform calc(var(--scene-time) + 1.3s) linear;
+}
+
+.gens-photo[data-active] img {
+  transform: scale(1);
+}
+
+.gens-grade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, color-mix(in oklch, var(--color-ink) 80%, transparent), transparent 40%),
+    linear-gradient(
+      to top,
+      color-mix(in oklch, var(--color-ink) 94%, transparent),
+      color-mix(in oklch, var(--color-ink) 45%, transparent) 30%,
+      transparent 55%
+    ),
+    radial-gradient(
+      130% 95% at 50% 50%,
+      transparent 55%,
+      color-mix(in oklch, var(--color-ink) 65%, transparent)
+    );
+}
+
+/* The brand's colour over every photograph, and film grain. */
+.gens-grade::before,
+.gens-grade::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.gens-grade::before {
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklch, var(--color-plasma) 34%, transparent),
+    transparent 60%,
+    color-mix(in oklch, var(--color-volt) 12%, transparent)
+  );
+  mix-blend-mode: soft-light;
+}
+
+.gens-grade::after {
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* The bond: drawn from one person to the other, an atom lighting up at each end. */
+.gens-bond {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.gens-bond-line {
+  fill: none;
+  stroke: url(#gens-bond-light);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  filter: drop-shadow(0 0 5px var(--color-plasma)) drop-shadow(0 0 14px var(--color-plasma));
+  animation: gens-draw 1.2s var(--ease-out) 0.9s forwards;
+}
+
+.gens-atom {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gens-atom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.7s forwards;
+}
+
+.gens-atom-late {
+  animation-delay: 1.9s;
+}
+
+.gens-atom-orbit {
+  fill: none;
+  stroke: color-mix(in oklch, var(--color-paper) 70%, transparent);
+  stroke-width: 1.2;
+}
+
+.gens-atom-nucleus {
+  fill: var(--color-plasma);
+  filter: drop-shadow(0 0 6px var(--color-plasma));
+}
+
+.gens-atom-electron {
+  fill: var(--color-volt);
+  filter: drop-shadow(0 0 4px var(--color-volt));
+}
+
+/* Reduced motion: the bond is simply there. */
+.gens-bond[data-still] .gens-bond-line {
+  stroke-dashoffset: 0;
+}
+
+.gens-bond[data-still] .gens-atom {
+  opacity: 1;
+}
+
+.gens-copy,
+.gens-foot {
+  width: 100%;
+  max-width: 92rem;
+  margin-inline: auto;
+}
+
+.gens-copy {
+  display: grid;
+  justify-items: start;
+  gap: clamp(0.75rem, 2svh, 1.25rem);
+}
+
+.gens-copy > p {
+  animation: rise-in 1.4s var(--ease-out) 0.45s backwards;
+}
+
+.gens-title {
+  font-family: var(--font-headline), var(--font-display);
+  font-size: clamp(3.25rem, min(9vw, 16svh), 10rem);
+  font-weight: 700;
+  font-variation-settings:
+    "wdth" 84,
+    "opsz" 96;
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+  color: var(--color-paper);
+  text-shadow: 0 8px 50px rgb(0 0 0 / 0.45);
+  animation: focus-pull 1.4s var(--ease-out) both;
+}
+
+.gens-find {
+  display: block;
+}
+
+/* Every line in the same place: the title keeps the height of the longest. */
+.gens-lines {
+  display: grid;
+}
+
+.gens-lines em {
+  grid-area: 1 / 1;
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  color: var(--color-plasma);
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(0.3em);
+  transition:
+    opacity 0.6s var(--ease-out),
+    filter 0.6s var(--ease-out),
+    transform 0.9s var(--ease-out);
+}
+
+.gens-lines em[data-active] {
+  opacity: 1;
+  filter: none;
+  transform: none;
+  transition-delay: 0.3s;
+}
+
+.gens-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem 3rem;
+}
+
+.gens-foot > * {
+  animation: rise-in 1.4s var(--ease-out) 0.55s backwards;
+}
+
+.gens-lead {
+  max-width: 34rem;
+  font-size: clamp(1rem, 1.25vw, 1.15rem);
+  line-height: 1.55;
+  text-shadow: 0 2px 20px rgb(0 0 0 / 0.5);
+  color: color-mix(in oklch, var(--color-paper) 88%, transparent);
+}
+
+.gens-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.gens-side {
+  display: grid;
+  justify-items: end;
+  gap: 0.875rem;
+  text-align: right;
+}
+
+.gens-meta {
+  display: grid;
+  justify-items: inherit;
+  gap: 0.375rem;
+}
+
+.gens-meta .hero-schools {
+  justify-content: flex-end;
+}
+
+.gens-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.gens-illustration {
+  font: 400 0.625rem / 1.3 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--color-paper) 70%, transparent);
+}
+
+/* How far the slideshow is: one bar per photograph, the current one filling up. */
+.gens-bars {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.gens-bars li {
+  width: 1.75rem;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in oklch, var(--color-paper) 25%, transparent);
+}
+
+.gens-bars li::after {
+  content: "";
+  display: block;
+  height: 100%;
+  background: var(--color-paper);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.gens-bars li[data-done]::after {
+  transform: scaleX(1);
+}
+
+.gens-bars li[data-active]::after {
+  animation: gens-progress var(--scene-time) linear forwards;
+}
+
+.gens-controls[data-paused] .gens-bars li[data-active]::after {
+  animation-play-state: paused;
+}
+
+.gens-pause {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklch, var(--color-paper) 35%, transparent);
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--color-ink) 45%, transparent);
+  color: var(--color-paper);
+  backdrop-filter: blur(10px);
+  transition: border-color 0.25s var(--ease-out);
+}
+
+.gens-pause:hover {
+  border-color: var(--color-paper);
+}
+
+.gens-pause:focus-visible {
+  outline: 2px solid var(--color-volt);
+  outline-offset: 3px;
+}
+
+/* Narrow screens: everything on the left, the call as compact as it gets. */
+@media (max-width: 47.99rem) {
+  .gens-foot {
+    gap: 1.25rem;
+  }
+
+  .gens-actions > * {
+    min-height: 3rem;
+  }
+
+  .gens-side {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .gens-meta .hero-schools {
+    justify-content: flex-start;
+  }
+}
+
+@keyframes gens-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes gens-atom {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes gens-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
 /* Text is painted from the first frame (no hidden LCP): it only comes into focus. */
 @keyframes focus-pull {
   from {

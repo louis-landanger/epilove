@@ -178,5 +178,18 @@
     },
     "join": "Rejoindre la liste",
     "continue": "Continuer"
+  },
+  "gens": {
+    "lead": "L’app de rencontre et d’amitié réservée aux étudiantes et étudiants vérifiés du campus. Amour, potes ou binôme : tout commence par une liaison.",
+    "find": "Trouve",
+    "lines": {
+      "crochus": "tes atomes crochus.",
+      "amour": "ton amour.",
+      "potes": "tes potes.",
+      "binome": "ton binôme."
+    },
+    "illustration": "Photos d’illustration, pas des membres",
+    "pause": "Mettre le diaporama en pause",
+    "play": "Relancer le diaporama"
   }
 }

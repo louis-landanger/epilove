@@ -178,5 +178,18 @@
     },
     "join": "Join the list",
     "continue": "Continue"
+  },
+  "gens": {
+    "lead": "The dating and friendship app for verified students of the campus. Love, friends or a teammate: it all starts with a bond.",
+    "find": "Find",
+    "lines": {
+      "crochus": "your perfect chemistry.",
+      "amour": "your love.",
+      "potes": "your crew.",
+      "binome": "your teammate."
+    },
+    "illustration": "Illustrative photos, not members",
+    "pause": "Pause the slideshow",
+    "play": "Play the slideshow"
   }
 }
