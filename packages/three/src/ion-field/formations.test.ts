@@ -4,11 +4,10 @@ import {
   contourPoint,
   FORMATION_STRIDE,
   type Formations,
-  type LatticeFormation,
-  LINK_PAIRS,
   orbitArcPoint,
   orbitTheta,
   PAIR_FIELD_LINES,
+  type ProfilesFormation,
   pairFieldPoint,
   pairGeometry,
   toWorldBox,
@@ -74,171 +73,161 @@ describe("contourPoint", () => {
   });
 });
 
-describe("lattice formation", () => {
-  // The nodes of a 19 × 11 grid, row after row, across the table's box.
-  const columns = 19;
-  const rows = 11;
-  const nodes = new Float32Array(2 * columns * rows);
-  for (let node = 0; node < columns * rows; node += 1) {
-    nodes[node * 2] = (node % columns) / (columns - 1);
-    nodes[node * 2 + 1] = Math.floor(node / columns) / (rows - 1);
-  }
-  const count = columns * rows;
-  const table = { x: -0.1, y: 0.2, hw: 1.1, hh: 0.6 };
-  const lattice: LatticeFormation = { weight: 1, box: table, nodes };
+describe("profiles formation", () => {
+  // Two cards tilted towards each other, of two schools (ISG and IPSA in `SCHOOL_KEYS` order).
+  const left = { x: -0.32, y: 0.1, hw: 0.28, hh: 0.42, angle: 0.12, school: 3 };
+  const right = { x: 0.26, y: 0.04, hw: 0.28, hh: 0.42, angle: -0.1, school: 4 };
+  const profiles: ProfilesFormation = { weight: 1, cards: [left, right], spread: 0, glow: 1 };
   const unit = 2 / 900;
-  /** Where node `node` stands, in world units. */
-  const nodeAt = (node: number) => ({
-    x: table.x - table.hw + (nodes[node * 2] ?? 0) * 2 * table.hw,
-    y: table.y + table.hh - (nodes[node * 2 + 1] ?? 0) * 2 * table.hh,
-  });
-  const targetOf = (targets: Float32Array, index: number) => ({
-    x: targets[index * FORMATION_STRIDE] ?? 0,
-    y: targets[index * FORMATION_STRIDE + 1] ?? 0,
-  });
+  /** A target in the frame of its card standing straight: x right, y up, from the card's centre. */
+  const onCard = (targets: Float32Array, index: number) => {
+    const card = (index >> 1) & 1 ? right : left;
+    const dx = (targets[index * FORMATION_STRIDE] ?? 0) - card.x;
+    const dy = (targets[index * FORMATION_STRIDE + 1] ?? 0) - card.y;
+    const cos = Math.cos(-card.angle);
+    const sin = Math.sin(-card.angle);
+    return { card, x: dx * cos - dy * sin, y: dx * sin + dy * cos };
+  };
+  const pictureBottom = (card: typeof left) => card.hh - 2 * card.hw * 1.05;
 
-  it("rests one lit pair on every node, a hair apart, and holds every particle", () => {
-    const { targets, looks, layout } = run({ lattice }, 1600, 2);
+  it("puts every pair on one of the two cards, right inside it, half on each", () => {
+    const { targets, layout } = run({ profiles }, 1600, 1);
+    const onLeft = { count: 0 };
     for (let index = 0; index < layout.count; index += 1) {
       expect(targets[index * FORMATION_STRIDE + 2]).toBe(1);
-      const node = nodeAt((index >> 1) % count);
-      const { x, y } = targetOf(targets, index);
-      expect(Math.hypot(x - node.x, y - node.y)).toBeLessThan(2.5 * unit);
-      const glow = looks[index * FORMATION_STRIDE + 2] ?? 0;
-      if (index >> 1 < count) {
-        expect(glow).toBeGreaterThan(0.25);
-      } else {
-        // The pairs the nodes cannot hold wait there unlit.
-        expect(glow).toBe(0);
+      const { card, x, y } = onCard(targets, index);
+      expect(Math.abs(x)).toBeLessThan(card.hw);
+      expect(Math.abs(y)).toBeLessThan(card.hh);
+      if (card === left) {
+        onLeft.count += 1;
       }
     }
+    expect(onLeft.count).toBe(layout.count / 2);
   });
 
-  it("draws the nodes with fine grains, paper white with a few volt sparks", () => {
+  it("draws the outline, the picture and the lines of text of each card", () => {
+    const { targets, layout } = run({ profiles }, 1600, 1);
+    let edge = 0;
+    let picture = 0;
+    let text = 0;
+    for (let index = 0; index < layout.count; index += 1) {
+      const { card, x, y } = onCard(targets, index);
+      const fromEdge = Math.min(card.hw - Math.abs(x), card.hh - Math.abs(y)) / unit;
+      if (fromEdge < 10) {
+        edge += 1;
+      } else if (y > pictureBottom(card)) {
+        picture += 1;
+      } else {
+        text += 1;
+      }
+    }
+    expect(edge / layout.count).toBeGreaterThan(0.2);
+    expect(picture / layout.count).toBeGreaterThan(0.35);
+    expect(text / layout.count).toBeGreaterThan(0.05);
+  });
+
+  it("colours each picture with the atoms of the person's school, the rest plasma, the text paper white", () => {
+    const { targets, looks, layout } = run({ profiles }, 1600, 1);
+    let ownSchool = 0;
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      const [plasma, paper] = [looks[offset + 1] ?? 0, looks[offset + 3] ?? 0];
+      if (paper > 0.5) {
+        continue;
+      }
+      // Untinted or plasma: the picture.
+      const { card, y } = onCard(targets, index);
+      expect(y).toBeGreaterThan(pictureBottom(card) - 2 * unit);
+      const sameSchool = layout.schools[index] === card.school;
+      expect(plasma > 0.5).toBe(!sameSchool);
+      if (sameSchool) {
+        ownSchool += 1;
+      }
+    }
+    expect(ownSchool).toBeGreaterThan(0);
+  });
+
+  it("lights the atoms as much as asked, in fine grains", () => {
     const layout = createIonFieldLayout(800);
     const targets = new Float32Array(layout.count * FORMATION_STRIDE);
     const looks = new Float32Array(layout.count * FORMATION_STRIDE);
     const grains = new Float32Array(layout.count);
-    writeFormations(targets, looks, layout, { lattice }, null, 2, unit, grains);
-    expect(Math.max(...grains)).toBeLessThanOrEqual(0.42);
-    let sparks = 0;
-    for (let index = 0; index < 2 * count; index += 1) {
-      const offset = index * FORMATION_STRIDE;
-      if ((looks[offset] ?? 0) > 0.5) {
-        sparks += 1;
-      } else {
-        expect(looks[offset + 3]).toBeGreaterThan(0.5);
-      }
-    }
-    expect(sparks).toBeGreaterThan(0);
-    expect(sparks).toBeLessThan(0.2 * 2 * count);
+    writeFormations(targets, looks, layout, { profiles: { ...profiles, glow: 0 } }, null, 1, unit, grains);
+    expect(
+      Math.max(
+        ...Array.from({ length: layout.count }, (_, index) => looks[index * FORMATION_STRIDE + 2] ?? 0),
+      ),
+    ).toBe(0);
+    expect(Math.max(...grains)).toBeLessThan(0.6);
+    writeFormations(targets, looks, layout, { profiles }, null, 1, unit, grains);
+    expect(
+      Math.min(
+        ...Array.from({ length: layout.count }, (_, index) => looks[index * FORMATION_STRIDE + 2] ?? 0),
+      ),
+    ).toBeGreaterThan(0.4);
   });
 
-  it("sends a soft wave of light across the lattice", () => {
-    // Halfway through its nine-second cycle, the wave crosses the middle of the table.
-    const { looks } = run({ lattice }, 1600, 4.5);
-    let lit = 0;
-    let dim = 0;
-    for (let index = 0; index < 2 * count; index += 1) {
-      const node = (index >> 1) % count;
-      const along = (nodes[node * 2] ?? 0) * 0.75 + (nodes[node * 2 + 1] ?? 0) * 0.25;
-      const glow = looks[index * FORMATION_STRIDE + 2] ?? 0;
-      if (Math.abs(along - 0.5) < 0.02) {
-        lit = Math.max(lit, glow);
-      } else if (Math.abs(along - 0.5) > 0.3) {
-        dim = Math.max(dim, glow);
+  it("blows the atoms away around the cards when they spread, still held", () => {
+    const { targets, layout } = run({ profiles: { ...profiles, spread: 1 } }, 1600, 1);
+    let outside = 0;
+    let rise = 0;
+    const resting = run({ profiles }, 1600, 1).targets;
+    for (let index = 0; index < layout.count; index += 1) {
+      expect(targets[index * FORMATION_STRIDE + 2]).toBe(1);
+      const { card, x, y } = onCard(targets, index);
+      if (Math.abs(x) > card.hw || Math.abs(y) > card.hh) {
+        outside += 1;
       }
+      rise += (targets[index * FORMATION_STRIDE + 1] ?? 0) - (resting[index * FORMATION_STRIDE + 1] ?? 0);
     }
-    expect(lit).toBeGreaterThan(0.8);
-    expect(dim).toBeLessThan(0.44);
+    expect(outside / layout.count).toBeGreaterThan(0.4);
+    expect(rise / layout.count).toBeGreaterThan(0);
   });
 
-  it("hands the nodes over to the logo mark one after another, from the right", () => {
+  it("hands the cards over to the logo mark from the top down", () => {
     const mark = { x: 1.1, y: 0, radius: 0.35 };
     const pair = { weight: 0.5, box: { x: 1.1, y: 0, hw: 0.35, hh: 0.35 }, bond: 1, merge: 1, mark };
-    const { targets, layout } = run({ lattice: { ...lattice, weight: 0.5 }, pair }, 1600, 1);
+    const { targets, layout } = run({ profiles: { ...profiles, weight: 0.5 }, pair }, 1600, 1);
     let resting = 0;
     let gone = 0;
-    let restingX = 0;
-    for (let index = 0; index < layout.count; index += 2) {
+    let depth = 0;
+    for (let index = 0; index < layout.count; index += 1) {
       // Fully held all along: the two shapes share each particle, never set free.
       expect(targets[index * FORMATION_STRIDE + 2]).toBeCloseTo(1, 5);
-      const node = (index >> 1) % count;
-      const { x, y } = targetOf(targets, index);
+      const x = targets[index * FORMATION_STRIDE] ?? 0;
+      const y = targets[index * FORMATION_STRIDE + 1] ?? 0;
       if (Math.hypot(x - mark.x, y - mark.y) < mark.radius * 1.2) {
         gone += 1;
-      } else {
-        const at = nodeAt(node);
-        if (Math.hypot(x - at.x, y - at.y) < 3 * unit) {
-          resting += 1;
-          restingX += nodes[node * 2] ?? 0;
-        }
+        continue;
+      }
+      const spot = onCard(targets, index);
+      if (Math.abs(spot.x) < spot.card.hw && Math.abs(spot.y) < spot.card.hh) {
+        resting += 1;
+        depth += (spot.card.hh - spot.y) / (2 * spot.card.hh);
       }
     }
-    const pairs = layout.count / 2;
-    // Halfway: most pairs are on their node or in the mark, not squashed in between.
-    expect(resting + gone).toBeGreaterThan(pairs * 0.65);
-    expect(resting).toBeGreaterThan(pairs * 0.2);
-    expect(gone).toBeGreaterThan(pairs * 0.2);
-    // The right of the table has left first.
-    expect(restingX / resting).toBeLessThan(0.45);
+    expect(resting + gone).toBeGreaterThan(layout.count * 0.6);
+    expect(resting).toBeGreaterThan(layout.count * 0.15);
+    expect(gone).toBeGreaterThan(layout.count * 0.15);
+    // The tops of the cards have left first: what is left sits low.
+    expect(depth / resting).toBeGreaterThan(0.55);
   });
 
-  it("is carried with the table while the page scrolls", () => {
+  it("is carried with the cards while the page scrolls", () => {
     const layout = createIonFieldLayout(400);
     const targets = new Float32Array(layout.count * FORMATION_STRIDE);
     const looks = new Float32Array(layout.count * FORMATION_STRIDE);
-    const moved = { ...lattice, box: { ...table, y: table.y + 0.15 } };
-    writeFormations(targets, looks, layout, { lattice: moved }, { lattice }, 1, unit);
+    const moved: ProfilesFormation = {
+      ...profiles,
+      cards: [
+        { ...left, y: left.y + 0.15 },
+        { ...right, y: right.y + 0.15 },
+      ],
+    };
+    writeFormations(targets, looks, layout, { profiles: moved }, { profiles }, 1, unit);
     for (let index = 0; index < layout.count; index += 1) {
       expect(targets[index * FORMATION_STRIDE + 3]).toBeCloseTo(0.15, 6);
     }
-  });
-
-  describe("reactions", () => {
-    const from = { x: -0.6, y: 0.3 };
-    const to = { x: 0.4, y: -0.1 };
-    const length = Math.hypot(to.x - from.x, to.y - from.y);
-    const isChain = (index: number) => index >> 1 >= count && index >> 1 < count + LINK_PAIRS;
-
-    it("draws a chain of bonded atoms from one element to the other, plasma to volt", () => {
-      const { targets, looks, layout } = run({ lattice, link: { weight: 1, from, to } }, 1600, 0.5);
-      let previous = -1;
-      for (let index = 0; index < layout.count; index += 1) {
-        if (!isChain(index)) {
-          continue;
-        }
-        const { x, y } = targetOf(targets, index);
-        // Along the segment, at most a gentle arc away from it.
-        const s = ((x - from.x) * (to.x - from.x) + (y - from.y) * (to.y - from.y)) / length ** 2;
-        const away = Math.abs((x - from.x) * (to.y - from.y) - (y - from.y) * (to.x - from.x)) / length;
-        expect(s).toBeGreaterThan(0);
-        expect(s).toBeLessThan(1);
-        expect(away).toBeLessThan(0.13 * length);
-        if (index % 2 === 0) {
-          // Pair after pair, from the first element to the second.
-          expect(s).toBeGreaterThan(previous);
-          previous = s;
-          const partner = targetOf(targets, index + 1);
-          expect(Math.hypot(partner.x - x, partner.y - y)).toBeLessThan(length / LINK_PAIRS);
-        }
-        const offset = index * FORMATION_STRIDE;
-        const [volt, plasma] = [looks[offset] ?? 0, looks[offset + 1] ?? 0];
-        expect(s < 0.3 ? plasma > volt : s > 0.7 ? volt > plasma : true).toBe(true);
-        expect(looks[offset + 2]).toBeGreaterThan(0);
-      }
-    });
-
-    it("borrows only its chain from the lattice, as far as it has faded in", () => {
-      const { targets, layout } = run({ lattice, link: { weight: 0.5, from, to } }, 1600, 0.5);
-      const resting = run({ lattice }, 1600, 0.5).targets;
-      for (let index = 0; index < layout.count; index += 1) {
-        expect(targets[index * FORMATION_STRIDE + 2]).toBe(1);
-        if (!isChain(index)) {
-          expect(targetOf(targets, index)).toEqual(targetOf(resting, index));
-        }
-      }
-    });
   });
 });
 

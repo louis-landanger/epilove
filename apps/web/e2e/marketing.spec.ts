@@ -86,13 +86,15 @@ test.describe("landing", () => {
     );
   });
 
-  test("makes two elements of the periodic table react, from the keyboard too", async ({ page }) => {
+  test("shows two fictional profiles bonding, out of reach of assistive technologies", async ({ page }) => {
     await page.goto("/");
-    const again = page.getByRole("button", { name: "Nouvelle réaction" });
-    await again.focus();
-    await page.keyboard.press("Enter");
-    // Announced politely, only when someone asked for it.
-    await expect(page.locator(".readout [aria-live]")).toContainText(/\d+\s?% de chimie/);
+    const stage = page.locator("[data-field-profiles]");
+    await expect(stage.locator("[data-profile-card]")).toHaveCount(2);
+    await expect(stage.locator("[data-profile-card]").first()).toBeVisible();
+    await expect(stage).toContainText("Liaison établie");
+    await expect(stage).toContainText("Profils fictifs");
+    // An illustration: inert, so neither focus nor screen readers land in it.
+    await expect(stage).toHaveAttribute("inert", "");
   });
 
   test("tells the story section by section", async ({ page }) => {

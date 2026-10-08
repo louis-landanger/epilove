@@ -1,11 +1,16 @@
-import { markPlacementFor, type PixelBox, type ViewportFormations } from "@atomes/three";
+import {
+  markPlacementFor,
+  type PixelBox,
+  type ViewportFormations,
+  type ViewportProfileCard,
+} from "@atomes/three";
 
 /**
  * The ion field's journey down the landing page (docs/02-design.md, section
  * 5): from the measured position of each section, which shapes the particles
- * draw (the lattice of the hero's periodic table and its reactions, the logo
- * mark beside the manifesto, the stacked cards, the school race tubes, the
- * Pact rings) and how they share them. Pure,
+ * draw (the hero's two profile cards, the logo mark beside the manifesto, the
+ * stacked cards, the school race tubes, the Pact rings) and how they share
+ * them. Pure,
  * so it can be tested without a browser; the canvas measures the page and
  * applies the result every frame.
  */
@@ -16,12 +21,15 @@ export interface JourneyMeasures {
   readonly height: number;
   /** Hero and manifesto (`[data-field-scope]`): the field condenses into the logo mark there. */
   readonly scope: PixelBox | null;
-  /** The hero's periodic table (`[data-field-lattice]`) and the nodes of its grid, in [0, 1] of its box. */
-  readonly lattice: { readonly box: PixelBox; readonly nodes: Float32Array } | null;
-  /** The reaction under way in the table: the centres of its two elements, and its age in seconds. */
-  readonly reaction: {
-    readonly from: { readonly x: number; readonly y: number };
-    readonly to: { readonly x: number; readonly y: number };
+  /**
+   * The hero's two profile cards (`[data-field-profiles]`): the stage, each
+   * card, and where the match loop stands (match-stage.tsx: its phase, and
+   * how long ago it started, in seconds).
+   */
+  readonly profiles: {
+    readonly box: PixelBox;
+    readonly cards: readonly [ViewportProfileCard, ViewportProfileCard];
+    readonly phase: string | undefined;
     readonly age: number;
   } | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
@@ -107,25 +115,38 @@ function distanceToMiddle(box: PixelBox, height: number): number {
   return Math.min(Math.abs(box.top - middle), Math.abs(bottomOf(box) - middle));
 }
 
-/** A reaction's bond: drawn in half a second, held, then given back to the lattice. */
-const LINK_LIFE = 4.2;
+/**
+ * How the atoms of the profile cards follow the match loop: hidden behind
+ * the cards, they show when the cards dissolve and drift away as dust, then
+ * gather again, unlit, behind the next two cards while they fade in.
+ */
+export function profileLight(phase: string | undefined, age: number): { spread: number; glow: number } {
+  if (phase === "dissolve") {
+    const t = age / 1.1;
+    return { spread: ramp((t - 0.12) / 0.88), glow: 1 - ramp((t - 0.4) / 0.6) };
+  }
+  if (phase === "materialize") {
+    return { spread: 1 - ramp(age / 0.35), glow: ramp((age - 0.5) / 0.25) };
+  }
+  return { spread: 0, glow: 1 };
+}
 
 /**
- * In the hero the particles rest on the nodes of the periodic table and bond
- * the elements that react; scrolling, the lattice breaks up into the logo
- * mark beside the manifesto; further down come the cards, the tubes and the
- * Pact rings. Every particle always belongs to a shape:
+ * In the hero the particles make up the two profile cards; scrolling, the
+ * cards dissolve and their atoms gather into the logo mark beside the
+ * manifesto; further down come the stacked cards, the tubes and the Pact
+ * rings. Every particle always belongs to a shape:
  * neighbouring shapes share the particles while one section gives way to the
  * next (their weights add up to 1); between sections the nearest shape keeps
  * them, and scrolls away with its section.
  */
 export function journey(measures: JourneyMeasures): JourneyState {
-  const { height, scope, lattice, reaction, rack, pact } = measures;
+  const { height, scope, profiles, rack, pact } = measures;
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
-  // The lattice holds while the hero copy fades, then leaves for the logo mark…
-  const settle = lattice ? ramp((scrolled - 0.12) / 0.38) : 1;
+  // The atoms of the cards hold while the cards fade, then leave for the logo mark…
+  const settle = profiles ? ramp((scrolled - 0.12) / 0.38) : 1;
   // …which hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
 
@@ -145,9 +166,9 @@ export function journey(measures: JourneyMeasures): JourneyState {
 
   const card = cardStage(measures);
   const stages: ReadonlyArray<Stage | null> = [
-    // The table scrolls with the hero; the mark is pinned in the viewport, but leaves with the
+    // The cards scroll with the hero; the mark is pinned in the viewport, but leaves with the
     // hero and the manifesto (the nearest-shape rule).
-    scope && lattice ? { presence: opening * (1 - settle), box: lattice.box } : null,
+    scope && profiles ? { presence: opening * (1 - settle), box: profiles.box } : null,
     scope ? { presence: opening * settle, box: scope } : null,
     card,
     rack
@@ -187,7 +208,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
     }
   }
   const share = (index: number) => (total > 0 ? (weights[index] ?? 0) / total : 0);
-  const [latticeShare, pairShare, cardShare, tubesShare, pactShare] = [0, 1, 2, 3, 4].map(share) as [
+  const [profilesShare, pairShare, cardShare, tubesShare, pactShare] = [0, 1, 2, 3, 4].map(share) as [
     number,
     number,
     number,
@@ -199,7 +220,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
   const offScreen = (stage: Stage | null) => !stage || bottomOf(stage.box) < 0 || stage.box.top > height;
   const shapesOffScreen =
     pairShare <= 0.001 &&
-    [latticeShare, cardShare, tubesShare, pactShare].every((weight, index) => {
+    [profilesShare, cardShare, tubesShare, pactShare].every((weight, index) => {
       const stage = stages[index === 0 ? 0 : index + 1] ?? null;
       return weight <= 0.001 || offScreen(stage);
     });
@@ -208,17 +229,9 @@ export function journey(measures: JourneyMeasures): JourneyState {
     opening,
     hidden: shapesOffScreen || measures.covers.some((cover) => cover.top <= 0 && bottomOf(cover) >= height),
     formations: {
-      lattice:
-        lattice && latticeShare > 0.001
-          ? { weight: latticeShare, box: lattice.box, nodes: lattice.nodes }
-          : null,
-      link:
-        lattice && reaction && latticeShare > 0.001
-          ? {
-              weight: ramp(reaction.age / 0.45) * ramp((LINK_LIFE - reaction.age) / 0.6),
-              from: reaction.from,
-              to: reaction.to,
-            }
+      profiles:
+        profiles && profilesShare > 0.001
+          ? { weight: profilesShare, cards: profiles.cards, ...profileLight(profiles.phase, profiles.age) }
           : null,
       // The mark is the two atoms merged (formations.ts): bonded and merged from the start.
       pair: scope && pairShare > 0.001 ? { weight: pairShare, box: markBox, bond: 1, merge: 1, mark } : null,

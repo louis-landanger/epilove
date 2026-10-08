@@ -6,6 +6,7 @@ import {
   type PixelBox,
   particleBudget,
   SCHOOL_KEYS,
+  type ViewportProfileCard,
 } from "@atomes/three";
 import { useEffect, useRef, useState } from "react";
 import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
@@ -16,64 +17,38 @@ const toBox = (element: Element): PixelBox => {
   return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 };
 
-/** Where a tile of the periodic table stands, in [0, 1] of the table, from its layout box (transforms aside). */
-function tileBox(tile: HTMLElement, table: HTMLElement) {
+/** The rotation an element is drawn with, in degrees clockwise, from its computed transform. */
+function rotationOf(element: Element): number {
+  const matrix = /^matrix\(([^,]+),\s*([^,]+)/.exec(getComputedStyle(element).transform);
+  return matrix ? (Math.atan2(Number(matrix[2]), Number(matrix[1])) * 180) / Math.PI : 0;
+}
+
+/** A profile card of the hero as the page draws it: centre, size standing straight, tilt and school. */
+function readCard(card: HTMLElement): ViewportProfileCard {
+  const box = card.getBoundingClientRect();
   return {
-    left: tile.offsetLeft / table.offsetWidth,
-    top: tile.offsetTop / table.offsetHeight,
-    right: (tile.offsetLeft + tile.offsetWidth) / table.offsetWidth,
-    bottom: (tile.offsetTop + tile.offsetHeight) / table.offsetHeight,
+    x: box.left + box.width / 2,
+    y: box.top + box.height / 2,
+    width: card.offsetWidth,
+    height: card.offsetHeight,
+    rotation: rotationOf(card),
+    school: Math.max(0, SCHOOL_KEYS.indexOf(card.dataset.school as (typeof SCHOOL_KEYS)[number])),
   };
 }
 
-/**
- * The nodes of the periodic table's grid, where the tiles meet (in the
- * middle of the gaps), in [0, 1] of the table; and the centre of each tile,
- * by atomic number. The nodes come shuffled, always the same way: the atoms
- * the lattice keeps unlit for the reactions wait all over it.
- */
-function readTable(table: HTMLElement) {
-  const tiles = [...table.querySelectorAll<HTMLElement>("[data-z]")];
-  const width = Math.max(1, table.offsetWidth);
-  const height = Math.max(1, table.offsetHeight);
-  const gap = Number.parseFloat(getComputedStyle(table).columnGap) || 0;
-  const halfX = gap / 2 / width;
-  const halfY = gap / 2 / height;
-  const nodes = new Map<string, [number, number]>();
-  const centres = new Map<number, { x: number; y: number }>();
-  for (const tile of tiles) {
-    const box = tileBox(tile, table);
-    centres.set(Number(tile.dataset.z), { x: (box.left + box.right) / 2, y: (box.top + box.bottom) / 2 });
-    for (const x of [box.left - halfX, box.right + halfX]) {
-      for (const y of [box.top - halfY, box.bottom + halfY]) {
-        nodes.set(`${Math.round(x * width)}:${Math.round(y * height)}`, [x, y]);
-      }
-    }
-  }
-  const shuffled = [...nodes.values()]
-    .map((node, index) => ({ node, key: (Math.sin(index * 12.9898) * 43758.5453) % 1 }))
-    .sort((a, b) => a.key - b.key);
-  return { nodes: new Float32Array(shuffled.flatMap(({ node }) => node)), centres };
-}
-
-/** The reaction under way in the table (`data-reaction`, `data-reaction-at`), in viewport pixels. */
-function readReaction(
-  table: HTMLElement,
-  centres: ReadonlyMap<number, { x: number; y: number }>,
-  box: PixelBox,
-): JourneyMeasures["reaction"] {
-  const at = Number(table.dataset.reactionAt);
-  const [first, second] = (table.dataset.reaction ?? "").split("-").map(Number);
-  const from = centres.get(first ?? 0);
-  const to = centres.get(second ?? 0);
-  if (!at || !from || !to) {
+/** The hero's two profile cards and where their loop stands (match-stage.tsx). */
+function readProfiles(stage: HTMLElement, cards: readonly HTMLElement[]): JourneyMeasures["profiles"] {
+  const [first, second] = cards;
+  if (!first || !second) {
     return null;
   }
-  const toViewport = (point: { x: number; y: number }) => ({
-    x: box.left + point.x * box.width,
-    y: box.top + point.y * box.height,
-  });
-  return { from: toViewport(from), to: toViewport(to), age: (performance.now() - at) / 1000 };
+  const at = Number(stage.dataset.phaseAt);
+  return {
+    box: toBox(stage),
+    cards: [readCard(first), readCard(second)],
+    phase: stage.dataset.phase,
+    age: at ? (performance.now() - at) / 1000 : Number.POSITIVE_INFINITY,
+  };
 }
 
 /**
@@ -92,10 +67,11 @@ function createPageMeasurer() {
     const firstCard = steps[0]?.querySelector("article");
     const rack = document.querySelector("[data-field-rack]");
     const pact = document.querySelector("[data-field-pact]");
-    const table = document.querySelector<HTMLElement>("[data-field-lattice]");
-    // The table's grid is read once, then again on resize.
+    const stage = document.querySelector<HTMLElement>("[data-field-profiles]");
     return {
-      table: table ? { element: table, ...readTable(table) } : null,
+      profiles: stage
+        ? { stage, cards: [...stage.querySelectorAll<HTMLElement>("[data-profile-card]")] }
+        : null,
       rackSection: rack?.closest("section") ?? null,
       pactSection: pact?.closest("section") ?? null,
       scope: document.querySelector("[data-field-scope]"),
@@ -131,14 +107,12 @@ function createPageMeasurer() {
         return rect.bottom > -1.5 * height && rect.top < 2.5 * height;
       };
       const raceNear = near(elements.rackSection);
-      const { table } = elements;
-      const lattice = table ? { box: toBox(table.element), nodes: table.nodes } : null;
+      const { profiles } = elements;
       return {
         width: window.innerWidth,
         height,
         scope: elements.scope ? toBox(elements.scope) : null,
-        lattice,
-        reaction: table && lattice ? readReaction(table.element, table.centres, lattice.box) : null,
+        profiles: profiles ? readProfiles(profiles.stage, profiles.cards) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,
@@ -164,10 +138,10 @@ function createPageMeasurer() {
  * The live ion field (docs/02-design.md, section 5), behind the whole landing.
  * The three.js chunk is imported only after load, when motion is allowed and
  * the device can afford it; otherwise there is no field, and the hero stays
- * as it is, without atoms. The particles rest on the nodes of the hero's
- * periodic table and bond the elements that react, break up into the logo
- * mark beside the manifesto, then trace the stacked cards, fill the school
- * race tubes and orbit the Pact (journey.ts).
+ * as it is, without atoms. The particles make up the hero's two profile
+ * cards, gather into the logo mark beside the manifesto as the cards
+ * dissolve, then trace the stacked cards, fill the school race tubes and
+ * orbit the Pact (journey.ts).
  */
 export function IonFieldCanvas({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);

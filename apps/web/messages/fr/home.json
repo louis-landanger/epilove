@@ -1,94 +1,52 @@
 {
-  "title": "Trouve tes atomes crochus.",
   "titleLead": "Trouve tes",
-  "titleFirst": {
-    "number": "85",
-    "symbol": "At",
-    "rest": "omes",
-    "name": "Atomes"
-  },
-  "titleJoin": " ",
-  "titleSecond": {
-    "number": "24",
-    "symbol": "Cr",
-    "rest": "ochus",
-    "name": "Crochus"
-  },
-  "titleEnd": ".",
+  "titleAccent": "atomes crochus.",
   "eyebrow": "Campus IONIS Lyon · 5 écoles",
   "lead": "L’app de rencontre et d’amitié réservée aux étudiantes et étudiants vérifiés du campus. Un cercle fermé, sûr, pensé pour provoquer les rencontres qui n’auraient jamais eu lieu.",
   "secondary": "Comment ça marche",
   "schools": "Écoles concernées",
   "cta": "Rejoindre la liste",
   "count": "{count, plural, =0 {Sois la première personne de la liste} one {# personne déjà dans la liste} other {# personnes déjà dans la liste}}",
-  "reaction": {
-    "label": "Réaction",
-    "unit": " % de chimie",
-    "again": "Nouvelle réaction",
-    "help": "Clique deux éléments du tableau pour les faire réagir.",
-    "announce": "{first} + {second} : {score} % de chimie. {verdict}",
-    "verdicts": {
-      "explosive": "Réaction explosive : garde ton samedi.",
-      "stable": "Réaction stable : ça sent le binôme de BU.",
-      "slow": "Réaction lente mais sûre : un café d’abord.",
-      "shy": "Réaction timide : il faudra un catalyseur. Le Pacte ?"
-    },
-    "families": {
-      "outing": "Sorties",
-      "sport": "Sport, plein air",
-      "study": "Études, projets",
-      "heart": "Cœur"
+  "match": {
+    "bond": "Liaison établie",
+    "fiction": "Profils fictifs",
+    "love": "Love",
+    "friends": "Amis",
+    "score": "{score} % de chimie",
+    "scoreFriends": "{score} % de chimie · amis",
+    "people": {
+      "lea": {
+        "prompt": "Mon plan parfait un jeudi soir",
+        "answer": "Un concert surprise, puis des pâtes à 1 h du matin."
+      },
+      "yanis": {
+        "prompt": "Je suis imbattable sur",
+        "answer": "Les horaires du T1, à la minute près."
+      },
+      "ines": {
+        "prompt": "Mon red flag assumé",
+        "answer": "J’annote mes séries comme des cours."
+      },
+      "hugo": {
+        "prompt": "Je cherche",
+        "answer": "Un binôme de hackathon qui dort aussi peu que moi."
+      },
+      "camille": {
+        "prompt": "On s’entendra si",
+        "answer": "Tu connais un kebab ouvert après minuit."
+      },
+      "zoe": {
+        "prompt": "Le date idéal",
+        "answer": "Pique-nique sur les quais du Rhône, au coucher du soleil."
+      },
+      "malik": {
+        "prompt": "Ma fierté de l’année",
+        "answer": "Survivre aux partiels sans café. (Mensonge.)"
+      },
+      "sacha": {
+        "prompt": "Ma spécialité",
+        "answer": "Les playlists qui sauvent n’importe quel trajet en tram."
+      }
     }
-  },
-  "elements": {
-    "1": "Hackathon",
-    "4": "Bénévolat",
-    "6": "Ciné",
-    "7": "Nuit blanche",
-    "8": "Oral",
-    "9": "Foot",
-    "11": "Nature",
-    "12": "Manga",
-    "13": "Algo",
-    "14": "Série",
-    "15": "Pique-nique",
-    "16": "Skate",
-    "17": "Club",
-    "18": "Art",
-    "19": "Karaoké",
-    "20": "Café",
-    "23": "Vélo",
-    "26": "Festival",
-    "27": "Coloc",
-    "29": "Cuisine",
-    "31": "Gaming",
-    "33": "Asso",
-    "35": "Brunch",
-    "39": "Yoga",
-    "42": "Mood",
-    "44": "Running",
-    "46": "Podcast",
-    "50": "Snack",
-    "52": "Tennis",
-    "56": "Basket",
-    "57": "Labo",
-    "59": "Projet",
-    "63": "Erasmus",
-    "71": "Lumières",
-    "75": "Révisions",
-    "78": "Partiels",
-    "82": "Problème",
-    "83": "Binôme",
-    "84": "Pote",
-    "86": "Rando",
-    "87": "Friperie",
-    "88": "Rap",
-    "90": "Théâtre",
-    "91": "Parkour",
-    "95": "Amitié",
-    "110": "Date",
-    "112": "Concert",
-    "114": "Flirt",
-    "116": "Love"
   }
 }

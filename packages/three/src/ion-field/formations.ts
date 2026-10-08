@@ -73,31 +73,32 @@ export interface PairFormation {
   readonly mark: { readonly x: number; readonly y: number; readonly radius: number };
 }
 
-/**
- * The hero's periodic table as a crystal lattice: particles rest on the
- * nodes of its grid, where the tiles meet, one bonded pair per node, fine
- * and dim, quivering a little as if warm; now and then a soft wave of light
- * crosses it. The pairs the nodes cannot hold wait on them unlit: they draw
- * the reactions (`LinkFormation`) and, further down, the other shapes.
- */
-export interface LatticeFormation {
-  readonly weight: number;
-  readonly box: WorldBox;
-  /** x, y pairs in [0, 1] across the box, y down as on the page. */
-  readonly nodes: Float32Array;
+/** One of the hero's two profile cards, as the page draws it: world units, radians counterclockwise. */
+export interface ProfileCardShape {
+  readonly x: number;
+  readonly y: number;
+  readonly hw: number;
+  readonly hh: number;
+  readonly angle: number;
+  /** The person's school, in `SCHOOL_KEYS` order: atoms of that school colour the picture. */
+  readonly school: number;
 }
 
 /**
- * A reaction between two elements of the table: a chain of bonded atoms
- * from one to the other, plasma where it starts, volt where it ends, with a
- * pulse of light running along it. Drawn by pairs the lattice keeps unlit,
- * and only as much as the lattice holds them (`weight` is the reaction's
- * own fade in and out).
+ * The hero's two profile cards, made of atoms: each pair of particles holds a
+ * point of one card (its outline, its picture, the orbit drawn on it, the
+ * lines of its text) right behind the card, so nothing shows while the card
+ * is there. When a card fades, its atoms show in its place; `spread` blows
+ * them away in a soft cloud (a match ends, the next profiles come in), and
+ * scrolling hands them over to the logo mark, from the top of the cards down.
  */
-export interface LinkFormation {
+export interface ProfilesFormation {
   readonly weight: number;
-  readonly from: { readonly x: number; readonly y: number };
-  readonly to: { readonly x: number; readonly y: number };
+  readonly cards: readonly [ProfileCardShape, ProfileCardShape];
+  /** 0: the atoms make up the cards; 1: blown away around them. */
+  readonly spread: number;
+  /** Light of the atoms, in [0, 1]. */
+  readonly glow: number;
 }
 
 export interface Formations {
@@ -105,8 +106,7 @@ export interface Formations {
   readonly freeGlow?: number;
   /** Tint of the free particles towards paper white, in [0, 1] (default 0: their school colour). */
   readonly freePaper?: number;
-  readonly lattice?: LatticeFormation | null;
-  readonly link?: LinkFormation | null;
+  readonly profiles?: ProfilesFormation | null;
   readonly pair?: PairFormation | null;
   readonly card?: CardFormation | null;
   readonly tubes?: TubeFormation | null;
@@ -268,14 +268,14 @@ function arcPoint(
 
 /** Largest weight among the formations: 0 when the field drifts freely. */
 export function formationStrength(formations: {
-  readonly lattice?: { readonly weight: number } | null;
+  readonly profiles?: { readonly weight: number } | null;
   readonly pair?: { readonly weight: number } | null;
   readonly card?: { readonly weight: number } | null;
   readonly tubes?: { readonly weight: number } | null;
   readonly pact?: { readonly weight: number } | null;
 }): number {
   return Math.max(
-    formations.lattice?.weight ?? 0,
+    formations.profiles?.weight ?? 0,
     formations.pair?.weight ?? 0,
     formations.card?.weight ?? 0,
     formations.tubes?.weight ?? 0,
@@ -295,7 +295,7 @@ interface Contribution {
   paper: number;
   /** Vertical move of the shape's element since the previous frame (world units). */
   carry: number;
-  /** Size of the particle's light (1: its own); the hero's lattice and links set it, finer. */
+  /** Size of the particle's light (1: its own); the hero's profile cards set it, finer. */
   grain: number;
 }
 
@@ -770,107 +770,147 @@ function pairContribution(
   return true;
 }
 
-/** Pairs drawing the chain of a reaction (`LinkFormation`). */
-export const LINK_PAIRS = 36;
+/** Shares of a profile card's pairs: outline, picture and the orbit drawn on it; the rest draw its text. */
+const PROFILE_OUTLINE = 0.3;
+const PROFILE_PICTURE = 0.76;
+const PROFILE_ORBIT = 0.86;
+/** The atoms stay this far inside a card's edge (CSS pixels), hidden even while it moves. */
+const PROFILE_INSET = 7;
+/** Text lines of a card under its picture: where (0 top of the text, 1 bottom) and how long (share of the width). */
+const PROFILE_LINES = [
+  [0.18, 0.42],
+  [0.38, 0.5],
+  [0.62, 0.86],
+  [0.8, 0.58],
+] as const;
 
 /**
- * Where a particle stands in the lattice: its node (in [0, 1] of the box),
- * whether its pair is lit, and its place in a reaction's chain (-1: none).
+ * Where a particle stands on its profile card: its target before the spread,
+ * its region and how far down the card it sits (0 at the top, for the order
+ * in which the cards dissolve into the mark).
  */
-const latticeSpot = { x: 0, y: 0, lit: false, chain: -1 };
+const profileSpot = { x: 0, y: 0, region: 0, depth: 0 };
+const local = { x: 0, y: 0 };
+
+/** The card a particle belongs to: pairs go to either card in turn. */
+const cardOf = (cards: ProfilesFormation["cards"], index: number) => ((index >> 1) & 1 ? cards[1] : cards[0]);
 
 /**
- * The node of the lattice a particle rests on: pair `k` on node `k`, so the
- * first pairs are the lit ones (the adaptive quality, which draws only the
- * first particles, never thins the lattice out). The next `LINK_PAIRS` pairs
- * draw the reactions; the others wait unlit, spread over the nodes.
+ * The point of a profile card a particle holds (`profileSpot`): pairs go to
+ * either card in turn, then to a region by their random phase; the two atoms
+ * of a pair sit a hair apart. Positions are worked out on the card standing
+ * straight, then turned with it.
  */
-function locateInLattice(index: number, lattice: LatticeFormation): void {
-  const nodes = lattice.nodes.length / 2;
-  const pair = index >> 1;
-  const node = nodes > 0 ? pair % nodes : 0;
-  latticeSpot.x = lattice.nodes[node * 2] ?? 0.5;
-  latticeSpot.y = lattice.nodes[node * 2 + 1] ?? 0.5;
-  latticeSpot.lit = pair < nodes;
-  const chain = pair - nodes;
-  latticeSpot.chain = chain >= 0 && chain < LINK_PAIRS ? chain : -1;
-}
-
-/**
- * Lattice: each pair on its node (`locateInLattice`, called first), the two
- * atoms a hair apart and slowly turning, the whole quivering a little.
- */
-function latticeContribution(
+function locateOnProfile(
   particles: FormationParticles,
   index: number,
-  lattice: LatticeFormation,
-  previous: LatticeFormation | null,
-  time: number,
+  profiles: ProfilesFormation,
   unit: number,
-  into: Contribution,
-): boolean {
-  const { box } = lattice;
-  const phase = particles.phases[index & ~1] ?? 0;
-  const own = particles.phases[index] ?? 0;
-  const turn = TAU * phase + time * (0.25 + 0.2 * phase);
-  const side = (index & 1) === 0 ? 1 : -1;
-  const reach = 1.3 * unit;
-  const quiver = 0.4 * unit;
-  const offsetX = side * Math.cos(turn) * reach + Math.sin(time * 2.3 + own * 31) * quiver;
-  const offsetY = side * Math.sin(turn) * reach + Math.cos(time * 1.9 + own * 17) * quiver;
-  into.x = box.x - box.hw + latticeSpot.x * 2 * box.hw + offsetX;
-  into.y = box.y + box.hh - latticeSpot.y * 2 * box.hh + offsetY;
-  // A soft wave of light crosses the lattice diagonally every nine seconds.
-  const sweep = fract(time / 9) * 2 - 0.5;
-  const wave = Math.exp(-((latticeSpot.x * 0.75 + latticeSpot.y * 0.25 - sweep) ** 2) / 0.008);
-  const heavy = (particles.sizes[index] ?? 0) >= PAIR_HEAVY;
-  into.glow = latticeSpot.lit ? (heavy ? 0.3 : 0.42) + 0.55 * wave : 0;
-  into.grain = heavy ? 0.3 : 0.42;
-  // Paper white, a few volt sparks.
-  const spark = phase < 0.07;
-  into.paper = spark ? 0 : 0.85;
-  into.volt = spark ? 0.9 : 0;
-  into.plasma = 0;
-  into.pull = 1;
-  into.carry = previous ? box.y - previous.box.y : 0;
-  return true;
-}
-
-/**
- * Link: the pairs of a reaction's chain (`latticeSpot.chain`) evenly spaced
- * along a gentle arc from one element to the other, partners side by side.
- */
-function linkContribution(
-  particles: FormationParticles,
-  index: number,
-  link: LinkFormation,
-  previous: LinkFormation | null,
-  time: number,
-  unit: number,
-  into: Contribution,
-): boolean {
-  const { from, to } = link;
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const length = Math.hypot(dx, dy);
-  if (length < 1e-6 || latticeSpot.chain < 0) {
-    return false;
+): void {
+  const base = index & ~1;
+  const card = cardOf(profiles.cards, index);
+  const phase = particles.phases[base] ?? 0;
+  // A low-discrepancy pair of coordinates, nudged at random: evenly filled, without the
+  // diagonal rows the bare sequence would draw.
+  const s = clamp01((particles.along[base] ?? 0) + (fract(phase * 91.7) - 0.5) * 0.05);
+  const t = clamp01((particles.lanes[base] ?? 0) + (fract(phase * 53.3) - 0.5) * 0.05);
+  const inset = PROFILE_INSET * unit;
+  const hw = Math.max(card.hw - inset, unit);
+  const hh = Math.max(card.hh - inset, unit);
+  // The picture is a little taller than wide (4 / 4.2), at the top; the text fills the rest.
+  const pictureBottom = Math.max(-hh * 0.5, card.hh - 2 * card.hw * 1.05);
+  if (phase < PROFILE_OUTLINE) {
+    contourPoint({ x: 0, y: 0, hw, hh }, Math.min(hw, hh) * 0.12, 0, s, local);
+    profileSpot.region = 0;
+  } else if (phase < PROFILE_PICTURE) {
+    local.x = (s * 2 - 1) * hw;
+    local.y = hh - t * (hh - pictureBottom);
+    profileSpot.region = 1;
+  } else if (phase < PROFILE_ORBIT) {
+    // The orbit drawn on the picture: a tilted ellipse around its middle.
+    const angle = s * TAU;
+    const rx = 0.39 * 2 * card.hw;
+    const ry = 0.148 * 2 * card.hw;
+    const cx = 0;
+    const cy = card.hh - (card.hh - pictureBottom) * 0.46;
+    const ex = Math.cos(angle) * rx;
+    const ey = Math.sin(angle) * ry;
+    const tilt = (24 * Math.PI) / 180;
+    local.x = cx + ex * Math.cos(tilt) - ey * Math.sin(tilt);
+    local.y = cy + ex * Math.sin(tilt) + ey * Math.cos(tilt);
+    profileSpot.region = 2;
+  } else {
+    const line = PROFILE_LINES[Math.min(PROFILE_LINES.length - 1, Math.floor(t * PROFILE_LINES.length))] ?? [
+      0.5, 0.5,
+    ];
+    const textTop = pictureBottom - inset;
+    local.x = -hw + s * line[1] * 2 * hw;
+    local.y = textTop - line[0] * (textTop + hh);
+    profileSpot.region = 3;
   }
-  const s = (latticeSpot.chain + 0.5 + ((index & 1) === 1 ? 0.34 : 0)) / LINK_PAIRS;
-  const bulge = 0.12 * length * Math.sin(Math.PI * s);
-  const own = particles.phases[index] ?? 0;
-  into.x = from.x + dx * s - (dy / length) * bulge + Math.sin(time * 2.1 + own * 23) * 0.5 * unit;
-  into.y = from.y + dy * s + (dx / length) * bulge + Math.cos(time * 1.7 + own * 29) * 0.5 * unit;
-  // A pulse of light runs from the first element to the second; the chain fades at its ends.
-  const head = fract(time * 0.5) * 1.3 - 0.15;
-  const pulse = Math.exp(-((s - head) ** 2) / 0.006);
-  into.glow = (0.6 + 1.1 * pulse) * Math.sin(Math.PI * s) ** 0.35;
-  into.grain = 0.55;
-  into.plasma = 0.9 * (1 - s);
-  into.volt = 0.9 * s;
+  // The two atoms of a pair, a hair apart: one grain of dust.
+  const side = (index & 1) === 0 ? 1 : -1;
+  local.x += side * Math.cos(phase * 40) * 0.6 * unit;
+  local.y += side * Math.sin(phase * 40) * 0.6 * unit;
+  profileSpot.depth = clamp01((card.hh - local.y) / (2 * card.hh));
+  const cos = Math.cos(card.angle);
+  const sin = Math.sin(card.angle);
+  profileSpot.x = card.x + local.x * cos - local.y * sin;
+  profileSpot.y = card.y + local.x * sin + local.y * cos;
+}
+
+/**
+ * Profiles: each particle on its point of a card (`locateOnProfile`, called
+ * first). Spreading, the atoms drift out from between the two cards and
+ * curl around them, rising a little, like dust blown off.
+ */
+function profilesContribution(
+  particles: FormationParticles,
+  index: number,
+  profiles: ProfilesFormation,
+  previous: ProfilesFormation | null,
+  time: number,
+  unit: number,
+  into: Contribution,
+): boolean {
+  // The pair moves as one: both atoms take the pair's phase, so they never pull apart.
+  const own = particles.phases[index & ~1] ?? 0;
+  const card = cardOf(profiles.cards, index);
+  let x = profileSpot.x + Math.sin(time * 1.9 + own * 31) * 0.5 * unit;
+  let y = profileSpot.y + Math.cos(time * 1.6 + own * 17) * 0.5 * unit;
+  const spread = profiles.spread;
+  if (spread > 0) {
+    const [a, b] = profiles.cards;
+    const cx = (a.x + b.x) / 2;
+    const cy = (a.y + b.y) / 2;
+    const dx = x - cx;
+    const dy = y - cy;
+    const distance = Math.hypot(dx, dy) || unit;
+    const swirl = spread * (0.35 + 0.5 * fract(own * 13.7));
+    const reach = spread * (70 + 110 * fract(own * 29.3)) * unit;
+    x = cx + dx * Math.cos(swirl) - dy * Math.sin(swirl) + (dx / distance) * reach;
+    y = cy + dx * Math.sin(swirl) + dy * Math.cos(swirl) + (dy / distance) * reach + spread * 50 * unit;
+  }
+  into.x = x;
+  into.y = y;
+  const region = profileSpot.region;
+  const glow = region === 0 ? 0.8 : region === 1 ? 0.9 : region === 2 ? 0.75 : 0.55;
+  into.glow = glow * profiles.glow;
+  into.grain = region === 1 ? 0.55 : 0.48;
+  into.volt = 0;
+  into.plasma = 0;
   into.paper = 0;
+  if (region === 1) {
+    // The picture: atoms of the person's school in their own colour, the others plasma.
+    if ((particles.schools[index] ?? -1) !== card.school) {
+      into.plasma = 0.85;
+    }
+  } else {
+    into.paper = region === 2 ? 0.7 : 0.85;
+  }
   into.pull = 1;
-  into.carry = previous ? (from.y + to.y - previous.from.y - previous.to.y) / 2 : 0;
+  const before = previous ? cardOf(previous.cards, index) : null;
+  into.carry = before ? card.y - before.y : 0;
   return true;
 }
 
@@ -924,8 +964,7 @@ export function writeFormations(
   unit: number,
   grains?: Float32Array,
 ): void {
-  const lattice = formations.lattice && formations.lattice.weight > 0.001 ? formations.lattice : null;
-  const link = lattice && formations.link && formations.link.weight > 0.001 ? formations.link : null;
+  const profiles = formations.profiles && formations.profiles.weight > 0.001 ? formations.profiles : null;
   const pair = formations.pair && formations.pair.weight > 0.001 ? formations.pair : null;
   const card = formations.card && formations.card.weight > 0.001 ? formations.card : null;
   const tubes = formations.tubes && formations.tubes.weight > 0.001 ? formations.tubes : null;
@@ -946,39 +985,26 @@ export function writeFormations(
     sum.paper = 0;
     sum.carry = 0;
     sum.grain = 0;
-    let latticeWeight = lattice?.weight ?? 0;
+    let profilesWeight = profiles?.weight ?? 0;
     let pairWeight = pair?.weight ?? 0;
-    let linkWeight = 0;
-    if (lattice) {
-      locateInLattice(index, lattice);
+    if (profiles) {
+      locateOnProfile(particles, index, profiles, unit);
       if (pair) {
-        // The lattice leaves for the logo mark node after node, from the right: each pair
-        // switches over at its own moment rather than the whole table squashing.
-        const both = lattice.weight + pair.weight;
-        const order = 0.8 * (1 - latticeSpot.x) + 0.2 * fract((particles.phases[index & ~1] ?? 0) * 7.31);
+        // The cards dissolve into the logo mark from the top down: each pair switches over
+        // at its own moment rather than the whole cards squashing.
+        const both = profiles.weight + pair.weight;
+        const order = 0.75 * profileSpot.depth + 0.25 * fract((particles.phases[index & ~1] ?? 0) * 7.31);
         const gone = smoothstep(order * 0.72, order * 0.72 + 0.28, pair.weight / both);
-        latticeWeight = both * (1 - gone);
+        profilesWeight = both * (1 - gone);
         pairWeight = both * gone;
       }
-      if (link && latticeSpot.chain >= 0) {
-        // A reaction borrows its chain from the lattice, and gives it back.
-        linkWeight = latticeWeight * link.weight;
-        latticeWeight -= linkWeight;
-      }
     }
     if (
-      lattice &&
-      latticeWeight > 0 &&
-      latticeContribution(particles, index, lattice, previous?.lattice ?? null, time, unit, contribution)
+      profiles &&
+      profilesWeight > 0 &&
+      profilesContribution(particles, index, profiles, previous?.profiles ?? null, time, unit, contribution)
     ) {
-      accumulate(latticeWeight);
-    }
-    if (
-      link &&
-      linkWeight > 0 &&
-      linkContribution(particles, index, link, previous?.link ?? null, time, unit, contribution)
-    ) {
-      accumulate(linkWeight);
+      accumulate(profilesWeight);
     }
     if (
       pair &&
@@ -1029,18 +1055,27 @@ export function writeFormations(
   }
 }
 
+/** A profile card as the page measures it: centre and size in CSS pixels, CSS rotation in degrees (clockwise). */
+export interface ViewportProfileCard {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly rotation: number;
+  readonly school: number;
+}
+
 /** Formations as the page measures them: viewport rectangles in CSS pixels. */
 export interface ViewportFormations {
   /** Light of the particles no formation holds, in [0, 1] (default 1), and their tint towards paper white (default 0). */
   readonly freeGlow?: number;
   readonly freePaper?: number;
-  /** The hero's periodic table: its box on the page and the nodes of its grid (see `LatticeFormation`). */
-  readonly lattice?: { readonly weight: number; readonly box: PixelBox; readonly nodes: Float32Array } | null;
-  /** A reaction between two of its elements: the centres of the two tiles, in viewport pixels. */
-  readonly link?: {
+  /** The hero's two profile cards (see `ProfilesFormation`): centre and size in pixels, tilt in degrees. */
+  readonly profiles?: {
     readonly weight: number;
-    readonly from: { readonly x: number; readonly y: number };
-    readonly to: { readonly x: number; readonly y: number };
+    readonly cards: readonly [ViewportProfileCard, ViewportProfileCard];
+    readonly spread: number;
+    readonly glow: number;
   } | null;
   /** The two atoms of the logo mark (centre and radius in pixels), in a stage where they first stand apart. */
   readonly pair?: {
@@ -1068,19 +1103,28 @@ export interface ViewportFormations {
 /** Converts measured formations to world units for a canvas of `width` × `height` CSS pixels. */
 export function toWorldFormations(formations: ViewportFormations, width: number, height: number): Formations {
   const unit = 2 / height;
-  const { lattice, link, pair, card, tubes, pact } = formations;
-  const toWorldPoint = (point: { readonly x: number; readonly y: number }) => ({
-    x: (point.x - width / 2) * unit,
-    y: (height / 2 - point.y) * unit,
+  const { profiles, pair, card, tubes, pact } = formations;
+  const toWorldCard = (shape: ViewportProfileCard): ProfileCardShape => ({
+    x: (shape.x - width / 2) * unit,
+    y: (height / 2 - shape.y) * unit,
+    hw: (shape.width / 2) * unit,
+    hh: (shape.height / 2) * unit,
+    // A clockwise turn on the page is a clockwise turn in the world too, whose y points up.
+    angle: (-shape.rotation * Math.PI) / 180,
+    school: shape.school,
   });
   const pactBox = pact ? toWorldBox(pact.box, width, height) : null;
   return {
     ...(formations.freeGlow === undefined ? {} : { freeGlow: formations.freeGlow }),
     ...(formations.freePaper === undefined ? {} : { freePaper: formations.freePaper }),
-    lattice: lattice
-      ? { weight: lattice.weight, box: toWorldBox(lattice.box, width, height), nodes: lattice.nodes }
+    profiles: profiles
+      ? {
+          weight: profiles.weight,
+          cards: [toWorldCard(profiles.cards[0]), toWorldCard(profiles.cards[1])],
+          spread: profiles.spread,
+          glow: profiles.glow,
+        }
       : null,
-    link: link ? { weight: link.weight, from: toWorldPoint(link.from), to: toWorldPoint(link.to) } : null,
     pair: pair
       ? {
           weight: pair.weight,
