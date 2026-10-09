@@ -519,6 +519,47 @@ test.describe("hero under study: liaison", () => {
   });
 });
 
+test.describe("hero under study: the rivers", () => {
+  test("shows the whole title, and draws the rivers when the particles cannot", async ({ page }) => {
+    await page.goto("/apercu/fleuves");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
+    await expect(
+      page.getByText("À Lyon, même le Rhône et la Saône ont fini par se rencontrer."),
+    ).toBeVisible();
+    // The test browser renders in software: no field, the courses drawn in dots instead.
+    await page.waitForLoadState("load");
+    await page.waitForTimeout(1500);
+    await expect(page.locator("[data-ion-field]")).toHaveAttribute("data-live", "false");
+    await expect(page.locator(".fleuves-drawing")).toBeVisible();
+    await expect(page.locator(".fleuves-drawing polyline")).toHaveCount(3);
+    await expect(page.locator(".fleuves-drawing")).toHaveCSS("opacity", "1");
+  });
+
+  test("keeps its call on screen when the page starts to scroll", async ({ page }) => {
+    await page.goto("/apercu/fleuves");
+    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
+    await page.mouse.wheel(0, 160);
+    await page.waitForTimeout(800);
+    const call = page.getByRole("link", { name: "Rejoindre la liste" });
+    await expect(call).toBeInViewport();
+    const opacity = await call.evaluate((element) => {
+      let product = 1;
+      for (let node: Element | null = element; node; node = node.parentElement) {
+        product *= Number(getComputedStyle(node).opacity);
+      }
+      return product;
+    });
+    expect(opacity).toBe(1);
+  });
+
+  test("has no detectable violations", async ({ page }) => {
+    await page.goto("/apercu/fleuves");
+    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
+    await page.waitForTimeout(1500);
+    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
+  });
+});
+
 test.describe("accessibility (WCAG 2.2 AA)", () => {
   test("the landing has no detectable violations", async ({ page }) => {
     await page.goto("/");

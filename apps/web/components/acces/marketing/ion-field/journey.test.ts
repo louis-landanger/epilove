@@ -39,6 +39,7 @@ function page(scroll: number): JourneyMeasures {
       ],
     },
     anchor: null,
+    rivers: null,
     cards,
     cardList: box(2860, 1620),
     cardRadius: 32,
@@ -126,6 +127,31 @@ describe("journey", () => {
     expect(shortHalfHeight).toBeGreaterThan(250);
   });
 
+  it("flows down the rivers in the hero, then gathers into the logo mark beside the manifesto", () => {
+    const map = { left: 700, top: 40, width: 560, height: 830 };
+    const withRivers = (scroll: number) =>
+      journey({
+        ...page(scroll),
+        profiles: null,
+        rivers: { ...map, top: map.top - scroll },
+      }).formations;
+    const top = withRivers(0);
+    // Every particle in the rivers at first, none in the mark.
+    expect(top.rivers?.weight).toBe(1);
+    expect(top.rivers?.box).toEqual(map);
+    expect(top.pair).toBeNull();
+    // Halfway through the hand-over, both share the particles…
+    const midway = withRivers(200);
+    expect((midway.rivers?.weight ?? 0) + (midway.pair?.weight ?? 0)).toBeCloseTo(1, 6);
+    expect(midway.rivers?.weight).toBeGreaterThan(0.2);
+    expect(midway.pair?.weight).toBeGreaterThan(0.2);
+    // …and once the hero has scrolled away, the mark holds them all, beside the manifesto.
+    const settled = withRivers(500);
+    expect(settled.rivers).toBeNull();
+    expect(settled.pair?.weight).toBe(1);
+    expect(settled.pair?.mark).toEqual(journey(page(900)).formations.pair?.mark);
+  });
+
   it("puts the mark beside the manifesto from the start when there are no cards", () => {
     const top = journey({ ...page(0), profiles: null }).formations.pair;
     expect(top?.weight).toBe(1);
@@ -208,6 +234,7 @@ describe("journey", () => {
       scope: null,
       profiles: null,
       anchor: null,
+      rivers: null,
       cards: [],
       cardList: null,
       cardRadius: 32,
@@ -221,6 +248,7 @@ describe("journey", () => {
       card: null,
       tubes: null,
       pact: null,
+      rivers: null,
     });
   });
 });

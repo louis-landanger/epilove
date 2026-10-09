@@ -2493,6 +2493,204 @@
   }
 }
 
+/* ----------------------------------------------------------- fleuves hero */
+
+/*
+ * Hero under study (fleuves/fleuves-hero.tsx): the particles of the ion field
+ * flow down the Saône and the Rhône on the map (`[data-field-rivers]`, whose
+ * box the field fits the rivers into, rivers.ts) and meet at the Confluence.
+ * The hero is transparent: the field shows through. Without the field, the
+ * same courses drawn in dots.
+ */
+.fleuves-hero {
+  justify-content: flex-end;
+  padding-bottom: clamp(1.75rem, 5svh, 2.75rem);
+}
+
+/* The map keeps the proportions of rivers.ts (9.6 km × 14.2 km): the field fits it whole. */
+.fleuves-map {
+  position: absolute;
+  top: 4.25rem;
+  left: 50%;
+  height: min(44svh, 120vw);
+  aspect-ratio: 9.6 / 14.2;
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+@media (min-width: 64rem) {
+  .fleuves-map {
+    top: 50%;
+    right: 5vw;
+    left: auto;
+    height: calc(100svh - 7.5rem);
+    translate: 0 -46%;
+  }
+}
+
+.fleuves-drawing {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transition: opacity 1.2s var(--ease-out);
+}
+
+/* Once the particles flow, the drawing steps aside. */
+:root:has([data-ion-field][data-live="true"]) .fleuves-drawing {
+  opacity: 0;
+}
+
+.fleuves-course {
+  fill: none;
+  stroke-width: 0.06;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 0.001 0.11;
+}
+
+.fleuves-saone {
+  stroke: var(--color-plasma);
+}
+
+.fleuves-rhone {
+  stroke: var(--color-volt);
+}
+
+.fleuves-merged {
+  stroke: color-mix(in oklch, var(--color-paper) 80%, transparent);
+  stroke-width: 0.08;
+}
+
+.fleuves-names {
+  position: absolute;
+  inset: 0;
+}
+
+.fleuves-river,
+.fleuves-place {
+  position: absolute;
+  translate: -50% -50%;
+  white-space: nowrap;
+}
+
+.fleuves-river {
+  translate: -115% -50%;
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
+  font-size: clamp(1rem, 1.4vw, 1.25rem);
+  font-style: italic;
+  color: color-mix(in oklch, var(--color-paper) 82%, transparent);
+}
+
+.fleuves-river-rhone {
+  translate: 15% -120%;
+}
+
+.fleuves-place {
+  translate: -100% -50%;
+  padding-right: 0.75rem;
+  font-size: 0.8125rem;
+  color: color-mix(in oklch, var(--color-paper) 68%, transparent);
+}
+
+.fleuves-place::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-radius: 50%;
+  background: currentColor;
+  translate: 0 -50%;
+}
+
+.fleuves-copy {
+  position: relative;
+  display: grid;
+  gap: 1.25rem;
+  max-width: 40rem;
+}
+
+/* Phones: two lines, so that the copy stays under the rivers. */
+.fleuves-title {
+  font-family: var(--font-headline), var(--font-display);
+  font-size: min(12.2vw, 9svh);
+  font-weight: 700;
+  font-variation-settings:
+    "wdth" 84,
+    "opsz" 96;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+
+@media (min-width: 40rem) {
+  .fleuves-title {
+    font-size: clamp(3.25rem, min(9vw, 11svh), 7.75rem);
+  }
+}
+
+.fleuves-line {
+  display: block;
+}
+
+.fleuves-lead {
+  max-width: 31rem;
+  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  line-height: 1.5;
+  text-wrap: pretty;
+  color: color-mix(in oklch, var(--color-paper) 84%, transparent);
+}
+
+.fleuves-call {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.875rem 1.25rem;
+}
+
+.fleuves-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3.5rem;
+  padding: 0 1.75rem;
+  border-radius: 999px;
+  background: var(--color-plasma);
+  color: var(--color-ink);
+  font-weight: 600;
+  transition: background-color 0.2s var(--ease-out);
+}
+
+.fleuves-cta:focus-visible {
+  outline: 2px solid var(--color-paper);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .fleuves-cta:hover {
+    background: color-mix(in oklch, var(--color-plasma) 84%, white);
+  }
+}
+
+.fleuves-schools {
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  color: color-mix(in oklch, var(--color-paper) 66%, transparent);
+}
+
+/* Where the courses come from. */
+.fleuves-credit {
+  position: absolute;
+  right: var(--hero-gutter);
+  bottom: 0.75rem;
+  font-size: 0.6875rem;
+  color: color-mix(in oklch, var(--color-paper) 52%, transparent);
+}
+
 /* Text is painted from the first frame (no hidden LCP): it only comes into focus. */
 @keyframes focus-pull {
   from {

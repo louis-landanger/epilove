@@ -34,6 +34,12 @@ export interface JourneyMeasures {
    * it when it moves or changes size.
    */
   readonly anchor: PixelBox | null;
+  /**
+   * The map of the rivers when the hero shows Lyon's two rivers
+   * (`[data-field-rivers]`): the particles flow down them, then gather into
+   * the logo mark beside the manifesto.
+   */
+  readonly rivers: PixelBox | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
   readonly cards: ReadonlyArray<{ readonly box: PixelBox; readonly stuckTop: number }>;
   /** The list holding the cards: the formation lets go once it scrolls away. */
@@ -170,12 +176,12 @@ function atomAround(box: PixelBox, width: number, height: number): { x: number; 
  * them, and scrolls away with its section.
  */
 export function journey(measures: JourneyMeasures): JourneyState {
-  const { height, scope, profiles, anchor, rack, pact } = measures;
+  const { height, scope, profiles, anchor, rivers, rack, pact } = measures;
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
   // The atom shrinks into the logo mark as soon as the cards start to fade…
-  const settle = profiles || anchor ? ramp((scrolled - 0.02) / 0.4) : 1;
+  const settle = profiles || anchor || rivers ? ramp((scrolled - 0.02) / 0.4) : 1;
   // …which hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
 
@@ -265,11 +271,12 @@ export function journey(measures: JourneyMeasures): JourneyState {
     hidden: shapesOffScreen || measures.covers.some((cover) => cover.top <= 0 && bottomOf(cover) >= height),
     formations: {
       // The mark is the two atoms merged (formations.ts): bonded and merged from the start. Dimmer
-      // around the cards, its nucleus dark behind them; it lights up as it leaves them.
+      // around the cards, its nucleus dark behind them; it lights up as it leaves them. When the
+      // hero shows the rivers, they hold the particles first and hand them to the mark on scroll.
       pair:
-        scope && pairShare > 0.001
+        scope && pairShare * (rivers ? settle : 1) > 0.001
           ? {
-              weight: pairShare,
+              weight: pairShare * (rivers ? settle : 1),
               box: markBox,
               bond: 1,
               merge: 1,
@@ -284,6 +291,10 @@ export function journey(measures: JourneyMeasures): JourneyState {
           : null,
       tubes: rack && tubesShare > 0.001 ? { weight: tubesShare, tubes: measures.tubes } : null,
       pact: pact && pactShare > 0.001 ? { weight: pactShare, box: pact } : null,
+      rivers:
+        rivers && scope && pairShare * (1 - settle) > 0.001
+          ? { weight: pairShare * (1 - settle), box: rivers }
+          : null,
     },
   };
 }

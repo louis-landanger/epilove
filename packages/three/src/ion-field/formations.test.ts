@@ -9,11 +9,13 @@ import {
   PAIR_FIELD_LINES,
   pairFieldPoint,
   pairGeometry,
+  riverDistance,
   toWorldBox,
   type WorldBox,
   writeFormations,
 } from "./formations";
 import { createIonFieldLayout, MARK, SCHOOL_KEYS } from "./layout";
+import { RHONE_PATH, RIVER_MAP, SAONE_PATH } from "./rivers";
 
 const box: WorldBox = { x: 0.2, y: -0.1, hw: 0.8, hh: 0.4 };
 
@@ -390,6 +392,94 @@ describe("writeFormations", () => {
       expect(both.targets[offset + 2]).toBeCloseTo(1, 5);
       const midway = ((card.targets[offset] ?? 0) + (ring.targets[offset] ?? 0)) / 2;
       expect(both.targets[offset]).toBeCloseTo(midway, 5);
+    }
+  });
+});
+
+describe("the rivers formation", () => {
+  // The map's box, as tall as the screen on the right of a wide one (the map is 9.6 km × 14.2 km).
+  const map = {
+    x: 0.8,
+    y: 0,
+    hw: (0.96 * (RIVER_MAP.maxX - RIVER_MAP.minX)) / (RIVER_MAP.maxY - RIVER_MAP.minY),
+    hh: 0.96,
+  };
+  const rivers = { weight: 1, box: map };
+
+  it("holds every particle, the Saône's in plasma and the Rhône's in volt", () => {
+    const { targets, looks, layout } = run({ rivers });
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      expect(targets[offset + 2]).toBe(1);
+      if (index % 2 === 0) {
+        expect(looks[offset + 1]).toBeGreaterThan(0.8);
+        expect(looks[offset]).toBe(0);
+      } else {
+        expect(looks[offset]).toBeGreaterThan(0.8);
+        expect(looks[offset + 1]).toBe(0);
+      }
+    }
+  });
+
+  it("brings partners to the Confluence at the same moment, each down its own river", () => {
+    const layout = createIonFieldLayout(2000);
+    for (const time of [0, 7.3, 41, 120]) {
+      for (let index = 0; index < layout.count; index += 2) {
+        const saone = riverDistance(layout, index, time) - SAONE_PATH.confluence;
+        const rhone = riverDistance(layout, index + 1, time) - RHONE_PATH.confluence;
+        expect(saone).toBeCloseTo(rhone, 6);
+      }
+    }
+  });
+
+  it("goes on down the merged river side by side, close enough for the bonds to light up", () => {
+    const time = 31;
+    const { targets, layout } = run({ rivers }, 2000, time);
+    let checked = 0;
+    for (let index = 0; index < layout.count; index += 2) {
+      const past = riverDistance(layout, index, time) - SAONE_PATH.confluence;
+      if (past > 2.5 && riverDistance(layout, index, time) < SAONE_PATH.leaves) {
+        const a = index * FORMATION_STRIDE;
+        const b = a + FORMATION_STRIDE;
+        expect(
+          Math.hypot((targets[a] ?? 0) - (targets[b] ?? 0), (targets[a + 1] ?? 0) - (targets[b + 1] ?? 0)),
+        ).toBeLessThan(0.06);
+        checked += 1;
+      }
+    }
+    expect(checked).toBeGreaterThan(50);
+  });
+
+  it("keeps the particles dark out of sight, and draws the rivers inside the map", () => {
+    const time = 12;
+    const { targets, looks, layout } = run({ rivers }, 2000, time);
+    let lit = 0;
+    for (let index = 0; index < layout.count; index += 1) {
+      const path = index % 2 === 0 ? SAONE_PATH : RHONE_PATH;
+      const s = riverDistance(layout, index, time);
+      const offset = index * FORMATION_STRIDE;
+      if (s <= 0 || s >= path.total) {
+        // Waiting at its source, or flying back to it: unseen.
+        expect(looks[offset + 2]).toBe(0);
+      }
+      if ((looks[offset + 2] ?? 0) > 0.99) {
+        lit += 1;
+        expect(Math.abs((targets[offset] ?? 0) - map.x)).toBeLessThan(map.hw * 1.03);
+        expect(Math.abs((targets[offset + 1] ?? 0) - map.y)).toBeLessThan(map.hh * 1.03);
+      }
+    }
+    // Most of the particles are in sight at any moment.
+    expect(lit).toBeGreaterThan(layout.count * 0.45);
+  });
+
+  it("carries the rivers with their map as the page scrolls", () => {
+    const layout = createIonFieldLayout(200);
+    const targets = new Float32Array(layout.count * FORMATION_STRIDE);
+    const looks = new Float32Array(layout.count * FORMATION_STRIDE);
+    const moved = { weight: 1, box: { ...map, y: map.y + 0.15 } };
+    writeFormations(targets, looks, layout, { rivers: moved }, { rivers }, 2, 2 / 900);
+    for (let index = 0; index < layout.count; index += 1) {
+      expect(targets[index * FORMATION_STRIDE + 3]).toBeCloseTo(0.15, 6);
     }
   });
 });

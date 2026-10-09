@@ -1,4 +1,5 @@
 import { MARK } from "./layout";
+import { RHONE_PATH, RIVER_MAP, type RiverPath, riverPoint, SAONE_PATH } from "./rivers";
 
 /**
  * Formations of the ion field down the landing page (docs/02-design.md):
@@ -77,6 +78,17 @@ export interface PairFormation {
   readonly core?: number;
 }
 
+/**
+ * The Saône and the Rhône through Lyon (rivers.ts), drawn by the particles in
+ * `box` (the map, fitted whole): each pair of partners comes down both rivers
+ * at once, one particle in each, meets at the Confluence and goes on down
+ * the merged river side by side, bonded.
+ */
+export interface RiversFormation {
+  readonly weight: number;
+  readonly box: WorldBox;
+}
+
 export interface Formations {
   /** Light of the particles no formation holds, in [0, 1] (default 1): the hero's drifting dust is dim. */
   readonly freeGlow?: number;
@@ -86,6 +98,7 @@ export interface Formations {
   readonly card?: CardFormation | null;
   readonly tubes?: TubeFormation | null;
   readonly pact?: PactFormation | null;
+  readonly rivers?: RiversFormation | null;
 }
 
 /** The per-particle data the formations need (a subset of `IonFieldLayout`). */
@@ -247,12 +260,14 @@ export function formationStrength(formations: {
   readonly card?: { readonly weight: number } | null;
   readonly tubes?: { readonly weight: number } | null;
   readonly pact?: { readonly weight: number } | null;
+  readonly rivers?: { readonly weight: number } | null;
 }): number {
   return Math.max(
     formations.pair?.weight ?? 0,
     formations.card?.weight ?? 0,
     formations.tubes?.weight ?? 0,
     formations.pact?.weight ?? 0,
+    formations.rivers?.weight ?? 0,
   );
 }
 
@@ -421,6 +436,84 @@ function pactContribution(
   into.plasma = 0;
   into.paper = 0;
   into.carry = previous ? pact.y - previous.y : 0;
+  return true;
+}
+
+/** Speed of the rivers on the map, in kilometres per second, and its spread between pairs (± half). */
+const RIVER_SPEED = 0.38;
+const RIVER_SPREAD = 0.3;
+const RIVER_SLOWEST = RIVER_SPEED * (1 - RIVER_SPREAD / 2);
+/**
+ * Seconds a pair takes, at its slowest, from the farther source to the
+ * Confluence, then out of sight down the merged river: its whole journey,
+ * after which it starts again from the sources.
+ */
+const RIVER_UP = Math.max(SAONE_PATH.confluence, RHONE_PATH.confluence) / RIVER_SLOWEST;
+const RIVER_CYCLE = RIVER_UP + (SAONE_PATH.total - SAONE_PATH.confluence) / RIVER_SLOWEST;
+/** Half widths of the rivers on the map, in kilometres (wider than in Lyon, to be seen). */
+const SAONE_HALF = 0.07;
+const RHONE_HALF = 0.1;
+const MERGED_HALF = 0.16;
+/** Over how many kilometres past the Confluence the two waters run side by side before they mix. */
+const SIDE_BY_SIDE = 2.4;
+const MAP_WIDTH = RIVER_MAP.maxX - RIVER_MAP.minX;
+const MAP_HEIGHT = RIVER_MAP.maxY - RIVER_MAP.minY;
+const MAP_X = (RIVER_MAP.minX + RIVER_MAP.maxX) / 2;
+const MAP_Y = (RIVER_MAP.minY + RIVER_MAP.maxY) / 2;
+
+const onRiver = { x: 0, y: 0, nx: 0, ny: 0 };
+
+/** How far along its course a particle of the rivers is at `time`, in kilometres (may run past either end). */
+export function riverDistance(particles: FormationParticles, index: number, time: number): number {
+  const pair = index & ~1;
+  const path: RiverPath = (index & 1) === 1 ? RHONE_PATH : SAONE_PATH;
+  const speed = RIVER_SPEED * (1 - RIVER_SPREAD / 2 + RIVER_SPREAD * (particles.phases[pair] ?? 0));
+  // Partners share their clock and their speed: they reach the Confluence at the same moment.
+  const sinceConfluence = fract((particles.along[pair] ?? 0) + time / RIVER_CYCLE) * RIVER_CYCLE - RIVER_UP;
+  return path.confluence + sinceConfluence * speed;
+}
+
+/**
+ * The rivers: even particles come down the Saône (plasma), odd ones down the
+ * Rhône (volt). Past the Confluence, the two waters run side by side, then
+ * mix, each pair of partners side by side, bonded. Before a particle comes
+ * into sight it waits at its source, dark, and once out of sight it flies
+ * back there, dark too.
+ */
+function riversContribution(
+  particles: FormationParticles,
+  index: number,
+  rivers: RiversFormation,
+  previous: RiversFormation | null,
+  time: number,
+  into: Contribution,
+): boolean {
+  const rhone = (index & 1) === 1;
+  const path = rhone ? RHONE_PATH : SAONE_PATH;
+  const s = Math.min(path.total, Math.max(0, riverDistance(particles, index, time)));
+  riverPoint(path, s, onRiver);
+  const lane = (particles.lanes[index] ?? 0.5) * 2 - 1;
+  const past = s - path.confluence;
+  let offset: number;
+  if (past <= 0) {
+    offset = lane * (rhone ? RHONE_HALF : SAONE_HALF);
+  } else {
+    const mixed = smoothstep(0, SIDE_BY_SIDE, past);
+    offset = ((rhone ? 0.5 : -0.5) * (1 - mixed) + lane * (0.5 + 0.5 * mixed)) * MERGED_HALF;
+  }
+  offset += Math.sin(time * 1.3 + (particles.phases[index] ?? 0) * TAU) * 0.012;
+  const { box } = rivers;
+  const scale = Math.min((2 * box.hw) / MAP_WIDTH, (2 * box.hh) / MAP_HEIGHT);
+  into.x = box.x + (onRiver.x + offset * onRiver.nx - MAP_X) * scale;
+  into.y = box.y + (onRiver.y + offset * onRiver.ny - MAP_Y) * scale;
+  into.pull = 1;
+  into.glow =
+    smoothstep(path.enters * 0.4, path.enters, s) *
+    (1 - smoothstep(path.leaves, path.leaves + (path.total - path.leaves) * 0.6, s));
+  into.plasma = rhone ? 0 : 0.9;
+  into.volt = rhone ? 0.85 : 0;
+  into.paper = 0;
+  into.carry = previous ? box.y - previous.box.y : 0;
   return true;
 }
 
@@ -800,6 +893,7 @@ export function writeFormations(
   const card = formations.card && formations.card.weight > 0.001 ? formations.card : null;
   const tubes = formations.tubes && formations.tubes.weight > 0.001 ? formations.tubes : null;
   const pact = formations.pact && formations.pact.weight > 0.001 ? formations.pact : null;
+  const rivers = formations.rivers && formations.rivers.weight > 0.001 ? formations.rivers : null;
   const freeGlow = formations.freeGlow ?? 1;
   const freePaper = formations.freePaper ?? 0;
 
@@ -832,6 +926,12 @@ export function writeFormations(
     }
     if (pact && pactContribution(particles, index, pact, previous?.pact ?? null, time, contribution)) {
       accumulate(pact.weight);
+    }
+    if (
+      rivers &&
+      riversContribution(particles, index, rivers, previous?.rivers ?? null, time, contribution)
+    ) {
+      accumulate(rivers.weight);
     }
     const { x, y, total, glow, volt, plasma, paper, carry, grain } = sum;
 
@@ -893,12 +993,14 @@ export interface ViewportFormations {
   } | null;
   /** The Pact stage: the rings are inscribed in it. */
   readonly pact?: { readonly weight: number; readonly box: PixelBox } | null;
+  /** The map of the rivers (rivers.ts), fitted whole in its box. */
+  readonly rivers?: { readonly weight: number; readonly box: PixelBox } | null;
 }
 
 /** Converts measured formations to world units for a canvas of `width` × `height` CSS pixels. */
 export function toWorldFormations(formations: ViewportFormations, width: number, height: number): Formations {
   const unit = 2 / height;
-  const { pair, card, tubes, pact } = formations;
+  const { pair, card, tubes, pact, rivers } = formations;
   const pactBox = pact ? toWorldBox(pact.box, width, height) : null;
   return {
     ...(formations.freeGlow === undefined ? {} : { freeGlow: formations.freeGlow }),
@@ -938,5 +1040,6 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
       pact && pactBox
         ? { weight: pact.weight, x: pactBox.x, y: pactBox.y, radius: Math.min(pactBox.hw, pactBox.hh) * 0.96 }
         : null,
+    rivers: rivers ? { weight: rivers.weight, box: toWorldBox(rivers.box, width, height) } : null,
   };
 }

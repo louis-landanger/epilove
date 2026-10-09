@@ -36,7 +36,13 @@ describe("particle budget", () => {
   it("always returns pairs", () => {
     for (const profile of [laptop, phone, { ...phone, cores: 3 }, { ...laptop, memoryGb: 3 }]) {
       expect(particleBudget(profile) % 2).toBe(0);
+      expect(particleBudget(profile, true) % 2).toBe(0);
     }
+  });
+
+  it("gives half as many again to a hero that draws the rivers", () => {
+    expect(particleBudget(laptop, true)).toBe(2400);
+    expect(particleBudget(phone, true) / particleBudget(phone)).toBeCloseTo(1.5, 2);
   });
 
   it("keeps the poster on data saver and very small devices", () => {

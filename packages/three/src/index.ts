@@ -7,3 +7,4 @@ export * from "./colors";
 export * from "./ion-field/formations";
 export * from "./ion-field/layout";
 export * from "./ion-field/quality";
+export * from "./ion-field/rivers";

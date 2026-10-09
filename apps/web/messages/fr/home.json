@@ -196,5 +196,13 @@
     "title": "<line>Trouve <pair>tes<tie></tie> atomes</pair></line> <line>crochus.</line>",
     "lead": "L’appli de rencontre et d’amitié des étudiantes et étudiants du campus IONIS de Lyon. On entre avec son email d’école.",
     "photo": "Photo provisoire : la montée de la Grande-Côte, à Lyon (Romainbehar, CC0)."
+  },
+  "fleuves": {
+    "lead": "À Lyon, même le Rhône et la Saône ont fini par se rencontrer. Atomes, c’est l’appli de rencontre et d’amitié des étudiantes et étudiants du campus IONIS.",
+    "saone": "la Saône",
+    "rhone": "le Rhône",
+    "confluence": "Confluence",
+    "vaise": "Vaise",
+    "credit": "Tracé des fleuves : © les contributeurs d’OpenStreetMap"
   }
 }

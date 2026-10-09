@@ -55,6 +55,7 @@ function createPageMeasurer() {
     const stage = document.querySelector<HTMLElement>("[data-field-profiles]");
     const anchor = document.querySelector("[data-field-atom]");
     return {
+      rivers: document.querySelector("[data-field-rivers]"),
       profiles: stage
         ? { stage, cards: [...stage.querySelectorAll<HTMLElement>("[data-profile-card]")] }
         : null,
@@ -109,6 +110,7 @@ function createPageMeasurer() {
         scope: elements.scope ? toBox(elements.scope) : null,
         profiles: profiles ? readProfiles(profiles.stage, profiles.cards) : null,
         anchor: anchor ? toBox(anchor) : null,
+        rivers: elements.rivers?.isConnected ? toBox(elements.rivers) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,
@@ -172,7 +174,11 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         let followPage = () => {};
         const field = await createIonField({
           container,
-          particleCount: () => (forcedCount > 0 ? forcedCount : particleBudget(profile)),
+          // Lyon's two rivers across the hero need more particles than a shape.
+          particleCount: () =>
+            forcedCount > 0
+              ? forcedCount
+              : particleBudget(profile, document.querySelector("[data-field-rivers]") !== null),
           adaptiveQuality: !forced,
           beforeFrame: () => followPage(),
           // The particles start in the shapes on screen (a reload further down the page).

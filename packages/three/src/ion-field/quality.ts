@@ -36,12 +36,13 @@ export function canAffordLiveField(profile: DeviceProfile): boolean {
  * The particles are fine, and a few hundred are enough for each shape; touch
  * screens and small windows get fewer, modest machines fewer still. Never
  * fewer than the hero's lattice needs (a pair on each of its nodes, and a
- * reaction's chain).
+ * reaction's chain). A hero that draws Lyon's rivers (`dense`) gets half as
+ * many again: two rivers across the screen need more particles than a shape.
  */
-export function particleBudget(profile: DeviceProfile): number {
+export function particleBudget(profile: DeviceProfile, dense = false): number {
   const modest = profile.cores <= 4 || (profile.memoryGb !== undefined && profile.memoryGb <= 4);
   const small = profile.coarsePointer || profile.viewportArea < 900 * 700;
-  const budget = (small ? 900 : 1600) * (modest ? 0.75 : 1);
+  const budget = (small ? 900 : 1600) * (modest ? 0.75 : 1) * (dense ? 1.5 : 1);
   return Math.max(640, Math.floor(budget / 2) * 2);
 }
 
