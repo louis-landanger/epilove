@@ -526,6 +526,9 @@ test.describe("hero under study: the rivers", () => {
     await expect(
       page.getByText("À Lyon, même le Rhône et la Saône ont fini par se rencontrer."),
     ).toBeVisible();
+    // Why Lyon: the campus is marked on the plan.
+    await expect(page.locator(".fleuves-campus-name")).toHaveText("Campus IONIS");
+    await expect(page.locator(".fleuves-campus-name")).toBeInViewport();
     // The test browser renders in software: no field, the courses drawn in dots instead.
     await page.waitForLoadState("load");
     await page.waitForTimeout(1500);

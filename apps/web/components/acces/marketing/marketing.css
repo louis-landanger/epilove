@@ -2503,39 +2503,40 @@
  * through. Without the field, the rivers' courses are drawn in dots.
  */
 .fleuves-hero {
-  /* A kilometre on screen, and where the Presqu'île (1.6 km west, 1.2 km south of 45.76° N, 4.85° E) lands. */
+  /* A kilometre on screen, and where the campus in Vaise (CAMPUS_SITES in rivers.ts) lands. */
   --km: min(21.5vw, 10svh);
-  --focus-x: 56%;
-  --focus-y: 26%;
+  --focus-x: 30%;
+  --focus-y: 24%;
   justify-content: flex-end;
   padding-bottom: clamp(1.75rem, 5svh, 2.75rem);
 }
 
 @media (min-width: 40rem) {
   .fleuves-hero {
-    --km: min(13vw, 11svh);
-    --focus-x: 60%;
-    --focus-y: 32%;
+    --km: min(14vw, 11.5svh);
+    --focus-x: 38%;
+    --focus-y: 30%;
   }
 }
 
 @media (min-width: 64rem) {
   .fleuves-hero {
-    --km: min(8.2vw, 13.6svh);
-    --focus-x: calc(50% + 12rem);
-    --focus-y: 50%;
+    --km: min(8.4vw, 13.6svh);
+    --focus-x: calc(50% + 5rem);
+    --focus-y: 30%;
   }
 }
 
 /*
  * The map keeps the proportions of rivers.ts (9.6 km × 14.2 km, from 3.8 km
  * west and 6.9 km north): the field fits the rivers into it and the plan
- * lines its streets up with it. It overflows the hero, which clips it.
+ * lines its streets up with it. The campus lies 0.412 km from its west edge
+ * and 5.697 km from its north edge. It overflows the hero, which clips it.
  */
 .fleuves-map {
   position: absolute;
-  top: calc(var(--focus-y) - 8.1 * var(--km));
-  left: calc(var(--focus-x) - 2.2 * var(--km));
+  top: calc(var(--focus-y) - 5.697 * var(--km));
+  left: calc(var(--focus-x) - 0.412 * var(--km));
   width: calc(9.6 * var(--km));
   height: calc(14.2 * var(--km));
   pointer-events: none;
@@ -2640,8 +2641,15 @@
   color: color-mix(in oklch, var(--color-paper) 82%, transparent);
 }
 
+/* Phones: the Rhône is named on its west bank, clear of the screen's edge. */
 .fleuves-river-rhone {
-  translate: 15% -120%;
+  translate: -110% -50%;
+}
+
+@media (min-width: 40rem) {
+  .fleuves-river-rhone {
+    translate: 15% -120%;
+  }
 }
 
 .fleuves-place {
@@ -2649,6 +2657,17 @@
   padding-right: 0.75rem;
   font-size: 0.8125rem;
   color: color-mix(in oklch, var(--color-paper) 68%, transparent);
+}
+
+/* Phones: the Confluence lies under the copy, unnamed. */
+.fleuves-place-confluence {
+  display: none;
+}
+
+@media (min-width: 40rem) {
+  .fleuves-place-confluence {
+    display: block;
+  }
 }
 
 .fleuves-place::after {
@@ -2661,6 +2680,94 @@
   border-radius: 50%;
   background: currentColor;
   translate: 0 -50%;
+}
+
+/* The campus: a point, which calls with a ring of light. */
+.fleuves-campus {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.fleuves-campus::before,
+.fleuves-campus::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  translate: -50% -50%;
+}
+
+.fleuves-campus::before {
+  width: 0.8125rem;
+  height: 0.8125rem;
+  background: var(--color-paper);
+  box-shadow:
+    0 0 0 0.1875rem color-mix(in oklch, var(--color-plasma) 60%, transparent),
+    0 0 1rem 0.25rem color-mix(in oklch, var(--color-plasma) 40%, transparent);
+}
+
+.fleuves-campus::after {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1.5px solid var(--color-plasma);
+  animation: campus-call 3.2s var(--ease-out) infinite;
+}
+
+@keyframes campus-call {
+  from {
+    scale: 0.3;
+    opacity: 0.9;
+  }
+  to {
+    scale: 2.4;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fleuves-campus::after {
+    animation: none;
+    scale: 0.75;
+    opacity: 0.5;
+  }
+}
+
+.fleuves-campus-text {
+  position: absolute;
+  top: 0;
+  left: 1.5rem;
+  display: grid;
+  gap: 0.125rem;
+  white-space: nowrap;
+  translate: 0 -50%;
+  text-shadow:
+    0 0 0.75rem var(--color-ink),
+    0 0 0.25rem var(--color-ink);
+}
+
+/* On wide screens the campus is named on its west side, clear of the Saône. */
+@media (min-width: 64rem) {
+  .fleuves-campus-text {
+    right: 1.5rem;
+    left: auto;
+    text-align: right;
+  }
+}
+
+.fleuves-campus-name {
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
+  font-size: clamp(1.25rem, 1.8vw, 1.75rem);
+  font-style: italic;
+  line-height: 1.1;
+  color: var(--color-paper);
+}
+
+.fleuves-campus-detail {
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: color-mix(in oklch, var(--color-paper) 72%, transparent);
 }
 
 .fleuves-copy {

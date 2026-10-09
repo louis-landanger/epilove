@@ -1,7 +1,7 @@
 import { colors } from "@atomes/tokens";
 import { linearSrgbToHex, tokenToLinearSrgb } from "../colors";
 import { CITY_LAYERS, type CityDots } from "./city";
-import { RIVER_MAP } from "./rivers";
+import { CAMPUS, RIVER_MAP } from "./rivers";
 
 /**
  * Paints the plan of Lyon (city.ts) on a 2D canvas, dot by dot: no GPU, no
@@ -65,8 +65,8 @@ export const CITY_LOOK: ReadonlyArray<{ radius: number; alpha: number; color: "p
   { radius: 0.8, alpha: 0.24, color: "volt" },
 ];
 
-/** The plan is brightest around the Presqu'île and dims with distance (kilometres): a drawing, not a map. */
-const FOCUS = { x: -1.6, y: -1.2, reach: 5.5, floor: 0.3 } as const;
+/** The plan is brightest around the campus and dims with distance (kilometres): a drawing, not a map. */
+const FOCUS = { x: CAMPUS[0], y: CAMPUS[1], reach: 4.8, floor: 0.3 } as const;
 /** Cells of the grid that finds the dots near the pointer, in kilometres. */
 const CELL = 0.25;
 /** How much the torch adds to the dots it lights, at its centre. */

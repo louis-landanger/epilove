@@ -1,5 +1,5 @@
 import { SCHOOLS } from "@atomes/core";
-import { MERGED_COURSE, RHONE_COURSE, RIVER_MAP, RIVER_PLACES, SAONE_COURSE } from "@atomes/three";
+import { CAMPUS, MERGED_COURSE, RHONE_COURSE, RIVER_MAP, RIVER_PLACES, SAONE_COURSE } from "@atomes/three";
 import { getTranslations } from "next-intl/server";
 import type { CSSProperties } from "react";
 import { CityCanvas } from "./city-canvas";
@@ -45,12 +45,13 @@ function RiversDrawing() {
 /**
  * Hero under study (`/apercu/fleuves`, docs/02-design.md, section 5): the
  * plan of Lyon drawn in some hundred and fifty thousand dots fills the hero,
- * lit up from the Confluence outwards, and the particles of the ion field
- * flow down its two rivers, the Saône and the Rhône, along their real
- * courses, to meet at the Confluence, where they go on together, side by
- * side, then mixed, each pair bonded. In Lyon, even the rivers end up
- * meeting. Scrolling, the particles gather into the logo mark beside the
- * manifesto (ion-field/journey.ts).
+ * framed on the campus in Vaise, where the five schools are, marked by a
+ * point and lit up from it outwards. The particles of the ion field flow
+ * down the city's two rivers, the Saône (past the campus) and the Rhône,
+ * along their real courses, to meet at the Confluence, where they go
+ * on together, side by side, then mixed, each pair bonded. In Lyon, even the
+ * rivers end up meeting. Scrolling, the particles gather into the logo mark
+ * beside the manifesto (ion-field/journey.ts).
  */
 export async function FleuvesHero() {
   const t = await getTranslations("home");
@@ -69,11 +70,15 @@ export async function FleuvesHero() {
           <span className="fleuves-river fleuves-river-rhone" style={at(RIVER_PLACES.rhone)}>
             {t("fleuves.rhone")}
           </span>
-          <span className="fleuves-place" style={at(RIVER_PLACES.confluence)}>
+          <span className="fleuves-place fleuves-place-confluence" style={at(RIVER_PLACES.confluence)}>
             {t("fleuves.confluence")}
           </span>
-          <span className="fleuves-place" style={at(RIVER_PLACES.vaise)}>
-            {t("fleuves.vaise")}
+          {/* Why Lyon: the campus, where the five schools are. */}
+          <span className="fleuves-campus" style={at(CAMPUS)}>
+            <span className="fleuves-campus-text">
+              <span className="fleuves-campus-name">{t("fleuves.campus")}</span>
+              <span className="fleuves-campus-detail">{t("fleuves.campusDetail")}</span>
+            </span>
           </span>
         </div>
       </div>

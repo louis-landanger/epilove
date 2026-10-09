@@ -44,16 +44,22 @@ export const MERGED_COURSE: readonly number[] = [
 export const RIVER_MAP = { minX: -3.8, maxX: 5.8, minY: -7.3, maxY: 6.9 } as const;
 
 /**
- * Where the hero names the rivers and the places, in kilometres (x east, y
- * north): beside each river where the hero shows it, at the Confluence, and
- * in Vaise, the neighbourhood of the campus.
+ * Where the hero names the rivers, in kilometres (x east, y north): beside
+ * each river where the hero shows it, and at the Confluence.
  */
 export const RIVER_PLACES = {
   saone: [-2.75, -1.2],
   rhone: [-0.75, -0.3],
   confluence: [-2.442, -3.521],
-  vaise: [-3.43, 1.63],
 } as const;
+
+/**
+ * The IONIS campus in Vaise, where the five schools share one site, in
+ * kilometres (x east, y north), from OpenStreetMap (« Campus IONIS
+ * Education Group », 16 rue Jean-Marie Leclair, Lyon 9ᵉ). The Saône runs
+ * past it.
+ */
+export const CAMPUS = [-3.388, 1.203] as const;
 
 /** How far each river runs beyond the map, in kilometres: it comes into sight and leaves it already flowing. */
 const RUN_UP = 2.5;

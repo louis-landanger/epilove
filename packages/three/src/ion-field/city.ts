@@ -1,5 +1,5 @@
 import { createRandom } from "./layout";
-import { MERGED_COURSE } from "./rivers";
+import { CAMPUS } from "./rivers";
 
 /**
  * The plan of Lyon that the rivers hero (`/apercu/fleuves`) draws in dots:
@@ -169,7 +169,7 @@ export interface CityDots {
   readonly layer: Uint8Array;
   /** The dot's own light, around 1 (lower near the plan's edge). */
   readonly light: Float32Array;
-  /** When the dot lights up as the plan is revealed, in [0, 1]: from the Confluence outwards. */
+  /** When the dot lights up as the plan is revealed, in [0, 1]: from the campus outwards. */
   readonly order: Float32Array;
 }
 
@@ -193,9 +193,14 @@ function insideRing(ring: Int32Array, x: number, y: number): boolean {
  * Lays the dots of the plan out: along each line, one every
  * `CITY_DOT_SPACING[layer]` metres or so, slightly off the line; in each
  * green area, one per `CITY_GREEN_STEP` square, at random. The same seed
- * gives the same dots.
+ * gives the same dots. They light up from `origin` (kilometres), the campus
+ * in Vaise unless told otherwise, outwards.
  */
-export function cityDots(plan: CityPlan, seed = 20_271_009): CityDots {
+export function cityDots(
+  plan: CityPlan,
+  seed = 20_271_009,
+  origin: readonly [number, number] = CAMPUS,
+): CityDots {
   const random = createRandom(seed);
   const xs: number[] = [];
   const ys: number[] = [];
@@ -274,8 +279,8 @@ export function cityDots(plan: CityPlan, seed = 20_271_009): CityDots {
   const y = new Float32Array(count);
   const light = new Float32Array(count);
   const order = new Float32Array(count);
-  const confluenceX = (MERGED_COURSE[0] ?? 0) * 1000;
-  const confluenceY = (MERGED_COURSE[1] ?? 0) * 1000;
+  const originX = origin[0] * 1000;
+  const originY = origin[1] * 1000;
   let farthest = 1;
   for (let index = 0; index < count; index += 1) {
     const px = xs[index] ?? 0;
@@ -285,12 +290,12 @@ export function cityDots(plan: CityPlan, seed = 20_271_009): CityDots {
     const edge = Math.min(px - minX, maxX - px, py - minY, maxY - py);
     const fade = Math.min(1, Math.max(0, edge / EDGE_FADE));
     light[index] = (0.75 + random() * 0.5) * fade * fade * (3 - 2 * fade);
-    const distance = Math.hypot(px - confluenceX, py - confluenceY);
+    const distance = Math.hypot(px - originX, py - originY);
     order[index] = distance;
     farthest = Math.max(farthest, distance);
   }
   for (let index = 0; index < count; index += 1) {
-    // From the Confluence outwards, a little ragged.
+    // From the origin outwards, a little ragged.
     order[index] = Math.min(1, Math.max(0, ((order[index] ?? 0) / farthest) * 0.92 + random() * 0.08));
   }
   return { count, x, y, layer: Uint8Array.from(layers), light, order };

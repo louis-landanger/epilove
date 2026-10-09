@@ -9,7 +9,7 @@ Atomes est l'application de rencontre **et** d'amitié réservée aux étudiante
 
 ## Le constat
 
-1. **Cinq écoles, deux sites, peu de mélange.** EPITA, ESME, IPSA et Sup'Biotech partagent depuis la rentrée 2025 le campus de Vaise (Lyon 9ᵉ) ; l'ISG est installée ailleurs dans Lyon. Les promos sont cloisonnées, les BDE séparés, les emplois du temps décalés. Les rencontres inter-écoles relèvent du hasard.
+1. **Cinq écoles, un campus, peu de mélange.** EPITA, ESME, IPSA, Sup'Biotech et l'ISG partagent le campus IONIS de Vaise (Lyon 9ᵉ, 16 rue Jean-Marie Leclair). Les promos sont cloisonnées, les BDE séparés, les emplois du temps décalés. Les rencontres inter-écoles relèvent du hasard.
 2. **Les applications grand public ne sont pas faites pour ce contexte.** Bassin immense et anonyme, faux profils, aucun repère commun, expérience « catalogue », monétisation agressive (likes reçus floutés, boosts payants).
 3. **Un déséquilibre démographique marqué.** Ordres de grandeur publiés à l'échelle nationale de chaque école : environ 13 % de femmes à l'EPITA, 22 % à l'IPSA, autour de 30 % à l'ESME, contre environ 75 % à Sup'Biotech et plus de la moitié à l'ISG. Un espace commun aux cinq écoles rééquilibre fortement le bassin : c'est l'argument central du multi-écoles.
 4. **Sur un campus, le frein n'est pas de trouver quelqu'un, c'est d'oser.** Peur d'être vu par sa promo, peur du malaise, peur du refus visible. Le produit doit réduire ce coût social.

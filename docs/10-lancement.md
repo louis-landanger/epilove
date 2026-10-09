@@ -46,7 +46,7 @@
 
 ## 6. Présence sur les sites
 
-- **Campus de Vaise** (EPITA, ESME, IPSA, Sup'Biotech) et **site de l'ISG** : affiches et stickers avec QR code, avec l'accord des administrations.
+- **Campus de Vaise** (les cinq écoles) : affiches et stickers avec QR code, avec l'accord des administrations.
 - Goodies cohérents avec l'univers : fausses éprouvettes remplies de bonbons avec un QR code, stickers holographiques aux couleurs des écoles.
 - Stand ponctuel pendant la semaine d'ouverture du Pacte.
 

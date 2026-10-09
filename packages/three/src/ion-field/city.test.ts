@@ -8,7 +8,7 @@ import {
   decodeCityPlan,
   encodeCityPlan,
 } from "./city";
-import { MERGED_COURSE } from "./rivers";
+import { CAMPUS } from "./rivers";
 
 /** A street 2 km long, a railway crossing it, and a park far from both. */
 const plan: CityPlan = {
@@ -85,10 +85,10 @@ describe("the city's dots", () => {
     }
   });
 
-  it("lights the city up from the Confluence outwards", () => {
-    const confluence = { x: MERGED_COURSE[0] ?? 0, y: MERGED_COURSE[1] ?? 0 };
+  it("lights the city up from the campus outwards", () => {
+    const [campusX, campusY] = CAMPUS;
     const distance = (index: number) =>
-      Math.hypot((dots.x[index] ?? 0) - confluence.x, (dots.y[index] ?? 0) - confluence.y);
+      Math.hypot((dots.x[index] ?? 0) - campusX, (dots.y[index] ?? 0) - campusY);
     const indices = Array.from({ length: dots.count }, (_, index) => index).sort(
       (a, b) => distance(a) - distance(b),
     );
