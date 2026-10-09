@@ -535,6 +535,31 @@ test.describe("hero under study: the rivers", () => {
     await expect(page.locator(".fleuves-drawing")).toHaveCSS("opacity", "1");
   });
 
+  test("draws the plan of Lyon in dots, with or without the particles", async ({ page }) => {
+    const plan = page.waitForResponse((response) => response.url().endsWith("/apercu/fleuves/lyon-plan.bin"));
+    await page.goto("/apercu/fleuves");
+    const response = await plan;
+    expect(response.status()).toBe(200);
+    expect((await response.body()).subarray(0, 4).toString("latin1")).toBe("APL1");
+    // Lit once every dot is drawn, from the Confluence outwards; the canvases cover the hero.
+    await expect(page.locator(".fleuves-city")).toHaveAttribute("data-lit", "true", { timeout: 20_000 });
+    const hero = await page.locator("#hero").boundingBox();
+    const canvas = await page.locator(".fleuves-city canvas").first().boundingBox();
+    expect(canvas?.width).toBeCloseTo(hero?.width ?? 0, 0);
+    expect(canvas?.height).toBeCloseTo(hero?.height ?? 0, 0);
+  });
+
+  test.describe("with reduced motion", () => {
+    test.use({ reducedMotion: "reduce" });
+
+    test("draws the whole plan at once, and the rivers in dots", async ({ page }) => {
+      await page.goto("/apercu/fleuves");
+      await expect(page.locator(".fleuves-city")).toHaveAttribute("data-lit", "true", { timeout: 20_000 });
+      await expect(page.locator("[data-ion-field]")).toHaveAttribute("data-live", "false");
+      await expect(page.locator(".fleuves-drawing")).toHaveCSS("opacity", "1");
+    });
+  });
+
   test("keeps its call on screen when the page starts to scroll", async ({ page }) => {
     await page.goto("/apercu/fleuves");
     await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));

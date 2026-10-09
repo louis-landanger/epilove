@@ -37,6 +37,7 @@ Prérequis : Node 24 (`.node-version`), Corepack activé (`corepack enable`), Do
 | `pnpm --filter @atomes/tokens generate` | Régénère `theme.gen.css` après modification des jetons |
 | `pnpm pact:compute` / `pnpm pact:demo --reveal-in 60` | Calcule une saison du Pacte (solveur Python) / prépare une saison de démonstration révélée dans 60 s (le worker doit tourner) |
 | `pnpm drop:run` | Lance le Drop du soir sans attendre 21 h |
+| `pnpm --filter @atomes/three plan:lyon` | Régénère le plan de Lyon en points du héros `/apercu/fleuves` depuis OpenStreetMap (réseau requis ; `OVERPASS_URL` pour un autre serveur Overpass) |
 | `sudo bash infra/dev-host/setup.sh` / `update.sh` | Serveur de développement partagé : toute la stack sur une VM Ubuntu, derrière HTTPS et un mot de passe d'équipe (voir `infra/dev-host/README.md`, ADR 0014) |
 | `infra/load/run.sh 3000 180` | Test de charge k6 de la révélation du Pacte (app compilée, worker et services lancés ; voir `infra/load/README.md`) |
 

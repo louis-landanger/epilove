@@ -9,6 +9,7 @@
     "./ion-field": "./src/ion-field/scene.ts"
   },
   "scripts": {
+    "plan:lyon": "tsx scripts/lyon-plan.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -18,7 +19,9 @@
   },
   "devDependencies": {
     "@atomes/config": "workspace:*",
+    "@types/node": "catalog:",
     "@types/three": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

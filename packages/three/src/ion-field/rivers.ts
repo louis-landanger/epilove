@@ -43,12 +43,16 @@ export const MERGED_COURSE: readonly number[] = [
 /** What the map shows, in kilometres: the formation and the static drawing fit it to their box. */
 export const RIVER_MAP = { minX: -3.8, maxX: 5.8, minY: -7.3, maxY: 6.9 } as const;
 
-/** Where to name the rivers and the places, as fractions of the map from its top left corner. */
+/**
+ * Where the hero names the rivers and the places, in kilometres (x east, y
+ * north): beside each river where the hero shows it, at the Confluence, and
+ * in Vaise, the neighbourhood of the campus.
+ */
 export const RIVER_PLACES = {
-  saone: [0.1302, 0.2641],
-  rhone: [0.6088, 0.2347],
-  confluence: [0.1414, 0.7338],
-  vaise: [0.0277, 0.3575],
+  saone: [-2.75, -1.2],
+  rhone: [-0.75, -0.3],
+  confluence: [-2.442, -3.521],
+  vaise: [-3.43, 1.63],
 } as const;
 
 /** How far each river runs beyond the map, in kilometres: it comes into sight and leaves it already flowing. */

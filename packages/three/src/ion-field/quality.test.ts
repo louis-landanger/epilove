@@ -40,9 +40,9 @@ describe("particle budget", () => {
     }
   });
 
-  it("gives half as many again to a hero that draws the rivers", () => {
-    expect(particleBudget(laptop, true)).toBe(2400);
-    expect(particleBudget(phone, true) / particleBudget(phone)).toBeCloseTo(1.5, 2);
+  it("gives three and a half times as many to a hero that draws the rivers", () => {
+    expect(particleBudget(laptop, true)).toBe(5600);
+    expect(particleBudget(phone, true) / particleBudget(phone)).toBeCloseTo(3.5, 2);
   });
 
   it("keeps the poster on data saver and very small devices", () => {

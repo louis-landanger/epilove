@@ -117,6 +117,16 @@ const DAMPING_FREE = 1.15;
 const DAMPING_HELD = 9;
 const MAX_SPEED = 1.6;
 const GLOW_QUAD = 7;
+/**
+ * Fine particles (the rivers of the hero): a crisp dot of this radius, in
+ * CSS pixels, drawn on a quad this wide, with no halo; and thinner bonds.
+ * The same on every screen, whatever the particle count.
+ */
+const FINE_RADIUS = 1.3;
+const FINE_QUAD = 5;
+const FINE_BOND = 2.5;
+/** Fine dots carry all their light in a pixel or two: brighter than a glow's core. */
+const FINE_GAIN = 2.1;
 // Formations follow page elements while they scroll: stiffer, and allowed to move faster.
 const FORMATION_SPRING = 30;
 const FORMATION_MAX_SPEED = 5;
@@ -230,6 +240,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const uPointerStrength = uniform(0);
   const uPointerCharge = uniform(1);
   const uPulse = uniform(0);
+  /** How fine the particles are drawn (0: glowing, 1: crisp dots), and a CSS pixel in world units and device pixels. */
+  const uFine = uniform(0);
+  const uPixel = uniform(2 / Math.max(1, options.container.clientHeight));
+  const uPixelRatio = uniform(1);
 
   // Formations, computed on the CPU every frame (formations.ts): x, y, pull, 0 and volt, plasma, glow, 0.
   const formationTargets = new Float32Array(count * FORMATION_STRIDE);
@@ -616,10 +630,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   // Depth: the smallest ions are dimmer, like dust further away.
   const depth = mix(float(0.26), float(1), smoothstep(0.003, 0.014, radius));
   const swell = float(1).add(particleBond.mul(0.45)).add(pointerProximity.mul(0.6));
-  ionMaterial.positionNode = vec3(
-    particleCenter.add(positionGeometry.xy.mul(radius.mul(swell).mul(GLOW_QUAD).mul(particleGrain))),
-    0,
-  );
+  const quadSize = mix(radius.mul(swell).mul(GLOW_QUAD).mul(particleGrain), uPixel.mul(FINE_QUAD), uFine);
+  ionMaterial.positionNode = vec3(particleCenter.add(positionGeometry.xy.mul(quadSize)), 0);
+  const quadPixels = quadSize.div(uPixel).toVarying();
   // Formations tint some motifs (volt, plasma, paper) and dim the particles that sit them out.
   const tint = (color: Node<"vec3">, look: Node<"vec4">) =>
     mix(
@@ -630,8 +643,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const tinted = tint(colorAttribute.xyz, particleLook);
   const ionColor = tinted
     .mul(twinkle.add(particleBond.mul(0.5)).add(pointerProximity.mul(0.8)))
-    .mul(depth)
-    .mul(0.5 + density * 0.5)
+    .mul(mix(depth.mul(0.5 + density * 0.5), float(FINE_GAIN), uFine))
     .mul(particleLook.z)
     .toVarying();
   const fromCenter = length(uv().sub(0.5)).mul(2);
@@ -639,7 +651,13 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const core = float(1)
     .sub(smoothstep(0.08, 0.2, fromCenter))
     .mul(1.4);
-  ionMaterial.colorNode = vec4(ionColor.mul(halo.add(core)), 1);
+  // A fine particle: a disc, its edge anti-aliased over one device pixel.
+  const disc = clamp(
+    float(FINE_RADIUS).sub(fromCenter.mul(quadPixels).mul(0.5)).mul(uPixelRatio).add(0.5),
+    0,
+    1,
+  );
+  ionMaterial.colorNode = vec4(ionColor.mul(mix(halo.add(core), disc, uFine)), 1);
 
   const bondMaterial = new MeshBasicNodeMaterial({
     transparent: true,
@@ -652,13 +670,16 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const along = positionGeometry.x.add(0.5);
   const normal = vec2(segment.y.negate(), segment.x).div(segmentLength);
   bondMaterial.positionNode = vec3(
-    bondA.add(segment.mul(along)).add(normal.mul(positionGeometry.y.mul(0.02))),
+    bondA
+      .add(segment.mul(along))
+      .add(normal.mul(positionGeometry.y.mul(mix(float(0.02), uPixel.mul(FINE_BOND), uFine)))),
     0,
   );
   const bondStrength = float(1)
     .sub(smoothstep(0.03, 0.14, segmentLength))
     .mul(bondLook.z)
     .mul(0.75 * density)
+    .mul(mix(float(1), float(0.6), uFine))
     .toVarying();
   // Bonds take the tint of their atoms: the title's letters stay white and plasma.
   const bondColor = tint(mix(bondColorA, bondColorB, along), bondLook).toVarying();
@@ -704,6 +725,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     }
     const previous = formations;
     formations = toWorldFormations(measured, width, height);
+    uFine.value = Math.min(1, formations.rivers?.weight ?? 0);
     writeFormations(
       formationTargets,
       formationLooks,
@@ -719,6 +741,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     formationsOn = active;
     if (!active) {
       formations = null;
+      uFine.value = 0;
     }
   };
 
@@ -728,6 +751,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     // World units change with the size: no carry across a resize.
     formations = null;
     const aspect = width / height;
+    uPixel.value = 2 / height;
+    uPixelRatio.value = pixelRatio;
     renderer.setSize(width, height, false);
     camera.left = -aspect;
     camera.right = aspect;
@@ -777,6 +802,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     if (verdict === "degrade") {
       if (pixelRatio > 1) {
         pixelRatio = 1;
+        uPixelRatio.value = pixelRatio;
         renderer.setPixelRatio(pixelRatio);
         renderer.setSize(width, height, false);
       } else if (ions.count > 600) {

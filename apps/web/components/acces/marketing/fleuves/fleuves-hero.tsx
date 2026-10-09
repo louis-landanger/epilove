@@ -2,6 +2,7 @@ import { SCHOOLS } from "@atomes/core";
 import { MERGED_COURSE, RHONE_COURSE, RIVER_MAP, RIVER_PLACES, SAONE_COURSE } from "@atomes/three";
 import { getTranslations } from "next-intl/server";
 import type { CSSProperties } from "react";
+import { CityCanvas } from "./city-canvas";
 
 /** A course of rivers.ts as SVG points: kilometres, y down (north at the top). */
 function points(course: readonly number[]): string {
@@ -12,9 +13,11 @@ function points(course: readonly number[]): string {
   return out.join(" ");
 }
 
-/** Where a label sits on the map, from rivers.ts (fractions of the map from its top left). */
+/** Where a label sits on the map, from a place of rivers.ts (kilometres east and north). */
 function at([x, y]: readonly [number, number]): CSSProperties {
-  return { left: `${x * 100}%`, top: `${y * 100}%` };
+  const left = (x - RIVER_MAP.minX) / (RIVER_MAP.maxX - RIVER_MAP.minX);
+  const top = (RIVER_MAP.maxY - y) / (RIVER_MAP.maxY - RIVER_MAP.minY);
+  return { left: `${(left * 100).toFixed(2)}%`, top: `${(top * 100).toFixed(2)}%` };
 }
 
 /**
@@ -41,17 +44,21 @@ function RiversDrawing() {
 
 /**
  * Hero under study (`/apercu/fleuves`, docs/02-design.md, section 5): the
- * particles of the ion field flow down Lyon's two rivers, the Saône and the
- * Rhône, along their real courses, and meet at the Confluence, where they go
- * on together, side by side, then mixed, each pair bonded. In Lyon, even the
- * rivers end up meeting. Scrolling, the particles gather into the logo mark
- * beside the manifesto (ion-field/journey.ts).
+ * plan of Lyon drawn in some hundred and fifty thousand dots fills the hero,
+ * lit up from the Confluence outwards, and the particles of the ion field
+ * flow down its two rivers, the Saône and the Rhône, along their real
+ * courses, to meet at the Confluence, where they go on together, side by
+ * side, then mixed, each pair bonded. In Lyon, even the rivers end up
+ * meeting. Scrolling, the particles gather into the logo mark beside the
+ * manifesto (ion-field/journey.ts).
  */
 export async function FleuvesHero() {
   const t = await getTranslations("home");
 
   return (
     <section id="hero" aria-labelledby="hero-title" className="hero fleuves-hero">
+      <CityCanvas />
+      <div className="fleuves-shade" aria-hidden="true" />
       <div className="fleuves-map" data-field-rivers aria-hidden="true">
         <RiversDrawing />
         {/* The names leave with the hero's text as the page scrolls, while the rivers gather into the logo mark. */}

@@ -2496,35 +2496,92 @@
 /* ----------------------------------------------------------- fleuves hero */
 
 /*
- * Hero under study (fleuves/fleuves-hero.tsx): the particles of the ion field
- * flow down the Saône and the Rhône on the map (`[data-field-rivers]`, whose
- * box the field fits the rivers into, rivers.ts) and meet at the Confluence.
- * The hero is transparent: the field shows through. Without the field, the
- * same courses drawn in dots.
+ * Hero under study (fleuves/fleuves-hero.tsx): the plan of Lyon in dots
+ * (city-canvas.tsx) fills the hero, and the particles of the ion field flow
+ * down the Saône and the Rhône through it, along the streets of their banks,
+ * to meet at the Confluence. The hero is transparent: the field shows
+ * through. Without the field, the rivers' courses are drawn in dots.
  */
 .fleuves-hero {
+  /* A kilometre on screen, and where the Presqu'île (1.6 km west, 1.2 km south of 45.76° N, 4.85° E) lands. */
+  --km: min(21.5vw, 10svh);
+  --focus-x: 56%;
+  --focus-y: 26%;
   justify-content: flex-end;
   padding-bottom: clamp(1.75rem, 5svh, 2.75rem);
 }
 
-/* The map keeps the proportions of rivers.ts (9.6 km × 14.2 km): the field fits it whole. */
-.fleuves-map {
-  position: absolute;
-  top: 4.25rem;
-  left: 50%;
-  height: min(44svh, 120vw);
-  aspect-ratio: 9.6 / 14.2;
-  translate: -50% 0;
-  pointer-events: none;
+@media (min-width: 40rem) {
+  .fleuves-hero {
+    --km: min(13vw, 11svh);
+    --focus-x: 60%;
+    --focus-y: 32%;
+  }
 }
 
 @media (min-width: 64rem) {
-  .fleuves-map {
-    top: 50%;
-    right: 5vw;
-    left: auto;
-    height: calc(100svh - 7.5rem);
-    translate: 0 -46%;
+  .fleuves-hero {
+    --km: min(8.2vw, 13.6svh);
+    --focus-x: calc(50% + 12rem);
+    --focus-y: 50%;
+  }
+}
+
+/*
+ * The map keeps the proportions of rivers.ts (9.6 km × 14.2 km, from 3.8 km
+ * west and 6.9 km north): the field fits the rivers into it and the plan
+ * lines its streets up with it. It overflows the hero, which clips it.
+ */
+.fleuves-map {
+  position: absolute;
+  top: calc(var(--focus-y) - 8.1 * var(--km));
+  left: calc(var(--focus-x) - 2.2 * var(--km));
+  width: calc(9.6 * var(--km));
+  height: calc(14.2 * var(--km));
+  pointer-events: none;
+}
+
+/* The plan fades out at the foot of the hero rather than stopping at its edge. */
+.fleuves-city {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+}
+
+.fleuves-city canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The torch adds its light to the plan's. */
+.fleuves-city-torch {
+  mix-blend-mode: plus-lighter;
+}
+
+/* Night falls behind the copy: the plan stays a drawing, the text stays legible. */
+.fleuves-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    color-mix(in oklch, var(--color-ink) 94%, transparent) 0%,
+    color-mix(in oklch, var(--color-ink) 78%, transparent) 36%,
+    transparent 64%
+  );
+}
+
+@media (min-width: 64rem) {
+  .fleuves-shade {
+    background: radial-gradient(
+      ellipse 60% 78% at 8% 80%,
+      color-mix(in oklch, var(--color-ink) 92%, transparent) 0%,
+      color-mix(in oklch, var(--color-ink) 62%, transparent) 50%,
+      transparent 80%
+    );
   }
 }
 
@@ -2544,10 +2601,10 @@
 
 .fleuves-course {
   fill: none;
-  stroke-width: 0.06;
+  stroke-width: 0.028;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 0.001 0.11;
+  stroke-dasharray: 0.001 0.05;
 }
 
 .fleuves-saone {
@@ -2560,7 +2617,7 @@
 
 .fleuves-merged {
   stroke: color-mix(in oklch, var(--color-paper) 80%, transparent);
-  stroke-width: 0.08;
+  stroke-width: 0.034;
 }
 
 .fleuves-names {
@@ -2682,7 +2739,7 @@
   color: color-mix(in oklch, var(--color-paper) 66%, transparent);
 }
 
-/* Where the courses come from. */
+/* Where the plan and the courses come from. */
 .fleuves-credit {
   position: absolute;
   right: var(--hero-gutter);
