@@ -2297,6 +2297,202 @@
   opacity: 1;
 }
 
+/* ----------------------------------------------------------- liaison hero */
+
+/*
+ * Hero under study (liaison/liaison-hero.tsx): a photograph of Lyon, full
+ * bleed, the title over it in the serif, and under « tes‿atomes » the liaison
+ * of French reading books, drawn once like a stroke of felt pen. One call, no
+ * glow, nothing that fades on scroll. The photograph covers the page: the ion
+ * field rests behind it (`data-field-cover`).
+ */
+.liaison-hero {
+  isolation: isolate;
+  justify-content: flex-end;
+  padding-bottom: clamp(1.75rem, 5svh, 2.75rem);
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.liaison-photo {
+  z-index: -2;
+  object-fit: cover;
+  object-position: 50% 62%;
+}
+
+/* For legibility only: darker under the header and under the copy. */
+.liaison-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0.4),
+    transparent 22%,
+    transparent 34%,
+    rgb(0 0 0 / 0.66)
+  );
+}
+
+/* Phones: the title climbs higher, over the sky; the shade climbs with it. */
+@media (max-width: 39.99rem) {
+  .liaison-hero::after {
+    background: linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.4),
+      transparent 20%,
+      rgb(0 0 0 / 0.38) 44%,
+      rgb(0 0 0 / 0.72)
+    );
+  }
+}
+
+.liaison-inner {
+  display: grid;
+  gap: clamp(1.25rem, 4svh, 2.5rem);
+  width: 100%;
+}
+
+.liaison-title {
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
+  font-size: min(21vw, 9rem);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+@media (min-width: 40rem) {
+  .liaison-title {
+    font-size: clamp(4rem, min(11.5vw, 21svh), 14rem);
+  }
+}
+
+.liaison-line {
+  display: block;
+}
+
+/* « tes atomes » stays on one line: the liaison sits under the space between them. */
+.liaison-pair {
+  white-space: nowrap;
+}
+
+/* A point on the baseline, at the end of « tes »: the stroke hangs from it, in ems of the title. */
+.liaison-tie {
+  position: relative;
+  display: inline-block;
+  width: 0;
+  height: 0;
+  vertical-align: baseline;
+}
+
+.liaison-tie svg {
+  position: absolute;
+  top: 0.03em;
+  left: -0.13em;
+  width: 0.52em;
+  height: 0.2em;
+  overflow: visible;
+}
+
+.liaison-tie path {
+  fill: none;
+  stroke: var(--color-plasma);
+  stroke-width: 4.4;
+  stroke-linecap: round;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1.1;
+  animation: liaison-draw 0.7s cubic-bezier(0.3, 0.7, 0.2, 1) 0.6s forwards;
+}
+
+@keyframes liaison-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liaison-tie path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+.liaison-foot {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.liaison-lead {
+  max-width: 34rem;
+  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  line-height: 1.5;
+  text-wrap: pretty;
+  color: color-mix(in oklch, var(--color-paper) 90%, transparent);
+}
+
+.liaison-call {
+  display: grid;
+  justify-items: start;
+  gap: 0.875rem;
+}
+
+.liaison-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3.5rem;
+  padding: 0 1.75rem;
+  border-radius: 999px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-weight: 600;
+  transition: background-color 0.2s var(--ease-out);
+}
+
+.liaison-cta:focus-visible {
+  outline: 2px solid var(--color-paper);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .liaison-cta:hover {
+    background: color-mix(in oklch, var(--color-paper) 84%, var(--color-plasma));
+  }
+}
+
+.liaison-schools {
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  color: color-mix(in oklch, var(--color-paper) 74%, transparent);
+}
+
+/* Where the photograph comes from, until the campus shoot replaces it. */
+.liaison-credit {
+  position: absolute;
+  top: 5.75rem;
+  right: var(--hero-gutter);
+  max-width: 15rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-align: right;
+  color: color-mix(in oklch, var(--color-paper) 72%, transparent);
+}
+
+/* Large screens: the lead on the left, the call and the schools on the right, on one line. */
+@media (min-width: 64rem) {
+  .liaison-foot {
+    grid-template-columns: minmax(0, 34rem) auto;
+    justify-content: space-between;
+    align-items: end;
+  }
+
+  .liaison-call {
+    justify-items: end;
+  }
+}
+
 /* Text is painted from the first frame (no hidden LCP): it only comes into focus. */
 @keyframes focus-pull {
   from {

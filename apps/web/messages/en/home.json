@@ -191,5 +191,10 @@
     "illustration": "Illustrative photos, not members",
     "pause": "Pause the slideshow",
     "play": "Play the slideshow"
+  },
+  "liaison": {
+    "title": "<line>Find your</line> <line>perfect chemistry.</line>",
+    "lead": "The dating and friendship app for students of the IONIS campus in Lyon. You get in with your school email.",
+    "photo": "Placeholder photo: the Montée de la Grande-Côte, in Lyon (Romainbehar, CC0)."
   }
 }

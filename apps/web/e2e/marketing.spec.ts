@@ -476,6 +476,49 @@ test.describe("hero under study: glass", () => {
   });
 });
 
+test.describe("hero under study: liaison", () => {
+  test("shows the whole title over a photograph of Lyon, with one call", async ({ page }) => {
+    await page.goto("/apercu/liaison");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
+    await expect(page.getByRole("link", { name: "Rejoindre la liste" })).toBeVisible();
+    await expect(page.getByText("Photo provisoire")).toBeVisible();
+  });
+
+  test("keeps its call on screen when the page starts to scroll", async ({ page }) => {
+    await page.goto("/apercu/liaison");
+    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
+    await page.mouse.wheel(0, 160);
+    await page.waitForTimeout(800);
+    const call = page.getByRole("link", { name: "Rejoindre la liste" });
+    await expect(call).toBeInViewport();
+    // Nothing fades it: the opacity of the link and of every box around it stays whole.
+    const opacity = await call.evaluate((element) => {
+      let product = 1;
+      for (let node: Element | null = element; node; node = node.parentElement) {
+        product *= Number(getComputedStyle(node).opacity);
+      }
+      return product;
+    });
+    expect(opacity).toBe(1);
+  });
+
+  test("has no detectable violations", async ({ page }) => {
+    await page.goto("/apercu/liaison");
+    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
+    await page.waitForTimeout(1500);
+    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
+  });
+
+  test.describe("with reduced motion", () => {
+    test.use({ reducedMotion: "reduce" });
+
+    test("draws the liaison at once", async ({ page }) => {
+      await page.goto("/apercu/liaison");
+      await expect(page.locator(".liaison-tie path")).toHaveCSS("stroke-dashoffset", "0px");
+    });
+  });
+});
+
 test.describe("accessibility (WCAG 2.2 AA)", () => {
   test("the landing has no detectable violations", async ({ page }) => {
     await page.goto("/");

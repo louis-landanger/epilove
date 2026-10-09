@@ -191,5 +191,10 @@
     "illustration": "Photos d’illustration, pas des membres",
     "pause": "Mettre le diaporama en pause",
     "play": "Relancer le diaporama"
+  },
+  "liaison": {
+    "title": "<line>Trouve <pair>tes<tie></tie> atomes</pair></line> <line>crochus.</line>",
+    "lead": "L’appli de rencontre et d’amitié des étudiantes et étudiants du campus IONIS de Lyon. On entre avec son email d’école.",
+    "photo": "Photo provisoire : la montée de la Grande-Côte, à Lyon (Romainbehar, CC0)."
   }
 }
