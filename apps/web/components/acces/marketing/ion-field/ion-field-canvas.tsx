@@ -184,6 +184,10 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           // The particles start in the shapes on screen (a reload further down the page).
           initialFormations: journey(page.measure()).formations,
           onFirstFrame: () => setLive(true),
+          // For bug reports: how many particles the field draws, at which pixel ratio, once it adapts.
+          onQuality: ({ pixelRatio, visibleParticles }) => {
+            container.dataset.quality = `${visibleParticles}@${pixelRatio}`;
+          },
           // The device cannot keep up even at the lowest quality: no field, for good.
           onGiveUp: () => {
             setLive(false);

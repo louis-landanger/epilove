@@ -93,6 +93,39 @@ describe("createFrameMonitor", () => {
     expect(Array.from({ length: 9 }, () => monitor.push(40)).every((verdict) => verdict === "ok")).toBe(true);
   });
 
+  it("gives the quality back once the device keeps up again, not before", () => {
+    // A heavy stretch of the page: the field lowers its quality…
+    const monitor = createFrameMonitor({ window: 10, windowMs: 1000, budgetMs: 20, cooldown: 20 });
+    const slow = Array.from({ length: 40 }, () => monitor.push(40, false, true));
+    expect(slow).toContain("degrade");
+    // …and frames that only just keep up do not bring it back,
+    expect(Array.from({ length: 200 }, () => monitor.push(15, false, true))).not.toContain("upgrade");
+    // fast frames do, after a while,
+    const fast = Array.from({ length: 400 }, () => monitor.push(6, false, true));
+    expect(fast).toContain("upgrade");
+    expect(fast.indexOf("upgrade")).toBeGreaterThan(20);
+    // and never when the quality is already at its best.
+    const best = createFrameMonitor({ window: 10, budgetMs: 20, cooldown: 20 });
+    expect(Array.from({ length: 400 }, () => best.push(6, false, false))).not.toContain("upgrade");
+  });
+
+  it("waits longer each time a quality it gave back proves too much", () => {
+    const monitor = createFrameMonitor({ window: 10, windowMs: 1000, budgetMs: 20, cooldown: 20 });
+    const until = (frameMs: number, verdict: string, limit = 5000) => {
+      for (let frame = 1; frame <= limit; frame += 1) {
+        if (monitor.push(frameMs, false, true) === verdict) {
+          return frame;
+        }
+      }
+      return Number.POSITIVE_INFINITY;
+    };
+    until(40, "degrade");
+    const first = until(6, "upgrade");
+    until(40, "degrade");
+    const second = until(6, "upgrade");
+    expect(second).toBeGreaterThan(first * 1.5);
+  });
+
   it("ignores isolated spikes", () => {
     const monitor = createFrameMonitor({ window: 10, budgetMs: 20, cooldown: 0 });
     const verdicts = Array.from({ length: 30 }, (_, index) => monitor.push(index % 5 === 0 ? 80 : 16));

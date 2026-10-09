@@ -83,6 +83,13 @@ export function markPlacementFor(aspect: number, mark: typeof MARK = MARK): Mark
  * drawing three frames a second reacts in a couple of seconds, not minutes.
  * `canGiveUp` tells it the quality is already at its floor: a frame rate
  * still far below the budget then means "stop, keep the poster".
+ *
+ * A slowdown is often only a moment (a heavy section, another tab, the
+ * garbage collector): `canUpgrade` tells it the quality is below its best,
+ * and once frames have been fast for a while (well under the budget, for
+ * `upgradeHoldMs`) it asks for the quality back. Each time a quality it gave
+ * back proves too much (slow again soon after), it waits twice as long
+ * before the next attempt: no back and forth.
  */
 export function createFrameMonitor(
   options: {
@@ -91,6 +98,8 @@ export function createFrameMonitor(
     budgetMs?: number;
     cooldown?: number;
     cooldownMs?: number;
+    upgradeRatio?: number;
+    upgradeHoldMs?: number;
   } = {},
 ) {
   const size = options.window ?? 90;
@@ -98,11 +107,26 @@ export function createFrameMonitor(
   const budget = options.budgetMs ?? 24;
   const cooldown = options.cooldown ?? 180;
   const cooldownMs = options.cooldownMs ?? 2000;
+  const upgradeBelow = budget * (options.upgradeRatio ?? 0.45);
+  const baseHold = options.upgradeHoldMs ?? 4000;
+  let hold = baseHold;
   let samples: number[] = [];
   let sinceLastChange = 0;
   let msSinceLastChange = 0;
+  let lastChange: "degrade" | "upgrade" | null = null;
+  const change = (verdict: "degrade" | "upgrade") => {
+    if (verdict === "degrade" && lastChange === "upgrade" && msSinceLastChange < 2 * hold) {
+      // The quality given back was too much: next time, wait longer.
+      hold = Math.min(16 * baseHold, 2 * hold);
+    }
+    lastChange = verdict;
+    samples = [];
+    sinceLastChange = 0;
+    msSinceLastChange = 0;
+    return verdict;
+  };
   return {
-    push(frameMs: number, canGiveUp = false): "ok" | "degrade" | "give-up" {
+    push(frameMs: number, canGiveUp = false, canUpgrade = false): "ok" | "degrade" | "give-up" | "upgrade" {
       samples.push(frameMs);
       sinceLastChange += 1;
       msSinceLastChange += frameMs;
@@ -111,19 +135,25 @@ export function createFrameMonitor(
       }
       const elapsed = samples.reduce((sum, sample) => sum + sample, 0);
       const fullWindow = samples.length >= size || (samples.length >= 5 && elapsed >= windowMs);
-      const cooledDown = sinceLastChange >= cooldown || msSinceLastChange >= cooldownMs;
-      if (!fullWindow || !cooledDown) {
+      if (!fullWindow) {
         return "ok";
       }
       const sorted = [...samples].sort((a, b) => a - b);
       const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
-      if (median <= budget) {
+      if (canUpgrade && median <= upgradeBelow && msSinceLastChange >= hold) {
+        return change("upgrade");
+      }
+      const cooledDown = sinceLastChange >= cooldown || msSinceLastChange >= cooldownMs;
+      if (!cooledDown || median <= budget) {
         return "ok";
       }
-      samples = [];
-      sinceLastChange = 0;
-      msSinceLastChange = 0;
-      return canGiveUp && median > budget * 3 ? "give-up" : "degrade";
+      if (canGiveUp && median > budget * 3) {
+        samples = [];
+        sinceLastChange = 0;
+        msSinceLastChange = 0;
+        return "give-up";
+      }
+      return change("degrade");
     },
     reset() {
       samples = [];

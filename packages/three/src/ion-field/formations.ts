@@ -607,8 +607,8 @@ export function pairAtomSize(hw: number, hh: number): number {
   const a = ATOM_REACH_X ** 2 + ATOM_REACH_Y ** 2 - ATOM_APART ** 2;
   const d = ATOM_REACH_X * hw + ATOM_REACH_Y * hh;
   const c = hw * hw + hh * hh;
-  // Smallest positive root of a r² - 2 d r + c, in its stable form.
-  const apart = c / (d + Math.sqrt(Math.max(0, d * d - a * c)));
+  // Smallest positive root of a r² - 2 d r + c, in its stable form (none in an empty box).
+  const apart = c > 0 ? c / (d + Math.sqrt(Math.max(0, d * d - a * c))) : 0;
   return Math.max(0, Math.min(hw / ATOM_REACH_X, hh / ATOM_REACH_Y, apart));
 }
 
@@ -854,6 +854,11 @@ const sum = { x: 0, y: 0, total: 0, glow: 0, volt: 0, plasma: 0, paper: 0, carry
 
 /** Adds the current `contribution`, weighted by its formation, to `sum`. */
 function accumulate(weight: number): void {
+  // A target that is not a number would lose the particle for good: such a contribution is left out.
+  if (!Number.isFinite(contribution.x) || !Number.isFinite(contribution.y)) {
+    contribution.grain = 1;
+    return;
+  }
   const w = weight * contribution.pull;
   sum.x += contribution.x * w;
   sum.y += contribution.y * w;

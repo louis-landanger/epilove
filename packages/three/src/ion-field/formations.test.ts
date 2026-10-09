@@ -11,6 +11,8 @@ import {
   pairGeometry,
   riverDistance,
   toWorldBox,
+  toWorldFormations,
+  type ViewportFormations,
   type WorldBox,
   writeFormations,
 } from "./formations";
@@ -193,6 +195,22 @@ describe("pairFieldPoint", () => {
 });
 
 describe("writeFormations", () => {
+  it("never hands a particle a target that is not a number, even for an empty box", () => {
+    // A particle sent to NaN is lost for good: it never comes back to any shape.
+    const empty = { left: 0, top: 0, width: 0, height: 0 };
+    const cases: ViewportFormations[] = [
+      { pair: { weight: 1, box: empty, bond: 1, merge: 1, mark: { x: 700, y: 400, radius: 200 } } },
+      { pair: { weight: 1, box: empty, bond: 0, merge: 0, mark: { x: 700, y: 400, radius: 0 } } },
+      { card: { weight: 1, box: empty, radius: 24, step: 1 } },
+      { pact: { weight: 1, box: empty } },
+      { rivers: { weight: 1, box: empty } },
+    ];
+    for (const formations of cases) {
+      const { targets, looks } = run(toWorldFormations(formations, 1440, 900));
+      expect([...targets, ...looks].every(Number.isFinite)).toBe(true);
+    }
+  });
+
   it("leaves every particle free, at full light, without formations", () => {
     const { targets, looks, layout } = run({});
     for (let index = 0; index < layout.count; index += 1) {

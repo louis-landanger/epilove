@@ -66,8 +66,8 @@ export interface IonFieldOptions {
   readonly seed?: number;
   /** Called after the first frame is on screen, to cross-fade from the poster. */
   readonly onFirstFrame?: () => void;
-  /** Called when the field lowers its quality to keep up (for diagnostics). */
-  readonly onDegrade?: (state: { pixelRatio: number; visibleParticles: number }) => void;
+  /** Called when the field lowers its quality to keep up, or gives it back once it can (for diagnostics). */
+  readonly onQuality?: (state: { pixelRatio: number; visibleParticles: number }) => void;
   /** Called when the device cannot keep up even at the lowest quality: the field has stopped. */
   readonly onGiveUp?: () => void;
   /** Called if a frame fails or the GPU device is lost after start-up; the loop is then stopped for good. */
@@ -791,7 +791,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       options.onFirstFrame?.();
     }
     const atFloor = pixelRatio <= 1 && ions.count <= 600;
-    const verdict = adaptive ? monitor.push(frameMs, atFloor) : "ok";
+    const bestPixelRatio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
+    const belowBest = ions.count < count || pixelRatio < bestPixelRatio;
+    const verdict = adaptive ? monitor.push(frameMs, atFloor, belowBest) : "ok";
     if (verdict === "give-up") {
       // Even at the lowest quality the device cannot keep up: back to the poster.
       setRunning(false);
@@ -809,7 +811,20 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         ions.count = Math.max(600, Math.floor(ions.count / 2 / 2) * 2);
         bonds.count = ions.count / 2;
       }
-      options.onDegrade?.({ pixelRatio, visibleParticles: ions.count });
+      options.onQuality?.({ pixelRatio, visibleParticles: ions.count });
+    }
+    if (verdict === "upgrade") {
+      // The device keeps up again (the slowdown was a moment): the particles first, then the sharpness.
+      if (ions.count < count) {
+        ions.count = Math.min(count, ions.count * 2);
+        bonds.count = ions.count / 2;
+      } else {
+        pixelRatio = bestPixelRatio;
+        uPixelRatio.value = pixelRatio;
+        renderer.setPixelRatio(pixelRatio);
+        renderer.setSize(width, height, false);
+      }
+      options.onQuality?.({ pixelRatio, visibleParticles: ions.count });
     }
   };
 
