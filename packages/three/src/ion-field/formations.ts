@@ -89,6 +89,27 @@ export interface RiversFormation {
   readonly box: WorldBox;
 }
 
+/**
+ * The dots of the plan of Lyon (`/apercu/fleuves`, city.ts), taken over by
+ * the field as the page scrolls and flown into the logo mark: `progress` 0
+ * keeps them on the map (`box`, fitted as for the rivers), 1 has them all
+ * merged into `mark`. Only those the plan's own canvas shows fly, within the
+ * hero (`hero`: its top, height and sides), fading out towards its foot as
+ * there. Not a shape of particles: the field draws these dots on their own
+ * (scene.ts, `flightPoint`).
+ */
+export interface FlightFormation {
+  readonly progress: number;
+  readonly box: WorldBox;
+  readonly hero: {
+    readonly top: number;
+    readonly height: number;
+    readonly left: number;
+    readonly right: number;
+  };
+  readonly mark: { readonly x: number; readonly y: number; readonly radius: number };
+}
+
 export interface Formations {
   /** Light of the particles no formation holds, in [0, 1] (default 1): the hero's drifting dust is dim. */
   readonly freeGlow?: number;
@@ -99,6 +120,7 @@ export interface Formations {
   readonly tubes?: TubeFormation | null;
   readonly pact?: PactFormation | null;
   readonly rivers?: RiversFormation | null;
+  readonly flight?: FlightFormation | null;
 }
 
 /** The per-particle data the formations need (a subset of `IonFieldLayout`). */
@@ -463,6 +485,15 @@ const MAP_Y = (RIVER_MAP.minY + RIVER_MAP.maxY) / 2;
 
 const onRiver = { x: 0, y: 0, nx: 0, ny: 0 };
 
+/**
+ * How the map (RIVER_MAP) fits, centred and whole, in `box` (world units):
+ * a kilometre in world units, and where 0 km, 0 km lands.
+ */
+export function riverMapTransform(box: WorldBox): { scale: number; x: number; y: number } {
+  const scale = Math.min((2 * box.hw) / MAP_WIDTH, (2 * box.hh) / MAP_HEIGHT);
+  return { scale, x: box.x - MAP_X * scale, y: box.y - MAP_Y * scale };
+}
+
 /** How far along its course a particle of the rivers is at `time`, in kilometres (may run past either end). */
 export function riverDistance(particles: FormationParticles, index: number, time: number): number {
   const pair = index & ~1;
@@ -503,9 +534,9 @@ function riversContribution(
   }
   offset += Math.sin(time * 1.3 + (particles.phases[index] ?? 0) * TAU) * 0.012;
   const { box } = rivers;
-  const scale = Math.min((2 * box.hw) / MAP_WIDTH, (2 * box.hh) / MAP_HEIGHT);
-  into.x = box.x + (onRiver.x + offset * onRiver.nx - MAP_X) * scale;
-  into.y = box.y + (onRiver.y + offset * onRiver.ny - MAP_Y) * scale;
+  const map = riverMapTransform(box);
+  into.x = map.x + (onRiver.x + offset * onRiver.nx) * map.scale;
+  into.y = map.y + (onRiver.y + offset * onRiver.ny) * map.scale;
   into.pull = 1;
   into.glow =
     smoothstep(path.enters * 0.4, path.enters, s) *
@@ -1000,12 +1031,19 @@ export interface ViewportFormations {
   readonly pact?: { readonly weight: number; readonly box: PixelBox } | null;
   /** The map of the rivers (rivers.ts), fitted whole in its box. */
   readonly rivers?: { readonly weight: number; readonly box: PixelBox } | null;
+  /** The plan's dots flying into the logo mark (FlightFormation): the map, the hero, the mark in pixels. */
+  readonly flight?: {
+    readonly progress: number;
+    readonly box: PixelBox;
+    readonly hero: PixelBox;
+    readonly mark: { readonly x: number; readonly y: number; readonly radius: number };
+  } | null;
 }
 
 /** Converts measured formations to world units for a canvas of `width` × `height` CSS pixels. */
 export function toWorldFormations(formations: ViewportFormations, width: number, height: number): Formations {
   const unit = 2 / height;
-  const { pair, card, tubes, pact, rivers } = formations;
+  const { pair, card, tubes, pact, rivers, flight } = formations;
   const pactBox = pact ? toWorldBox(pact.box, width, height) : null;
   return {
     ...(formations.freeGlow === undefined ? {} : { freeGlow: formations.freeGlow }),
@@ -1046,5 +1084,100 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
         ? { weight: pact.weight, x: pactBox.x, y: pactBox.y, radius: Math.min(pactBox.hw, pactBox.hh) * 0.96 }
         : null,
     rivers: rivers ? { weight: rivers.weight, box: toWorldBox(rivers.box, width, height) } : null,
+    flight: flight
+      ? {
+          progress: flight.progress,
+          box: toWorldBox(flight.box, width, height),
+          hero: {
+            top: (height / 2 - flight.hero.top) * unit,
+            height: flight.hero.height * unit,
+            left: (flight.hero.left - width / 2) * unit,
+            right: (flight.hero.left + flight.hero.width - width / 2) * unit,
+          },
+          mark: {
+            x: (flight.mark.x - width / 2) * unit,
+            y: (height / 2 - flight.mark.y) * unit,
+            radius: flight.mark.radius * unit,
+          },
+        }
+      : null,
   };
+}
+
+/** Below this progress the plan is at rest: the page paints it, the field does not draw it. */
+export const FLIGHT_START = 0.001;
+/**
+ * The dots nearest the mark's ring leave first: a dot's departure waits
+ * FLIGHT_SPREAD of the flight per FLIGHT_REACH radii of the mark between it
+ * and the ring (in the orbit's plane), at most FLIGHT_SPREAD; each then takes
+ * the rest of the flight to land.
+ */
+export const FLIGHT_SPREAD = 0.35;
+export const FLIGHT_REACH = 4;
+/**
+ * How far the plan turns as it closes in on the ring: radians per natural log
+ * of the ratio by which a dot's distance from the mark's centre shrinks (a
+ * logarithmic spiral). Little at first, more and more near the ring.
+ */
+export const FLIGHT_TURN = 0.9;
+/** Share of the hero's height over which the plan fades out at its foot, as its canvas does (marketing.css). */
+export const FLIGHT_FOOT = 0.28;
+/** Width of the band the dots land on, astride the ring, as a share of the mark's radius. */
+export const FLIGHT_ORBIT_WIDTH = 0.12;
+/**
+ * The plan thins out on its way: each dot fades out over FLIGHT_FADE of its
+ * flight, starting anywhere in FLIGHT_FADE_FROM (from its seed). Two thirds
+ * are still lit halfway, one in six nearly there, none once landed: the
+ * mark's own particles take over, where the plan's would otherwise pile up.
+ */
+export const FLIGHT_FADE = 0.2;
+export const FLIGHT_FADE_FROM: readonly [number, number] = [0.2, 0.8];
+
+/**
+ * Where a dot of the plan stands at the flight's progress, starting from
+ * `start` (world units), and how much of its light it keeps: none if the
+ * plan's canvas does not show it at rest (outside the hero, or past its
+ * foot), and it fades on its way (its `seed`, in [0, 1), says when). The plan
+ * is drawn into the logo mark as water into a whirlpool: seen in the orbit's
+ * own plane, where the tilted ring is a circle, each dot closes in on the ring
+ * (or opens out onto it from inside), turning counter-clockwise, as the ring
+ * does, the more the closer it gets. Neighbours stay neighbours: the streets
+ * curl into the ring rather than scatter. The ion field's shader computes
+ * the same (scene.ts).
+ */
+export function flightPoint(
+  start: { readonly x: number; readonly y: number },
+  seed: number,
+  flight: FlightFormation,
+  out: { x: number; y: number; light: number },
+): void {
+  const { mark } = flight;
+  const radius = Math.max(mark.radius, 1e-6);
+  const cos = Math.cos(MARK.tilt);
+  const sin = Math.sin(MARK.tilt);
+  // In the orbit's plane, in radii of the mark.
+  const dx = (start.x - mark.x) / radius;
+  const dy = (start.y - mark.y) / radius;
+  const u = dx * cos + dy * sin;
+  const v = (dy * cos - dx * sin) / MARK.orbitMinor;
+  const away = Math.max(Math.hypot(u, v), 1e-6);
+  const beyond = away - 1;
+  const leave = FLIGHT_SPREAD * Math.min(1, Math.max(0, beyond) / FLIGHT_REACH);
+  const p = smoothstep(leave, leave + 1 - FLIGHT_SPREAD, flight.progress);
+  // It lands astride the ring, the dots from further out on its outer edge.
+  const land = 1 + (FLIGHT_ORBIT_WIDTH / 2) * (beyond / (1 + Math.abs(beyond)));
+  const reach = away + (land - away) * p;
+  const scale = reach / away;
+  const turn = FLIGHT_TURN * Math.log(Math.max(1, away / reach));
+  const tu = (u * Math.cos(turn) - v * Math.sin(turn)) * scale;
+  const tv = (u * Math.sin(turn) + v * Math.cos(turn)) * scale * MARK.orbitMinor;
+  out.x = mark.x + (tu * cos - tv * sin) * radius;
+  out.y = mark.y + (tu * sin + tv * cos) * radius;
+  const fadeFrom = FLIGHT_FADE_FROM[0] + (FLIGHT_FADE_FROM[1] - FLIGHT_FADE_FROM[0]) * fract(seed * 11.3);
+  const { hero } = flight;
+  const shown =
+    start.x >= hero.left && start.x <= hero.right && start.y <= hero.top
+      ? Math.min(1, Math.max(0, (1 - (hero.top - start.y) / hero.height) / FLIGHT_FOOT))
+      : 0;
+  out.light = shown * (1 - smoothstep(fadeFrom, fadeFrom + FLIGHT_FADE, p));
 }

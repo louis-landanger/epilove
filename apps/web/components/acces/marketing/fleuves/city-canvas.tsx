@@ -4,6 +4,7 @@ import { type CityView, cityViewFor } from "@atomes/three";
 import { useEffect, useRef, useState } from "react";
 import { afterLoadAndIdle } from "../live-scene";
 import type { CityWorkerMessage, CityWorkerReply } from "./city.worker";
+import { publishCityFlight } from "./city-flight";
 
 const PLAN_URL = "/apercu/fleuves/lyon-plan.bin";
 
@@ -15,11 +16,13 @@ const box = (element: Element) => {
 /**
  * The plan of Lyon in dots, behind the rivers hero (fleuves-hero.tsx): some
  * hundred and fifty thousand of them along the streets, the railways and in
- * the parks, lit up from the Confluence outwards once the page has loaded,
+ * the parks, lit up from the campus outwards once the page has loaded,
  * with a torch of light under the pointer. Drawn in 2D, in a worker when the
  * browser allows it: no GPU needed, the same crisp dots on every device. It
  * fits the map's box (`[data-field-rivers]`) as the ion field's rivers do,
- * so the streets line the rivers' banks.
+ * so the streets line the rivers' banks. Once lit, it hands its dots to the
+ * ion field (city-flight.ts), which takes over as the page scrolls and flies
+ * them into the logo mark; meanwhile this canvas is hidden.
  */
 export function CityCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -52,6 +55,7 @@ export function CityCanvas() {
       },
       () => base.remove(),
       () => torch?.remove(),
+      () => publishCityFlight(null),
     ];
     let send: (message: CityWorkerMessage) => void = () => {};
 
@@ -63,6 +67,8 @@ export function CityCanvas() {
         worker.onmessage = (event: MessageEvent<CityWorkerReply>) => {
           if (event.data.type === "lit") {
             setLit(true);
+          } else if (event.data.type === "flight" && !disposed) {
+            publishCityFlight(event.data.flight);
           }
         };
         const baseSurface = base.transferControlToOffscreen();
@@ -78,8 +84,15 @@ export function CityCanvas() {
         if (disposed) {
           return;
         }
-        const renderer = createCityRenderer(base, torch, (width, height) =>
-          Object.assign(document.createElement("canvas"), { width, height }),
+        const renderer = createCityRenderer(
+          base,
+          torch,
+          (width, height) => Object.assign(document.createElement("canvas"), { width, height }),
+          (flight) => {
+            if (!disposed) {
+              publishCityFlight(flight);
+            }
+          },
         );
         cleanups.push(() => renderer.dispose());
         send = (message) => {

@@ -40,6 +40,7 @@ function page(scroll: number): JourneyMeasures {
     },
     anchor: null,
     rivers: null,
+    riversHero: null,
     cards,
     cardList: box(2860, 1620),
     cardRadius: 32,
@@ -129,11 +130,13 @@ describe("journey", () => {
 
   it("flows down the rivers in the hero, then gathers into the logo mark beside the manifesto", () => {
     const map = { left: 700, top: 40, width: 560, height: 830 };
+    const hero = { left: 0, top: 0, width, height };
     const withRivers = (scroll: number) =>
       journey({
         ...page(scroll),
         profiles: null,
         rivers: { ...map, top: map.top - scroll },
+        riversHero: { ...hero, top: hero.top - scroll },
       }).formations;
     const top = withRivers(0);
     // Every particle in the rivers at first, none in the mark.
@@ -150,6 +153,30 @@ describe("journey", () => {
     expect(settled.rivers).toBeNull();
     expect(settled.pair?.weight).toBe(1);
     expect(settled.pair?.mark).toEqual(journey(page(900)).formations.pair?.mark);
+  });
+
+  it("flies the plan of Lyon into the mark at the pace of the rivers' particles", () => {
+    const map = { left: 700, top: 40, width: 560, height: 830 };
+    const hero = { left: 0, top: 0, width, height };
+    const at = (scroll: number) =>
+      journey({
+        ...page(scroll),
+        profiles: null,
+        rivers: { ...map, top: map.top - scroll },
+        riversHero: { ...hero, top: hero.top - scroll },
+      }).formations;
+    // At rest, the plan stays where the page paints it.
+    expect(at(0).flight).toMatchObject({ progress: 0, box: map, hero });
+    // Scrolling, it flies as the rivers hand their particles to the mark…
+    const midway = at(200);
+    expect(midway.flight?.progress).toBeCloseTo(midway.pair?.weight ?? 0, 6);
+    expect(midway.flight?.hero.top).toBe(-200);
+    // …and lands in the mark beside the manifesto.
+    const settled = at(500);
+    expect(settled.flight?.progress).toBe(1);
+    expect(settled.flight?.mark).toEqual(settled.pair?.mark);
+    // No plan without the rivers' hero.
+    expect(journey(page(0)).formations.flight).toBeNull();
   });
 
   it("puts the mark beside the manifesto from the start when there are no cards", () => {
@@ -235,6 +262,7 @@ describe("journey", () => {
       profiles: null,
       anchor: null,
       rivers: null,
+      riversHero: null,
       cards: [],
       cardList: null,
       cardRadius: 32,
@@ -249,6 +277,7 @@ describe("journey", () => {
       tubes: null,
       pact: null,
       rivers: null,
+      flight: null,
     });
   });
 });

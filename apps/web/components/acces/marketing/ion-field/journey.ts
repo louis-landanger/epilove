@@ -40,6 +40,12 @@ export interface JourneyMeasures {
    * the logo mark beside the manifesto.
    */
   readonly rivers: PixelBox | null;
+  /**
+   * The hero that holds the map of the rivers, where the plan of Lyon is
+   * painted (fleuves hero): scrolling, the field flies the plan's dots from
+   * it into the logo mark.
+   */
+  readonly riversHero: PixelBox | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
   readonly cards: ReadonlyArray<{ readonly box: PixelBox; readonly stuckTop: number }>;
   /** The list holding the cards: the formation lets go once it scrolls away. */
@@ -294,6 +300,11 @@ export function journey(measures: JourneyMeasures): JourneyState {
       rivers:
         rivers && scope && pairShare * (1 - settle) > 0.001
           ? { weight: pairShare * (1 - settle), box: rivers }
+          : null,
+      // The plan of Lyon follows the rivers' particles into the mark, at the same pace.
+      flight:
+        rivers && scope && measures.riversHero
+          ? { progress: settle, box: rivers, hero: measures.riversHero, mark: atom }
           : null,
     },
   };

@@ -1,5 +1,5 @@
 import { colors } from "@atomes/tokens";
-import { linearSrgbToHex, tokenToLinearSrgb } from "../colors";
+import { linearSrgbToHex, linearSrgbToSrgb, tokenToLinearSrgb } from "../colors";
 import { CITY_LAYERS, type CityDots } from "./city";
 import { CAMPUS, RIVER_MAP } from "./rivers";
 
@@ -72,7 +72,63 @@ const CELL = 0.25;
 /** How much the torch adds to the dots it lights, at its centre. */
 const TORCH_GAIN = 1.6;
 
+/** Each dot's opacity as painted: its layer's, its own light, and the distance from the campus. */
+export function cityDotAlpha(dots: CityDots): Float32Array {
+  const { count, x, y, layer, light } = dots;
+  const alpha = new Float32Array(count);
+  for (let index = 0; index < count; index += 1) {
+    const look = CITY_LOOK[layer[index] ?? CITY_LAYERS.minor];
+    const dx = (x[index] ?? 0) - FOCUS.x;
+    const dy = (y[index] ?? 0) - FOCUS.y;
+    const focus =
+      FOCUS.floor + (1 - FOCUS.floor) * Math.exp(-(dx * dx + dy * dy) / (FOCUS.reach * FOCUS.reach));
+    alpha[index] = Math.min(1, (look?.alpha ?? 0.3) * (light[index] ?? 1) * focus);
+  }
+  return alpha;
+}
+
+/**
+ * The plan's dots as the ion field takes them over when the page scrolls,
+ * to fly them into the logo mark (formations.ts, `flightPoint`): the same
+ * dots, in the same place, colour and light as painted here.
+ */
+export interface CityFlight {
+  readonly count: number;
+  /** Per dot: x and y in kilometres, and a seed in [0, 1) (when it fades on its way). */
+  readonly place: Float32Array;
+  /** Per dot: its colour (gamma-encoded sRGB, 0 to 1) and opacity, as painted. */
+  readonly look: Float32Array;
+  /** Per dot: its radius in CSS pixels, as painted. */
+  readonly radius: Float32Array;
+}
+
+const GOLDEN_FRACTION = (Math.sqrt(5) - 1) / 2;
+
+export function cityFlight(dots: CityDots, alpha: Float32Array = cityDotAlpha(dots)): CityFlight {
+  const { count, x, y, layer } = dots;
+  const tints = CITY_LOOK.map((look) => linearSrgbToSrgb(tokenToLinearSrgb(colors[look.color])));
+  const place = new Float32Array(count * 3);
+  const look = new Float32Array(count * 4);
+  const radius = new Float32Array(count);
+  for (let index = 0; index < count; index += 1) {
+    const kind = layer[index] ?? CITY_LAYERS.minor;
+    const tint = tints[kind] ?? [1, 1, 1];
+    place[index * 3] = x[index] ?? 0;
+    place[index * 3 + 1] = y[index] ?? 0;
+    // Seeds spread evenly, whatever the dots' order in the plan.
+    place[index * 3 + 2] = (index * GOLDEN_FRACTION) % 1;
+    look[index * 4] = tint[0];
+    look[index * 4 + 1] = tint[1];
+    look[index * 4 + 2] = tint[2];
+    look[index * 4 + 3] = alpha[index] ?? 0;
+    radius[index] = CITY_LOOK[kind]?.radius ?? 1;
+  }
+  return { count, place, look, radius };
+}
+
 export interface CityPainter {
+  /** Each dot's opacity, as painted. */
+  readonly alpha: Float32Array;
   /** Paints, over what is already there, the dots whose order is in (from, to]: the plan lights up. */
   paint(context: Context, view: CityView, from: number, to: number): void;
   /**
@@ -110,18 +166,10 @@ export function createCityPainter(
   dots: CityDots,
   makeSurface: (width: number, height: number) => Surface,
 ): CityPainter {
-  const { count, x, y, layer, light, order } = dots;
+  const { count, x, y, layer, order } = dots;
 
   // Each dot's opacity, once and for all.
-  const alpha = new Float32Array(count);
-  for (let index = 0; index < count; index += 1) {
-    const look = CITY_LOOK[layer[index] ?? CITY_LAYERS.minor];
-    const dx = (x[index] ?? 0) - FOCUS.x;
-    const dy = (y[index] ?? 0) - FOCUS.y;
-    const focus =
-      FOCUS.floor + (1 - FOCUS.floor) * Math.exp(-(dx * dx + dy * dy) / (FOCUS.reach * FOCUS.reach));
-    alpha[index] = Math.min(1, (look?.alpha ?? 0.3) * (light[index] ?? 1) * focus);
-  }
+  const alpha = cityDotAlpha(dots);
 
   // The dots in the order they light up.
   const byOrder = Uint32Array.from({ length: count }, (_, index) => index).sort(
@@ -200,6 +248,7 @@ export function createCityPainter(
   };
 
   return {
+    alpha,
     paint(context, view, from, to) {
       spritesFor(view.pixelRatio);
       context.setTransform(1, 0, 0, 1, 0, 0);

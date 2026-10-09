@@ -2562,6 +2562,11 @@
   mix-blend-mode: plus-lighter;
 }
 
+/* Scrolling, the ion field takes the plan's dots over and flies them into the logo mark. */
+:root:has([data-ion-field][data-flight="on"]) .fleuves-city {
+  visibility: hidden;
+}
+
 /* Night falls behind the copy: the plan stays a drawing, the text stays legible. */
 .fleuves-shade {
   position: absolute;

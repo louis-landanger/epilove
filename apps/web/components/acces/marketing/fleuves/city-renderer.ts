@@ -1,11 +1,20 @@
-import { type CityPainter, type CityView, cityDots, createCityPainter, decodeCityPlan } from "@atomes/three";
+import {
+  type CityFlight,
+  type CityPainter,
+  type CityView,
+  cityDots,
+  cityFlight,
+  createCityPainter,
+  decodeCityPlan,
+} from "@atomes/three";
 
 /**
  * Draws the plan of Lyon behind the rivers hero (city-canvas.tsx): fetches
- * it, lays its dots out, lights them up from the Confluence outwards, and
- * keeps a torch of light under the pointer. Runs in a worker on two
- * `OffscreenCanvas` (city.worker.ts), or on the page's own canvases where
- * the browser cannot hand them to a worker.
+ * it, lays its dots out, lights them up from the campus outwards, and keeps
+ * a torch of light under the pointer. Once lit, hands its dots over
+ * (`onFlight`) for the ion field to fly them into the logo mark as the page
+ * scrolls. Runs in a worker on two `OffscreenCanvas` (city.worker.ts), or on
+ * the page's own canvases where the browser cannot hand them to a worker.
  */
 
 type Surface = HTMLCanvasElement | OffscreenCanvas;
@@ -38,6 +47,7 @@ export function createCityRenderer(
   base: Surface,
   torch: Surface | null,
   makeSurface: (width: number, height: number) => Surface,
+  onFlight?: (flight: CityFlight) => void,
 ): CityRenderer {
   const baseContext = base.getContext("2d") as Context | null;
   const torchContext = torch ? (torch.getContext("2d") as Context | null) : null;
@@ -107,13 +117,20 @@ export function createCityRenderer(
       if (disposed) {
         return;
       }
-      painter = createCityPainter(dots, makeSurface);
+      const painted = createCityPainter(dots, makeSurface);
+      painter = painted;
       // The page may have been resized while the plan loaded: its latest view wins.
       view ??= firstView;
       sizeCanvases(view);
+      const handOver = () => {
+        if (!disposed) {
+          onFlight?.(cityFlight(dots, painted.alpha));
+        }
+      };
       if (!reveal) {
         lit = 1;
         repaint();
+        handOver();
         return;
       }
       await new Promise<void>((resolve) => {
@@ -136,6 +153,7 @@ export function createCityRenderer(
         };
         nextFrame(step);
       });
+      handOver();
     },
     setView(next) {
       if (sameView(view, next)) {

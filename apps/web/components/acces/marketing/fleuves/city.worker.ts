@@ -1,9 +1,10 @@
-import type { CityView } from "@atomes/three";
+import type { CityFlight, CityView } from "@atomes/three";
 import { createCityRenderer } from "./city-renderer";
 
 /**
  * Draws the plan of Lyon off the main thread (city-canvas.tsx): the page
- * hands over its two canvases, then sends the view and the pointer.
+ * hands over its two canvases, then sends the view and the pointer; once
+ * lit, the worker sends the dots back for the ion field.
  */
 
 export type CityWorkerMessage =
@@ -18,12 +19,12 @@ export type CityWorkerMessage =
   | { type: "view"; view: CityView }
   | { type: "pointer"; x: number; y: number; active: boolean };
 
-export type CityWorkerReply = { type: "lit" } | { type: "failed" };
+export type CityWorkerReply = { type: "lit" } | { type: "failed" } | { type: "flight"; flight: CityFlight };
 
 // The app's types are the page's (DOM): the little of the worker's scope this needs.
 const scope = self as unknown as {
   onmessage: ((event: MessageEvent<CityWorkerMessage>) => void) | null;
-  postMessage(message: CityWorkerReply): void;
+  postMessage(message: CityWorkerReply, transfer?: Transferable[]): void;
 };
 let renderer: ReturnType<typeof createCityRenderer> | null = null;
 
@@ -34,6 +35,12 @@ scope.onmessage = (event) => {
       message.base,
       message.torch,
       (width, height) => new OffscreenCanvas(width, height),
+      (flight) =>
+        scope.postMessage({ type: "flight", flight }, [
+          flight.place.buffer,
+          flight.look.buffer,
+          flight.radius.buffer,
+        ]),
     );
     renderer.start(message.url, message.view, message.reveal).then(
       () => scope.postMessage({ type: "lit" }),

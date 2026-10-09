@@ -2,12 +2,14 @@
 
 import {
   canAffordLiveField,
+  FLIGHT_START,
   isSoftwareRenderer,
   type PixelBox,
   particleBudget,
   SCHOOL_KEYS,
 } from "@atomes/three";
 import { useEffect, useRef, useState } from "react";
+import { onCityFlight } from "../fleuves/city-flight";
 import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
 import { type HeroCard, type JourneyMeasures, journey } from "./journey";
 
@@ -54,8 +56,10 @@ function createPageMeasurer() {
     const pact = document.querySelector("[data-field-pact]");
     const stage = document.querySelector<HTMLElement>("[data-field-profiles]");
     const anchor = document.querySelector("[data-field-atom]");
+    const rivers = document.querySelector("[data-field-rivers]");
     return {
-      rivers: document.querySelector("[data-field-rivers]"),
+      rivers,
+      riversHero: rivers?.closest("section") ?? null,
       profiles: stage
         ? { stage, cards: [...stage.querySelectorAll<HTMLElement>("[data-profile-card]")] }
         : null,
@@ -111,6 +115,7 @@ function createPageMeasurer() {
         profiles: profiles ? readProfiles(profiles.stage, profiles.cards) : null,
         anchor: anchor ? toBox(anchor) : null,
         rivers: elements.rivers?.isConnected ? toBox(elements.rivers) : null,
+        riversHero: elements.riversHero?.isConnected ? toBox(elements.riversHero) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,
@@ -239,11 +244,30 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           }
         };
 
+        // The plan of Lyon's dots (fleuves hero), once lit: the field flies them into the mark.
+        let flightReady = false;
+        let flying = false;
+        cleanups.push(
+          onCityFlight((flight) => {
+            field.setFlight(flight);
+            flightReady = flight !== null;
+          }),
+          () => {
+            delete container.dataset.flight;
+          },
+        );
+
         // Every frame: where the page stands in the journey.
         followPage = () => {
           const state = journey(page.measure());
           field.setFormations(state.formations);
           setHidden(state.hidden);
+          // While the field flies the plan's dots, the plan's own canvas steps aside.
+          const nowFlying = flightReady && (state.formations.flight?.progress ?? 0) > FLIGHT_START;
+          if (nowFlying !== flying) {
+            flying = nowFlying;
+            container.dataset.flight = flying ? "on" : "off";
+          }
         };
 
         // While the field rests, scrolling wakes it up.

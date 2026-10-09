@@ -48,15 +48,21 @@ export function oklchToLinearSrgb({ l, c, h }: Oklch): LinearRgb {
   ];
 }
 
+/** Linear sRGB to gamma-encoded sRGB, each channel in [0, 1]. */
+export function linearSrgbToSrgb(rgb: LinearRgb): readonly [r: number, g: number, b: number] {
+  const encode = (channel: number) =>
+    clamp01(channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055);
+  return [encode(rgb[0]), encode(rgb[1]), encode(rgb[2])];
+}
+
 /** Linear sRGB to an `#rrggbb` string (gamma-encoded), for canvases and fallbacks. */
 export function linearSrgbToHex(rgb: LinearRgb): string {
-  return `#${rgb
-    .map((channel) => {
-      const encoded = channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055;
-      return Math.round(clamp01(encoded) * 255)
+  return `#${linearSrgbToSrgb(rgb)
+    .map((channel) =>
+      Math.round(channel * 255)
         .toString(16)
-        .padStart(2, "0");
-    })
+        .padStart(2, "0"),
+    )
     .join("")}`;
 }
 

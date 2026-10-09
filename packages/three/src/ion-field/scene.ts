@@ -6,18 +6,22 @@ import {
   exp,
   Fn,
   float,
+  fract,
   instancedArray,
   instancedBufferAttribute,
   instancedDynamicBufferAttribute,
   instanceIndex,
   length,
+  log,
   max,
   min,
   mix,
   positionGeometry,
+  pow,
   sign,
   sin,
   smoothstep,
+  step as stepAt,
   uniform,
   uv,
   vec2,
@@ -37,18 +41,31 @@ import {
   PlaneGeometry,
   Scene,
   Vector2,
+  Vector3,
+  Vector4,
   WebGPURenderer,
 } from "three/webgpu";
-import { type LinearRgb, tokenToLinearSrgb } from "../colors";
+import { type LinearRgb, linearSrgbToSrgb, tokenToLinearSrgb } from "../colors";
+import type { CityFlight } from "./city-painter";
 import {
+  FLIGHT_FADE,
+  FLIGHT_FADE_FROM,
+  FLIGHT_FOOT,
+  FLIGHT_ORBIT_WIDTH,
+  FLIGHT_REACH,
+  FLIGHT_SPREAD,
+  FLIGHT_START,
+  FLIGHT_TURN,
+  type FlightFormation,
   FORMATION_STRIDE,
   type Formations,
   formationStrength,
+  riverMapTransform,
   toWorldFormations,
   type ViewportFormations,
   writeFormations,
 } from "./formations";
-import { createIonFieldLayout, ION_FIELD_SEED, type IonFieldLayout, SCHOOL_KEYS } from "./layout";
+import { createIonFieldLayout, ION_FIELD_SEED, type IonFieldLayout, MARK, SCHOOL_KEYS } from "./layout";
 import { createFrameMonitor } from "./quality";
 
 export type IonFieldBackend = "webgpu" | "webgl2";
@@ -99,6 +116,12 @@ export interface IonField {
    * up to at most 1; the rest of each particle drifts freely.
    */
   setFormations(formations: ViewportFormations): void;
+  /**
+   * The dots of the plan of Lyon (`/apercu/fleuves`), for the field to fly
+   * them into the logo mark when the page scrolls (`flight` formation); null
+   * removes them.
+   */
+  setFlight(flight: CityFlight | null): void;
   setRunning(running: boolean): void;
   resize(width: number, height: number): void;
   dispose(): void;
@@ -244,6 +267,11 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const uFine = uniform(0);
   const uPixel = uniform(2 / Math.max(1, options.container.clientHeight));
   const uPixelRatio = uniform(1);
+  /** The plan's flight: its progress, the map (a kilometre, where 0 km lands), the hero (top, height, sides) and the mark. */
+  const uFlight = uniform(0);
+  const uFlightMap = uniform(new Vector3(1, 0, 0));
+  const uFlightHero = uniform(new Vector4(1, 2, -2, 2));
+  const uFlightMark = uniform(new Vector3(0, 0, 0.3));
 
   // Formations, computed on the CPU every frame (formations.ts): x, y, pull, 0 and volt, plasma, glow, 0.
   const formationTargets = new Float32Array(count * FORMATION_STRIDE);
@@ -696,6 +724,128 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   scene.add(bonds, ions);
 
   // ---------------------------------------------------------------------------
+  // The plan of Lyon's dots (fleuves hero): the page paints them while it rests;
+  // as it scrolls, the field draws them, in the same place and light, and flies
+  // them into the logo mark (formations.ts, flightPoint: the same path on the CPU).
+  // ---------------------------------------------------------------------------
+  const INK_SRGB = linearSrgbToSrgb(INK);
+  let flightMesh: Mesh | null = null;
+  let flightMaterial: MeshBasicNodeMaterial | null = null;
+  const setFlight = (flight: CityFlight | null) => {
+    if (flightMesh) {
+      scene.remove(flightMesh);
+      flightMaterial?.dispose();
+      flightMesh = null;
+      flightMaterial = null;
+    }
+    if (!flight || flight.count === 0) {
+      return;
+    }
+    const place = instancedBufferAttribute<"vec3">(new InstancedBufferAttribute(flight.place, 3), "vec3");
+    const look = instancedBufferAttribute<"vec4">(new InstancedBufferAttribute(flight.look, 4), "vec4");
+    const dotRadius = instancedBufferAttribute<"float">(
+      new InstancedBufferAttribute(flight.radius, 1),
+      "float",
+    );
+    const material = new MeshBasicNodeMaterial({
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+      blending: AdditiveBlending,
+    });
+    const start = vec2(
+      uFlightMap.y.add(place.x.mul(uFlightMap.x)),
+      uFlightMap.z.add(place.y.mul(uFlightMap.x)),
+    );
+    // The plan is drawn into the mark as water into a whirlpool, worked out in the orbit's own
+    // plane (the tilted ring a circle), in radii of the mark.
+    const tiltCos = Math.cos(MARK.tilt);
+    const tiltSin = Math.sin(MARK.tilt);
+    const markRadius = max(uFlightMark.z, 1e-6);
+    const fromMark = start.sub(uFlightMark.xy).div(markRadius);
+    const u = fromMark.x.mul(tiltCos).add(fromMark.y.mul(tiltSin));
+    const v = fromMark.y.mul(tiltCos).sub(fromMark.x.mul(tiltSin)).div(MARK.orbitMinor);
+    const away = max(length(vec2(u, v)), 1e-6);
+    const beyond = away.sub(1);
+    // The dots nearest the ring leave first,
+    const leave = clamp(beyond.div(FLIGHT_REACH), 0, 1).mul(FLIGHT_SPREAD);
+    const progress = smoothstep(leave, leave.add(1 - FLIGHT_SPREAD), uFlight);
+    // close in on it (or open out onto it), landing astride it,
+    const land = beyond
+      .div(abs(beyond).add(1))
+      .mul(FLIGHT_ORBIT_WIDTH / 2)
+      .add(1);
+    const reach = away.add(land.sub(away).mul(progress));
+    const scale = reach.div(away);
+    // and turn counter-clockwise, as the ring does, the more the closer it gets.
+    const turn = log(max(away.div(reach), 1)).mul(FLIGHT_TURN);
+    const tu = u
+      .mul(cos(turn))
+      .sub(v.mul(sin(turn)))
+      .mul(scale);
+    const tv = u
+      .mul(sin(turn))
+      .add(v.mul(cos(turn)))
+      .mul(scale)
+      .mul(MARK.orbitMinor);
+    const position = uFlightMark.xy.add(
+      vec2(tu.mul(tiltCos).sub(tv.mul(tiltSin)), tu.mul(tiltSin).add(tv.mul(tiltCos))).mul(markRadius),
+    );
+    // Only the dots the plan's canvas shows fly: within the hero, fading out at its foot as
+    // there. The plan thins out on its way, its last dots fading as they reach the ring.
+    const belowTop = uFlightHero.x.sub(start.y).div(uFlightHero.y);
+    const shown = clamp(float(1).sub(belowTop).div(FLIGHT_FOOT), 0, 1)
+      .mul(stepAt(0, belowTop))
+      .mul(stepAt(uFlightHero.z, start.x))
+      .mul(stepAt(start.x, uFlightHero.w));
+    const fadeFrom = fract(place.z.mul(11.3))
+      .mul(FLIGHT_FADE_FROM[1] - FLIGHT_FADE_FROM[0])
+      .add(FLIGHT_FADE_FROM[0]);
+    const fade = float(1).sub(smoothstep(fadeFrom, fadeFrom.add(FLIGHT_FADE), progress));
+    const lit = look.w.mul(fade).mul(shown);
+    // A dot out of sight draws nothing: its quad shrinks to a point.
+    const quadPixels = dotRadius.add(1).mul(2).mul(stepAt(0.002, lit));
+    material.positionNode = vec3(position.add(positionGeometry.xy.mul(quadPixels.mul(uPixel))), 0);
+    const opacity = lit.toVarying();
+    const tint = look.xyz.toVarying();
+    const pixels = quadPixels.toVarying();
+    const radius = dotRadius.toVarying();
+    // A disc of the painted radius, its edge anti-aliased over one device pixel…
+    const fromCenter = length(uv().sub(0.5)).mul(2);
+    const coverage = clamp(radius.sub(fromCenter.mul(pixels).mul(0.5)).mul(uPixelRatio).add(0.5), 0, 1);
+    // …blended over the ink as the page blends the plan's canvas (in sRGB), added in linear light.
+    const ink = vec3(INK_SRGB[0], INK_SRGB[1], INK_SRGB[2]);
+    const blended = mix(ink, tint, opacity.mul(coverage));
+    const linear = pow(blended.add(0.055).div(1.055), vec3(2.4, 2.4, 2.4));
+    material.colorNode = vec4(max(linear.sub(vec3(INK[0], INK[1], INK[2])), vec3(0, 0, 0)), 1);
+    const mesh = new Mesh(quad, material);
+    mesh.count = flight.count;
+    mesh.frustumCulled = false;
+    mesh.renderOrder = -1;
+    mesh.visible = false;
+    scene.add(mesh);
+    flightMesh = mesh;
+    flightMaterial = material;
+  };
+
+  /** Follows the plan's flight: drawn only while it is on its way (the page paints it at rest). */
+  const updateFlight = (flight: FlightFormation | null) => {
+    if (!flightMesh) {
+      return;
+    }
+    if (!flight) {
+      flightMesh.visible = false;
+      return;
+    }
+    const map = riverMapTransform(flight.box);
+    uFlightMap.value.set(map.scale, map.x, map.y);
+    uFlightHero.value.set(flight.hero.top, flight.hero.height, flight.hero.left, flight.hero.right);
+    uFlightMark.value.set(flight.mark.x, flight.mark.y, flight.mark.radius);
+    uFlight.value = flight.progress;
+    flightMesh.visible = flight.progress > FLIGHT_START && flight.progress < 1 - FLIGHT_START;
+  };
+
+  // ---------------------------------------------------------------------------
   // Loop, adaptive quality and controls.
   // ---------------------------------------------------------------------------
   let width = 1;
@@ -721,11 +871,13 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const active = formationStrength(measured) > 0.001;
     const freeLook = `${measured.freeGlow ?? 1}/${measured.freePaper ?? 0}`;
     if (!active && !formationsOn && freeLook === freeLookOn) {
+      updateFlight(null);
       return;
     }
     const previous = formations;
     formations = toWorldFormations(measured, width, height);
     uFine.value = Math.min(1, formations.rivers?.weight ?? 0);
+    updateFlight(formations.flight ?? null);
     writeFormations(
       formationTargets,
       formationLooks,
@@ -843,6 +995,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     quad.dispose();
     ionMaterial.dispose();
     bondMaterial.dispose();
+    flightMaterial?.dispose();
     renderer.dispose();
     canvas.remove();
   };
@@ -889,6 +1042,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     setFormations(next) {
       measured = next;
     },
+    setFlight,
     setRunning,
     resize,
     dispose: release,

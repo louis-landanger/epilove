@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   contourLength,
   contourPoint,
+  FLIGHT_ORBIT_WIDTH,
+  type FlightFormation,
   FORMATION_STRIDE,
   type Formations,
+  flightPoint,
   orbitArcPoint,
   orbitTheta,
   PAIR_FIELD_LINES,
@@ -499,5 +502,167 @@ describe("the rivers formation", () => {
     for (let index = 0; index < layout.count; index += 1) {
       expect(targets[index * FORMATION_STRIDE + 3]).toBeCloseTo(0.15, 6);
     }
+  });
+});
+
+describe("the plan's flight into the logo mark", () => {
+  const mark = { x: 0.9, y: 0.05, radius: 0.45 };
+  const flight = (progress: number): FlightFormation => ({
+    progress,
+    box: { x: -0.4, y: 0.1, hw: 1.2, hh: 1.6 },
+    hero: { top: 1.2, height: 4, left: -1.8, right: 1.8 },
+    mark,
+  });
+  const out = { x: 0, y: 0, light: 0 };
+  /** A point in the orbit's own plane, where the tilted ring is a circle: in radii of the mark. */
+  const inOrbitPlane = (point: { x: number; y: number }) => {
+    const dx = (point.x - mark.x) / mark.radius;
+    const dy = (point.y - mark.y) / mark.radius;
+    const u = dx * Math.cos(MARK.tilt) + dy * Math.sin(MARK.tilt);
+    const v = (dy * Math.cos(MARK.tilt) - dx * Math.sin(MARK.tilt)) / MARK.orbitMinor;
+    return { away: Math.hypot(u, v), angle: Math.atan2(v, u) };
+  };
+  // Dots all over the hero, inside the ring and far beyond it.
+  const starts = Array.from({ length: 21 * 13 }, (_, index) => ({
+    x: -1.7 + (index % 21) * 0.17,
+    y: -1.05 + Math.floor(index / 21) * 0.17,
+  }));
+
+  it("leaves every dot where the plan painted it until the page scrolls", () => {
+    for (const [index, start] of [...starts, { x: mark.x, y: mark.y }].entries()) {
+      flightPoint(start, (index * 0.618_033_988_7) % 1, flight(0), out);
+      expect(out.x).toBeCloseTo(start.x, 9);
+      expect(out.y).toBeCloseTo(start.y, 9);
+      expect(out.light).toBe(1);
+    }
+  });
+
+  it("flies only the dots the plan's canvas shows, fading out at the hero's foot as it does", () => {
+    for (const progress of [0, 0.5]) {
+      // Above the hero, beyond its sides: never shown.
+      for (const start of [
+        { x: 0, y: 1.3 },
+        { x: -1.9, y: 0 },
+        { x: 1.85, y: 0 },
+      ]) {
+        flightPoint(start, 0.1, flight(progress), out);
+        expect(out.light).toBe(0);
+      }
+    }
+    // Halfway down the hero's foot, half lit.
+    flightPoint({ x: -1, y: 1.2 - 0.86 * 4 }, 0.1, flight(0), out);
+    expect(out.light).toBeCloseTo(0.5, 6);
+  });
+
+  it("lands every dot astride the mark's ring, its light gone", () => {
+    for (const [index, start] of starts.entries()) {
+      flightPoint(start, (index * 0.618_033_988_7) % 1, flight(1), out);
+      expect(out.light).toBe(0);
+      const { away } = inOrbitPlane(out);
+      expect(away).toBeGreaterThanOrEqual(1 - FLIGHT_ORBIT_WIDTH / 2 - 1e-9);
+      expect(away).toBeLessThanOrEqual(1 + FLIGHT_ORBIT_WIDTH / 2 + 1e-9);
+    }
+    // Even the dot right on the mark's centre has somewhere to be,
+    flightPoint({ x: mark.x, y: mark.y }, 0.5, flight(1), out);
+    expect(Number.isFinite(out.x) && Number.isFinite(out.y)).toBe(true);
+    // and every dot, when the mark has no size yet.
+    flightPoint({ x: 0.2, y: 0.3 }, 0.5, { ...flight(0.5), mark: { x: 0.9, y: 0.05, radius: 0 } }, out);
+    expect(Number.isFinite(out.x) && Number.isFinite(out.y) && Number.isFinite(out.light)).toBe(true);
+  });
+
+  it("keeps neighbours together: the streets curl rather than scatter", () => {
+    const apart = 0.004;
+    const other = { x: 0, y: 0, light: 0 };
+    let worst = 0;
+    // (Inside the ring, the plan opens out onto it: stretched, not scattered.)
+    for (const [index, start] of starts.entries()) {
+      if (inOrbitPlane(start).away < 1) {
+        continue;
+      }
+      for (const angle of [0, 1, 2, 3, 4, 5]) {
+        const neighbour = { x: start.x + apart * Math.cos(angle), y: start.y + apart * Math.sin(angle) };
+        for (let progress = 0; progress <= 1; progress += 0.05) {
+          // Different seeds: where a dot goes does not depend on it.
+          flightPoint(start, (index * 0.618_033_988_7) % 1, flight(progress), out);
+          flightPoint(neighbour, ((index + 1) * 0.618_033_988_7) % 1, flight(progress), other);
+          worst = Math.max(worst, Math.hypot(out.x - other.x, out.y - other.y) / apart);
+        }
+      }
+    }
+    expect(worst).toBeLessThan(3);
+  });
+
+  it("closes in on the ring turning counter-clockwise, as the ring does", () => {
+    for (const start of [
+      { x: -1.2, y: 0.8 },
+      { x: -0.5, y: -0.9 },
+      { x: 1.6, y: 0.9 },
+    ]) {
+      let previous = { gap: Number.POSITIVE_INFINITY, angle: Number.NEGATIVE_INFINITY };
+      let first = Number.NaN;
+      for (let progress = 0; progress <= 1.0001; progress += 0.05) {
+        flightPoint(start, 0.42, flight(progress), out);
+        const { away, angle } = inOrbitPlane(out);
+        first = Number.isNaN(first) ? angle : first;
+        // Unwrapped from the first angle, less than half a turn away either side.
+        const turned = first + Math.atan2(Math.sin(angle - first), Math.cos(angle - first));
+        expect(Math.abs(away - 1)).toBeLessThanOrEqual(previous.gap + 1e-9);
+        expect(turned).toBeGreaterThanOrEqual(previous.angle - 1e-9);
+        previous = { gap: Math.abs(away - 1), angle: turned };
+      }
+      expect(previous.angle - first).toBeGreaterThan(0.3);
+    }
+  });
+
+  it("turns little while far, more and more near the ring, as water into a whirlpool", () => {
+    const start = { x: -1.2, y: 0.8 };
+    const angleAt = (progress: number) => {
+      flightPoint(start, 0.42, flight(progress), out);
+      return inOrbitPlane(out);
+    };
+    const begin = angleAt(0);
+    // The progress at which the dot has come half its way to the ring.
+    let half = 0;
+    while (angleAt(half).away > (begin.away + 1) / 2) {
+      half += 0.001;
+    }
+    const turned = (from: number, to: number) => {
+      const delta = angleAt(to).angle - angleAt(from).angle;
+      return Math.atan2(Math.sin(delta), Math.cos(delta));
+    };
+    expect(turned(half, 1)).toBeGreaterThan(turned(0, half) * 1.5);
+  });
+
+  it("sends the dots nearest the ring first, the plan's edges last", () => {
+    const near = { x: mark.x - 0.6, y: mark.y };
+    const far = { x: -1.6, y: 0.95 };
+    flightPoint(near, 0.42, flight(0.3), out);
+    expect(inOrbitPlane(out).away - 1).toBeLessThan((inOrbitPlane(near).away - 1) * 0.85);
+    flightPoint(far, 0.42, flight(0.3), out);
+    expect(out.x).toBeCloseTo(far.x, 9);
+    expect(out.y).toBeCloseTo(far.y, 9);
+  });
+
+  it("thins the plan out on its way, the last dots fading as they reach the ring", () => {
+    // From inside the ring, so the dots leave at once.
+    const start = { x: mark.x + 0.05, y: mark.y + 0.02 };
+    const lasting = (progress: number) => {
+      let sum = 0;
+      for (let index = 0; index < 1000; index += 1) {
+        flightPoint(start, (index * 0.618_033_988_7) % 1, flight(progress), out);
+        sum += out.light;
+      }
+      return sum / 1000;
+    };
+    // Whole on take-off,
+    expect(lasting(0.03)).toBeGreaterThan(0.99);
+    // two thirds of them halfway,
+    expect(lasting(0.325)).toBeGreaterThan(0.55);
+    expect(lasting(0.325)).toBeLessThan(0.8);
+    // a few nearly there,
+    expect(lasting(0.464)).toBeGreaterThan(0.1);
+    expect(lasting(0.464)).toBeLessThan(0.25);
+    // none once landed.
+    expect(lasting(1)).toBeLessThan(0.01);
   });
 });
