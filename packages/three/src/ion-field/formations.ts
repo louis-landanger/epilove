@@ -1113,9 +1113,9 @@ export const FLIGHT_START = 0.001;
  * give or take half of FLIGHT_JITTER, and flies for FLIGHT_SPAN of it, up to
  * FLIGHT_SPAN_JITTER of that less: neighbours leave and fly a little apart.
  */
-export const FLIGHT_RISE = 0.25;
+export const FLIGHT_RISE = 0.45;
 export const FLIGHT_JITTER = 0.1;
-export const FLIGHT_SPAN = 0.65;
+export const FLIGHT_SPAN = 0.5;
 export const FLIGHT_SPAN_JITTER = 0.25;
 /**
  * Each dot heads for the side of the mark it comes from, give or take

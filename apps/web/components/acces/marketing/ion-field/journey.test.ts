@@ -144,15 +144,36 @@ describe("journey", () => {
     expect(top.rivers?.box).toEqual(map);
     expect(top.pair).toBeNull();
     // Halfway through the hand-over, both share the particles…
-    const midway = withRivers(200);
+    const midway = withRivers(400);
     expect((midway.rivers?.weight ?? 0) + (midway.pair?.weight ?? 0)).toBeCloseTo(1, 6);
     expect(midway.rivers?.weight).toBeGreaterThan(0.2);
     expect(midway.pair?.weight).toBeGreaterThan(0.2);
     // …and once the hero has scrolled away, the mark holds them all, beside the manifesto.
-    const settled = withRivers(500);
+    const settled = withRivers(820);
     expect(settled.rivers).toBeNull();
     expect(settled.pair?.weight).toBe(1);
     expect(settled.pair?.mark).toEqual(journey(page(900)).formations.pair?.mark);
+  });
+
+  it("holds the rivers and the plan while the hero's copy is on screen, and lets go as the hero leaves", () => {
+    const map = { left: 700, top: 40, width: 560, height: 830 };
+    const hero = { left: 0, top: 0, width, height };
+    const at = (scroll: number) =>
+      journey({
+        ...page(scroll),
+        profiles: null,
+        rivers: { ...map, top: map.top - scroll },
+        riversHero: { ...hero, top: hero.top - scroll },
+      }).formations;
+    // The copy sits at the foot of the hero: scrolled by 43 % of the screen, all of it still
+    // shows. The rivers and the plan are on their way, not gone.
+    const copyOnScreen = at(0.43 * height);
+    expect(copyOnScreen.rivers?.weight).toBeGreaterThan(0.4);
+    expect(copyOnScreen.flight?.progress).toBeLessThan(0.6);
+    // They have joined the mark once the hero has nearly left the screen.
+    const heroGone = at(0.9 * height);
+    expect(heroGone.rivers).toBeNull();
+    expect(heroGone.flight?.progress).toBe(1);
   });
 
   it("flies the plan of Lyon into the mark at the pace of the rivers' particles", () => {
@@ -168,11 +189,11 @@ describe("journey", () => {
     // At rest, the plan stays where the page paints it.
     expect(at(0).flight).toMatchObject({ progress: 0, box: map, hero });
     // Scrolling, it flies as the rivers hand their particles to the mark…
-    const midway = at(200);
+    const midway = at(400);
     expect(midway.flight?.progress).toBeCloseTo(midway.pair?.weight ?? 0, 6);
-    expect(midway.flight?.hero.top).toBe(-200);
+    expect(midway.flight?.hero.top).toBe(-400);
     // …and lands in the mark beside the manifesto.
-    const settled = at(500);
+    const settled = at(820);
     expect(settled.flight?.progress).toBe(1);
     expect(settled.flight?.mark).toEqual(settled.pair?.mark);
     // No plan without the rivers' hero.

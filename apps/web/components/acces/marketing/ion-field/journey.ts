@@ -71,6 +71,13 @@ export interface JourneyState {
   readonly formations: ViewportFormations;
 }
 
+/**
+ * When the rivers hero hands its particles and its plan to the logo mark, in
+ * viewports scrolled: from `from`, over `span`. The hero is a screen tall,
+ * its copy at its foot: the hand-over ends as the copy leaves the screen.
+ */
+const RIVERS_SETTLE = { from: 0.03, span: 0.85 } as const;
+
 const ramp = (value: number) => {
   const t = Math.min(1, Math.max(0, value));
   return t * t * (3 - 2 * t);
@@ -186,8 +193,13 @@ export function journey(measures: JourneyMeasures): JourneyState {
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
-  // The atom shrinks into the logo mark as soon as the cards start to fade…
-  const settle = profiles || anchor || rivers ? ramp((scrolled - 0.02) / 0.4) : 1;
+  // The atom shrinks into the logo mark as soon as the cards start to fade. The rivers and
+  // the plan of Lyon flow into it as the hero leaves the screen, its copy (at its foot) with it…
+  const settle = rivers
+    ? ramp((scrolled - RIVERS_SETTLE.from) / RIVERS_SETTLE.span)
+    : profiles || anchor
+      ? ramp((scrolled - 0.02) / 0.4)
+      : 1;
   // …which hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
 
