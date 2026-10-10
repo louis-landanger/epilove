@@ -604,6 +604,23 @@ describe("the plan's flight into the logo mark", () => {
     expect(lit(1)).toBe(0);
   });
 
+  it("keeps the plan on its way as long as the rivers' particles are, landing with them at the end", () => {
+    const lit = (progress: number) => {
+      let sum = 0;
+      for (const [index, start] of starts.entries()) {
+        flightPoint(start, index, flight(progress), out);
+        sum += out.light;
+      }
+      return sum / starts.length;
+    };
+    // Three quarters of the way, the rivers are still on theirs: so is the plan.
+    expect(lit(0.75)).toBeGreaterThan(0.7);
+    // It merges into the mark as the rivers' particles reach it.
+    expect(lit(0.92)).toBeGreaterThan(0.1);
+    expect(lit(0.92)).toBeLessThan(0.7);
+    expect(lit(1)).toBe(0);
+  });
+
   it("lands every dot on the mark, on its orbit or in its nucleus, taking on the nucleus's colour there", () => {
     let inNucleus = 0;
     for (const [index, start] of starts.entries()) {

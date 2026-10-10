@@ -1107,16 +1107,15 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
 /** Below this progress the plan is at rest: the page paints it, the field does not draw it. */
 export const FLIGHT_START = 0.001;
 /**
- * The plan flows into the mark from the bottom up, while the rivers'
- * particles gather there: a dot leaves when the flight's progress reaches
- * FLIGHT_RISE times its height in the hero (0 at its foot, 1 at its top),
- * give or take half of FLIGHT_JITTER, and flies for FLIGHT_SPAN of it, up to
- * FLIGHT_SPAN_JITTER of that less: neighbours leave and fly a little apart.
+ * The plan flows into the mark from the bottom up, at the pace of the rivers'
+ * particles: a dot leaves when the flight's progress reaches FLIGHT_RISE
+ * times its height in the hero (0 at its foot, 1 at its top), give or take
+ * half of FLIGHT_JITTER, and lands with the rivers' particles, somewhere from
+ * FLIGHT_LANDING to the end: the plan stays on its way as long as they do.
  */
-export const FLIGHT_RISE = 0.45;
+export const FLIGHT_RISE = 0.4;
 export const FLIGHT_JITTER = 0.1;
-export const FLIGHT_SPAN = 0.5;
-export const FLIGHT_SPAN_JITTER = 0.25;
+export const FLIGHT_LANDING = 0.85;
 /**
  * Each dot heads for the side of the mark it comes from, give or take
  * FLIGHT_SCATTER radians (in the orbit's plane): the plan flows in streams.
@@ -1132,8 +1131,8 @@ export const FLIGHT_BOW = 0.3;
  */
 export const FLIGHT_NUCLEUS = 0.25;
 export const FLIGHT_ORBIT_WIDTH = 0.08;
-/** Share of its flight over which a dot merges into the mark as it lands, where the mark's particles take over. */
-export const FLIGHT_MERGE = 0.2;
+/** How long before it lands (in the flight's progress) a dot merges into the mark, where the mark's particles take over. */
+export const FLIGHT_MERGE = 0.12;
 /** Share of the hero's height over which the plan fades out at its foot, as its canvas does (marketing.css). */
 export const FLIGHT_FOOT = 0.28;
 
@@ -1173,11 +1172,11 @@ export function flightPoint(
   const random = (channel: number) => flightRandom(index, channel);
   const { mark, hero } = flight;
   const radius = Math.max(mark.radius, 1e-6);
-  // When it leaves, and how long it flies.
+  // When it leaves, and when it lands.
   const fromFoot = Math.min(1, Math.max(0, (start.y - (hero.top - hero.height)) / hero.height));
   const leave = Math.max(0, FLIGHT_RISE * fromFoot + FLIGHT_JITTER * (random(0) - 0.5));
-  const span = FLIGHT_SPAN * (1 - FLIGHT_SPAN_JITTER * random(1));
-  const p = smoothstep(leave, leave + span, flight.progress);
+  const land = FLIGHT_LANDING + (1 - FLIGHT_LANDING) * random(1);
+  const p = smoothstep(leave, land, flight.progress);
   // Where it lands: the side of the mark it comes from (seen in the orbit's plane), give or take.
   const cos = Math.cos(MARK.tilt);
   const sin = Math.sin(MARK.tilt);
@@ -1216,6 +1215,6 @@ export function flightPoint(
     start.x >= hero.left && start.x <= hero.right && start.y <= hero.top
       ? Math.min(1, Math.max(0, (1 - (hero.top - start.y) / hero.height) / FLIGHT_FOOT))
       : 0;
-  out.light = shown * (1 - smoothstep(1 - FLIGHT_MERGE, 1, p));
+  out.light = shown * (1 - smoothstep(land - FLIGHT_MERGE, land, flight.progress));
   out.plasma = nucleus ? smoothstep(0.4, 1, p) : 0;
 }

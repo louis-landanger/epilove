@@ -53,14 +53,13 @@ import {
   FLIGHT_CHANNELS,
   FLIGHT_FOOT,
   FLIGHT_JITTER,
+  FLIGHT_LANDING,
   FLIGHT_LIFT,
   FLIGHT_MERGE,
   FLIGHT_NUCLEUS,
   FLIGHT_ORBIT_WIDTH,
   FLIGHT_RISE,
   FLIGHT_SCATTER,
-  FLIGHT_SPAN,
-  FLIGHT_SPAN_JITTER,
   FLIGHT_START,
   type FlightFormation,
   FORMATION_STRIDE,
@@ -767,11 +766,14 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     );
     // Each dot is a particle of its own, its random numbers those of the CPU (flightRandom).
     const random = (channel: number) => hash(instanceIndex.mul(FLIGHT_CHANNELS).add(channel));
-    // It leaves when the flow rising from the foot of the hero reaches it, a little ragged…
+    // It leaves when the flow rising from the foot of the hero reaches it, a little ragged, and
+    // lands with the rivers' particles, at the end…
     const fromFoot = clamp(start.y.sub(uFlightHero.x.sub(uFlightHero.y)).div(uFlightHero.y), 0, 1);
     const leave = max(fromFoot.mul(FLIGHT_RISE).add(random(0).sub(0.5).mul(FLIGHT_JITTER)), 0);
-    const span = float(1).sub(random(1).mul(FLIGHT_SPAN_JITTER)).mul(FLIGHT_SPAN);
-    const progress = smoothstep(leave, leave.add(span), uFlight);
+    const land = random(1)
+      .mul(1 - FLIGHT_LANDING)
+      .add(FLIGHT_LANDING);
+    const progress = smoothstep(leave, land, uFlight);
     // …for the side of the mark it comes from (seen in the orbit's plane), give or take, on the
     // orbit or in the nucleus…
     const markRadius = max(uFlightMark.z, 1e-6);
@@ -816,14 +818,14 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       .add(control.mul(rest.mul(progress).mul(2)))
       .add(target.mul(progress.mul(progress)));
     // Only the dots the plan's canvas shows fly: within the hero, fading out at its foot as there.
-    // Each keeps its light on its way and merges into the mark as it lands, those bound for the
-    // nucleus taking on its colour.
+    // Each keeps its light on its way and merges into the mark just before it lands, those bound
+    // for the nucleus taking on its colour.
     const belowTop = uFlightHero.x.sub(start.y).div(uFlightHero.y);
     const shown = clamp(float(1).sub(belowTop).div(FLIGHT_FOOT), 0, 1)
       .mul(stepAt(0, belowTop))
       .mul(stepAt(uFlightHero.z, start.x))
       .mul(stepAt(start.x, uFlightHero.w));
-    const lit = look.w.mul(shown).mul(float(1).sub(smoothstep(1 - FLIGHT_MERGE, 1, progress)));
+    const lit = look.w.mul(shown).mul(float(1).sub(smoothstep(land.sub(FLIGHT_MERGE), land, uFlight)));
     const plasma = nucleus.mul(smoothstep(0.4, 1, progress));
     // A dot out of sight draws nothing: its quad shrinks to a point.
     const quadPixels = dotRadius.add(1).mul(2).mul(stepAt(0.002, lit));
