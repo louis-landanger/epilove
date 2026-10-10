@@ -151,7 +151,7 @@ const PAIR_FIELD = 0.35;
  */
 const PAIR_HEAVY = 0.01;
 /** Radius of a nucleus and of an electron's head, in orbit radii. */
-const NUCLEUS_REACH = 0.26;
+export const NUCLEUS_REACH = 0.26;
 const ELECTRON_REACH = 0.07;
 /** Length of an electron's tail, as a fraction of the orbit. */
 const ELECTRON_TAIL = 0.11;
@@ -1107,77 +1107,115 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
 /** Below this progress the plan is at rest: the page paints it, the field does not draw it. */
 export const FLIGHT_START = 0.001;
 /**
- * The dots nearest the mark's ring leave first: a dot's departure waits
- * FLIGHT_SPREAD of the flight per FLIGHT_REACH radii of the mark between it
- * and the ring (in the orbit's plane), at most FLIGHT_SPREAD; each then takes
- * the rest of the flight to land.
+ * The plan flows into the mark from the bottom up, while the rivers'
+ * particles gather there: a dot leaves when the flight's progress reaches
+ * FLIGHT_RISE times its height in the hero (0 at its foot, 1 at its top),
+ * give or take half of FLIGHT_JITTER, and flies for FLIGHT_SPAN of it, up to
+ * FLIGHT_SPAN_JITTER of that less: neighbours leave and fly a little apart.
  */
-export const FLIGHT_SPREAD = 0.35;
-export const FLIGHT_REACH = 4;
+export const FLIGHT_RISE = 0.25;
+export const FLIGHT_JITTER = 0.1;
+export const FLIGHT_SPAN = 0.65;
+export const FLIGHT_SPAN_JITTER = 0.25;
 /**
- * How far the plan turns as it closes in on the ring: radians per natural log
- * of the ratio by which a dot's distance from the mark's centre shrinks (a
- * logarithmic spiral). Little at first, more and more near the ring.
+ * Each dot heads for the side of the mark it comes from, give or take
+ * FLIGHT_SCATTER radians (in the orbit's plane): the plan flows in streams.
+ * Its curve bows upwards by FLIGHT_LIFT radii of the mark, half to one and a
+ * half times that, and sideways by up to half of FLIGHT_BOW of its way.
  */
-export const FLIGHT_TURN = 0.9;
+export const FLIGHT_SCATTER = 0.4;
+export const FLIGHT_LIFT = 0.5;
+export const FLIGHT_BOW = 0.3;
+/**
+ * Share of the dots that land in the mark's nucleus, taking on its colour;
+ * the others land on its orbit, a little either side of it.
+ */
+export const FLIGHT_NUCLEUS = 0.25;
+export const FLIGHT_ORBIT_WIDTH = 0.08;
+/** Share of its flight over which a dot merges into the mark as it lands, where the mark's particles take over. */
+export const FLIGHT_MERGE = 0.2;
 /** Share of the hero's height over which the plan fades out at its foot, as its canvas does (marketing.css). */
 export const FLIGHT_FOOT = 0.28;
-/** Width of the band the dots land on, astride the ring, as a share of the mark's radius. */
-export const FLIGHT_ORBIT_WIDTH = 0.12;
+
+/** How many random numbers each dot of the plan draws for its flight (`flightRandom` channels). */
+export const FLIGHT_CHANNELS = 8;
+
 /**
- * The plan thins out on its way: each dot fades out over FLIGHT_FADE of its
- * flight, starting anywhere in FLIGHT_FADE_FROM (from its seed). Two thirds
- * are still lit halfway, one in six nearly there, none once landed: the
- * mark's own particles take over, where the plan's would otherwise pile up.
+ * The `channel`-th random number in [0, 1) of the plan's dot `index`: the
+ * PCG hash the ion field's shader uses (three's TSL `hash`), so both draw
+ * the same flight for each dot, with no pattern between dots or channels.
  */
-export const FLIGHT_FADE = 0.2;
-export const FLIGHT_FADE_FROM: readonly [number, number] = [0.2, 0.8];
+export function flightRandom(index: number, channel: number): number {
+  const seed = (index * FLIGHT_CHANNELS + channel) >>> 0;
+  const state = (Math.imul(seed, 747_796_405) + 2_891_336_453) >>> 0;
+  const word = Math.imul(((state >>> ((state >>> 28) + 4)) ^ state) >>> 0, 277_803_737) >>> 0;
+  return (((word >>> 22) ^ word) >>> 0) / 2 ** 32;
+}
 
 /**
  * Where a dot of the plan stands at the flight's progress, starting from
- * `start` (world units), and how much of its light it keeps: none if the
- * plan's canvas does not show it at rest (outside the hero, or past its
- * foot), and it fades on its way (its `seed`, in [0, 1), says when). The plan
- * is drawn into the logo mark as water into a whirlpool: seen in the orbit's
- * own plane, where the tilted ring is a circle, each dot closes in on the ring
- * (or opens out onto it from inside), turning counter-clockwise, as the ring
- * does, the more the closer it gets. Neighbours stay neighbours: the streets
- * curl into the ring rather than scatter. The ion field's shader computes
- * the same (scene.ts).
+ * `start` (world units), how much of its light it keeps, and how much it has
+ * taken on the colour of the mark's nucleus (`plasma`). Each dot is a
+ * particle of its own, from its `index` in the plan: it leaves its street when
+ * the flow rising from the foot of the hero reaches it, and flies, along a
+ * curve bowed upwards, to the side of the mark it comes from, on the orbit or
+ * in the nucleus, where it merges into the mark's particles: the plan flows
+ * into the mark in streams, each dot a little off its neighbours. Dots the
+ * plan's canvas does not show at rest (outside the hero, or past its foot)
+ * stay unseen. The ion field's shader computes the same (scene.ts).
  */
 export function flightPoint(
   start: { readonly x: number; readonly y: number },
-  seed: number,
+  index: number,
   flight: FlightFormation,
-  out: { x: number; y: number; light: number },
+  out: { x: number; y: number; light: number; plasma: number },
 ): void {
-  const { mark } = flight;
+  const random = (channel: number) => flightRandom(index, channel);
+  const { mark, hero } = flight;
   const radius = Math.max(mark.radius, 1e-6);
+  // When it leaves, and how long it flies.
+  const fromFoot = Math.min(1, Math.max(0, (start.y - (hero.top - hero.height)) / hero.height));
+  const leave = Math.max(0, FLIGHT_RISE * fromFoot + FLIGHT_JITTER * (random(0) - 0.5));
+  const span = FLIGHT_SPAN * (1 - FLIGHT_SPAN_JITTER * random(1));
+  const p = smoothstep(leave, leave + span, flight.progress);
+  // Where it lands: the side of the mark it comes from (seen in the orbit's plane), give or take.
   const cos = Math.cos(MARK.tilt);
   const sin = Math.sin(MARK.tilt);
-  // In the orbit's plane, in radii of the mark.
-  const dx = (start.x - mark.x) / radius;
-  const dy = (start.y - mark.y) / radius;
-  const u = dx * cos + dy * sin;
-  const v = (dy * cos - dx * sin) / MARK.orbitMinor;
-  const away = Math.max(Math.hypot(u, v), 1e-6);
-  const beyond = away - 1;
-  const leave = FLIGHT_SPREAD * Math.min(1, Math.max(0, beyond) / FLIGHT_REACH);
-  const p = smoothstep(leave, leave + 1 - FLIGHT_SPREAD, flight.progress);
-  // It lands astride the ring, the dots from further out on its outer edge.
-  const land = 1 + (FLIGHT_ORBIT_WIDTH / 2) * (beyond / (1 + Math.abs(beyond)));
-  const reach = away + (land - away) * p;
-  const scale = reach / away;
-  const turn = FLIGHT_TURN * Math.log(Math.max(1, away / reach));
-  const tu = (u * Math.cos(turn) - v * Math.sin(turn)) * scale;
-  const tv = (u * Math.sin(turn) + v * Math.cos(turn)) * scale * MARK.orbitMinor;
-  out.x = mark.x + (tu * cos - tv * sin) * radius;
-  out.y = mark.y + (tu * sin + tv * cos) * radius;
-  const fadeFrom = FLIGHT_FADE_FROM[0] + (FLIGHT_FADE_FROM[1] - FLIGHT_FADE_FROM[0]) * fract(seed * 11.3);
-  const { hero } = flight;
+  const dx = start.x - mark.x;
+  const dy = start.y - mark.y;
+  let u = dx * cos + dy * sin;
+  let v = (dy * cos - dx * sin) / MARK.orbitMinor;
+  const away = Math.hypot(u, v);
+  if (away > 1e-9) {
+    u /= away;
+    v /= away;
+  } else {
+    u = 1;
+    v = 0;
+  }
+  const scatter = (random(2) - 0.5) * 2 * FLIGHT_SCATTER;
+  const su = u * Math.cos(scatter) - v * Math.sin(scatter);
+  const sv = u * Math.sin(scatter) + v * Math.cos(scatter);
+  const nucleus = random(3) < FLIGHT_NUCLEUS;
+  // On the orbit: the circle of the orbit's plane, flattened and tilted into the ring. In the
+  // nucleus: a disc.
+  const reach = nucleus
+    ? radius * NUCLEUS_REACH * Math.sqrt(random(4))
+    : radius * (1 + (random(4) - 0.5) * FLIGHT_ORBIT_WIDTH);
+  const flat = nucleus ? 1 : MARK.orbitMinor;
+  const tx = mark.x + (su * cos - sv * flat * sin) * reach;
+  const ty = mark.y + (su * sin + sv * flat * cos) * reach;
+  // How it gets there: a quadratic Bézier, its middle lifted and pushed aside a little.
+  const aside = (random(5) - 0.5) * FLIGHT_BOW;
+  const cx = (start.x + tx) / 2 - (ty - start.y) * aside;
+  const cy = (start.y + ty) / 2 + (tx - start.x) * aside + FLIGHT_LIFT * radius * (0.5 + random(6));
+  const q = 1 - p;
+  out.x = q * q * start.x + 2 * q * p * cx + p * p * tx;
+  out.y = q * q * start.y + 2 * q * p * cy + p * p * ty;
   const shown =
     start.x >= hero.left && start.x <= hero.right && start.y <= hero.top
       ? Math.min(1, Math.max(0, (1 - (hero.top - start.y) / hero.height) / FLIGHT_FOOT))
       : 0;
-  out.light = shown * (1 - smoothstep(fadeFrom, fadeFrom + FLIGHT_FADE, p));
+  out.light = shown * (1 - smoothstep(1 - FLIGHT_MERGE, 1, p));
+  out.plasma = nucleus ? smoothstep(0.4, 1, p) : 0;
 }

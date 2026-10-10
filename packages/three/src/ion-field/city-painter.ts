@@ -94,7 +94,7 @@ export function cityDotAlpha(dots: CityDots): Float32Array {
  */
 export interface CityFlight {
   readonly count: number;
-  /** Per dot: x and y in kilometres, and a seed in [0, 1) (when it fades on its way). */
+  /** Per dot: x and y in kilometres. Its index draws its flight (formations.ts, `flightRandom`). */
   readonly place: Float32Array;
   /** Per dot: its colour (gamma-encoded sRGB, 0 to 1) and opacity, as painted. */
   readonly look: Float32Array;
@@ -102,21 +102,17 @@ export interface CityFlight {
   readonly radius: Float32Array;
 }
 
-const GOLDEN_FRACTION = (Math.sqrt(5) - 1) / 2;
-
 export function cityFlight(dots: CityDots, alpha: Float32Array = cityDotAlpha(dots)): CityFlight {
   const { count, x, y, layer } = dots;
   const tints = CITY_LOOK.map((look) => linearSrgbToSrgb(tokenToLinearSrgb(colors[look.color])));
-  const place = new Float32Array(count * 3);
+  const place = new Float32Array(count * 2);
   const look = new Float32Array(count * 4);
   const radius = new Float32Array(count);
   for (let index = 0; index < count; index += 1) {
     const kind = layer[index] ?? CITY_LAYERS.minor;
     const tint = tints[kind] ?? [1, 1, 1];
-    place[index * 3] = x[index] ?? 0;
-    place[index * 3 + 1] = y[index] ?? 0;
-    // Seeds spread evenly, whatever the dots' order in the plan.
-    place[index * 3 + 2] = (index * GOLDEN_FRACTION) % 1;
+    place[index * 2] = x[index] ?? 0;
+    place[index * 2 + 1] = y[index] ?? 0;
     look[index * 4] = tint[0];
     look[index * 4 + 1] = tint[1];
     look[index * 4 + 2] = tint[2];

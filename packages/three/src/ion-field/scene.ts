@@ -6,21 +6,22 @@ import {
   exp,
   Fn,
   float,
-  fract,
+  hash,
   instancedArray,
   instancedBufferAttribute,
   instancedDynamicBufferAttribute,
   instanceIndex,
   length,
-  log,
   max,
   min,
   mix,
   positionGeometry,
   pow,
+  select,
   sign,
   sin,
   smoothstep,
+  sqrt,
   step as stepAt,
   uniform,
   uv,
@@ -48,18 +49,24 @@ import {
 import { type LinearRgb, linearSrgbToSrgb, tokenToLinearSrgb } from "../colors";
 import type { CityFlight } from "./city-painter";
 import {
-  FLIGHT_FADE,
-  FLIGHT_FADE_FROM,
+  FLIGHT_BOW,
+  FLIGHT_CHANNELS,
   FLIGHT_FOOT,
+  FLIGHT_JITTER,
+  FLIGHT_LIFT,
+  FLIGHT_MERGE,
+  FLIGHT_NUCLEUS,
   FLIGHT_ORBIT_WIDTH,
-  FLIGHT_REACH,
-  FLIGHT_SPREAD,
+  FLIGHT_RISE,
+  FLIGHT_SCATTER,
+  FLIGHT_SPAN,
+  FLIGHT_SPAN_JITTER,
   FLIGHT_START,
-  FLIGHT_TURN,
   type FlightFormation,
   FORMATION_STRIDE,
   type Formations,
   formationStrength,
+  NUCLEUS_REACH,
   riverMapTransform,
   toWorldFormations,
   type ViewportFormations,
@@ -729,6 +736,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   // them into the logo mark (formations.ts, flightPoint: the same path on the CPU).
   // ---------------------------------------------------------------------------
   const INK_SRGB = linearSrgbToSrgb(INK);
+  const PLASMA_SRGB = linearSrgbToSrgb(PLASMA);
   let flightMesh: Mesh | null = null;
   let flightMaterial: MeshBasicNodeMaterial | null = null;
   const setFlight = (flight: CityFlight | null) => {
@@ -741,7 +749,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     if (!flight || flight.count === 0) {
       return;
     }
-    const place = instancedBufferAttribute<"vec3">(new InstancedBufferAttribute(flight.place, 3), "vec3");
+    const place = instancedBufferAttribute<"vec2">(new InstancedBufferAttribute(flight.place, 2), "vec2");
     const look = instancedBufferAttribute<"vec4">(new InstancedBufferAttribute(flight.look, 4), "vec4");
     const dotRadius = instancedBufferAttribute<"float">(
       new InstancedBufferAttribute(flight.radius, 1),
@@ -757,57 +765,71 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       uFlightMap.y.add(place.x.mul(uFlightMap.x)),
       uFlightMap.z.add(place.y.mul(uFlightMap.x)),
     );
-    // The plan is drawn into the mark as water into a whirlpool, worked out in the orbit's own
-    // plane (the tilted ring a circle), in radii of the mark.
+    // Each dot is a particle of its own, its random numbers those of the CPU (flightRandom).
+    const random = (channel: number) => hash(instanceIndex.mul(FLIGHT_CHANNELS).add(channel));
+    // It leaves when the flow rising from the foot of the hero reaches it, a little ragged…
+    const fromFoot = clamp(start.y.sub(uFlightHero.x.sub(uFlightHero.y)).div(uFlightHero.y), 0, 1);
+    const leave = max(fromFoot.mul(FLIGHT_RISE).add(random(0).sub(0.5).mul(FLIGHT_JITTER)), 0);
+    const span = float(1).sub(random(1).mul(FLIGHT_SPAN_JITTER)).mul(FLIGHT_SPAN);
+    const progress = smoothstep(leave, leave.add(span), uFlight);
+    // …for the side of the mark it comes from (seen in the orbit's plane), give or take, on the
+    // orbit or in the nucleus…
+    const markRadius = max(uFlightMark.z, 1e-6);
     const tiltCos = Math.cos(MARK.tilt);
     const tiltSin = Math.sin(MARK.tilt);
-    const markRadius = max(uFlightMark.z, 1e-6);
-    const fromMark = start.sub(uFlightMark.xy).div(markRadius);
-    const u = fromMark.x.mul(tiltCos).add(fromMark.y.mul(tiltSin));
-    const v = fromMark.y.mul(tiltCos).sub(fromMark.x.mul(tiltSin)).div(MARK.orbitMinor);
-    const away = max(length(vec2(u, v)), 1e-6);
-    const beyond = away.sub(1);
-    // The dots nearest the ring leave first,
-    const leave = clamp(beyond.div(FLIGHT_REACH), 0, 1).mul(FLIGHT_SPREAD);
-    const progress = smoothstep(leave, leave.add(1 - FLIGHT_SPREAD), uFlight);
-    // close in on it (or open out onto it), landing astride it,
-    const land = beyond
-      .div(abs(beyond).add(1))
-      .mul(FLIGHT_ORBIT_WIDTH / 2)
-      .add(1);
-    const reach = away.add(land.sub(away).mul(progress));
-    const scale = reach.div(away);
-    // and turn counter-clockwise, as the ring does, the more the closer it gets.
-    const turn = log(max(away.div(reach), 1)).mul(FLIGHT_TURN);
-    const tu = u
-      .mul(cos(turn))
-      .sub(v.mul(sin(turn)))
-      .mul(scale);
-    const tv = u
-      .mul(sin(turn))
-      .add(v.mul(cos(turn)))
-      .mul(scale)
-      .mul(MARK.orbitMinor);
-    const position = uFlightMark.xy.add(
-      vec2(tu.mul(tiltCos).sub(tv.mul(tiltSin)), tu.mul(tiltSin).add(tv.mul(tiltCos))).mul(markRadius),
+    const fromMark = start.sub(uFlightMark.xy);
+    const side = vec2(
+      fromMark.x.mul(tiltCos).add(fromMark.y.mul(tiltSin)),
+      fromMark.y.mul(tiltCos).sub(fromMark.x.mul(tiltSin)).div(MARK.orbitMinor),
     );
-    // Only the dots the plan's canvas shows fly: within the hero, fading out at its foot as
-    // there. The plan thins out on its way, its last dots fading as they reach the ring.
+    const away = length(side);
+    const towards = select(away.greaterThan(1e-9), side.div(max(away, 1e-9)), vec2(1, 0));
+    const scatter = random(2)
+      .sub(0.5)
+      .mul(2 * FLIGHT_SCATTER);
+    const su = towards.x.mul(cos(scatter)).sub(towards.y.mul(sin(scatter)));
+    const sv = towards.x.mul(sin(scatter)).add(towards.y.mul(cos(scatter)));
+    const nucleus = float(1).sub(stepAt(FLIGHT_NUCLEUS, random(3)));
+    const reach = mix(
+      random(4).sub(0.5).mul(FLIGHT_ORBIT_WIDTH).add(1),
+      sqrt(random(4)).mul(NUCLEUS_REACH),
+      nucleus,
+    ).mul(markRadius);
+    const flat = mix(float(MARK.orbitMinor), float(1), nucleus);
+    const target = uFlightMark.xy.add(
+      vec2(
+        su.mul(tiltCos).sub(sv.mul(flat).mul(tiltSin)),
+        su.mul(tiltSin).add(sv.mul(flat).mul(tiltCos)),
+      ).mul(reach),
+    );
+    // …along a quadratic Bézier, its middle lifted and pushed aside a little.
+    const aside = random(5).sub(0.5).mul(FLIGHT_BOW);
+    const way = target.sub(start);
+    const control = start
+      .add(target)
+      .mul(0.5)
+      .add(vec2(way.y.negate(), way.x).mul(aside))
+      .add(vec2(0, markRadius.mul(random(6).add(0.5)).mul(FLIGHT_LIFT)));
+    const rest = float(1).sub(progress);
+    const position = start
+      .mul(rest.mul(rest))
+      .add(control.mul(rest.mul(progress).mul(2)))
+      .add(target.mul(progress.mul(progress)));
+    // Only the dots the plan's canvas shows fly: within the hero, fading out at its foot as there.
+    // Each keeps its light on its way and merges into the mark as it lands, those bound for the
+    // nucleus taking on its colour.
     const belowTop = uFlightHero.x.sub(start.y).div(uFlightHero.y);
     const shown = clamp(float(1).sub(belowTop).div(FLIGHT_FOOT), 0, 1)
       .mul(stepAt(0, belowTop))
       .mul(stepAt(uFlightHero.z, start.x))
       .mul(stepAt(start.x, uFlightHero.w));
-    const fadeFrom = fract(place.z.mul(11.3))
-      .mul(FLIGHT_FADE_FROM[1] - FLIGHT_FADE_FROM[0])
-      .add(FLIGHT_FADE_FROM[0]);
-    const fade = float(1).sub(smoothstep(fadeFrom, fadeFrom.add(FLIGHT_FADE), progress));
-    const lit = look.w.mul(fade).mul(shown);
+    const lit = look.w.mul(shown).mul(float(1).sub(smoothstep(1 - FLIGHT_MERGE, 1, progress)));
+    const plasma = nucleus.mul(smoothstep(0.4, 1, progress));
     // A dot out of sight draws nothing: its quad shrinks to a point.
     const quadPixels = dotRadius.add(1).mul(2).mul(stepAt(0.002, lit));
     material.positionNode = vec3(position.add(positionGeometry.xy.mul(quadPixels.mul(uPixel))), 0);
     const opacity = lit.toVarying();
-    const tint = look.xyz.toVarying();
+    const tint = mix(look.xyz, vec3(PLASMA_SRGB[0], PLASMA_SRGB[1], PLASMA_SRGB[2]), plasma).toVarying();
     const pixels = quadPixels.toVarying();
     const radius = dotRadius.toVarying();
     // A disc of the painted radius, its edge anti-aliased over one device pixel…

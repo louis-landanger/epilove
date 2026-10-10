@@ -17,26 +17,14 @@ describe("the plan's dots handed to the ion field", () => {
     const alpha = cityDotAlpha(dots);
     const flight = cityFlight(dots, alpha);
     expect(flight.count).toBe(dots.count);
-    expect(flight.place).toHaveLength(dots.count * 3);
+    expect(flight.place).toHaveLength(dots.count * 2);
     expect(flight.look).toHaveLength(dots.count * 4);
     expect(flight.radius).toHaveLength(dots.count);
     for (let index = 0; index < dots.count; index += 1) {
-      expect(flight.place[index * 3]).toBeCloseTo(dots.x[index] ?? Number.NaN, 6);
-      expect(flight.place[index * 3 + 1]).toBeCloseTo(dots.y[index] ?? Number.NaN, 6);
+      expect(flight.place[index * 2]).toBeCloseTo(dots.x[index] ?? Number.NaN, 6);
+      expect(flight.place[index * 2 + 1]).toBeCloseTo(dots.y[index] ?? Number.NaN, 6);
       expect(flight.look[index * 4 + 3]).toBeCloseTo(alpha[index] ?? Number.NaN, 6);
       expect(flight.radius[index]).toBeCloseTo(CITY_LOOK[dots.layer[index] ?? 0]?.radius ?? Number.NaN, 6);
     }
-  });
-
-  it("gives the dots seeds spread evenly over [0, 1), whatever their order in the plan", () => {
-    const flight = cityFlight(cityDots(plan));
-    const seeds = Array.from(
-      { length: flight.count },
-      (_, index) => flight.place[index * 3 + 2] ?? Number.NaN,
-    );
-    expect(seeds.every((seed) => seed >= 0 && seed < 1)).toBe(true);
-    const halves = seeds.filter((seed) => seed < 0.5).length / seeds.length;
-    expect(halves).toBeGreaterThan(0.45);
-    expect(halves).toBeLessThan(0.55);
   });
 });
