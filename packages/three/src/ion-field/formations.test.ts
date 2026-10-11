@@ -19,6 +19,7 @@ import {
   type Formations,
   flightPoint,
   flightRandom,
+  followFlight,
   gatherFlight,
   orbitArc,
   orbitArcPoint,
@@ -732,6 +733,62 @@ describe("the plan's flight into the logo mark", () => {
     }
   });
 
+  it("glides after the scroll, as the field's particles follow their shapes, whatever the wheel's steps", () => {
+    // A wheel notch moves the page at once: the plan follows it smoothly, without a jump.
+    const motion = { progress: 0, speed: 0 };
+    let previous = 0;
+    let reached = Number.POSITIVE_INFINITY;
+    for (let frame = 1; frame <= 120; frame += 1) {
+      followFlight(motion, 0.6, 1 / 60);
+      expect(motion.progress).toBeGreaterThanOrEqual(previous);
+      expect(motion.progress - previous).toBeLessThan(0.03);
+      expect(motion.progress).toBeLessThanOrEqual(0.6);
+      if (motion.progress > 0.57 && reached === Number.POSITIVE_INFINITY) {
+        reached = frame / 60;
+      }
+      previous = motion.progress;
+    }
+    // It takes its time, as the rivers do, but gets there.
+    expect(reached).toBeGreaterThan(0.4);
+    expect(reached).toBeLessThan(1.2);
+    // At rest, it rests; and it follows the same way however long the frames.
+    const still = { progress: 0.3, speed: 0 };
+    followFlight(still, 0.3, 1 / 60);
+    expect(still.progress).toBe(0.3);
+    const fine = { progress: 0, speed: 0 };
+    const coarse = { progress: 0, speed: 0 };
+    for (let frame = 0; frame < 24; frame += 1) {
+      followFlight(coarse, 1, 1 / 24);
+      for (let step = 0; step < 10; step += 1) {
+        followFlight(fine, 1, 1 / 240);
+      }
+    }
+    expect(coarse.progress).toBeCloseTo(fine.progress, 6);
+  });
+
+  it("lifts each dot off its street gently, then lands it softly", () => {
+    const start = { x: -0.6, y: -0.3 };
+    const target = towards(11, mark);
+    for (const dot of dots) {
+      // When it leaves and when it lands, as the flight goes.
+      let leave = -1;
+      for (let progress = 0; progress <= 1; progress += 0.0005) {
+        flightPoint(start, dot, target, flight(progress), out);
+        if (leave < 0 && Math.hypot(out.x - start.x, out.y - start.y) > 1e-9) {
+          leave = progress;
+        }
+      }
+      const land = 0.85 + 0.15 * flightRandom(11, 1);
+      const way = Math.hypot(mark.x - start.x, mark.y - start.y);
+      // A tenth of the way through its flight, it has hardly left its street…
+      flightPoint(start, dot, target, flight(leave + 0.1 * (land - leave)), out);
+      expect(Math.hypot(out.x - start.x, out.y - start.y)).toBeLessThan(0.02 * way);
+      // …and a tenth before it lands, it is all but there.
+      flightPoint(start, dot, target, flight(land - 0.1 * (land - leave)), out);
+      expect(Math.hypot(out.x - mark.x, out.y - mark.y)).toBeLessThan(0.02 * way);
+    }
+  });
+
   it("holds the plan whole while the rivers set off, then lets it flow from the bottom of the hero up", () => {
     const foot = { x: 0.2, y: -1.15 };
     const top = { x: 0.2, y: 1.15 };
@@ -1000,14 +1057,14 @@ describe("the plan's flight into the logo mark", () => {
     let strangers = 0;
     for (const dot of dots) {
       const start = { x: -1.5 + (dot % 20) * 0.14, y: -0.5 + Math.floor(dot / 20) * 0.07 };
-      flightPoint(start, dot, towards(7, left), flight(0.45), out);
+      flightPoint(start, dot, towards(7, left), flight(0.6), out);
       // A dot of the same patch, a few pixels away…
       const near = { x: start.x + 0.01, y: start.y };
-      flightPoint(near, dot + 1000, towards(7, left), flight(0.45), other);
+      flightPoint(near, dot + 1000, towards(7, left), flight(0.6), other);
       neighbours += Math.hypot(out.x - other.x, out.y - other.y);
       // …and one from the other side of the plan, bound elsewhere.
       const far = { x: -start.x * 0.5, y: 0.6 - start.y };
-      flightPoint(far, dot + 2000, towards(8, right), flight(0.45), other);
+      flightPoint(far, dot + 2000, towards(8, right), flight(0.6), other);
       strangers += Math.hypot(out.x - other.x, out.y - other.y);
     }
     expect(neighbours / dots.length).toBeGreaterThan(0.02);

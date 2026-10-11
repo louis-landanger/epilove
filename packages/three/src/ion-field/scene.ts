@@ -72,6 +72,7 @@ import {
   FORMATION_STRIDE,
   type FormationParticles,
   type Formations,
+  followFlight,
   formationStrength,
   gatherFlight,
   riverMapTransform,
@@ -127,6 +128,12 @@ export interface IonFieldOptions {
    * the plan's streets lands as in the logo mark, unseen until then.
    */
   readonly flight?: boolean;
+  /**
+   * Called when the field takes the plan's dots over from the page (true: the
+   * page stops painting them) or hands them back (false), in the frame it
+   * starts or stops drawing them.
+   */
+  readonly onFlightChange?: (flying: boolean) => void;
 }
 
 export interface IonField {
@@ -813,6 +820,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     flightDots = null;
     flightLanding = null;
     gatheredFor = null;
+    if (flying) {
+      flying = false;
+      options.onFlightChange?.(false);
+    }
     revealFrom = -1;
     planned.patches.fill(0);
     planned.landed.fill(-1);
@@ -854,7 +865,12 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const land = patch(1)
       .mul(1 - FLIGHT_LANDING)
       .add(FLIGHT_LANDING);
-    const progress = smoothstep(leave, land, uFlight);
+    // (smootherstep: it sets off and lands gently.)
+    const travel = clamp(uFlight.sub(leave).div(land.sub(leave)), 0, 1);
+    const progress = travel
+      .mul(travel)
+      .mul(travel)
+      .mul(travel.mul(travel.mul(6).sub(15)).add(10));
     // …on its particle, wherever it stands (in the mark, making way for the pointer)…
     const target = particleAt(uint(max(slot, 0)));
     // …along a quadratic Bézier of its own, its middle lifted and pushed aside a little.
@@ -941,26 +957,52 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     }
   };
 
-  /** Follows the plan's flight: drawn only while it is on its way (the page paints it at rest). */
-  const updateFlight = (flight: FlightFormation | null) => {
+  /** The flight as it glides after the scroll; `following` false starts it where the scroll is. */
+  const flightMotion = { progress: 0, speed: 0 };
+  let following = false;
+  let flying = false;
+
+  /**
+   * Follows the plan's flight, gliding after the scroll: drawn only while it is on its way (the
+   * page paints it at rest, and it is particles of the field once landed). Returns the flight
+   * as it stands.
+   */
+  const updateFlight = (flight: FlightFormation | null, delta: number): FlightFormation | null => {
+    let gliding = flight;
     if (flight) {
       gather(flight);
+      if (following) {
+        followFlight(flightMotion, flight.progress, delta);
+      } else {
+        flightMotion.progress = flight.progress;
+        flightMotion.speed = 0;
+        following = true;
+      }
+      gliding = { ...flight, progress: Math.min(1, Math.max(0, flightMotion.progress)) };
+    } else {
+      following = false;
     }
     planned.reveal = revealFrom < 0 ? 0 : Math.min(1, (uTime.value - revealFrom) / FLIGHT_REVEAL);
-    if (!flightMesh) {
-      return;
+    // The page stops painting the plan as soon as the field draws it, in the same frame.
+    const nowFlying = flightMesh !== null && gliding !== null && gliding.progress > FLIGHT_START;
+    if (nowFlying !== flying) {
+      flying = nowFlying;
+      options.onFlightChange?.(flying);
     }
-    if (!flight) {
-      flightMesh.visible = false;
-      return;
+    if (!flightMesh || !gliding) {
+      if (flightMesh) {
+        flightMesh.visible = false;
+      }
+      return gliding;
     }
-    const map = riverMapTransform(flight.box);
+    const map = riverMapTransform(gliding.box);
     uFlightMap.value.set(map.scale, map.x, map.y);
-    uFlightHero.value.set(flight.hero.top, flight.hero.height, flight.hero.left, flight.hero.right);
-    uFlightRadius.value = flight.mark.radius;
-    uFlight.value = flight.progress;
+    uFlightHero.value.set(gliding.hero.top, gliding.hero.height, gliding.hero.left, gliding.hero.right);
+    uFlightRadius.value = gliding.mark.radius;
+    uFlight.value = gliding.progress;
     // At rest the page paints the plan; once landed, it is particles of the field.
-    flightMesh.visible = flight.progress > FLIGHT_START && flight.progress < 1 - FLIGHT_START;
+    flightMesh.visible = flying && gliding.progress < 1 - FLIGHT_START;
+    return gliding;
   };
 
   // ---------------------------------------------------------------------------
@@ -985,17 +1027,17 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
    * Recomputes the formation targets for this frame (skipped while the field
    * drifts freely, once the free particles' light is set).
    */
-  const updateFormations = () => {
+  const updateFormations = (delta: number) => {
     const active = formationStrength(measured) > 0.001;
     const freeLook = `${measured.freeGlow ?? 1}/${measured.freePaper ?? 0}`;
     if (!active && !formationsOn && freeLook === freeLookOn) {
-      updateFlight(null);
+      updateFlight(null, delta);
       return;
     }
     const previous = formations;
-    formations = toWorldFormations(measured, width, height);
+    const measuredNow = toWorldFormations(measured, width, height);
+    formations = { ...measuredNow, flight: updateFlight(measuredNow.flight ?? null, delta) };
     uFine.value = Math.min(1, formations.rivers?.weight ?? 0);
-    updateFlight(formations.flight ?? null);
     writeFormations(
       formationTargets,
       formationLooks,
@@ -1046,7 +1088,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
 
     try {
       options.beforeFrame?.();
-      updateFormations();
+      updateFormations(delta);
       step(delta);
       renderer.render(scene, camera);
     } catch (error) {
@@ -1105,6 +1147,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     }
     running = next;
     lastTime = -1;
+    following = false;
     monitor.reset();
     void renderer.setAnimationLoop(running ? frame : null);
   };

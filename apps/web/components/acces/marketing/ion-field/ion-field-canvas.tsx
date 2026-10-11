@@ -2,7 +2,6 @@
 
 import {
   canAffordLiveField,
-  FLIGHT_START,
   isSoftwareRenderer,
   type PixelBox,
   particleBudget,
@@ -185,6 +184,10 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           particleCount: () => (forcedCount > 0 ? forcedCount : particleBudget(profile, rivers)),
           // And particles for the plan's patches of streets to land as in the logo.
           flight: rivers,
+          // While the field flies the plan's dots, the plan's own canvas steps aside.
+          onFlightChange: (flying) => {
+            container.dataset.flight = flying ? "on" : "off";
+          },
           adaptiveQuality: !forced,
           beforeFrame: () => followPage(),
           // The particles start in the shapes on screen (a reload further down the page).
@@ -246,13 +249,8 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         };
 
         // The plan of Lyon's dots (fleuves hero), once lit: the field flies them into the mark.
-        let flightReady = false;
-        let flying = false;
         cleanups.push(
-          onCityFlight((flight) => {
-            field.setFlight(flight);
-            flightReady = flight !== null;
-          }),
+          onCityFlight((flight) => field.setFlight(flight)),
           () => {
             delete container.dataset.flight;
           },
@@ -263,12 +261,6 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           const state = journey(page.measure());
           field.setFormations(state.formations);
           setHidden(state.hidden);
-          // While the field flies the plan's dots, the plan's own canvas steps aside.
-          const nowFlying = flightReady && (state.formations.flight?.progress ?? 0) > FLIGHT_START;
-          if (nowFlying !== flying) {
-            flying = nowFlying;
-            container.dataset.flight = flying ? "on" : "off";
-          }
         };
 
         // While the field rests, scrolling wakes it up.

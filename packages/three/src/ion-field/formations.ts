@@ -205,6 +205,11 @@ const smoothstep = (edge0: number, edge1: number, value: number) => {
   const t = clamp01((value - edge0) / (edge1 - edge0));
   return t * t * (3 - 2 * t);
 };
+/** As smoothstep, setting off and arriving more gently still (and as steady in its middle). */
+const smootherstep = (edge0: number, edge1: number, value: number) => {
+  const t = clamp01((value - edge0) / (edge1 - edge0));
+  return t * t * t * (t * (t * 6 - 15) + 10);
+};
 
 /** Converts a viewport rectangle (CSS pixels) to world units for a canvas of `width` × `height`. */
 export function toWorldBox(box: PixelBox, width: number, height: number): WorldBox {
@@ -1183,15 +1188,23 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
 /** Below this progress the plan is at rest: the page paints it, the field does not draw it. */
 export const FLIGHT_START = 0.001;
 /**
+ * The flight follows the page's scroll with the inertia of the field's
+ * particles following their shapes: its progress glides after the scroll's
+ * (`followFlight`), a critically damped spring of FLIGHT_FOLLOW radians a
+ * second, so the plan moves as smoothly as the rivers, whatever the wheel's
+ * steps.
+ */
+export const FLIGHT_FOLLOW = 4.5;
+/**
  * The plan stays whole while the rivers' particles set off, then flows into
  * the mark from the bottom up, at their pace: a dot leaves when the flight's
  * progress reaches FLIGHT_DELAY plus FLIGHT_RISE times its height in the hero
- * (0 at its foot, 1 at its top), give or take half of FLIGHT_JITTER, and
- * lands with the rivers' particles, somewhere from FLIGHT_LANDING to the
- * end: the plan stays on its way as long as they do.
+ * (0 at its foot, 1 at its top), give or take half of FLIGHT_JITTER, gently,
+ * and lands with the rivers' particles, softly, somewhere from
+ * FLIGHT_LANDING to the end: the plan stays on its way as long as they do.
  */
 export const FLIGHT_DELAY = 0.2;
-export const FLIGHT_RISE = 0.35;
+export const FLIGHT_RISE = 0.45;
 export const FLIGHT_JITTER = 0.1;
 export const FLIGHT_LANDING = 0.85;
 /**
@@ -1222,7 +1235,7 @@ export const FLIGHT_ORBIT_WIDTH = 0.08;
  * of the median patch, less below.
  */
 export const FLIGHT_SHARE = 0.25;
-export const FLIGHT_MERGE = 0.05;
+export const FLIGHT_MERGE = 0.1;
 export const FLIGHT_PATCH_LIGHT = 0.5;
 /**
  * How fast the patches' places in the mark move with it: along the orbit, in
@@ -1261,6 +1274,26 @@ export function flightRandom(index: number, channel: number): number {
   const state = (Math.imul(seed, 747_796_405) + 2_891_336_453) >>> 0;
   const word = Math.imul(((state >>> ((state >>> 28) + 4)) ^ state) >>> 0, 277_803_737) >>> 0;
   return (((word >>> 22) ^ word) >>> 0) / 2 ** 32;
+}
+
+/** Where the plan's flight stands as it follows the scroll (`followFlight`): its progress, and how fast it goes (a second). */
+export interface FlightMotion {
+  progress: number;
+  speed: number;
+}
+
+/**
+ * Moves the flight `delta` seconds on towards the progress the scroll asks
+ * for (`target`), as a critically damped spring (FLIGHT_FOLLOW): it sets off
+ * and arrives smoothly, never overshoots, and follows the same course
+ * whatever the frame time.
+ */
+export function followFlight(motion: FlightMotion, target: number, delta: number): void {
+  const away = motion.progress - target;
+  const swing = motion.speed + FLIGHT_FOLLOW * away;
+  const decay = Math.exp(-FLIGHT_FOLLOW * delta);
+  motion.progress = target + (away + swing * delta) * decay;
+  motion.speed = (motion.speed - FLIGHT_FOLLOW * swing * delta) * decay;
 }
 
 /** When the patch of streets of the particle `index` kept for the plan lands, in the flight's progress. */
@@ -1507,7 +1540,7 @@ export function flightPoint(
   const fromFoot = Math.min(1, Math.max(0, (start.y - (hero.top - hero.height)) / hero.height));
   const leave = Math.max(0, FLIGHT_DELAY + FLIGHT_RISE * fromFoot + FLIGHT_JITTER * (own(0) - 0.5));
   const land = flightLand(target.index);
-  const p = smoothstep(leave, land, flight.progress);
+  const p = smootherstep(leave, land, flight.progress);
   // How it gets there: a quadratic Bézier of its own, its middle lifted and pushed aside a little.
   const { x: tx, y: ty } = target;
   const aside = (own(5) - 0.5) * FLIGHT_BOW;
