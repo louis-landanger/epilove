@@ -4,7 +4,7 @@ import { type CityView, cityViewFor } from "@atomes/three";
 import { useEffect, useRef, useState } from "react";
 import { afterLoadAndIdle } from "../live-scene";
 import type { CityWorkerMessage, CityWorkerReply } from "./city.worker";
-import { publishCityFlight } from "./city-flight";
+import { onCityFlying, publishCityFlight } from "./city-flight";
 
 const PLAN_URL = "/apercu/fleuves/lyon-plan.bin";
 
@@ -56,6 +56,9 @@ export function CityCanvas() {
       () => base.remove(),
       () => torch?.remove(),
       () => publishCityFlight(null),
+      // While the ion field flies the plan's dots, this canvas steps aside (marketing.css).
+      onCityFlying((flying) => container.toggleAttribute("data-flying", flying)),
+      () => container.removeAttribute("data-flying"),
     ];
     let send: (message: CityWorkerMessage) => void = () => {};
 

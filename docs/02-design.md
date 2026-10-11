@@ -247,6 +247,8 @@ Cible : **WCAG 2.2 niveau AA**, vérifiée automatiquement (axe) et manuellement
 
 **Qualité adaptative de la 3D** : détection du niveau du GPU, densité de pixels plafonnée à 1,5, nombre de particules ajusté (le même en WebGPU et en WebGL2, pour un rendu identique d'un appareil à l'autre : 1 600 sur ordinateur, 900 sur mobile, moins sur les machines modestes), rendu suspendu quand le canevas sort de l'écran ou que l'onglet est masqué, image fixe de repli si le GPU est trop faible ou si l'utilisateur a demandé moins d'animations.
 
+**Pas d'à-coup** : les shaders du champ se compilent avant sa première image, ceux du vol de la carte dès qu'elle est prête, hors du fil principal quand le navigateur le permet, jamais au premier défilement ; le démarrage se fait par petites tâches. La simulation sur processeur (WebGL2) saute les termes nuls des particules tenues par une forme, et les formations calculent une fois par image ce qui ne change pas d'une particule à l'autre. Le vol ne dessine que les points que le héros montre, avec leurs nombres calculés une fois. La carte de Lyon se prépare plus vite (parcs remplis rangée par rangée, points triés sans comparateur). Un signal qui change au défilement se pose sur l'élément qu'il concerne, jamais sous un `:root:has()`, qui restylerait toute la page. Chaque optimisation laisse le rendu identique : mêmes nombres, au bit près pour ce que calcule le processeur, à la précision du processeur graphique pour le vol.
+
 Mesure continue : Lighthouse CI sur chaque pull request, mesures réelles des Core Web Vitals remontées depuis les navigateurs des utilisateurs.
 
 ## 10. Méthode et outils

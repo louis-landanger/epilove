@@ -6,7 +6,6 @@ import {
   exp,
   Fn,
   float,
-  hash,
   instancedArray,
   instancedBufferAttribute,
   instancedDynamicBufferAttribute,
@@ -54,18 +53,11 @@ import {
 import { type LinearRgb, linearSrgbToSrgb, tokenToLinearSrgb } from "../colors";
 import type { CityFlight } from "./city-painter";
 import {
-  FLIGHT_BOW,
-  FLIGHT_CHANNELS,
-  FLIGHT_DELAY,
-  FLIGHT_FOOT,
-  FLIGHT_JITTER,
-  FLIGHT_LANDING,
-  FLIGHT_LIFT,
   FLIGHT_MERGE,
+  FLIGHT_PACK_STRIDE,
   FLIGHT_PATCH_STRIDE,
   FLIGHT_PUSH,
   FLIGHT_PUSH_REACH,
-  FLIGHT_RISE,
   FLIGHT_SHARE,
   FLIGHT_START,
   type FlightFormation,
@@ -75,6 +67,7 @@ import {
   followFlight,
   formationStrength,
   gatherFlight,
+  packFlight,
   riverMapTransform,
   toWorldFormations,
   type ViewportFormations,
@@ -402,6 +395,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   let bondA: Node<"vec2">;
   let bondB: Node<"vec2">;
   let step: (delta: number) => void;
+  /** Compiles the simulation's GPU passes ahead of the first step (none on the CPU). */
+  let compileStep: () => Promise<void> = async () => {};
   /** Where a particle stands, for the plan's dots to fly to theirs (any of the first `kept`). */
   let particleAt: (index: Node<"uint">) => Node<"vec2">;
   let releaseData = () => {};
@@ -501,6 +496,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     })().compute(count);
 
     const computeNodes: ComputeNode[] = [forces, integrate];
+    compileStep = () => renderer.compileComputeAsync(computeNodes);
 
     particleCenter = positions.element(instanceIndex);
     particleAt = (index) => positions.element(index);
@@ -608,68 +604,85 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       const pointerStrength = uPointerStrength.value;
       const pointerCharge = uPointerCharge.value;
       const pulse = uPulse.value;
+      // A particle fully held by its shape (almost all of them, mostly) damps and tops out alike.
+      const held = 1;
+      const heldDamping = Math.exp(-(DAMPING_FREE + (DAMPING_HELD - DAMPING_FREE) * held) * delta);
+      const heldSpeed = MAX_SPEED + (FORMATION_MAX_SPEED - MAX_SPEED) * held;
+      // The terms that weigh exactly nothing (a held particle's drift, bond and charge, a still
+      // pointer's push) are skipped: every sum keeps its value, bit for bit.
+      const pointing = pointerStrength !== 0 || pulse !== 0;
       for (let index = 0; index < count; index += 1) {
         const partner = index ^ 1;
         const px = positions[index * 2] ?? 0;
         const py = positions[index * 2 + 1] ?? 0;
-        const charge = data.props[index * 2] ?? 1;
-        const phase = data.props[index * 2 + 1] ?? 0;
         const pull = formationTargets[index * FORMATION_STRIDE + 2] ?? 0;
         const hold = pull;
         const free = 1 - hold;
+        let ax = 0;
+        let ay = 0;
 
-        const angle = flowAngle(px, py, time);
-        let ax = Math.cos(angle) * FLOW * free;
-        let ay = Math.sin(angle) * FLOW * free;
+        if (free !== 0) {
+          const angle = flowAngle(px, py, time);
+          ax = Math.cos(angle) * FLOW * free;
+          ay = Math.sin(angle) * FLOW * free;
 
-        const dx = (positions[partner * 2] ?? 0) - px;
-        const dy = (positions[partner * 2 + 1] ?? 0) - py;
-        const distance = Math.hypot(dx, dy) + 0.0001;
-        const nx = dx / distance;
-        const ny = dy / distance;
-        const rhythm = Math.sin(time * 0.33 + phase * 6.2831) * 0.5 + 0.5;
-        const rest = 0.03 + (0.75 - 0.03) * rhythm * rhythm;
-        const spring = Math.max(-0.9, Math.min(0.9, (distance - rest) * BOND_SPRING));
-        ax += nx * spring * free;
-        ay += ny * spring * free;
-        const close = 1 - smooth(0.025, 0.16, distance);
-        ax += -ny * close * ORBIT * free;
-        ay += nx * close * ORBIT * free;
-
-        const tx = pointer.x - px;
-        const ty = pointer.y - py;
-        const pointerDistance = Math.hypot(tx, ty) + 0.02;
-        const qx = tx / pointerDistance;
-        const qy = ty / pointerDistance;
-        const pointerPull = Math.max(
-          -3.5,
-          Math.min(
-            3.5,
-            (-charge * pointerCharge * pointerStrength * POINTER_FORCE) /
-              (pointerDistance * pointerDistance + 0.012),
-          ),
-        );
-        ax += qx * pointerPull * free;
-        ay += qy * pointerPull * free;
-        const swirl = Math.max(pointerPull, 0) * 0.35 * free;
-        ax += -qy * swirl;
-        ay += qx * swirl;
-        // Held particles part around the pointer instead, and their shape pulls them back.
-        const reach = pointerDistance / POINTER_REACH;
-        const push = hold * pointerStrength * POINTER_PUSH * Math.exp(-reach * reach);
-        ax -= qx * push;
-        ay -= qy * push;
-        const shock = pulse * 2.4 * Math.exp(-pointerDistance * 3.5);
-        ax -= qx * shock;
-        ay -= qy * shock;
-
-        const boundX = aspect * 1.04;
-        const contain = CONTAIN * (1 - pull);
-        if (Math.abs(px) > boundX) {
-          ax -= (Math.abs(px) - boundX) * Math.sign(px) * contain;
+          const dx = (positions[partner * 2] ?? 0) - px;
+          const dy = (positions[partner * 2 + 1] ?? 0) - py;
+          const distance = Math.hypot(dx, dy) + 0.0001;
+          const nx = dx / distance;
+          const ny = dy / distance;
+          const phase = data.props[index * 2 + 1] ?? 0;
+          const rhythm = Math.sin(time * 0.33 + phase * 6.2831) * 0.5 + 0.5;
+          const rest = 0.03 + (0.75 - 0.03) * rhythm * rhythm;
+          const spring = Math.max(-0.9, Math.min(0.9, (distance - rest) * BOND_SPRING));
+          ax += nx * spring * free;
+          ay += ny * spring * free;
+          const close = 1 - smooth(0.025, 0.16, distance);
+          ax += -ny * close * ORBIT * free;
+          ay += nx * close * ORBIT * free;
         }
-        if (Math.abs(py) > 1.04) {
-          ay -= (Math.abs(py) - 1.04) * Math.sign(py) * contain;
+
+        if (pointing) {
+          const tx = pointer.x - px;
+          const ty = pointer.y - py;
+          const pointerDistance = Math.hypot(tx, ty) + 0.02;
+          const qx = tx / pointerDistance;
+          const qy = ty / pointerDistance;
+          if (free !== 0) {
+            const charge = data.props[index * 2] ?? 1;
+            const pointerPull = Math.max(
+              -3.5,
+              Math.min(
+                3.5,
+                (-charge * pointerCharge * pointerStrength * POINTER_FORCE) /
+                  (pointerDistance * pointerDistance + 0.012),
+              ),
+            );
+            ax += qx * pointerPull * free;
+            ay += qy * pointerPull * free;
+            const swirl = Math.max(pointerPull, 0) * 0.35 * free;
+            ax += -qy * swirl;
+            ay += qx * swirl;
+          }
+          // Held particles part around the pointer instead, and their shape pulls them back.
+          const reach = pointerDistance / POINTER_REACH;
+          const push = hold * pointerStrength * POINTER_PUSH * Math.exp(-reach * reach);
+          ax -= qx * push;
+          ay -= qy * push;
+          const shock = pulse * 2.4 * Math.exp(-pointerDistance * 3.5);
+          ax -= qx * shock;
+          ay -= qy * shock;
+        }
+
+        const contain = CONTAIN * (1 - pull);
+        if (contain !== 0) {
+          const boundX = aspect * 1.04;
+          if (Math.abs(px) > boundX) {
+            ax -= (Math.abs(px) - boundX) * Math.sign(px) * contain;
+          }
+          if (Math.abs(py) > 1.04) {
+            ay -= (Math.abs(py) - 1.04) * Math.sign(py) * contain;
+          }
         }
 
         if (pull > 0) {
@@ -678,11 +691,14 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
           ay += ((formationTargets[index * FORMATION_STRIDE + 1] ?? 0) - py) * spring;
         }
 
-        const damping = Math.exp(-(DAMPING_FREE + (DAMPING_HELD - DAMPING_FREE) * hold) * delta);
+        const damping =
+          hold === held
+            ? heldDamping
+            : Math.exp(-(DAMPING_FREE + (DAMPING_HELD - DAMPING_FREE) * hold) * delta);
         let vx = ((velocities[index * 2] ?? 0) + ax * delta) * damping;
         let vy = ((velocities[index * 2 + 1] ?? 0) + ay * delta) * damping;
         const speed = Math.hypot(vx, vy);
-        const maxSpeed = MAX_SPEED + (FORMATION_MAX_SPEED - MAX_SPEED) * pull;
+        const maxSpeed = pull === held ? heldSpeed : MAX_SPEED + (FORMATION_MAX_SPEED - MAX_SPEED) * pull;
         if (speed > maxSpeed) {
           vx *= maxSpeed / speed;
           vy *= maxSpeed / speed;
@@ -806,7 +822,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   let flightMaterial: MeshBasicNodeMaterial | null = null;
   let flightDots: CityFlight | null = null;
   /** Per dot: the particle its patch lands as (-1: none), and 1 if that one lands in the nucleus. */
-  let flightLanding: InstancedBufferAttribute | null = null;
+  let flightLanding: Float32Array | null = null;
+  /** The dots the hero shows, packed for the shader (formations.ts, packFlight): route, timing, colour, size. */
+  let flightPacks: readonly InstancedBufferAttribute[] = [];
   /** The hero, in kilometres on the map, the dots were gathered for. */
   let gatheredFor: readonly number[] | null = null;
   let revealFrom = -1;
@@ -819,6 +837,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     }
     flightDots = null;
     flightLanding = null;
+    flightPacks = [];
     gatheredFor = null;
     if (flying) {
       flying = false;
@@ -832,18 +851,20 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       return;
     }
     flightDots = flight;
-    const landingArray = new Float32Array(flight.count * 2);
-    for (let index = 0; index < flight.count; index += 1) {
-      landingArray[index * 2] = -1;
-    }
-    flightLanding = new InstancedBufferAttribute(landingArray, 2);
-    const place = instancedBufferAttribute<"vec2">(new InstancedBufferAttribute(flight.place, 2), "vec2");
-    const landing = instancedBufferAttribute<"vec2">(flightLanding, "vec2");
-    const look = instancedBufferAttribute<"vec4">(new InstancedBufferAttribute(flight.look, 4), "vec4");
-    const dotRadius = instancedBufferAttribute<"float">(
-      new InstancedBufferAttribute(flight.radius, 1),
-      "float",
-    );
+    flightLanding = new Float32Array(flight.count * 2);
+    // The dots the hero shows, packed once gathered (none until then): only they are drawn.
+    const pack = (size: number) => new InstancedBufferAttribute(new Float32Array(flight.count * size), size);
+    flightPacks = [pack(FLIGHT_PACK_STRIDE), pack(FLIGHT_PACK_STRIDE), pack(FLIGHT_PACK_STRIDE), pack(1)];
+    const [routeData, timingData, colorData, sizeData] = flightPacks as [
+      InstancedBufferAttribute,
+      InstancedBufferAttribute,
+      InstancedBufferAttribute,
+      InstancedBufferAttribute,
+    ];
+    const route = instancedBufferAttribute<"vec4">(routeData, "vec4");
+    const timing = instancedBufferAttribute<"vec4">(timingData, "vec4");
+    const look = instancedBufferAttribute<"vec4">(colorData, "vec4");
+    const dotRadius = instancedBufferAttribute<"float">(sizeData, "float");
     const material = new MeshBasicNodeMaterial({
       transparent: true,
       depthWrite: false,
@@ -852,35 +873,27 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     });
     const onMap = (km: Node<"vec2">) =>
       vec2(uFlightMap.y.add(km.x.mul(uFlightMap.x)), uFlightMap.z.add(km.y.mul(uFlightMap.x)));
-    const start = onMap(place);
-    // Each dot is a particle of its own, and its patch of streets is its particle's: their random
-    // numbers are those of the CPU (flightRandom).
-    const slot = landing.x;
-    const own = (channel: number) => hash(instanceIndex.mul(FLIGHT_CHANNELS).add(channel));
-    const patch = (channel: number) => hash(max(slot, 0).mul(FLIGHT_CHANNELS).add(channel));
-    // Once the rivers' particles have set off, it leaves when the flow rising from the foot of the
-    // hero reaches it, a little ragged, and its patch lands with the rivers' particles, at the end…
-    const fromFoot = clamp(start.y.sub(uFlightHero.x.sub(uFlightHero.y)).div(uFlightHero.y), 0, 1);
-    const leave = max(fromFoot.mul(FLIGHT_RISE).add(own(0).sub(0.5).mul(FLIGHT_JITTER)).add(FLIGHT_DELAY), 0);
-    const land = patch(1)
-      .mul(1 - FLIGHT_LANDING)
-      .add(FLIGHT_LANDING);
-    // (smootherstep: it sets off and lands gently.)
+    const start = onMap(route.xy);
+    // Each dot flies by its own numbers, those flightPoint draws (packFlight): once the rivers'
+    // particles have set off, it leaves when the flow rising from the foot of the hero reaches it, a
+    // little ragged, and its patch lands with the rivers' particles, at the end (smootherstep: it
+    // sets off and lands gently)…
+    const leave = timing.x;
+    const land = timing.y;
     const travel = clamp(uFlight.sub(leave).div(land.sub(leave)), 0, 1);
     const progress = travel
       .mul(travel)
       .mul(travel)
       .mul(travel.mul(travel.mul(6).sub(15)).add(10));
     // …on its particle, wherever it stands (in the mark, making way for the pointer)…
-    const target = particleAt(uint(max(slot, 0)));
+    const target = particleAt(uint(route.z));
     // …along a quadratic Bézier of its own, its middle lifted and pushed aside a little.
-    const aside = own(5).sub(0.5).mul(FLIGHT_BOW);
     const way = target.sub(start);
     const control = start
       .add(target)
       .mul(0.5)
-      .add(vec2(way.y.negate(), way.x).mul(aside))
-      .add(vec2(0, max(uFlightRadius, 1e-6).mul(own(6).add(0.5)).mul(FLIGHT_LIFT)));
+      .add(vec2(way.y.negate(), way.x).mul(timing.z))
+      .add(vec2(0, max(uFlightRadius, 1e-6).mul(timing.w)));
     const rest = float(1).sub(progress);
     const curve = start
       .mul(rest.mul(rest))
@@ -894,17 +907,12 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       .mul(uPointerStrength)
       .mul(progress.mul(rest).mul(4 * FLIGHT_PUSH));
     const position = curve.add(fromPointer.div(max(apart, 1e-6)).mul(push));
-    // Only the dots the plan's canvas shows fly: within the hero, fading out at its foot as there.
-    // Each keeps its light on its way; as its patch lands, they all fuse into its particle, which
-    // lights up as they fade (writeFormations). Those bound for the nucleus take on its colour.
-    const belowTop = uFlightHero.x.sub(start.y).div(uFlightHero.y);
-    const shown = clamp(float(1).sub(belowTop).div(FLIGHT_FOOT), 0, 1)
-      .mul(stepAt(0, belowTop))
-      .mul(stepAt(uFlightHero.z, start.x))
-      .mul(stepAt(start.x, uFlightHero.w));
+    // Each keeps its light, as the plan's canvas shows it, on its way; as its patch lands, they all
+    // fuse into its particle, which lights up as they fade (writeFormations). Those bound for the
+    // nucleus take on its colour.
     const fused = smoothstep(land.sub(FLIGHT_MERGE), land, uFlight);
-    const lit = look.w.mul(shown).mul(float(1).sub(fused)).mul(stepAt(0, slot));
-    const plasma = landing.y.mul(smoothstep(0.4, 1, progress));
+    const lit = look.w.mul(float(1).sub(fused));
+    const plasma = route.w.mul(smoothstep(0.4, 1, progress));
     const quadPixels = dotRadius.add(1).mul(2).mul(stepAt(0.002, lit));
     material.positionNode = vec3(position.add(positionGeometry.xy.mul(quadPixels.mul(uPixel))), 0);
     const opacity = lit.toVarying();
@@ -920,7 +928,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const linear = pow(blended.add(0.055).div(1.055), vec3(2.4, 2.4, 2.4));
     material.colorNode = vec4(max(linear.sub(vec3(INK[0], INK[1], INK[2])), vec3(0, 0, 0)), 1);
     const mesh = new Mesh(quad, material);
-    mesh.count = flight.count;
+    mesh.count = 0;
     mesh.frustumCulled = false;
     mesh.renderOrder = -1;
     mesh.visible = false;
@@ -931,10 +939,11 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
 
   /**
    * Gathers the dots the hero shows into patches of streets, one for each particle kept for the
-   * plan, once it has them and again whenever the hero moves on the map (a resize).
+   * plan, and packs them for the shader, once it has them and again whenever the hero moves on the
+   * map (a resize).
    */
   const gather = (flight: FlightFormation) => {
-    if (!flightDots || !flightLanding) {
+    if (!flightDots || !flightLanding || !flightMesh) {
       return;
     }
     const map = riverMapTransform(flight.box);
@@ -950,8 +959,34 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       return;
     }
     gatheredFor = hero;
-    gatherFlight(flightDots.place, flightDots.look, flight, particles, flightLanding.array as Float32Array);
-    flightLanding.needsUpdate = true;
+    gatherFlight(flightDots.place, flightDots.look, flight, particles, flightLanding);
+    const [route, timing, color, size] = flightPacks;
+    if (route && timing && color && size) {
+      const packed = packFlight(
+        flightDots.place,
+        flightDots.look,
+        flightDots.radius,
+        flightLanding,
+        flight,
+        route.array as Float32Array,
+        timing.array as Float32Array,
+        color.array as Float32Array,
+        size.array as Float32Array,
+      );
+      // Only what changed goes to the GPU.
+      for (const attribute of flightPacks) {
+        attribute.clearUpdateRanges();
+        attribute.addUpdateRange(0, packed * attribute.itemSize);
+        attribute.needsUpdate = true;
+      }
+      flightMesh.count = packed;
+    }
+    // Its shaders compile and its dots go to the GPU now, off the main thread where the browser
+    // can, not on the first scroll. (Only what shows is prepared: shown for that one call.)
+    const visible = flightMesh.visible;
+    flightMesh.visible = true;
+    void renderer.compileAsync(flightMesh, camera, scene).catch(() => {});
+    flightMesh.visible = visible;
     if (revealFrom < 0) {
       revealFrom = uTime.value;
     }
@@ -1174,9 +1209,16 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
 
   resize(initialWidth, initialHeight);
 
-  // Probe one frame now: a WebGPU implementation that does not support what
-  // three.js asks for throws here, and the field starts again with WebGL2.
+  // Compile the shaders first, off the main thread where the browser can, one after the other, so
+  // starting the field never freezes the page; then probe one frame: a WebGPU implementation that
+  // does not support what three.js asks for throws here, and the field starts again with WebGL2.
   try {
+    await compileStep();
+    await yieldToPage();
+    await renderer.compileAsync(bonds, camera, scene);
+    await yieldToPage();
+    await renderer.compileAsync(ions, camera, scene);
+    await yieldToPage();
     step(1 / 60);
     renderer.render(scene, camera);
   } catch (error) {
@@ -1210,6 +1252,11 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     resize,
     dispose: release,
   };
+}
+
+/** Lets the page breathe between two long steps of the start-up. */
+function yieldToPage(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 function smooth(edge0: number, edge1: number, value: number): number {

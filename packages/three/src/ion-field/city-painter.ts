@@ -67,6 +67,8 @@ export const CITY_LOOK: ReadonlyArray<{ radius: number; alpha: number; color: "p
 
 /** The plan is brightest around the campus and dims with distance (kilometres): a drawing, not a map. */
 const FOCUS = { x: CAMPUS[0], y: CAMPUS[1], reach: 4.8, floor: 0.3 } as const;
+/** Room for each dot's index in the keys that sort the dots by order (createCityPainter). */
+const ORDER_KEY = 2 ** 21;
 /** Cells of the grid that finds the dots near the pointer, in kilometres. */
 const CELL = 0.25;
 /** How much the torch adds to the dots it lights, at its centre. */
@@ -168,10 +170,18 @@ export function createCityPainter(
   // Each dot's opacity, once and for all.
   const alpha = cityDotAlpha(dots);
 
-  // The dots in the order they light up.
-  const byOrder = Uint32Array.from({ length: count }, (_, index) => index).sort(
-    (a, b) => (order[a] ?? 0) - (order[b] ?? 0),
-  );
+  // The dots in the order they light up, ties in their own order: a native sort of (order, index)
+  // keys, a non-negative float's bits growing with it, packed exactly in a double.
+  const bits = new Uint32Array(order.buffer, order.byteOffset, count);
+  const keys = new Float64Array(count);
+  for (let index = 0; index < count; index += 1) {
+    keys[index] = (bits[index] ?? 0) * ORDER_KEY + index;
+  }
+  keys.sort();
+  const byOrder = new Uint32Array(count);
+  for (let index = 0; index < count; index += 1) {
+    byOrder[index] = (keys[index] ?? 0) % ORDER_KEY;
+  }
   const firstAfter = (value: number) => {
     let low = 0;
     let high = count;

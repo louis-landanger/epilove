@@ -173,11 +173,59 @@ export interface CityDots {
   readonly order: Float32Array;
 }
 
-/** Even-odd rule: is (x, y) inside the ring? */
-function insideRing(ring: Int32Array, x: number, y: number): boolean {
+/**
+ * The edges of a ring by rows of `step` metres (`rows` of them from
+ * `firstRow`): each row lists the edges whose span reaches into it, give or
+ * take a metre, the only ones the ray from a point of that row can cross.
+ */
+interface RingRows {
+  readonly firstRow: number;
+  /** Where each row's edges start in `edges`, and where the last ends (rows + 1 entries). */
+  readonly starts: Int32Array;
+  /** Edges, row by row: the index of each edge's end in the ring (its start is the point before). */
+  readonly edges: Int32Array;
+}
+
+function ringRows(ring: Int32Array, step: number, firstRow: number, rows: number): RingRows {
+  const count = ring.length / 2;
+  const rowOf = (value: number) => Math.min(rows - 1, Math.max(0, Math.floor(value / step) - firstRow));
+  const starts = new Int32Array(rows + 1);
+  for (let index = 0, previous = count - 1; index < count; previous = index, index += 1) {
+    const yi = ring[2 * index + 1] ?? 0;
+    const yj = ring[2 * previous + 1] ?? 0;
+    for (let row = rowOf(Math.min(yi, yj) - 1); row <= rowOf(Math.max(yi, yj) + 1); row += 1) {
+      starts[row + 1] = (starts[row + 1] ?? 0) + 1;
+    }
+  }
+  for (let row = 0; row < rows; row += 1) {
+    starts[row + 1] = (starts[row + 1] ?? 0) + (starts[row] ?? 0);
+  }
+  const edges = new Int32Array(starts[rows] ?? 0);
+  const filled = starts.slice(0, rows);
+  for (let index = 0, previous = count - 1; index < count; previous = index, index += 1) {
+    const yi = ring[2 * index + 1] ?? 0;
+    const yj = ring[2 * previous + 1] ?? 0;
+    for (let row = rowOf(Math.min(yi, yj) - 1); row <= rowOf(Math.max(yi, yj) + 1); row += 1) {
+      const slot = filled[row] ?? 0;
+      edges[slot] = index;
+      filled[row] = slot + 1;
+    }
+  }
+  return { firstRow, starts, edges };
+}
+
+/**
+ * Even-odd rule: is (x, y), in the row `row`, inside the ring? Only the edges
+ * of its row can cross the ray from it; the others leave the count as it is.
+ */
+function insideRing(ring: Int32Array, rows: RingRows, row: number, x: number, y: number): boolean {
   let inside = false;
   const count = ring.length / 2;
-  for (let index = 0, previous = count - 1; index < count; previous = index, index += 1) {
+  const { starts, edges } = rows;
+  const end = starts[row - rows.firstRow + 1] ?? 0;
+  for (let k = starts[row - rows.firstRow] ?? 0; k < end; k += 1) {
+    const index = edges[k] ?? 0;
+    const previous = index === 0 ? count - 1 : index - 1;
     const xi = ring[2 * index] ?? 0;
     const yi = ring[2 * index + 1] ?? 0;
     const xj = ring[2 * previous] ?? 0;
@@ -246,7 +294,21 @@ export function cityDots(
     }
   }
 
-  const taken = new Set<number>();
+  // The squares of the grid already holding a dot, over the extent of every area.
+  let firstColumn = Number.POSITIVE_INFINITY;
+  let lastColumn = Number.NEGATIVE_INFINITY;
+  let lowestRow = Number.POSITIVE_INFINITY;
+  let highestRow = Number.NEGATIVE_INFINITY;
+  for (const ring of plan.areas) {
+    for (let index = 0; index + 1 < ring.length; index += 2) {
+      firstColumn = Math.min(firstColumn, Math.floor((ring[index] ?? 0) / CITY_GREEN_STEP));
+      lastColumn = Math.max(lastColumn, Math.floor((ring[index] ?? 0) / CITY_GREEN_STEP));
+      lowestRow = Math.min(lowestRow, Math.floor((ring[index + 1] ?? 0) / CITY_GREEN_STEP));
+      highestRow = Math.max(highestRow, Math.floor((ring[index + 1] ?? 0) / CITY_GREEN_STEP));
+    }
+  }
+  const takenRows = Math.max(0, highestRow - lowestRow + 1);
+  const taken = new Uint8Array(Math.max(0, lastColumn - firstColumn + 1) * takenRows);
   for (const ring of plan.areas) {
     let left = Number.POSITIVE_INFINITY;
     let bottom = Number.POSITIVE_INFINITY;
@@ -258,14 +320,20 @@ export function cityDots(
       bottom = Math.min(bottom, ring[index + 1] ?? 0);
       top = Math.max(top, ring[index + 1] ?? 0);
     }
+    const firstRow = Math.floor(bottom / CITY_GREEN_STEP);
+    let rows = 0;
+    while ((firstRow + rows) * CITY_GREEN_STEP < top) {
+      rows += 1;
+    }
+    const edges = ringRows(ring, CITY_GREEN_STEP, firstRow, Math.max(1, rows));
     for (let column = Math.floor(left / CITY_GREEN_STEP); column * CITY_GREEN_STEP < right; column += 1) {
-      for (let row = Math.floor(bottom / CITY_GREEN_STEP); row * CITY_GREEN_STEP < top; row += 1) {
+      for (let row = firstRow; row * CITY_GREEN_STEP < top; row += 1) {
         // One dot per square of the grid, even where two areas overlap.
-        const key = (column + 32_768) * 65_536 + (row + 32_768);
+        const key = (column - firstColumn) * takenRows + (row - lowestRow);
         const x = (column + random()) * CITY_GREEN_STEP;
         const y = (row + random()) * CITY_GREEN_STEP;
-        if (!taken.has(key) && insideRing(ring, x, y)) {
-          taken.add(key);
+        if (taken[key] === 0 && insideRing(ring, edges, row, x, y)) {
+          taken[key] = 1;
           xs.push(x);
           ys.push(y);
           layers.push(CITY_LAYERS.green);

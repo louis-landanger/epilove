@@ -5,10 +5,12 @@ import {
   FLIGHT_DELAY,
   FLIGHT_JITTER,
   FLIGHT_LANDING,
+  FLIGHT_LIFT,
   FLIGHT_MERGE,
   FLIGHT_NUCLEUS,
   FLIGHT_ORBIT_SPIN,
   FLIGHT_ORBIT_WIDTH,
+  FLIGHT_PACK_STRIDE,
   FLIGHT_PATCH_STRIDE,
   FLIGHT_SCATTER,
   FLIGHT_SPREAD,
@@ -21,10 +23,12 @@ import {
   flightRandom,
   followFlight,
   gatherFlight,
+  FLIGHT_MERGE as MERGE,
   orbitArc,
   orbitArcPoint,
   orbitTheta,
   PAIR_FIELD_LINES,
+  packFlight,
   pairFieldPoint,
   pairGeometry,
   riverDistance,
@@ -704,6 +708,58 @@ describe("the plan's flight into the logo mark", () => {
       if ((particles.sizes[slot] ?? 0) >= 0.01) {
         expect(patches[slot * FLIGHT_PATCH_STRIDE + 3]).toBe(1);
       }
+    }
+  });
+
+  it("packs only the dots the hero shows, each with the numbers it flies by", () => {
+    const { landing } = fieldFor(2400, 300);
+    const radius = new Float32Array(plan.count).fill(1.2);
+    const route = new Float32Array(plan.count * FLIGHT_PACK_STRIDE);
+    const timing = new Float32Array(plan.count * FLIGHT_PACK_STRIDE);
+    const color = new Float32Array(plan.count * FLIGHT_PACK_STRIDE);
+    const size = new Float32Array(plan.count);
+    const packed = packFlight(plan.place, plan.look, radius, landing, flight(0), route, timing, color, size);
+    const shown = Array.from({ length: plan.count }, (_, index) => index).filter(
+      (index) => (landing[index * 2] ?? -1) >= 0,
+    );
+    expect(packed).toBe(shown.length);
+    expect(packed).toBeLessThan(plan.count);
+    const flown = { x: 0, y: 0, light: 0, plasma: 0 };
+    const there = { x: 0, y: 0, light: 0, plasma: 0 };
+    for (const [k, index] of shown.entries()) {
+      if (k % 97 !== 0) {
+        continue;
+      }
+      const slot = landing[index * 2] ?? -1;
+      expect(route[k * FLIGHT_PACK_STRIDE]).toBe(plan.place[index * 2]);
+      expect(route[k * FLIGHT_PACK_STRIDE + 2]).toBe(slot);
+      expect(route[k * FLIGHT_PACK_STRIDE + 3]).toBe(landing[index * 2 + 1]);
+      expect(size[k]).toBeCloseTo(1.2, 6);
+      // Flown with the packed numbers, as the shader does, it goes where flightPoint flies it, as lit.
+      const start = {
+        x: map.x + (plan.place[index * 2] ?? 0) * map.scale,
+        y: map.y + (plan.place[index * 2 + 1] ?? 0) * map.scale,
+      };
+      const target = towards(slot, { x: 0.9, y: 0.3 }, (landing[index * 2 + 1] ?? 0) > 0.5);
+      for (const progress of [0, 0.4, 0.7, 0.95]) {
+        flightPoint(start, index, target, flight(progress), flown);
+        const leave = timing[k * FLIGHT_PACK_STRIDE] ?? 0;
+        const land = timing[k * FLIGHT_PACK_STRIDE + 1] ?? 1;
+        const t = Math.min(1, Math.max(0, (progress - leave) / (land - leave)));
+        const p = t * t * t * (t * (t * 6 - 15) + 10);
+        const aside = timing[k * FLIGHT_PACK_STRIDE + 2] ?? 0;
+        const lift = (timing[k * FLIGHT_PACK_STRIDE + 3] ?? 0) * mark.radius;
+        const cx = (start.x + target.x) / 2 - (target.y - start.y) * aside;
+        const cy = (start.y + target.y) / 2 + (target.x - start.x) * aside + lift;
+        there.x = (1 - p) ** 2 * start.x + 2 * (1 - p) * p * cx + p * p * target.x;
+        there.y = (1 - p) ** 2 * start.y + 2 * (1 - p) * p * cy + p * p * target.y;
+        const fused = Math.min(1, Math.max(0, (progress - (land - MERGE)) / MERGE));
+        there.light = (color[k * FLIGHT_PACK_STRIDE + 3] ?? 0) * (1 - fused * fused * (3 - 2 * fused));
+        expect(there.x).toBeCloseTo(flown.x, 5);
+        expect(there.y).toBeCloseTo(flown.y, 5);
+        expect(there.light).toBeCloseTo(flown.light * (plan.look[index * 4 + 3] ?? 0), 5);
+      }
+      expect(FLIGHT_LIFT).toBeGreaterThan(0);
     }
   });
 

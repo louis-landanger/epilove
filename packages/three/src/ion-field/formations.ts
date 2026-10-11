@@ -199,6 +199,9 @@ const ATOM_REACH_Y = 0.7;
 const ATOM_APART = 1.15;
 
 const TAU = Math.PI * 2;
+/** The logo's tilt, its cosine and sine. */
+const TILT_COS = Math.cos(MARK.tilt);
+const TILT_SIN = Math.sin(MARK.tilt);
 const fract = (value: number) => value - Math.floor(value);
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 const smoothstep = (edge0: number, edge1: number, value: number) => {
@@ -546,6 +549,7 @@ function riversContribution(
   particles: FormationParticles,
   index: number,
   rivers: RiversFormation,
+  map: { readonly scale: number; readonly x: number; readonly y: number },
   previous: RiversFormation | null,
   time: number,
   into: Contribution,
@@ -565,7 +569,6 @@ function riversContribution(
   }
   offset += Math.sin(time * 1.3 + (particles.phases[index] ?? 0) * TAU) * 0.012;
   const { box } = rivers;
-  const map = riverMapTransform(box);
   into.x = map.x + (onRiver.x + offset * onRiver.nx) * map.scale;
   into.y = map.y + (onRiver.y + offset * onRiver.ny) * map.scale;
   into.pull = 1;
@@ -989,8 +992,10 @@ export function writeFormations(
   const kept = particles.flight;
   const keptCount = kept ? Math.min(kept.count, particles.count) : 0;
 
-  // Where the two atoms stand this frame: the same for every particle.
+  // Where the two atoms stand this frame, and where the map lies: the same for every particle.
   const geometry = pair ? pairGeometry(pair, time) : null;
+  const riverMap = rivers ? riverMapTransform(rivers.box) : null;
+  const flightMap = flight ? riverMapTransform(flight.box) : null;
 
   for (let index = 0; index < particles.count; index += 1) {
     sum.x = 0;
@@ -1017,7 +1022,17 @@ export function writeFormations(
       const spread = fusion * smoothstep(0, FLIGHT_SPREAD, time - (landed[index] ?? time));
       if (
         flight &&
-        landingContribution(particles, index, flight, previous?.flight ?? null, time, spread, contribution)
+        flightMap &&
+        landingContribution(
+          particles,
+          index,
+          flight,
+          flightMap,
+          previous?.flight ?? null,
+          time,
+          spread,
+          contribution,
+        )
       ) {
         accumulate(flight.presence);
       }
@@ -1041,7 +1056,8 @@ export function writeFormations(
     if (
       !planned &&
       rivers &&
-      riversContribution(particles, index, rivers, previous?.rivers ?? null, time, contribution)
+      riverMap &&
+      riversContribution(particles, index, rivers, riverMap, previous?.rivers ?? null, time, contribution)
     ) {
       accumulate(rivers.weight);
     }
@@ -1336,9 +1352,11 @@ export function gatherFlight(
   if (!kept || capacity === 0) {
     return 0;
   }
-  // Each dot's light as the hero shows it, and the extent of what it shows.
+  // Each dot's light as the hero shows it, and the extent of what it shows: the dots it shows, in order.
   const map = riverMapTransform(flight.box);
   const light = new Float32Array(count);
+  const shown = new Int32Array(count);
+  let shownCount = 0;
   let minX = Number.POSITIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
@@ -1350,6 +1368,8 @@ export function gatherFlight(
       shownBy(flight.hero, map.x + x * map.scale, map.y + y * map.scale) * (look[index * 4 + 3] ?? 0);
     light[index] = seen;
     if (seen > 0) {
+      shown[shownCount] = index;
+      shownCount += 1;
       minX = Math.min(minX, x);
       maxX = Math.max(maxX, x);
       minY = Math.min(minY, y);
@@ -1359,19 +1379,39 @@ export function gatherFlight(
   if (minX > maxX) {
     return 0;
   }
-  // The smallest square patches that fit: there are about as many as the area over their side squared.
-  const cells = new Map<number, number>();
-  const cellOf = (index: number, side: number) =>
-    Math.floor(((place[index * 2] ?? 0) - minX) / side) * 1_048_576 +
-    Math.floor(((place[index * 2 + 1] ?? 0) - minY) / side);
+  // Where each lies from the corner of what the hero shows.
+  const across = new Float64Array(shownCount);
+  const up = new Float64Array(shownCount);
+  for (let k = 0; k < shownCount; k += 1) {
+    const index = shown[k] ?? 0;
+    across[k] = (place[index * 2] ?? 0) - minX;
+    up[k] = (place[index * 2 + 1] ?? 0) - minY;
+  }
+  // The smallest square patches that fit: there are about as many as the area over their side
+  // squared. A grid of the patches each side tries, in order of their places (column by column).
+  let grid = new Int32Array(0);
+  let columns = 0;
+  let rows = 0;
+  let stamp = 0;
+  const cellOf = (k: number, side: number) =>
+    Math.floor((across[k] ?? 0) / side) * rows + Math.floor((up[k] ?? 0) / side);
   const gather = (side: number) => {
-    cells.clear();
-    for (let index = 0; index < count; index += 1) {
-      if ((light[index] ?? 0) > 0) {
-        cells.set(cellOf(index, side), 0);
+    columns = Math.floor((maxX - minX) / side) + 1;
+    rows = Math.floor((maxY - minY) / side) + 1;
+    if (grid.length < columns * rows) {
+      grid = new Int32Array(columns * rows);
+      stamp = 0;
+    }
+    stamp += 1;
+    let found = 0;
+    for (let k = 0; k < shownCount; k += 1) {
+      const cell = cellOf(k, side);
+      if (grid[cell] !== stamp) {
+        grid[cell] = stamp;
+        found += 1;
       }
     }
-    return cells.size;
+    return found;
   };
   let side = Math.max(1e-3, Math.sqrt(((maxX - minX) * (maxY - minY)) / capacity));
   side = Math.max(1e-3, side * Math.sqrt(gather(side) / capacity));
@@ -1381,20 +1421,22 @@ export function gatherFlight(
     patches = gather(side);
   }
   // In order of their places; each lands from its dots' centre of light.
-  const keys = [...cells.keys()].sort((a, b) => a - b);
-  for (const [slot, key] of keys.entries()) {
-    cells.set(key, slot);
+  const slots = new Int32Array(columns * rows);
+  for (let cell = 0, slot = 0; cell < columns * rows; cell += 1) {
+    if (grid[cell] === stamp) {
+      slots[cell] = slot;
+      slot += 1;
+    }
   }
   const sums = new Float64Array(patches * 3);
-  for (let index = 0; index < count; index += 1) {
+  for (let k = 0; k < shownCount; k += 1) {
+    const index = shown[k] ?? 0;
     const seen = light[index] ?? 0;
-    if (seen > 0) {
-      const slot = cells.get(cellOf(index, side)) ?? 0;
-      dots[index * 2] = slot;
-      sums[slot * 3] = (sums[slot * 3] ?? 0) + seen * (place[index * 2] ?? 0);
-      sums[slot * 3 + 1] = (sums[slot * 3 + 1] ?? 0) + seen * (place[index * 2 + 1] ?? 0);
-      sums[slot * 3 + 2] = (sums[slot * 3 + 2] ?? 0) + seen;
-    }
+    const slot = slots[cellOf(k, side)] ?? 0;
+    dots[index * 2] = slot;
+    sums[slot * 3] = (sums[slot * 3] ?? 0) + seen * (place[index * 2] ?? 0);
+    sums[slot * 3 + 1] = (sums[slot * 3 + 1] ?? 0) + seen * (place[index * 2 + 1] ?? 0);
+    sums[slot * 3 + 2] = (sums[slot * 3 + 2] ?? 0) + seen;
   }
   const lights = Array.from({ length: patches }, (_, slot) => sums[slot * 3 + 2] ?? 0).sort((a, b) => a - b);
   const full = Math.max(1e-9, FLIGHT_PATCH_LIGHT * (lights[patches >> 1] ?? 0));
@@ -1417,6 +1459,66 @@ export function gatherFlight(
   return side;
 }
 
+/** Floats per dot in the arrays packFlight fills (but `size`, one). */
+export const FLIGHT_PACK_STRIDE = 4;
+
+/**
+ * Packs the dots the hero shows for the ion field's shader (scene.ts), in
+ * their order, from the plan (`place`, `look` and `radius`, as cityFlight
+ * hands them) and how gatherFlight gathered them (`landing`): for each, in
+ * `route`, where it starts (x and y, kilometres on the map), the particle it
+ * lands as and 1 if that one lands in the nucleus; in `timing`, when it
+ * leaves and lands (in the flight's progress) and how its curve bows (aside,
+ * and up in radii of the mark); in `color`, its colour and its light as the
+ * hero shows it; in `size`, its radius. The others, unseen, are left out.
+ * Returns how many it packed. The shader flies each by these numbers as
+ * flightPoint does, with nothing to draw for the dots no one sees.
+ */
+export function packFlight(
+  place: Float32Array,
+  look: Float32Array,
+  radius: Float32Array,
+  landing: Float32Array,
+  flight: FlightFormation,
+  route: Float32Array,
+  timing: Float32Array,
+  color: Float32Array,
+  size: Float32Array,
+): number {
+  const map = riverMapTransform(flight.box);
+  const { hero } = flight;
+  const count = Math.floor(place.length / 2);
+  let packed = 0;
+  for (let index = 0; index < count; index += 1) {
+    const slot = landing[index * 2] ?? -1;
+    if (slot < 0) {
+      continue;
+    }
+    const own = (channel: number) => flightRandom(index, channel);
+    const x = place[index * 2] ?? 0;
+    const y = place[index * 2 + 1] ?? 0;
+    const startX = map.x + x * map.scale;
+    const startY = map.y + y * map.scale;
+    const fromFoot = Math.min(1, Math.max(0, (startY - (hero.top - hero.height)) / hero.height));
+    const at = packed * FLIGHT_PACK_STRIDE;
+    route[at] = x;
+    route[at + 1] = y;
+    route[at + 2] = slot;
+    route[at + 3] = landing[index * 2 + 1] ?? 0;
+    timing[at] = Math.max(0, FLIGHT_DELAY + FLIGHT_RISE * fromFoot + FLIGHT_JITTER * (own(0) - 0.5));
+    timing[at + 1] = flightLand(slot);
+    timing[at + 2] = (own(5) - 0.5) * FLIGHT_BOW;
+    timing[at + 3] = FLIGHT_LIFT * (0.5 + own(6));
+    color[at] = look[index * 4] ?? 0;
+    color[at + 1] = look[index * 4 + 1] ?? 0;
+    color[at + 2] = look[index * 4 + 2] ?? 0;
+    color[at + 3] = (look[index * 4 + 3] ?? 0) * shownBy(hero, startX, startY);
+    size[packed] = radius[index] ?? 0;
+    packed += 1;
+  }
+  return packed;
+}
+
 /**
  * Where the particle `index` kept for the plan stands in the mark for its
  * patch of streets, and how it shines there: on the side of the mark the
@@ -1431,6 +1533,7 @@ function landingContribution(
   particles: FormationParticles,
   index: number,
   flight: FlightFormation,
+  map: { readonly scale: number; readonly x: number; readonly y: number },
   previous: FlightFormation | null,
   time: number,
   spread: number,
@@ -1443,13 +1546,12 @@ function landingContribution(
   const patch = (channel: number) => flightRandom(index, channel);
   const { mark } = flight;
   const radius = Math.max(mark.radius, 1e-6);
-  const map = riverMapTransform(flight.box);
   const nucleus = (entries[index * FLIGHT_PATCH_STRIDE + 3] ?? 0) > 0.5;
   // The side of the mark the patch comes from, seen in the orbit's plane, give or take.
   const dx = map.x + (entries[index * FLIGHT_PATCH_STRIDE] ?? 0) * map.scale - mark.x;
   const dy = map.y + (entries[index * FLIGHT_PATCH_STRIDE + 1] ?? 0) * map.scale - mark.y;
-  const u = dx * Math.cos(MARK.tilt) + dy * Math.sin(MARK.tilt);
-  const v = (dy * Math.cos(MARK.tilt) - dx * Math.sin(MARK.tilt)) / MARK.orbitMinor;
+  const u = dx * TILT_COS + dy * TILT_SIN;
+  const v = (dy * TILT_COS - dx * TILT_SIN) / MARK.orbitMinor;
   const side = Math.hypot(u, v) > 1e-9 ? Math.atan2(v, u) : 0;
   const scatter = (patch(2) - 0.5) * 2 * FLIGHT_SCATTER;
   // Once landed, off its own way round the mark: a turn at most, either way.
@@ -1469,12 +1571,11 @@ function landingContribution(
     return true;
   }
   // The orbit's dust: a fine thread, its near half brighter, turning.
-  const s = orbitArc(side + scatter) + drift + time * FLIGHT_ORBIT_SPIN;
-  orbitArcPoint(mark, radius * (1 + (patch(4) - 0.5) * FLIGHT_ORBIT_WIDTH), MARK.tilt, s, point);
+  const theta = orbitTheta(orbitArc(side + scatter) + drift + time * FLIGHT_ORBIT_SPIN);
+  orbitPoint(mark, radius * (1 + (patch(4) - 0.5) * FLIGHT_ORBIT_WIDTH), MARK.tilt, theta, point);
   into.x = point.x;
   into.y = point.y;
-  into.glow =
-    (0.42 + 0.3 * orbitNear(orbitTheta(s))) * Math.min(1, Math.max(0.4, radius / PAIR_LIGHT_RADIUS));
+  into.glow = (0.42 + 0.3 * orbitNear(theta)) * Math.min(1, Math.max(0.4, radius / PAIR_LIGHT_RADIUS));
   into.plasma = 0;
   into.paper = 0.85;
   return true;

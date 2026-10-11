@@ -2562,8 +2562,9 @@
   mix-blend-mode: plus-lighter;
 }
 
-/* Scrolling, the ion field takes the plan's dots over and flies them into the logo mark. */
-:root:has([data-ion-field][data-flight="on"]) .fleuves-city {
+/* Scrolling, the ion field takes the plan's dots over and flies them into the logo mark (an
+   attribute on the plan itself: flipping it restyles the plan alone, not the page). */
+.fleuves-city[data-flying] {
   visibility: hidden;
 }
 

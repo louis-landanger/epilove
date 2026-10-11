@@ -8,7 +8,7 @@ import {
   SCHOOL_KEYS,
 } from "@atomes/three";
 import { useEffect, useRef, useState } from "react";
-import { onCityFlight } from "../fleuves/city-flight";
+import { onCityFlight, setCityFlying } from "../fleuves/city-flight";
 import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
 import { type HeroCard, type JourneyMeasures, journey } from "./journey";
 
@@ -185,9 +185,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           // And particles for the plan's patches of streets to land as in the logo.
           flight: rivers,
           // While the field flies the plan's dots, the plan's own canvas steps aside.
-          onFlightChange: (flying) => {
-            container.dataset.flight = flying ? "on" : "off";
-          },
+          onFlightChange: setCityFlying,
           adaptiveQuality: !forced,
           beforeFrame: () => followPage(),
           // The particles start in the shapes on screen (a reload further down the page).
@@ -252,7 +250,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         cleanups.push(
           onCityFlight((flight) => field.setFlight(flight)),
           () => {
-            delete container.dataset.flight;
+            setCityFlying(false);
           },
         );
 
