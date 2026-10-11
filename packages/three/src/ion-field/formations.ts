@@ -1325,6 +1325,26 @@ function shownBy(hero: FlightFormation["hero"], x: number, y: number): number {
 }
 
 /**
+ * How many of the plan's dots (or patches) gatherFlightSteps and
+ * packFlightSteps go through between two pauses: few enough for the ion
+ * field to spread their work over frames, a few milliseconds a frame.
+ */
+export const FLIGHT_GATHER_STEP = 512;
+
+/** Whether a loop of gatherFlightSteps or packFlightSteps pauses before its `index`-th turn. */
+const pausesAt = (index: number) => index > 0 && index % FLIGHT_GATHER_STEP === 0;
+
+/** Runs steps (gatherFlightSteps, packFlightSteps) to their end, and returns what they return. */
+function runSteps<T>(steps: Generator<void, T, void>): T {
+  for (;;) {
+    const step = steps.next();
+    if (step.done) {
+      return step.value;
+    }
+  }
+}
+
+/**
  * Gathers the dots of the plan the hero shows (`place`, kilometres on the
  * map, and `look`, their colour and opacity as painted, four floats each)
  * into square patches of streets, as small as the particles the field keeps
@@ -1341,10 +1361,29 @@ export function gatherFlight(
   particles: FormationParticles,
   dots: Float32Array,
 ): number {
+  return runSteps(gatherFlightSteps(place, look, flight, particles, dots));
+}
+
+/**
+ * gatherFlight a step at a time: the same work, in the same order, to the
+ * same result, pausing (`yield`) every FLIGHT_GATHER_STEP dots or patches, so
+ * that the ion field spreads it over frames rather than stall one (scene.ts).
+ * Done, it returns what gatherFlight returns.
+ */
+export function* gatherFlightSteps(
+  place: Float32Array,
+  look: Float32Array,
+  flight: FlightFormation,
+  particles: FormationParticles,
+  dots: Float32Array,
+): Generator<void, number, void> {
   const kept = particles.flight;
   const capacity = Math.min(kept?.count ?? 0, particles.count);
   const count = Math.floor(place.length / 2);
   for (let index = 0; index < count; index += 1) {
+    if (pausesAt(index)) {
+      yield;
+    }
     dots[index * 2] = -1;
     dots[index * 2 + 1] = 0;
   }
@@ -1362,6 +1401,9 @@ export function gatherFlight(
   let maxX = Number.NEGATIVE_INFINITY;
   let maxY = Number.NEGATIVE_INFINITY;
   for (let index = 0; index < count; index += 1) {
+    if (pausesAt(index)) {
+      yield;
+    }
     const x = place[index * 2] ?? 0;
     const y = place[index * 2 + 1] ?? 0;
     const seen =
@@ -1383,6 +1425,9 @@ export function gatherFlight(
   const across = new Float64Array(shownCount);
   const up = new Float64Array(shownCount);
   for (let k = 0; k < shownCount; k += 1) {
+    if (pausesAt(k)) {
+      yield;
+    }
     const index = shown[k] ?? 0;
     across[k] = (place[index * 2] ?? 0) - minX;
     up[k] = (place[index * 2 + 1] ?? 0) - minY;
@@ -1395,7 +1440,7 @@ export function gatherFlight(
   let stamp = 0;
   const cellOf = (k: number, side: number) =>
     Math.floor((across[k] ?? 0) / side) * rows + Math.floor((up[k] ?? 0) / side);
-  const gather = (side: number) => {
+  function* gather(side: number): Generator<void, number, void> {
     columns = Math.floor((maxX - minX) / side) + 1;
     rows = Math.floor((maxY - minY) / side) + 1;
     if (grid.length < columns * rows) {
@@ -1405,6 +1450,9 @@ export function gatherFlight(
     stamp += 1;
     let found = 0;
     for (let k = 0; k < shownCount; k += 1) {
+      if (pausesAt(k)) {
+        yield;
+      }
       const cell = cellOf(k, side);
       if (grid[cell] !== stamp) {
         grid[cell] = stamp;
@@ -1412,17 +1460,20 @@ export function gatherFlight(
       }
     }
     return found;
-  };
+  }
   let side = Math.max(1e-3, Math.sqrt(((maxX - minX) * (maxY - minY)) / capacity));
-  side = Math.max(1e-3, side * Math.sqrt(gather(side) / capacity));
-  let patches = gather(side);
+  side = Math.max(1e-3, side * Math.sqrt((yield* gather(side)) / capacity));
+  let patches = yield* gather(side);
   while (patches > capacity) {
     side *= Math.max(1.02, Math.sqrt(patches / capacity));
-    patches = gather(side);
+    patches = yield* gather(side);
   }
   // In order of their places; each lands from its dots' centre of light.
   const slots = new Int32Array(columns * rows);
   for (let cell = 0, slot = 0; cell < columns * rows; cell += 1) {
+    if (pausesAt(cell)) {
+      yield;
+    }
     if (grid[cell] === stamp) {
       slots[cell] = slot;
       slot += 1;
@@ -1430,6 +1481,9 @@ export function gatherFlight(
   }
   const sums = new Float64Array(patches * 3);
   for (let k = 0; k < shownCount; k += 1) {
+    if (pausesAt(k)) {
+      yield;
+    }
     const index = shown[k] ?? 0;
     const seen = light[index] ?? 0;
     const slot = slots[cellOf(k, side)] ?? 0;
@@ -1442,6 +1496,9 @@ export function gatherFlight(
   const full = Math.max(1e-9, FLIGHT_PATCH_LIGHT * (lights[patches >> 1] ?? 0));
   const { patches: entries } = kept;
   for (let slot = 0; slot < capacity; slot += 1) {
+    if (pausesAt(slot)) {
+      yield;
+    }
     const total = slot < patches ? (sums[slot * 3 + 2] ?? 0) : 0;
     entries[slot * FLIGHT_PATCH_STRIDE] = total > 0 ? (sums[slot * 3] ?? 0) / total : 0;
     entries[slot * FLIGHT_PATCH_STRIDE + 1] = total > 0 ? (sums[slot * 3 + 1] ?? 0) / total : 0;
@@ -1451,6 +1508,9 @@ export function gatherFlight(
       (particles.sizes[slot] ?? 0) >= PAIR_HEAVY || flightRandom(slot, 3) < FLIGHT_NUCLEUS ? 1 : 0;
   }
   for (let index = 0; index < count; index += 1) {
+    if (pausesAt(index)) {
+      yield;
+    }
     const slot = dots[index * 2] ?? -1;
     if (slot >= 0) {
       dots[index * 2 + 1] = entries[slot * FLIGHT_PATCH_STRIDE + 3] ?? 0;
@@ -1485,11 +1545,32 @@ export function packFlight(
   color: Float32Array,
   size: Float32Array,
 ): number {
+  return runSteps(packFlightSteps(place, look, radius, landing, flight, route, timing, color, size));
+}
+
+/**
+ * packFlight a step at a time, as gatherFlightSteps gathers: the same numbers,
+ * pausing every FLIGHT_GATHER_STEP dots. Done, it returns how many it packed.
+ */
+export function* packFlightSteps(
+  place: Float32Array,
+  look: Float32Array,
+  radius: Float32Array,
+  landing: Float32Array,
+  flight: FlightFormation,
+  route: Float32Array,
+  timing: Float32Array,
+  color: Float32Array,
+  size: Float32Array,
+): Generator<void, number, void> {
   const map = riverMapTransform(flight.box);
   const { hero } = flight;
   const count = Math.floor(place.length / 2);
   let packed = 0;
   for (let index = 0; index < count; index += 1) {
+    if (pausesAt(index)) {
+      yield;
+    }
     const slot = landing[index * 2] ?? -1;
     if (slot < 0) {
       continue;

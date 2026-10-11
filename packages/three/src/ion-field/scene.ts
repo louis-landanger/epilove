@@ -66,8 +66,8 @@ import {
   type Formations,
   followFlight,
   formationStrength,
-  gatherFlight,
-  packFlight,
+  gatherFlightSteps,
+  packFlightSteps,
   riverMapTransform,
   toWorldFormations,
   type ViewportFormations,
@@ -184,6 +184,8 @@ const FORMATION_MAX_SPEED = 5;
 const FLIGHT_REVEAL = 1.2;
 /** Width of the texture through which the plan's dots find their particles with WebGL2. */
 const FLIGHT_TEXTURE_WIDTH = 1024;
+/** Milliseconds at a time the field gathers the plan's dots, between the page's frames (gatherFlightSteps). */
+const FLIGHT_GATHER_SLICE = 4;
 
 const SCHOOL_RGB: readonly LinearRgb[] = SCHOOL_KEYS.map((key) => tokenToLinearSrgb(schoolColors[key]));
 const INK = tokenToLinearSrgb(colorTokens.ink);
@@ -291,6 +293,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     landed: new Float32Array(kept).fill(-1),
   };
   const particles: FormationParticles = kept > 0 ? { ...layout, flight: planned } : layout;
+  /** The patches a gathering of the plan fills, which the particles kept for it take up once complete. */
+  const gatheredPatches = new Float32Array(planned.patches.length);
   const data = staticData(layout);
 
   const scene = new Scene();
@@ -825,10 +829,14 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   let flightLanding: Float32Array | null = null;
   /** The dots the hero shows, packed for the shader (formations.ts, packFlight): route, timing, colour, size. */
   let flightPacks: readonly InstancedBufferAttribute[] = [];
-  /** The hero, in kilometres on the map, the dots were gathered for. */
+  /** The hero, in kilometres on the map, the dots were gathered for (null until they are). */
   let gatheredFor: readonly number[] | null = null;
+  /** The gathering under way, between the page's frames: the hero it gathers for, and how to abandon it. */
+  let gathering: { readonly hero: readonly number[]; readonly abandon: () => void } | null = null;
   let revealFrom = -1;
   const setFlight = (flight: CityFlight | null) => {
+    gathering?.abandon();
+    gathering = null;
     if (flightMesh) {
       scene.remove(flightMesh);
       flightMaterial?.dispose();
@@ -940,10 +948,15 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   /**
    * Gathers the dots the hero shows into patches of streets, one for each particle kept for the
    * plan, and packs them for the shader, once it has them and again whenever the hero moves on the
-   * map (a resize).
+   * map (a resize): between the page's frames, a few milliseconds at a time, so that lighting the
+   * plan never stalls the rivers. The particles and the shader take it up once complete, and the
+   * plan flies from then on (until then, the page paints it).
    */
   const gather = (flight: FlightFormation) => {
-    if (!flightDots || !flightLanding || !flightMesh) {
+    const dots = flightDots;
+    const landing = flightLanding;
+    const [route, timing, color, size] = flightPacks;
+    if (!dots || !landing || !flightMesh || !route || !timing || !color || !size) {
       return;
     }
     const map = riverMapTransform(flight.box);
@@ -953,43 +966,53 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       (flight.hero.top - map.y) / map.scale,
       flight.hero.height / map.scale,
     ];
-    const same = (value: number, index: number) =>
-      Math.abs(value - (gatheredFor?.[index] ?? Number.NaN)) < 0.02;
-    if (gatheredFor && hero.every(same)) {
+    const near = (to: readonly number[] | null) =>
+      hero.every((value, index) => Math.abs(value - (to?.[index] ?? Number.NaN)) < 0.02);
+    if (gathering ? near(gathering.hero) : near(gatheredFor)) {
       return;
     }
-    gatheredFor = hero;
-    gatherFlight(flightDots.place, flightDots.look, flight, particles, flightLanding);
-    const [route, timing, color, size] = flightPacks;
-    if (route && timing && color && size) {
-      const packed = packFlight(
-        flightDots.place,
-        flightDots.look,
-        flightDots.radius,
-        flightLanding,
+    gathering?.abandon();
+    const into = { ...particles, flight: { ...planned, patches: gatheredPatches } };
+    const steps = (function* (): Generator<void, number, void> {
+      yield* gatherFlightSteps(dots.place, dots.look, flight, into, landing);
+      return yield* packFlightSteps(
+        dots.place,
+        dots.look,
+        dots.radius,
+        landing,
         flight,
         route.array as Float32Array,
         timing.array as Float32Array,
         color.array as Float32Array,
         size.array as Float32Array,
       );
+    })();
+    const complete = (packed: number) => {
+      gathering = null;
+      const mesh = flightMesh;
+      if (!mesh) {
+        return;
+      }
+      planned.patches.set(gatheredPatches);
       // Only what changed goes to the GPU.
       for (const attribute of flightPacks) {
         attribute.clearUpdateRanges();
         attribute.addUpdateRange(0, packed * attribute.itemSize);
         attribute.needsUpdate = true;
       }
-      flightMesh.count = packed;
-    }
-    // Its shaders compile and its dots go to the GPU now, off the main thread where the browser
-    // can, not on the first scroll. (Only what shows is prepared: shown for that one call.)
-    const visible = flightMesh.visible;
-    flightMesh.visible = true;
-    void renderer.compileAsync(flightMesh, camera, scene).catch(() => {});
-    flightMesh.visible = visible;
-    if (revealFrom < 0) {
-      revealFrom = uTime.value;
-    }
+      mesh.count = packed;
+      gatheredFor = hero;
+      // Its shaders compile and its dots go to the GPU now, off the main thread where the browser
+      // can, not on the first scroll. (Only what shows is prepared: shown for that one call.)
+      const visible = mesh.visible;
+      mesh.visible = true;
+      void renderer.compileAsync(mesh, camera, scene).catch(() => {});
+      mesh.visible = visible;
+      if (revealFrom < 0) {
+        revealFrom = uTime.value;
+      }
+    };
+    gathering = { hero, abandon: runInSlices(steps, FLIGHT_GATHER_SLICE, complete, fail) };
   };
 
   /** The flight as it glides after the scroll; `following` false starts it where the scroll is. */
@@ -1018,8 +1041,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       following = false;
     }
     planned.reveal = revealFrom < 0 ? 0 : Math.min(1, (uTime.value - revealFrom) / FLIGHT_REVEAL);
-    // The page stops painting the plan as soon as the field draws it, in the same frame.
-    const nowFlying = flightMesh !== null && gliding !== null && gliding.progress > FLIGHT_START;
+    // The page stops painting the plan as soon as the field draws it, in the same frame (once gathered).
+    const nowFlying =
+      flightMesh !== null && gatheredFor !== null && gliding !== null && gliding.progress > FLIGHT_START;
     if (nowFlying !== flying) {
       flying = nowFlying;
       options.onFlightChange?.(flying);
@@ -1127,9 +1151,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       step(delta);
       renderer.render(scene, camera);
     } catch (error) {
-      setRunning(false);
-      broken = true;
-      options.onError?.(error);
+      fail(error);
       return;
     }
 
@@ -1187,8 +1209,17 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     void renderer.setAnimationLoop(running ? frame : null);
   };
 
+  /** Something went wrong (a frame, gathering the plan): stop, and let the caller fall back. */
+  function fail(error: unknown) {
+    setRunning(false);
+    broken = true;
+    options.onError?.(error);
+  }
+
   const release = () => {
     setRunning(false);
+    gathering?.abandon();
+    gathering = null;
     quad.dispose();
     ionMaterial.dispose();
     bondMaterial.dispose();
@@ -1257,6 +1288,45 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
 /** Lets the page breathe between two long steps of the start-up. */
 function yieldToPage(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * Runs `steps` between the page's frames, `budget` milliseconds at a time (a step at least), then
+ * calls `done` with what they return (`failed` if a step throws). Returns a function that abandons
+ * them.
+ */
+function runInSlices<T>(
+  steps: Generator<void, T, void>,
+  budget: number,
+  done: (value: T) => void,
+  failed: (error: unknown) => void,
+): () => void {
+  let abandoned = false;
+  const slice = () => {
+    if (abandoned) {
+      return;
+    }
+    try {
+      const until = performance.now() + budget;
+      let step = steps.next();
+      while (!step.done && performance.now() < until) {
+        step = steps.next();
+      }
+      if (step.done) {
+        done(step.value);
+        return;
+      }
+    } catch (error) {
+      failed(error);
+      return;
+    }
+    timer = setTimeout(slice, 0);
+  };
+  let timer = setTimeout(slice, 0);
+  return () => {
+    abandoned = true;
+    clearTimeout(timer);
+  };
 }
 
 function smooth(edge0: number, edge1: number, value: number): number {

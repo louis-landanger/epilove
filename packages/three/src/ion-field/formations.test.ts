@@ -3,6 +3,7 @@ import {
   contourLength,
   contourPoint,
   FLIGHT_DELAY,
+  FLIGHT_GATHER_STEP,
   FLIGHT_JITTER,
   FLIGHT_LANDING,
   FLIGHT_LIFT,
@@ -23,12 +24,14 @@ import {
   flightRandom,
   followFlight,
   gatherFlight,
+  gatherFlightSteps,
   FLIGHT_MERGE as MERGE,
   orbitArc,
   orbitArcPoint,
   orbitTheta,
   PAIR_FIELD_LINES,
   packFlight,
+  packFlightSteps,
   pairFieldPoint,
   pairGeometry,
   riverDistance,
@@ -770,6 +773,89 @@ describe("the plan's flight into the logo mark", () => {
       }
       expect(FLIGHT_LIFT).toBeGreaterThan(0);
     }
+  });
+
+  it("gathers and packs the plan a step at a time, to the same numbers, for the field to spread over frames", () => {
+    const whole = fieldFor(2400, 300);
+    const radius = new Float32Array(plan.count).fill(1.2);
+    const packs = () =>
+      [0, 0, 0, 0].map((_, k) => new Float32Array(plan.count * (k < 3 ? FLIGHT_PACK_STRIDE : 1)));
+    const [route, timing, color, size] = packs() as [Float32Array, Float32Array, Float32Array, Float32Array];
+    const packed = packFlight(
+      plan.place,
+      plan.look,
+      radius,
+      whole.landing,
+      flight(0),
+      route,
+      timing,
+      color,
+      size,
+    );
+    // Step by step, other work between the steps…
+    const particles = {
+      ...createIonFieldLayout(2400),
+      flight: {
+        count: 300,
+        patches: new Float32Array(300 * FLIGHT_PATCH_STRIDE),
+        reveal: 1,
+        landed: new Float32Array(300).fill(-1),
+      },
+    };
+    const landing = new Float32Array(plan.count * 2);
+    const [stepRoute, stepTiming, stepColor, stepSize] = packs() as [
+      Float32Array,
+      Float32Array,
+      Float32Array,
+      Float32Array,
+    ];
+    let pauses = 0;
+    const run = <T>(steps: Generator<void, T, void>): T => {
+      for (;;) {
+        const step = steps.next();
+        if (step.done) {
+          return step.value;
+        }
+        pauses += 1;
+        new Float32Array(64).fill(pauses);
+      }
+    };
+    const side = run(gatherFlightSteps(plan.place, plan.look, flight(0), particles, landing));
+    const gatherPauses = pauses;
+    const stepPacked = run(
+      packFlightSteps(
+        plan.place,
+        plan.look,
+        radius,
+        landing,
+        flight(0),
+        stepRoute,
+        stepTiming,
+        stepColor,
+        stepSize,
+      ),
+    );
+    // …the same numbers, bit for bit (the first float that differs: none)…
+    const differsAt = (a: Float32Array, b: Float32Array) => {
+      const bitsA = new Uint32Array(a.buffer, a.byteOffset, a.length);
+      const bitsB = new Uint32Array(b.buffer, b.byteOffset, b.length);
+      return a.length !== b.length ? 0 : bitsA.findIndex((bits, index) => bits !== bitsB[index]);
+    };
+    expect(side).toBe(whole.side);
+    expect(differsAt(landing, whole.landing)).toBe(-1);
+    expect(differsAt(particles.flight.patches, whole.particles.flight.patches)).toBe(-1);
+    expect(stepPacked).toBe(packed);
+    expect(
+      [
+        [stepRoute, route],
+        [stepTiming, timing],
+        [stepColor, color],
+        [stepSize, size],
+      ].map(([a, b]) => differsAt(a ?? new Float32Array(1), b ?? new Float32Array(0))),
+    ).toEqual([-1, -1, -1, -1]);
+    // …pausing every FLIGHT_GATHER_STEP dots at least, through each pass over the plan.
+    expect(gatherPauses).toBeGreaterThanOrEqual(3 * Math.floor((plan.count - 1) / FLIGHT_GATHER_STEP));
+    expect(pauses - gatherPauses).toBe(Math.floor((plan.count - 1) / FLIGHT_GATHER_STEP));
   });
 
   it("keeps no patch when the field keeps no particle for the plan, or the hero shows none of it", () => {
