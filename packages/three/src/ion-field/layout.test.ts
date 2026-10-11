@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createIonFieldLayout, createRandom, MARK, MARK_ROLES, SCHOOL_KEYS } from "./layout";
+import {
+  createIonFieldLayout,
+  createRandom,
+  MARK,
+  MARK_ROLES,
+  SCHOOL_KEYS,
+  withParticlesAhead,
+} from "./layout";
 
 describe("createRandom", () => {
   it("is reproducible and stays in [0, 1)", () => {
@@ -90,5 +97,36 @@ describe("createIonFieldLayout", () => {
     }
     expect(roles[MARK_ROLES.orbit]).toBeGreaterThan(roles[MARK_ROLES.nucleus] ?? 0);
     expect(roles[MARK_ROLES.electron]).toBeGreaterThan(0);
+  });
+});
+
+describe("withParticlesAhead", () => {
+  it("keeps every particle of the field as it was, behind the extra ones, which go on with it", () => {
+    const own = createIonFieldLayout(1200);
+    const layout = withParticlesAhead(own, 300);
+    const whole = createIonFieldLayout(1500);
+    expect(layout.count).toBe(1500);
+    for (const key of [
+      "positions",
+      "schools",
+      "charges",
+      "sizes",
+      "phases",
+      "ranks",
+      "along",
+      "lanes",
+    ] as const) {
+      const stride = key === "positions" ? 2 : 1;
+      // The field's own, exactly, 300 places further on…
+      expect(layout[key].slice(300 * stride)).toEqual(own[key]);
+      // …and the extra ones, as the next 300 particles of a larger field: new places in every shape.
+      expect(layout[key].slice(0, 300 * stride)).toEqual(whole[key].slice(1200 * stride));
+    }
+    // Still pairs of opposite charges.
+    for (let index = 0; index < layout.count; index += 2) {
+      expect((layout.charges[index] ?? 0) + (layout.charges[index + 1] ?? 0)).toBe(0);
+    }
+    expect(withParticlesAhead(own, 0)).toBe(own);
+    expect(() => withParticlesAhead(own, 3)).toThrow(RangeError);
   });
 });

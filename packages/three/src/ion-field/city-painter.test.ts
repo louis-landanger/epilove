@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CITY_LAYERS, type CityPlan, cityDots } from "./city";
-import { CITY_LOOK, CITY_PATCH, cityDotAlpha, cityFlight } from "./city-painter";
+import { CITY_LOOK, cityDotAlpha, cityFlight } from "./city-painter";
 
 /** A street and a railway crossing it. */
 const plan: CityPlan = {
@@ -26,33 +26,5 @@ describe("the plan's dots handed to the ion field", () => {
       expect(flight.look[index * 4 + 3]).toBeCloseTo(alpha[index] ?? Number.NaN, 6);
       expect(flight.radius[index]).toBeCloseTo(CITY_LOOK[dots.layer[index] ?? 0]?.radius ?? Number.NaN, 6);
     }
-  });
-
-  it("gathers the dots into patches of streets, each carried by one of its dots", () => {
-    const dots = cityDots(plan);
-    const { carrier } = cityFlight(dots);
-    const patches = new Set<string>();
-    let carriers = 0;
-    for (let index = 0; index < dots.count; index += 1) {
-      const x = dots.x[index] ?? 0;
-      const y = dots.y[index] ?? 0;
-      const own = carrier[index * 4 + 2] ?? -1;
-      // The carrier is a dot of the same patch…
-      expect(Math.floor((carrier[index * 4] ?? 0) / CITY_PATCH)).toBe(Math.floor(x / CITY_PATCH));
-      expect(Math.floor((carrier[index * 4 + 1] ?? 0) / CITY_PATCH)).toBe(Math.floor(y / CITY_PATCH));
-      expect(carrier[index * 4]).toBeCloseTo(dots.x[own] ?? Number.NaN, 6);
-      // …which carries itself.
-      expect(carrier[own * 4 + 2]).toBe(own);
-      expect(carrier[own * 4 + 3]).toBe(1);
-      if (own === index) {
-        carriers += 1;
-      } else {
-        expect(carrier[index * 4 + 3]).toBe(0);
-      }
-      patches.add(`${Math.floor(x / CITY_PATCH)},${Math.floor(y / CITY_PATCH)}`);
-    }
-    // One carrier a patch.
-    expect(carriers).toBe(patches.size);
-    expect(carriers).toBeLessThan(dots.count / 3);
   });
 });

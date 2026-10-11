@@ -7,9 +7,10 @@ import { RHONE_PATH, RIVER_MAP, type RiverPath, riverPoint, SAONE_PATH } from ".
  * glows, while the stacked cards of "how it works", the test tubes of the
  * school race and the rings of the Pact go by.
  *
- * Pure functions over the layout, run on the CPU every frame and handed to
- * either backend (GPU storage buffers or instanced attributes): no three.js
- * here, and the same result whatever the renderer.
+ * Pure functions over the layout (but for when the plan of Lyon's particles
+ * landed, which writeFormations keeps), run on the CPU every frame and
+ * handed to either backend (GPU storage buffers or instanced attributes): no
+ * three.js here, and the same result whatever the renderer.
  */
 
 /** A rectangle of the page in CSS pixels, relative to the viewport. */
@@ -93,11 +94,12 @@ export interface RiversFormation {
  * The dots of the plan of Lyon (`/apercu/fleuves`, city.ts), taken over by
  * the field as the page scrolls and flown into the logo mark: `progress` 0
  * keeps them on the map (`box`, fitted as for the rivers), 1 has them all
- * fused into `mark`, where they stay as long as it shows (`presence`, in
- * [0, 1]). Only those the plan's own canvas shows fly, within the hero
- * (`hero`: its top, height and sides), fading out towards its foot as there.
- * Not a shape of particles: the field draws these dots on their own
- * (scene.ts, `flightPoint`).
+ * landed in `mark`, fused into particles the field keeps for them
+ * (FlightParticles), which then hold there with the mark's share of the
+ * particles (`presence`, in [0, 1]) and go on with the others. Only those
+ * the plan's own canvas shows fly, within the hero (`hero`: its top, height
+ * and sides), fading out towards its foot as there. The field draws the
+ * dots on their own until they land (scene.ts, `flightPoint`).
  */
 export interface FlightFormation {
   readonly progress: number;
@@ -134,7 +136,29 @@ export interface FormationParticles {
   readonly lanes: Float32Array;
   readonly phases: Float32Array;
   readonly sizes: Float32Array;
+  /** The particles the field keeps for the plan of Lyon's flight, if any: its first ones. */
+  readonly flight?: FlightParticles;
 }
+
+/**
+ * The particles the field keeps for the plan's flight: its first `count`.
+ * For each, the patch of streets it lands for (`gatherFlight`), in
+ * FLIGHT_PATCH_STRIDE floats: where its dots come from (x and y, kilometres
+ * on the map: their centre of light), its light in [0, 1] (0: no patch, the
+ * particle stays unseen) and 1 if it lands in the mark's nucleus. `reveal`,
+ * in [0, 1], dims them all: the field raises it once it has the plan.
+ * `landed` holds, for each, when its patch landed (seconds, the formations'
+ * clock), -1 until it does: writeFormations keeps it, for the particle to
+ * spread along the mark from then on.
+ */
+export interface FlightParticles {
+  readonly count: number;
+  readonly patches: Float32Array;
+  readonly reveal: number;
+  readonly landed: Float32Array;
+}
+
+export const FLIGHT_PATCH_STRIDE = 4;
 
 /** Floats per particle in each output buffer (both are vec4 on the GPU). */
 export const FORMATION_STRIDE = 4;
@@ -611,6 +635,24 @@ export function orbitTheta(s: number): number {
   return from + (to - from) * (u - k);
 }
 
+/** Fraction of the orbit's arc length, in [0, 1), at the angle `theta`: the inverse of orbitTheta. */
+export function orbitArc(theta: number): number {
+  const angle = ((theta % TAU) + TAU) % TAU;
+  let low = 0;
+  let high = ORBIT_SAMPLES;
+  while (high - low > 1) {
+    const middle = (low + high) >> 1;
+    if ((ORBIT_THETA[middle] ?? 0) <= angle) {
+      low = middle;
+    } else {
+      high = middle;
+    }
+  }
+  const from = ORBIT_THETA[low] ?? 0;
+  const to = ORBIT_THETA[low + 1] ?? TAU;
+  return fract((low + (to > from ? (angle - from) / (to - from) : 0)) / ORBIT_SAMPLES);
+}
+
 /** Point at the fraction `s` of the arc length of an atom's orbit (see `orbitPoint`). */
 export function orbitArcPoint(
   center: { x: number; y: number },
@@ -916,6 +958,10 @@ function accumulate(weight: number): void {
  * particle by as much, so shapes stay glued to their element while the page
  * scrolls, and the springs only animate the motifs.
  * `unit` is one CSS pixel in world units: motifs are designed in pixels.
+ * The particles kept for the plan of Lyon (`particles.flight`) stand in the
+ * mark for their patch of streets instead of the rivers' and the mark's
+ * other places, unseen until their patch lands, and take part in the other
+ * shapes as every particle does.
  */
 export function writeFormations(
   targets: Float32Array,
@@ -932,8 +978,11 @@ export function writeFormations(
   const tubes = formations.tubes && formations.tubes.weight > 0.001 ? formations.tubes : null;
   const pact = formations.pact && formations.pact.weight > 0.001 ? formations.pact : null;
   const rivers = formations.rivers && formations.rivers.weight > 0.001 ? formations.rivers : null;
+  const flight = formations.flight ?? null;
   const freeGlow = formations.freeGlow ?? 1;
   const freePaper = formations.freePaper ?? 0;
+  const kept = particles.flight;
+  const keptCount = kept ? Math.min(kept.count, particles.count) : 0;
 
   // Where the two atoms stand this frame: the same for every particle.
   const geometry = pair ? pairGeometry(pair, time) : null;
@@ -948,7 +997,26 @@ export function writeFormations(
     sum.paper = 0;
     sum.carry = 0;
     sum.grain = 0;
-    if (
+    // The plan's particles stand in the mark for their patch of streets, in the rivers' stead:
+    // unseen until it fuses into them, then spreading round the mark from when it landed.
+    const planned = index < keptCount;
+    let fusion = 0;
+    if (kept && planned) {
+      fusion = plannedFusion(index, flight);
+      const { landed } = kept;
+      if (fusion <= 0) {
+        landed[index] = -1;
+      } else if ((landed[index] ?? -1) < 0) {
+        landed[index] = time;
+      }
+      const spread = fusion * smoothstep(0, FLIGHT_SPREAD, time - (landed[index] ?? time));
+      if (
+        flight &&
+        landingContribution(particles, index, flight, previous?.flight ?? null, time, spread, contribution)
+      ) {
+        accumulate(flight.presence);
+      }
+    } else if (
       pair &&
       geometry &&
       pairContribution(particles, index, pair, geometry, previous?.pair ?? null, time, contribution)
@@ -966,12 +1034,16 @@ export function writeFormations(
       accumulate(pact.weight);
     }
     if (
+      !planned &&
       rivers &&
       riversContribution(particles, index, rivers, previous?.rivers ?? null, time, contribution)
     ) {
       accumulate(rivers.weight);
     }
     const { x, y, total, glow, volt, plasma, paper, carry, grain } = sum;
+    // Unseen until their patch lands, then particles like the others.
+    const seen =
+      kept && planned ? (kept.patches[index * FLIGHT_PATCH_STRIDE + 2] ?? 0) * fusion * kept.reveal : 1;
 
     // Between two formations their weights add up to 1: the particle glides
     // from one shape to the next, held all the way, never set free.
@@ -984,7 +1056,7 @@ export function writeFormations(
       targets[offset + 3] = (carry / total) * share;
       looks[offset] = (volt / total) * share;
       looks[offset + 1] = (plasma / total) * share;
-      looks[offset + 2] = freeGlow + (glow / total - freeGlow) * share;
+      looks[offset + 2] = (freeGlow + (glow / total - freeGlow) * share) * seen;
       looks[offset + 3] = freePaper + (paper / total - freePaper) * share;
       if (grains) {
         grains[index] = 1 + (grain / total - 1) * share;
@@ -994,7 +1066,7 @@ export function writeFormations(
       targets[offset + 3] = 0;
       looks[offset] = 0;
       looks[offset + 1] = 0;
-      looks[offset + 2] = freeGlow;
+      looks[offset + 2] = freeGlow * seen;
       looks[offset + 3] = freePaper;
       if (grains) {
         grains[index] = 1;
@@ -1133,34 +1205,56 @@ export const FLIGHT_SCATTER = 1;
 export const FLIGHT_LIFT = 0.5;
 export const FLIGHT_BOW = 0.3;
 /**
- * Share of the patches that land in the mark's nucleus, taking on its colour;
- * the others land on its orbit, a little either side of it.
+ * Share of the patches that land in the mark's nucleus, taking on its colour,
+ * besides those of the heavy particles (which sit in the nucleus, as in the
+ * mark); the others land on its orbit, a little either side of it.
  */
 export const FLIGHT_NUCLEUS = 0.25;
 export const FLIGHT_ORBIT_WIDTH = 0.08;
 /**
- * The dots of a patch of streets (cityFlight, city-painter.ts) land together
- * on the same point of the mark and fuse there: over the last FLIGHT_MERGE of
- * the flight's progress, the others merge into the patch's carrier, which
- * grows up to FLIGHT_FUSION times brighter (its opacity at most
- * FLIGHT_FUSION_LIGHT). The carriers stay in the mark, turning with it.
+ * The field keeps FLIGHT_SHARE more particles for the plan (the ion field's
+ * `flight` option), ahead of its own, and gathers the plan the hero shows
+ * into as many patches of streets at most (`gatherFlight`), each landing as
+ * one of them: over the last FLIGHT_MERGE of the flight's progress before its
+ * patch lands, the patch's dots fuse into its particle, which lights up as
+ * they fade. Unseen until then, it is a particle like the others from then
+ * on. A patch lights its particle fully from FLIGHT_PATCH_LIGHT of the light
+ * of the median patch, less below.
  */
+export const FLIGHT_SHARE = 0.25;
 export const FLIGHT_MERGE = 0.05;
-export const FLIGHT_FUSION = 3;
-export const FLIGHT_FUSION_LIGHT = 0.9;
-/** How fast the carriers turn with the mark, in radians a second: on the orbit as its dust does, in the nucleus. */
-export const FLIGHT_ORBIT_SPIN = 0.25;
+export const FLIGHT_PATCH_LIGHT = 0.5;
+/**
+ * How fast the patches' places in the mark move with it: along the orbit, in
+ * turns a second, as its dust does; round the nucleus, in radians a second.
+ */
+export const FLIGHT_ORBIT_SPIN = 0.04;
 export const FLIGHT_NUCLEUS_SPIN = 0.1;
+/**
+ * Landed, the plan's particles spread along the orbit (or round the nucleus)
+ * over FLIGHT_SPREAD seconds, each its own way, until they line it as evenly
+ * as its own dust: the city melts into the atom.
+ */
+export const FLIGHT_SPREAD = 6;
 /** Share of the hero's height over which the plan fades out at its foot, as its canvas does (marketing.css). */
 export const FLIGHT_FOOT = 0.28;
+/**
+ * On their way, the plan's dots make way for the pointer as the field's
+ * particles do: pushed away from it by up to FLIGHT_PUSH (world units),
+ * within about FLIGHT_PUSH_REACH of it; not at rest (the page paints the
+ * plan), nor as they land (their particle makes way itself).
+ */
+export const FLIGHT_PUSH = 0.06;
+export const FLIGHT_PUSH_REACH = 0.1;
 
-/** How many random numbers each dot of the plan draws for its flight (`flightRandom` channels). */
+/** How many random numbers each dot of the plan, and each particle kept for it, draws for its flight (`flightRandom` channels). */
 export const FLIGHT_CHANNELS = 8;
 
 /**
- * The `channel`-th random number in [0, 1) of the plan's dot `index`: the
- * PCG hash the ion field's shader uses (three's TSL `hash`), so both draw
- * the same flight for each dot, with no pattern between dots or channels.
+ * The `channel`-th random number in [0, 1) of the plan's dot `index` (or of
+ * the particle `index` kept for the plan): the PCG hash the ion field's
+ * shader uses (three's TSL `hash`), so both draw the same flight for each
+ * dot, with no pattern between dots or channels.
  */
 export function flightRandom(index: number, channel: number): number {
   const seed = (index * FLIGHT_CHANNELS + channel) >>> 0;
@@ -1169,91 +1263,272 @@ export function flightRandom(index: number, channel: number): number {
   return (((word >>> 22) ^ word) >>> 0) / 2 ** 32;
 }
 
-/** The carrier of a dot's patch of streets: where it starts (world units), its index, and whether it is the dot itself. */
-export interface FlightCarrier {
+/** When the patch of streets of the particle `index` kept for the plan lands, in the flight's progress. */
+export function flightLand(index: number): number {
+  return FLIGHT_LANDING + (1 - FLIGHT_LANDING) * flightRandom(index, 1);
+}
+
+/** How much the plan's canvas shows of a dot at (x, y), world units: within the hero, fading out towards its foot. */
+function shownBy(hero: FlightFormation["hero"], x: number, y: number): number {
+  return x >= hero.left && x <= hero.right && y <= hero.top
+    ? Math.min(1, Math.max(0, (1 - (hero.top - y) / hero.height) / FLIGHT_FOOT))
+    : 0;
+}
+
+/**
+ * Gathers the dots of the plan the hero shows (`place`, kilometres on the
+ * map, and `look`, their colour and opacity as painted, four floats each)
+ * into square patches of streets, as small as the particles the field keeps
+ * for the plan allow (`particles.flight`, one a patch), and writes each patch
+ * into its particle's entry, in order of their places. Writes, for each dot,
+ * the particle it lands as (-1: none, a dot the hero does not show) and 1 if
+ * that one lands in the nucleus, into `dots` (two floats each). Returns the
+ * side of the patches, in kilometres (0 when there are none).
+ */
+export function gatherFlight(
+  place: Float32Array,
+  look: Float32Array,
+  flight: FlightFormation,
+  particles: FormationParticles,
+  dots: Float32Array,
+): number {
+  const kept = particles.flight;
+  const capacity = Math.min(kept?.count ?? 0, particles.count);
+  const count = Math.floor(place.length / 2);
+  for (let index = 0; index < count; index += 1) {
+    dots[index * 2] = -1;
+    dots[index * 2 + 1] = 0;
+  }
+  kept?.patches.fill(0);
+  if (!kept || capacity === 0) {
+    return 0;
+  }
+  // Each dot's light as the hero shows it, and the extent of what it shows.
+  const map = riverMapTransform(flight.box);
+  const light = new Float32Array(count);
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (let index = 0; index < count; index += 1) {
+    const x = place[index * 2] ?? 0;
+    const y = place[index * 2 + 1] ?? 0;
+    const seen =
+      shownBy(flight.hero, map.x + x * map.scale, map.y + y * map.scale) * (look[index * 4 + 3] ?? 0);
+    light[index] = seen;
+    if (seen > 0) {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  if (minX > maxX) {
+    return 0;
+  }
+  // The smallest square patches that fit: there are about as many as the area over their side squared.
+  const cells = new Map<number, number>();
+  const cellOf = (index: number, side: number) =>
+    Math.floor(((place[index * 2] ?? 0) - minX) / side) * 1_048_576 +
+    Math.floor(((place[index * 2 + 1] ?? 0) - minY) / side);
+  const gather = (side: number) => {
+    cells.clear();
+    for (let index = 0; index < count; index += 1) {
+      if ((light[index] ?? 0) > 0) {
+        cells.set(cellOf(index, side), 0);
+      }
+    }
+    return cells.size;
+  };
+  let side = Math.max(1e-3, Math.sqrt(((maxX - minX) * (maxY - minY)) / capacity));
+  side = Math.max(1e-3, side * Math.sqrt(gather(side) / capacity));
+  let patches = gather(side);
+  while (patches > capacity) {
+    side *= Math.max(1.02, Math.sqrt(patches / capacity));
+    patches = gather(side);
+  }
+  // In order of their places; each lands from its dots' centre of light.
+  const keys = [...cells.keys()].sort((a, b) => a - b);
+  for (const [slot, key] of keys.entries()) {
+    cells.set(key, slot);
+  }
+  const sums = new Float64Array(patches * 3);
+  for (let index = 0; index < count; index += 1) {
+    const seen = light[index] ?? 0;
+    if (seen > 0) {
+      const slot = cells.get(cellOf(index, side)) ?? 0;
+      dots[index * 2] = slot;
+      sums[slot * 3] = (sums[slot * 3] ?? 0) + seen * (place[index * 2] ?? 0);
+      sums[slot * 3 + 1] = (sums[slot * 3 + 1] ?? 0) + seen * (place[index * 2 + 1] ?? 0);
+      sums[slot * 3 + 2] = (sums[slot * 3 + 2] ?? 0) + seen;
+    }
+  }
+  const lights = Array.from({ length: patches }, (_, slot) => sums[slot * 3 + 2] ?? 0).sort((a, b) => a - b);
+  const full = Math.max(1e-9, FLIGHT_PATCH_LIGHT * (lights[patches >> 1] ?? 0));
+  const { patches: entries } = kept;
+  for (let slot = 0; slot < capacity; slot += 1) {
+    const total = slot < patches ? (sums[slot * 3 + 2] ?? 0) : 0;
+    entries[slot * FLIGHT_PATCH_STRIDE] = total > 0 ? (sums[slot * 3] ?? 0) / total : 0;
+    entries[slot * FLIGHT_PATCH_STRIDE + 1] = total > 0 ? (sums[slot * 3 + 1] ?? 0) / total : 0;
+    entries[slot * FLIGHT_PATCH_STRIDE + 2] = Math.min(1, total / full);
+    // The heavy particles sit in the nucleus, as in the mark.
+    entries[slot * FLIGHT_PATCH_STRIDE + 3] =
+      (particles.sizes[slot] ?? 0) >= PAIR_HEAVY || flightRandom(slot, 3) < FLIGHT_NUCLEUS ? 1 : 0;
+  }
+  for (let index = 0; index < count; index += 1) {
+    const slot = dots[index * 2] ?? -1;
+    if (slot >= 0) {
+      dots[index * 2 + 1] = entries[slot * FLIGHT_PATCH_STRIDE + 3] ?? 0;
+    }
+  }
+  return side;
+}
+
+/**
+ * Where the particle `index` kept for the plan stands in the mark for its
+ * patch of streets, and how it shines there: on the side of the mark the
+ * patch comes from (seen in the orbit's plane), give or take, on its orbit
+ * or in its nucleus, lit as the mark's own particles there, moving as they
+ * do; then, as `spread` goes from 0 to 1 once landed, off along the orbit
+ * (or round the nucleus), its own way, until the plan's particles line it
+ * evenly. Its patch's dots fly to it (flightPoint), and it stands there
+ * unseen until they land (writeFormations).
+ */
+function landingContribution(
+  particles: FormationParticles,
+  index: number,
+  flight: FlightFormation,
+  previous: FlightFormation | null,
+  time: number,
+  spread: number,
+  into: Contribution,
+): boolean {
+  const entries = particles.flight?.patches;
+  if (!entries) {
+    return false;
+  }
+  const patch = (channel: number) => flightRandom(index, channel);
+  const { mark } = flight;
+  const radius = Math.max(mark.radius, 1e-6);
+  const map = riverMapTransform(flight.box);
+  const nucleus = (entries[index * FLIGHT_PATCH_STRIDE + 3] ?? 0) > 0.5;
+  // The side of the mark the patch comes from, seen in the orbit's plane, give or take.
+  const dx = map.x + (entries[index * FLIGHT_PATCH_STRIDE] ?? 0) * map.scale - mark.x;
+  const dy = map.y + (entries[index * FLIGHT_PATCH_STRIDE + 1] ?? 0) * map.scale - mark.y;
+  const u = dx * Math.cos(MARK.tilt) + dy * Math.sin(MARK.tilt);
+  const v = (dy * Math.cos(MARK.tilt) - dx * Math.sin(MARK.tilt)) / MARK.orbitMinor;
+  const side = Math.hypot(u, v) > 1e-9 ? Math.atan2(v, u) : 0;
+  const scatter = (patch(2) - 0.5) * 2 * FLIGHT_SCATTER;
+  // Once landed, off its own way round the mark: a turn at most, either way.
+  const drift = (patch(7) - 0.5) * spread;
+  into.pull = 1;
+  into.volt = 0;
+  into.carry = previous ? mark.y - previous.mark.y : 0;
+  if (nucleus) {
+    // A disc, brighter at its heart, slowly swirling.
+    const depth = Math.sqrt(patch(4));
+    const angle = side + scatter + drift * TAU + time * FLIGHT_NUCLEUS_SPIN + MARK.tilt;
+    into.x = mark.x + Math.cos(angle) * radius * NUCLEUS_REACH * depth;
+    into.y = mark.y + Math.sin(angle) * radius * NUCLEUS_REACH * depth;
+    into.glow = 0.5 + 0.8 * (1 - depth);
+    into.plasma = 0.9;
+    into.paper = 0;
+    return true;
+  }
+  // The orbit's dust: a fine thread, its near half brighter, turning.
+  const s = orbitArc(side + scatter) + drift + time * FLIGHT_ORBIT_SPIN;
+  orbitArcPoint(mark, radius * (1 + (patch(4) - 0.5) * FLIGHT_ORBIT_WIDTH), MARK.tilt, s, point);
+  into.x = point.x;
+  into.y = point.y;
+  into.glow =
+    (0.42 + 0.3 * orbitNear(orbitTheta(s))) * Math.min(1, Math.max(0.4, radius / PAIR_LIGHT_RADIUS));
+  into.plasma = 0;
+  into.paper = 0.85;
+  return true;
+}
+
+/** How far the patch of the particle `index` kept for the plan has fused into it, in [0, 1]. */
+function plannedFusion(index: number, flight: FlightFormation | null): number {
+  if (!flight) {
+    return 0;
+  }
+  const land = flightLand(index);
+  return smoothstep(land - FLIGHT_MERGE, land, flight.progress);
+}
+
+/**
+ * The particle of the field a dot's patch of streets lands as: its index
+ * among those the field keeps for the plan, where it stands (world units),
+ * and whether it lands in the mark's nucleus.
+ */
+export interface FlightTarget {
+  readonly index: number;
   readonly x: number;
   readonly y: number;
-  readonly index: number;
-  readonly self: boolean;
+  readonly nucleus: boolean;
 }
 
 /**
  * Where a dot of the plan stands at the flight's progress, starting from
- * `start` (world units), how much light it gives (above 1 once fused), and
- * how much it has taken on the colour of the mark's nucleus (`plasma`).
+ * `start` (world units), how much light it gives, and how much it has taken
+ * on the colour of the mark's nucleus (`plasma`).
  *
- * Each dot is a particle of its own, from its `index` in the plan: it leaves
- * its street when the flow rising from the foot of the hero reaches it, and
- * flies along a curve of its own, bowed upwards. Its patch of streets (its
- * `carrier`'s) heads for the side of the mark it comes from, on the orbit or
- * in the nucleus, and lands there all at once: its dots fuse into the
- * carrier, which stays in the mark, turning with it at `time` (seconds), as
- * long as the mark shows (`presence`). The plan flows into the mark in
- * streams and becomes part of it. Dots the plan's canvas does not show at
- * rest (outside the hero, or past its foot) stay unseen. The ion field's
- * shader computes the same (scene.ts).
+ * Each dot flies on its own, from its `index` in the plan: it leaves its
+ * street when the flow rising from the foot of the hero reaches it, and flies
+ * along a curve of its own, bowed upwards, to the particle of the field its
+ * patch of streets lands as (`target`), wherever that one stands, making way
+ * for the `pointer` (world units, and its strength in [0, 1]) on its way. The
+ * patch lands all at once: its dots fuse into the particle, which lights up
+ * as they fade (writeFormations), and the plan goes on as particles of the
+ * field. Dots the plan's canvas does not show at rest (outside the hero, or
+ * past its foot), which have no particle (`null`), stay unseen. The ion
+ * field's shader computes the same (scene.ts), following the particle where
+ * it moves.
  */
 export function flightPoint(
   start: { readonly x: number; readonly y: number },
   index: number,
-  carrier: FlightCarrier,
+  target: FlightTarget | null,
   flight: FlightFormation,
   out: { x: number; y: number; light: number; plasma: number },
-  time = 0,
+  pointer?: { readonly x: number; readonly y: number; readonly strength: number },
 ): void {
+  if (!target) {
+    out.x = start.x;
+    out.y = start.y;
+    out.light = 0;
+    out.plasma = 0;
+    return;
+  }
   const own = (channel: number) => flightRandom(index, channel);
-  const patch = (channel: number) => flightRandom(carrier.index, channel);
-  const { mark, hero } = flight;
-  const radius = Math.max(mark.radius, 1e-6);
+  const { hero } = flight;
+  const radius = Math.max(flight.mark.radius, 1e-6);
   // When it leaves (its own), and when its patch lands.
   const fromFoot = Math.min(1, Math.max(0, (start.y - (hero.top - hero.height)) / hero.height));
   const leave = Math.max(0, FLIGHT_DELAY + FLIGHT_RISE * fromFoot + FLIGHT_JITTER * (own(0) - 0.5));
-  const land = FLIGHT_LANDING + (1 - FLIGHT_LANDING) * patch(1);
+  const land = flightLand(target.index);
   const p = smoothstep(leave, land, flight.progress);
-  // Where its patch lands: the side of the mark its carrier comes from (seen in the orbit's
-  // plane), give or take, turning with the mark.
-  const cos = Math.cos(MARK.tilt);
-  const sin = Math.sin(MARK.tilt);
-  const dx = carrier.x - mark.x;
-  const dy = carrier.y - mark.y;
-  let u = dx * cos + dy * sin;
-  let v = (dy * cos - dx * sin) / MARK.orbitMinor;
-  const away = Math.hypot(u, v);
-  if (away > 1e-9) {
-    u /= away;
-    v /= away;
-  } else {
-    u = 1;
-    v = 0;
-  }
-  const nucleus = patch(3) < FLIGHT_NUCLEUS;
-  const turn =
-    (patch(2) - 0.5) * 2 * FLIGHT_SCATTER + time * (nucleus ? FLIGHT_NUCLEUS_SPIN : FLIGHT_ORBIT_SPIN);
-  const su = u * Math.cos(turn) - v * Math.sin(turn);
-  const sv = u * Math.sin(turn) + v * Math.cos(turn);
-  // On the orbit: the circle of the orbit's plane, flattened and tilted into the ring. In the
-  // nucleus: a disc.
-  const reach = nucleus
-    ? radius * NUCLEUS_REACH * Math.sqrt(patch(4))
-    : radius * (1 + (patch(4) - 0.5) * FLIGHT_ORBIT_WIDTH);
-  const flat = nucleus ? 1 : MARK.orbitMinor;
-  const tx = mark.x + (su * cos - sv * flat * sin) * reach;
-  const ty = mark.y + (su * sin + sv * flat * cos) * reach;
   // How it gets there: a quadratic Bézier of its own, its middle lifted and pushed aside a little.
+  const { x: tx, y: ty } = target;
   const aside = (own(5) - 0.5) * FLIGHT_BOW;
   const cx = (start.x + tx) / 2 - (ty - start.y) * aside;
   const cy = (start.y + ty) / 2 + (tx - start.x) * aside + FLIGHT_LIFT * radius * (0.5 + own(6));
   const q = 1 - p;
   out.x = q * q * start.x + 2 * q * p * cx + p * p * tx;
   out.y = q * q * start.y + 2 * q * p * cy + p * p * ty;
-  // Its light: as painted, until its patch fuses into the carrier, which stays while the mark shows.
-  const shown =
-    start.x >= hero.left && start.x <= hero.right && start.y <= hero.top
-      ? Math.min(1, Math.max(0, (1 - (hero.top - start.y) / hero.height) / FLIGHT_FOOT))
-      : 0;
-  const fused = smoothstep(land - FLIGHT_MERGE, land, flight.progress);
-  out.light = carrier.self
-    ? shown * (1 + (FLIGHT_FUSION - 1) * fused) * (1 - fused + fused * flight.presence)
-    : shown * (1 - fused);
-  out.plasma = nucleus ? smoothstep(0.4, 1, p) : 0;
+  // On its way, it makes way for the pointer.
+  if (pointer && pointer.strength > 0) {
+    const dx = out.x - pointer.x;
+    const dy = out.y - pointer.y;
+    const apart = Math.hypot(dx, dy);
+    if (apart > 1e-6) {
+      const near = apart / FLIGHT_PUSH_REACH;
+      const push = 4 * FLIGHT_PUSH * p * q * pointer.strength * Math.exp(-near * near);
+      out.x += (dx / apart) * push;
+      out.y += (dy / apart) * push;
+    }
+  }
+  // Its light: as painted, until its patch fuses into its particle.
+  out.light = shownBy(hero, start.x, start.y) * (1 - smoothstep(land - FLIGHT_MERGE, land, flight.progress));
+  out.plasma = target.nucleus ? smoothstep(0.4, 1, p) : 0;
 }

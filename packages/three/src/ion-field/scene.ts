@@ -11,18 +11,20 @@ import {
   instancedBufferAttribute,
   instancedDynamicBufferAttribute,
   instanceIndex,
+  int,
+  ivec2,
   length,
   max,
   min,
   mix,
   positionGeometry,
   pow,
-  select,
   sign,
   sin,
   smoothstep,
-  sqrt,
   step as stepAt,
+  textureLoad,
+  uint,
   uniform,
   uv,
   vec2,
@@ -33,13 +35,16 @@ import {
   AdditiveBlending,
   Color,
   type ComputeNode,
+  DataTexture,
   DynamicDrawUsage,
+  FloatType,
   InstancedBufferAttribute,
   Mesh,
   MeshBasicNodeMaterial,
   type Node,
   OrthographicCamera,
   PlaneGeometry,
+  RGFormat,
   Scene,
   Vector2,
   Vector3,
@@ -53,30 +58,34 @@ import {
   FLIGHT_CHANNELS,
   FLIGHT_DELAY,
   FLIGHT_FOOT,
-  FLIGHT_FUSION,
-  FLIGHT_FUSION_LIGHT,
   FLIGHT_JITTER,
   FLIGHT_LANDING,
   FLIGHT_LIFT,
   FLIGHT_MERGE,
-  FLIGHT_NUCLEUS,
-  FLIGHT_NUCLEUS_SPIN,
-  FLIGHT_ORBIT_SPIN,
-  FLIGHT_ORBIT_WIDTH,
+  FLIGHT_PATCH_STRIDE,
+  FLIGHT_PUSH,
+  FLIGHT_PUSH_REACH,
   FLIGHT_RISE,
-  FLIGHT_SCATTER,
+  FLIGHT_SHARE,
   FLIGHT_START,
   type FlightFormation,
   FORMATION_STRIDE,
+  type FormationParticles,
   type Formations,
   formationStrength,
-  NUCLEUS_REACH,
+  gatherFlight,
   riverMapTransform,
   toWorldFormations,
   type ViewportFormations,
   writeFormations,
 } from "./formations";
-import { createIonFieldLayout, ION_FIELD_SEED, type IonFieldLayout, MARK, SCHOOL_KEYS } from "./layout";
+import {
+  createIonFieldLayout,
+  ION_FIELD_SEED,
+  type IonFieldLayout,
+  SCHOOL_KEYS,
+  withParticlesAhead,
+} from "./layout";
 import { createFrameMonitor } from "./quality";
 
 export type IonFieldBackend = "webgpu" | "webgl2";
@@ -112,6 +121,12 @@ export interface IonFieldOptions {
    * live field takes over from the static poster without a jump.
    */
   readonly initialFormations?: ViewportFormations;
+  /**
+   * Keep particles for the plan of Lyon (fleuves hero, `setFlight`):
+   * FLIGHT_SHARE more, ahead of the field's own, each the particle a patch of
+   * the plan's streets lands as in the logo mark, unseen until then.
+   */
+  readonly flight?: boolean;
 }
 
 export interface IonField {
@@ -129,7 +144,8 @@ export interface IonField {
   setFormations(formations: ViewportFormations): void;
   /**
    * The dots of the plan of Lyon (`/apercu/fleuves`), for the field to fly
-   * them into the logo mark when the page scrolls (`flight` formation); null
+   * them into the logo mark when the page scrolls (`flight` formation), where
+   * they fuse into the particles it keeps for them (`flight` option); null
    * removes them.
    */
   setFlight(flight: CityFlight | null): void;
@@ -164,6 +180,10 @@ const FINE_GAIN = 2.1;
 // Formations follow page elements while they scroll: stiffer, and allowed to move faster.
 const FORMATION_SPRING = 30;
 const FORMATION_MAX_SPEED = 5;
+/** Seconds over which the particles kept for the plan come up once the field has it (a page loaded below the hero). */
+const FLIGHT_REVEAL = 1.2;
+/** Width of the texture through which the plan's dots find their particles with WebGL2. */
+const FLIGHT_TEXTURE_WIDTH = 1024;
 
 const SCHOOL_RGB: readonly LinearRgb[] = SCHOOL_KEYS.map((key) => tokenToLinearSrgb(schoolColors[key]));
 const INK = tokenToLinearSrgb(colorTokens.ink);
@@ -258,8 +278,19 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   renderer.setClearColor(new Color(INK[0], INK[1], INK[2]), 1);
 
   const requested = Math.max(2, Math.floor(options.particleCount(backend) / 2) * 2);
-  const layout = createIonFieldLayout(requested, options.seed ?? ION_FIELD_SEED);
+  const seed = options.seed ?? ION_FIELD_SEED;
+  const own = createIonFieldLayout(requested, seed);
+  // The particles kept for the plan of Lyon come first (formations.ts, FlightParticles).
+  const kept = options.flight ? Math.max(2, Math.round((own.count * FLIGHT_SHARE) / 2) * 2) : 0;
+  const layout = withParticlesAhead(own, kept, seed);
   const count = layout.count;
+  const planned = {
+    count: kept,
+    patches: new Float32Array(kept * FLIGHT_PATCH_STRIDE),
+    reveal: 0,
+    landed: new Float32Array(kept).fill(-1),
+  };
+  const particles: FormationParticles = kept > 0 ? { ...layout, flight: planned } : layout;
   const data = staticData(layout);
 
   const scene = new Scene();
@@ -280,19 +311,19 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const uPixelRatio = uniform(1);
   /**
    * The plan's flight: its progress, the map (a kilometre, where 0 km lands), the hero (top,
-   * height, sides), the mark, and the mark's presence (its carriers stay in it while it shows).
+   * height, sides) and the mark's radius (the dots' curves bow by a share of it).
    */
   const uFlight = uniform(0);
   const uFlightMap = uniform(new Vector3(1, 0, 0));
   const uFlightHero = uniform(new Vector4(1, 2, -2, 2));
-  const uFlightMark = uniform(new Vector3(0, 0, 0.3));
-  const uFlightPresence = uniform(1);
+  const uFlightRadius = uniform(0.3);
 
   // Formations, computed on the CPU every frame (formations.ts): x, y, pull, 0 and volt, plasma, glow, 0.
   const formationTargets = new Float32Array(count * FORMATION_STRIDE);
   const formationLooks = new Float32Array(count * FORMATION_STRIDE);
   for (let index = 0; index < count; index += 1) {
-    formationLooks[index * FORMATION_STRIDE + 2] = 1;
+    // The plan's particles are unseen until it lands.
+    formationLooks[index * FORMATION_STRIDE + 2] = index < kept ? 0 : 1;
   }
   // And the size of each particle's light (the title draws finer grains).
   const formationGrains = new Float32Array(count).fill(1);
@@ -329,7 +360,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     writeFormations(
       formationTargets,
       formationLooks,
-      layout,
+      particles,
       toWorldFormations(options.initialFormations, initialWidth, initialHeight),
       null,
       0,
@@ -364,6 +395,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   let bondA: Node<"vec2">;
   let bondB: Node<"vec2">;
   let step: (delta: number) => void;
+  /** Where a particle stands, for the plan's dots to fly to theirs (any of the first `kept`). */
+  let particleAt: (index: Node<"uint">) => Node<"vec2">;
+  let releaseData = () => {};
 
   if (backend === "webgpu") {
     const positions = instancedArray(initialPositions, "vec2");
@@ -462,6 +496,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const computeNodes: ComputeNode[] = [forces, integrate];
 
     particleCenter = positions.element(instanceIndex);
+    particleAt = (index) => positions.element(index);
     const partnerCenter = positions.element(partnerOf(instanceIndex));
     particleBond = float(1).sub(smoothstep(0.03, 0.2, length(partnerCenter.sub(particleCenter))));
     bondA = positions.element(instanceIndex.mul(2));
@@ -525,6 +560,15 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     particleBond = particleNode.z;
     bondA = bondNode.xy;
     bondB = bondNode.zw;
+    // The positions of the plan's particles, in a texture the plan's dots read.
+    const keptWidth = Math.max(1, Math.min(kept, FLIGHT_TEXTURE_WIDTH));
+    const keptRows = Math.max(1, Math.ceil(kept / keptWidth));
+    const keptPositions = new Float32Array(keptWidth * keptRows * 2);
+    const keptTexture = new DataTexture(keptPositions, keptWidth, keptRows, RGFormat, FloatType);
+    keptTexture.needsUpdate = true;
+    particleAt = (index) =>
+      textureLoad(keptTexture, ivec2(int(index.mod(keptWidth)), int(index.div(keptWidth)))).xy;
+    releaseData = () => keptTexture.dispose();
 
     const write = () => {
       for (let index = 0; index < count; index += 1) {
@@ -543,6 +587,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       }
       particleBuffer.needsUpdate = true;
       bondBuffer.needsUpdate = true;
+      if (kept > 0) {
+        keptPositions.set(positions.subarray(0, kept * 2));
+        keptTexture.needsUpdate = true;
+      }
     };
     write();
 
@@ -661,7 +709,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   // About the same overall light whatever the particle count: the more ions,
   // the finer each one. A desktop's 1,600 read as fine dust, a phone's 900 as
   // slightly brighter sparks.
-  const density = Math.min(1, Math.max(0.45, Math.sqrt(1000 / count)));
+  const density = Math.min(1, Math.max(0.45, Math.sqrt(1000 / own.count)));
   const radius = colorAttribute.w.mul(density);
   const phase = phaseAttribute;
   const pointerProximity = float(1)
@@ -741,12 +789,20 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   // ---------------------------------------------------------------------------
   // The plan of Lyon's dots (fleuves hero): the page paints them while it rests;
   // as it scrolls, the field draws them, in the same place and light, and flies
-  // them into the logo mark (formations.ts, flightPoint: the same path on the CPU).
+  // each to the particle its patch of streets lands as, kept for it ahead of the
+  // others, into which they fuse (formations.ts: gatherFlight, flightPoint, the
+  // same path on the CPU).
   // ---------------------------------------------------------------------------
   const INK_SRGB = linearSrgbToSrgb(INK);
   const PLASMA_SRGB = linearSrgbToSrgb(PLASMA);
   let flightMesh: Mesh | null = null;
   let flightMaterial: MeshBasicNodeMaterial | null = null;
+  let flightDots: CityFlight | null = null;
+  /** Per dot: the particle its patch lands as (-1: none), and 1 if that one lands in the nucleus. */
+  let flightLanding: InstancedBufferAttribute | null = null;
+  /** The hero, in kilometres on the map, the dots were gathered for. */
+  let gatheredFor: readonly number[] | null = null;
+  let revealFrom = -1;
   const setFlight = (flight: CityFlight | null) => {
     if (flightMesh) {
       scene.remove(flightMesh);
@@ -754,11 +810,24 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       flightMesh = null;
       flightMaterial = null;
     }
-    if (!flight || flight.count === 0) {
+    flightDots = null;
+    flightLanding = null;
+    gatheredFor = null;
+    revealFrom = -1;
+    planned.patches.fill(0);
+    planned.landed.fill(-1);
+    planned.reveal = 0;
+    if (!flight || flight.count === 0 || kept === 0) {
       return;
     }
+    flightDots = flight;
+    const landingArray = new Float32Array(flight.count * 2);
+    for (let index = 0; index < flight.count; index += 1) {
+      landingArray[index * 2] = -1;
+    }
+    flightLanding = new InstancedBufferAttribute(landingArray, 2);
     const place = instancedBufferAttribute<"vec2">(new InstancedBufferAttribute(flight.place, 2), "vec2");
-    const carrier = instancedBufferAttribute<"vec4">(new InstancedBufferAttribute(flight.carrier, 4), "vec4");
+    const landing = instancedBufferAttribute<"vec2">(flightLanding, "vec2");
     const look = instancedBufferAttribute<"vec4">(new InstancedBufferAttribute(flight.look, 4), "vec4");
     const dotRadius = instancedBufferAttribute<"float">(
       new InstancedBufferAttribute(flight.radius, 1),
@@ -773,10 +842,11 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const onMap = (km: Node<"vec2">) =>
       vec2(uFlightMap.y.add(km.x.mul(uFlightMap.x)), uFlightMap.z.add(km.y.mul(uFlightMap.x)));
     const start = onMap(place);
-    // Each dot is a particle of its own, and its patch of streets is its carrier's: their random
+    // Each dot is a particle of its own, and its patch of streets is its particle's: their random
     // numbers are those of the CPU (flightRandom).
+    const slot = landing.x;
     const own = (channel: number) => hash(instanceIndex.mul(FLIGHT_CHANNELS).add(channel));
-    const patch = (channel: number) => hash(carrier.z.mul(FLIGHT_CHANNELS).add(channel));
+    const patch = (channel: number) => hash(max(slot, 0).mul(FLIGHT_CHANNELS).add(channel));
     // Once the rivers' particles have set off, it leaves when the flow rising from the foot of the
     // hero reaches it, a little ragged, and its patch lands with the rivers' particles, at the end…
     const fromFoot = clamp(start.y.sub(uFlightHero.x.sub(uFlightHero.y)).div(uFlightHero.y), 0, 1);
@@ -785,37 +855,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       .mul(1 - FLIGHT_LANDING)
       .add(FLIGHT_LANDING);
     const progress = smoothstep(leave, land, uFlight);
-    // …on the side of the mark its carrier comes from (seen in the orbit's plane), give or take,
-    // on the orbit or in the nucleus, turning with the mark…
-    const markRadius = max(uFlightMark.z, 1e-6);
-    const tiltCos = Math.cos(MARK.tilt);
-    const tiltSin = Math.sin(MARK.tilt);
-    const fromMark = onMap(carrier.xy).sub(uFlightMark.xy);
-    const side = vec2(
-      fromMark.x.mul(tiltCos).add(fromMark.y.mul(tiltSin)),
-      fromMark.y.mul(tiltCos).sub(fromMark.x.mul(tiltSin)).div(MARK.orbitMinor),
-    );
-    const away = length(side);
-    const towards = select(away.greaterThan(1e-9), side.div(max(away, 1e-9)), vec2(1, 0));
-    const nucleus = float(1).sub(stepAt(FLIGHT_NUCLEUS, patch(3)));
-    const turn = patch(2)
-      .sub(0.5)
-      .mul(2 * FLIGHT_SCATTER)
-      .add(uTime.mul(mix(float(FLIGHT_ORBIT_SPIN), float(FLIGHT_NUCLEUS_SPIN), nucleus)));
-    const su = towards.x.mul(cos(turn)).sub(towards.y.mul(sin(turn)));
-    const sv = towards.x.mul(sin(turn)).add(towards.y.mul(cos(turn)));
-    const reach = mix(
-      patch(4).sub(0.5).mul(FLIGHT_ORBIT_WIDTH).add(1),
-      sqrt(patch(4)).mul(NUCLEUS_REACH),
-      nucleus,
-    ).mul(markRadius);
-    const flat = mix(float(MARK.orbitMinor), float(1), nucleus);
-    const target = uFlightMark.xy.add(
-      vec2(
-        su.mul(tiltCos).sub(sv.mul(flat).mul(tiltSin)),
-        su.mul(tiltSin).add(sv.mul(flat).mul(tiltCos)),
-      ).mul(reach),
-    );
+    // …on its particle, wherever it stands (in the mark, making way for the pointer)…
+    const target = particleAt(uint(max(slot, 0)));
     // …along a quadratic Bézier of its own, its middle lifted and pushed aside a little.
     const aside = own(5).sub(0.5).mul(FLIGHT_BOW);
     const way = target.sub(start);
@@ -823,28 +864,31 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       .add(target)
       .mul(0.5)
       .add(vec2(way.y.negate(), way.x).mul(aside))
-      .add(vec2(0, markRadius.mul(own(6).add(0.5)).mul(FLIGHT_LIFT)));
+      .add(vec2(0, max(uFlightRadius, 1e-6).mul(own(6).add(0.5)).mul(FLIGHT_LIFT)));
     const rest = float(1).sub(progress);
-    const position = start
+    const curve = start
       .mul(rest.mul(rest))
       .add(control.mul(rest.mul(progress).mul(2)))
       .add(target.mul(progress.mul(progress)));
+    // On its way, it makes way for the pointer, as the field's particles do.
+    const fromPointer = curve.sub(uPointer);
+    const apart = length(fromPointer);
+    const near = apart.div(FLIGHT_PUSH_REACH);
+    const push = exp(near.mul(near).negate())
+      .mul(uPointerStrength)
+      .mul(progress.mul(rest).mul(4 * FLIGHT_PUSH));
+    const position = curve.add(fromPointer.div(max(apart, 1e-6)).mul(push));
     // Only the dots the plan's canvas shows fly: within the hero, fading out at its foot as there.
-    // Each keeps its light on its way; as its patch lands, the others fuse into the carrier,
-    // which grows brighter and stays in the mark while it shows. Those bound for the nucleus
-    // take on its colour.
+    // Each keeps its light on its way; as its patch lands, they all fuse into its particle, which
+    // lights up as they fade (writeFormations). Those bound for the nucleus take on its colour.
     const belowTop = uFlightHero.x.sub(start.y).div(uFlightHero.y);
     const shown = clamp(float(1).sub(belowTop).div(FLIGHT_FOOT), 0, 1)
       .mul(stepAt(0, belowTop))
       .mul(stepAt(uFlightHero.z, start.x))
       .mul(stepAt(start.x, uFlightHero.w));
     const fused = smoothstep(land.sub(FLIGHT_MERGE), land, uFlight);
-    const carried = fused
-      .mul(FLIGHT_FUSION - 1)
-      .add(1)
-      .mul(float(1).sub(fused).add(fused.mul(uFlightPresence)));
-    const lit = min(look.w.mul(shown).mul(mix(float(1).sub(fused), carried, carrier.w)), FLIGHT_FUSION_LIGHT);
-    const plasma = nucleus.mul(smoothstep(0.4, 1, progress));
+    const lit = look.w.mul(shown).mul(float(1).sub(fused)).mul(stepAt(0, slot));
+    const plasma = landing.y.mul(smoothstep(0.4, 1, progress));
     const quadPixels = dotRadius.add(1).mul(2).mul(stepAt(0.002, lit));
     material.positionNode = vec3(position.add(positionGeometry.xy.mul(quadPixels.mul(uPixel))), 0);
     const opacity = lit.toVarying();
@@ -869,8 +913,40 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     flightMaterial = material;
   };
 
+  /**
+   * Gathers the dots the hero shows into patches of streets, one for each particle kept for the
+   * plan, once it has them and again whenever the hero moves on the map (a resize).
+   */
+  const gather = (flight: FlightFormation) => {
+    if (!flightDots || !flightLanding) {
+      return;
+    }
+    const map = riverMapTransform(flight.box);
+    const hero = [
+      (flight.hero.left - map.x) / map.scale,
+      (flight.hero.right - map.x) / map.scale,
+      (flight.hero.top - map.y) / map.scale,
+      flight.hero.height / map.scale,
+    ];
+    const same = (value: number, index: number) =>
+      Math.abs(value - (gatheredFor?.[index] ?? Number.NaN)) < 0.02;
+    if (gatheredFor && hero.every(same)) {
+      return;
+    }
+    gatheredFor = hero;
+    gatherFlight(flightDots.place, flightDots.look, flight, particles, flightLanding.array as Float32Array);
+    flightLanding.needsUpdate = true;
+    if (revealFrom < 0) {
+      revealFrom = uTime.value;
+    }
+  };
+
   /** Follows the plan's flight: drawn only while it is on its way (the page paints it at rest). */
   const updateFlight = (flight: FlightFormation | null) => {
+    if (flight) {
+      gather(flight);
+    }
+    planned.reveal = revealFrom < 0 ? 0 : Math.min(1, (uTime.value - revealFrom) / FLIGHT_REVEAL);
     if (!flightMesh) {
       return;
     }
@@ -881,12 +957,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const map = riverMapTransform(flight.box);
     uFlightMap.value.set(map.scale, map.x, map.y);
     uFlightHero.value.set(flight.hero.top, flight.hero.height, flight.hero.left, flight.hero.right);
-    uFlightMark.value.set(flight.mark.x, flight.mark.y, flight.mark.radius);
+    uFlightRadius.value = flight.mark.radius;
     uFlight.value = flight.progress;
-    uFlightPresence.value = flight.presence;
-    // At rest the page paints the plan; once landed, its carriers stay in the mark while it shows.
-    flightMesh.visible =
-      flight.progress > FLIGHT_START && (flight.progress < 1 - FLIGHT_START || flight.presence > 0.001);
+    // At rest the page paints the plan; once landed, it is particles of the field.
+    flightMesh.visible = flight.progress > FLIGHT_START && flight.progress < 1 - FLIGHT_START;
   };
 
   // ---------------------------------------------------------------------------
@@ -925,7 +999,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     writeFormations(
       formationTargets,
       formationLooks,
-      layout,
+      particles,
       formations,
       previous,
       uTime.value,
@@ -986,7 +1060,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       firstFrame = false;
       options.onFirstFrame?.();
     }
-    const atFloor = pixelRatio <= 1 && ions.count <= 600;
+    // The particles kept for the plan come first: always drawn, the field's own follow the monitor.
+    const atFloor = pixelRatio <= 1 && ions.count - kept <= 600;
     const bestPixelRatio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
     const belowBest = ions.count < count || pixelRatio < bestPixelRatio;
     const verdict = adaptive ? monitor.push(frameMs, atFloor, belowBest) : "ok";
@@ -1003,8 +1078,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         uPixelRatio.value = pixelRatio;
         renderer.setPixelRatio(pixelRatio);
         renderer.setSize(width, height, false);
-      } else if (ions.count > 600) {
-        ions.count = Math.max(600, Math.floor(ions.count / 2 / 2) * 2);
+      } else if (ions.count - kept > 600) {
+        ions.count = kept + Math.max(600, Math.floor((ions.count - kept) / 2 / 2) * 2);
         bonds.count = ions.count / 2;
       }
       options.onQuality?.({ pixelRatio, visibleParticles: ions.count });
@@ -1012,7 +1087,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     if (verdict === "upgrade") {
       // The device keeps up again (the slowdown was a moment): the particles first, then the sharpness.
       if (ions.count < count) {
-        ions.count = Math.min(count, ions.count * 2);
+        ions.count = Math.min(count, kept + (ions.count - kept) * 2);
         bonds.count = ions.count / 2;
       } else {
         pixelRatio = bestPixelRatio;
@@ -1040,6 +1115,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     ionMaterial.dispose();
     bondMaterial.dispose();
     flightMaterial?.dispose();
+    releaseData();
     renderer.dispose();
     canvas.remove();
   };

@@ -38,7 +38,6 @@ scope.onmessage = (event) => {
       (flight) =>
         scope.postMessage({ type: "flight", flight }, [
           flight.place.buffer,
-          flight.carrier.buffer,
           flight.look.buffer,
           flight.radius.buffer,
         ]),

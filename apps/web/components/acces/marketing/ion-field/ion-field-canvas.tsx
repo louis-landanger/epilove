@@ -177,13 +177,14 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         const profile = deviceProfile();
         const page = createPageMeasurer();
         let followPage = () => {};
+        // The fleuves hero: Lyon's two rivers, in the plan of Lyon the field flies into the logo.
+        const rivers = document.querySelector("[data-field-rivers]") !== null;
         const field = await createIonField({
           container,
           // Lyon's two rivers across the hero need more particles than a shape.
-          particleCount: () =>
-            forcedCount > 0
-              ? forcedCount
-              : particleBudget(profile, document.querySelector("[data-field-rivers]") !== null),
+          particleCount: () => (forcedCount > 0 ? forcedCount : particleBudget(profile, rivers)),
+          // And particles for the plan's patches of streets to land as in the logo.
+          flight: rivers,
           adaptiveQuality: !forced,
           beforeFrame: () => followPage(),
           // The particles start in the shapes on screen (a reload further down the page).

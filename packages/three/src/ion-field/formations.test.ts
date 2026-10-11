@@ -3,23 +3,31 @@ import {
   contourLength,
   contourPoint,
   FLIGHT_DELAY,
-  FLIGHT_FUSION,
   FLIGHT_JITTER,
+  FLIGHT_LANDING,
+  FLIGHT_MERGE,
   FLIGHT_NUCLEUS,
   FLIGHT_ORBIT_SPIN,
   FLIGHT_ORBIT_WIDTH,
-  type FlightCarrier,
+  FLIGHT_PATCH_STRIDE,
+  FLIGHT_SCATTER,
+  FLIGHT_SPREAD,
   type FlightFormation,
+  type FlightTarget,
   FORMATION_STRIDE,
+  type FormationParticles,
   type Formations,
   flightPoint,
   flightRandom,
+  gatherFlight,
+  orbitArc,
   orbitArcPoint,
   orbitTheta,
   PAIR_FIELD_LINES,
   pairFieldPoint,
   pairGeometry,
   riverDistance,
+  riverMapTransform,
   toWorldBox,
   toWorldFormations,
   type ViewportFormations,
@@ -164,6 +172,16 @@ describe("orbitArcPoint", () => {
     expect(orbitTheta(0)).toBe(0);
     expect(orbitTheta(1)).toBeCloseTo(0);
     expect(orbitTheta(0.5)).toBeCloseTo(Math.PI);
+  });
+
+  it("finds how far along the orbit any angle stands (orbitArc), the inverse of orbitTheta", () => {
+    for (let step = 0; step < 360; step += 1) {
+      const s = step / 360;
+      expect(orbitArc(orbitTheta(s))).toBeCloseTo(s, 5);
+    }
+    // Whatever the turn.
+    expect(orbitArc(orbitTheta(0.3) + 4 * Math.PI)).toBeCloseTo(0.3, 5);
+    expect(orbitArc(orbitTheta(0.3) - 2 * Math.PI)).toBeCloseTo(0.3, 5);
   });
 });
 
@@ -523,13 +541,15 @@ describe("the plan's flight into the logo mark", () => {
     hero,
     mark: { ...mark, radius },
   });
+  const map = riverMapTransform(flight(0).box);
   const out = { x: 0, y: 0, light: 0, plasma: 0 };
   const dots = Array.from({ length: 400 }, (_, index) => index);
-  /** A dot carrying its own patch of streets. */
-  const itself = (start: { x: number; y: number }, index: number): FlightCarrier => ({
-    ...start,
+  /** The particle a patch lands as, standing at `at`. */
+  const towards = (index: number, at: { x: number; y: number }, nucleus = false): FlightTarget => ({
     index,
-    self: true,
+    x: at.x,
+    y: at.y,
+    nucleus,
   });
   /** A point in the orbit's own plane, where the tilted ring is a circle: its distance in radii of the mark, and its angle. */
   const inOrbitPlane = (point: { x: number; y: number }) => {
@@ -544,6 +564,55 @@ describe("the plan's flight into the logo mark", () => {
     x: -1.6 + (index % 17) * 0.2,
     y: -0.5 + Math.floor(index / 17) * 0.2,
   }));
+  /** The plan as a grid of dots, one every 50 m over the map, half lit. */
+  const plan = (() => {
+    const xs: number[] = [];
+    const ys: number[] = [];
+    for (let x = RIVER_MAP.minX; x <= RIVER_MAP.maxX; x += 0.05) {
+      for (let y = RIVER_MAP.minY; y <= RIVER_MAP.maxY; y += 0.05) {
+        xs.push(x);
+        ys.push(y);
+      }
+    }
+    const place = new Float32Array(xs.length * 2);
+    const look = new Float32Array(xs.length * 4);
+    for (const [index, x] of xs.entries()) {
+      place[index * 2] = x;
+      place[index * 2 + 1] = ys[index] ?? 0;
+      look.set([1, 1, 1, 0.5], index * 4);
+    }
+    return { count: xs.length, place, look };
+  })();
+  /** A field of `count` particles keeping its first `kept` for the plan, the plan gathered into them. */
+  const fieldFor = (count: number, kept: number, progress = 0) => {
+    const particles = {
+      ...createIonFieldLayout(count),
+      flight: {
+        count: kept,
+        patches: new Float32Array(kept * FLIGHT_PATCH_STRIDE),
+        reveal: 1,
+        landed: new Float32Array(kept).fill(-1),
+      },
+    };
+    const landing = new Float32Array(plan.count * 2);
+    const side = gatherFlight(plan.place, plan.look, flight(progress), particles, landing);
+    return { particles, landing, side };
+  };
+  const write = (
+    particles: FormationParticles,
+    formations: Formations,
+    time = 0,
+    previous: Formations | null = null,
+  ) => {
+    const targets = new Float32Array(particles.count * FORMATION_STRIDE);
+    const looks = new Float32Array(particles.count * FORMATION_STRIDE);
+    writeFormations(targets, looks, particles, formations, previous, time, 2 / 900);
+    return { targets, looks };
+  };
+  const shownAt = (x: number, y: number) => {
+    flightPoint({ x, y }, 0, towards(0, mark), flight(0), out);
+    return out.light;
+  };
 
   it("draws each dot's random numbers evenly, with no pattern across dots or channels", () => {
     const count = 20_000;
@@ -578,10 +647,83 @@ describe("the plan's flight into the logo mark", () => {
     expect(Math.abs(correlation(first.slice(1), first.slice(0, -1)))).toBeLessThan(0.03);
   });
 
+  it("gathers the dots the hero shows into patches of streets, one for each particle kept for the plan", () => {
+    const { particles, landing, side } = fieldFor(2400, 300);
+    const { patches } = particles.flight;
+    const extent = Array.from({ length: 300 }, () => ({ minX: 99, maxX: -99, minY: 99, maxY: -99, dots: 0 }));
+    for (let index = 0; index < plan.count; index += 1) {
+      const x = plan.place[index * 2] ?? 0;
+      const y = plan.place[index * 2 + 1] ?? 0;
+      const slot = landing[index * 2] ?? -1;
+      // Every dot the hero shows lands as one of them, the others as none.
+      if (shownAt(map.x + x * map.scale, map.y + y * map.scale) > 0) {
+        expect(slot).toBeGreaterThanOrEqual(0);
+        expect(slot).toBeLessThan(300);
+        const box = extent[slot];
+        if (box) {
+          box.minX = Math.min(box.minX, x);
+          box.maxX = Math.max(box.maxX, x);
+          box.minY = Math.min(box.minY, y);
+          box.maxY = Math.max(box.maxY, y);
+          box.dots += 1;
+        }
+        expect(landing[index * 2 + 1]).toBe(patches[slot * FLIGHT_PATCH_STRIDE + 3]);
+      } else {
+        expect(slot).toBe(-1);
+      }
+    }
+    // Square patches, as many as there are particles for them, or nearly.
+    const used = extent.filter((box) => box.dots > 0);
+    expect(used.length).toBeLessThanOrEqual(300);
+    expect(used.length).toBeGreaterThan(240);
+    let nucleus = 0;
+    for (const [slot, box] of extent.entries()) {
+      const light = patches[slot * FLIGHT_PATCH_STRIDE + 2] ?? 0;
+      if (box.dots === 0) {
+        expect(light).toBe(0);
+        continue;
+      }
+      expect(box.maxX - box.minX).toBeLessThan(side);
+      expect(box.maxY - box.minY).toBeLessThan(side);
+      // Each lands from its dots' centre of light, lit by them.
+      const x = patches[slot * FLIGHT_PATCH_STRIDE] ?? 0;
+      const y = patches[slot * FLIGHT_PATCH_STRIDE + 1] ?? 0;
+      expect(x).toBeGreaterThanOrEqual(box.minX - 1e-6);
+      expect(x).toBeLessThanOrEqual(box.maxX + 1e-6);
+      expect(y).toBeGreaterThanOrEqual(box.minY - 1e-6);
+      expect(y).toBeLessThanOrEqual(box.maxY + 1e-6);
+      expect(light).toBeGreaterThan(0);
+      expect(light).toBeLessThanOrEqual(1);
+      nucleus += patches[slot * FLIGHT_PATCH_STRIDE + 3] ?? 0;
+    }
+    // A quarter of them land in the nucleus, and the heavy particles too.
+    expect(nucleus / used.length).toBeGreaterThan(FLIGHT_NUCLEUS * 0.8);
+    expect(nucleus / used.length).toBeLessThan(FLIGHT_NUCLEUS + 0.15);
+    for (let slot = 0; slot < 300; slot += 1) {
+      if ((particles.sizes[slot] ?? 0) >= 0.01) {
+        expect(patches[slot * FLIGHT_PATCH_STRIDE + 3]).toBe(1);
+      }
+    }
+  });
+
+  it("keeps no patch when the field keeps no particle for the plan, or the hero shows none of it", () => {
+    const landing = new Float32Array(plan.count * 2);
+    const none = {
+      ...createIonFieldLayout(200),
+      flight: { count: 0, patches: new Float32Array(0), reveal: 1, landed: new Float32Array(0) },
+    };
+    expect(gatherFlight(plan.place, plan.look, flight(0), none, landing)).toBe(0);
+    expect(landing.every((value, index) => value === (index % 2 === 0 ? -1 : 0))).toBe(true);
+    const away = { ...flight(0), hero: { top: -5, height: 1, left: 10, right: 12 } };
+    const { particles } = fieldFor(200, 20);
+    expect(gatherFlight(plan.place, plan.look, away, particles, landing)).toBe(0);
+    expect(particles.flight.patches.every((value) => value === 0)).toBe(true);
+  });
+
   it("leaves every dot where the plan painted it until the page scrolls", () => {
     for (const [index, start] of starts.entries()) {
-      for (const carrier of [itself(start, index), { x: 0.3, y: 0.2, index: 9999, self: false }]) {
-        flightPoint(start, index, carrier, flight(0), out);
+      for (const target of [towards(index, mark), towards(9999, { x: 0.3, y: 0.2 }, true)]) {
+        flightPoint(start, index, target, flight(0), out);
         expect(out.x).toBeCloseTo(start.x, 9);
         expect(out.y).toBeCloseTo(start.y, 9);
         expect(out.light).toBe(1);
@@ -594,20 +736,21 @@ describe("the plan's flight into the logo mark", () => {
     const foot = { x: 0.2, y: -1.15 };
     const top = { x: 0.2, y: 1.15 };
     for (const dot of dots) {
+      const target = towards(dot, mark);
       // At first, not a dot moves…
       for (const start of [foot, top]) {
-        flightPoint(start, dot, itself(start, dot), flight(FLIGHT_DELAY - FLIGHT_JITTER / 2), out);
+        flightPoint(start, dot, target, flight(FLIGHT_DELAY - FLIGHT_JITTER / 2), out);
         expect(out.x).toBeCloseTo(start.x, 9);
         expect(out.y).toBeCloseTo(start.y, 9);
       }
       // …then the foot of the plan leaves first…
-      flightPoint(foot, dot, itself(foot, dot), flight(FLIGHT_DELAY + FLIGHT_JITTER), out);
+      flightPoint(foot, dot, target, flight(FLIGHT_DELAY + FLIGHT_JITTER), out);
       expect(Math.hypot(out.x - foot.x, out.y - foot.y)).toBeGreaterThan(1e-4);
-      flightPoint(top, dot, itself(top, dot), flight(FLIGHT_DELAY + FLIGHT_JITTER), out);
+      flightPoint(top, dot, target, flight(FLIGHT_DELAY + FLIGHT_JITTER), out);
       expect(out.x).toBeCloseTo(top.x, 9);
       expect(out.y).toBeCloseTo(top.y, 9);
       // …and its top follows, well before the end.
-      flightPoint(top, dot, itself(top, dot), flight(0.7), out);
+      flightPoint(top, dot, target, flight(0.7), out);
       expect(Math.hypot(out.x - top.x, out.y - top.y)).toBeGreaterThan(1e-4);
     }
   });
@@ -616,14 +759,7 @@ describe("the plan's flight into the logo mark", () => {
     const lit = (progress: number) => {
       let count = 0;
       for (const [index, start] of starts.entries()) {
-        // Dots of others' patches: they fuse as they land.
-        flightPoint(
-          start,
-          index,
-          { x: start.x, y: start.y, index: index + 5000, self: false },
-          flight(progress),
-          out,
-        );
+        flightPoint(start, index, towards(index + 5000, mark), flight(progress), out);
         count += out.light > 0.5 ? 1 : 0;
       }
       return count / starts.length;
@@ -631,101 +767,247 @@ describe("the plan's flight into the logo mark", () => {
     expect(lit(0.5)).toBe(1);
     // Three quarters of the way, the rivers are still on theirs: so is the plan.
     expect(lit(0.75)).toBe(1);
-    // It fuses as the rivers' particles reach the mark.
+    // It lands as the rivers' particles reach the mark.
     expect(lit(0.92)).toBeLessThan(0.7);
     expect(lit(1)).toBe(0);
   });
 
-  it("fuses each patch of streets into its carrier, on one point of the mark, where it stays", () => {
-    const carrierStart = { x: -0.7, y: 0.1 };
-    const carrier = itself(carrierStart, 42);
-    // What the patch's other dots know of their carrier.
-    const theirs = { ...carrier, self: false };
+  it("fuses each patch of streets into its particle, wherever that one stands", () => {
     const members = [
+      { x: -0.7, y: 0.1 },
       { x: -0.68, y: 0.11 },
       { x: -0.72, y: 0.08 },
       { x: -0.69, y: 0.13 },
     ];
-    const landing = { x: 0, y: 0 };
-    flightPoint(carrierStart, 42, carrier, flight(1), out);
-    Object.assign(landing, { x: out.x, y: out.y });
-    // The carrier lands brighter: its patch has fused into it.
-    expect(out.light).toBeCloseTo(FLIGHT_FUSION, 6);
-    for (const [offset, start] of members.entries()) {
-      const index = 100 + offset;
-      // On their way, each dot of the patch flies its own curve…
-      flightPoint(start, index, theirs, flight(0.5), out);
-      expect(out.light).toBe(1);
-      // …and they all land on the carrier, merging into it.
-      flightPoint(start, index, theirs, flight(1), out);
-      expect(out.x).toBeCloseTo(landing.x, 9);
-      expect(out.y).toBeCloseTo(landing.y, 9);
-      expect(out.light).toBe(0);
-    }
-  });
-
-  it("lands every patch on the mark, on its orbit or in its nucleus, taking on the nucleus's colour there", () => {
-    let inNucleus = 0;
-    for (const [index, start] of starts.entries()) {
-      for (const dot of [index, index + starts.length]) {
-        flightPoint(start, dot, itself(start, dot), flight(1), out);
-        const fromCentre = Math.hypot(out.x - mark.x, out.y - mark.y) / mark.radius;
-        if (out.plasma > 0) {
-          inNucleus += 1;
-          expect(out.plasma).toBe(1);
-          expect(fromCentre).toBeLessThanOrEqual(0.27);
-        } else {
-          const { away } = inOrbitPlane(out);
-          expect(away).toBeGreaterThanOrEqual(1 - FLIGHT_ORBIT_WIDTH / 2 - 1e-9);
-          expect(away).toBeLessThanOrEqual(1 + FLIGHT_ORBIT_WIDTH / 2 + 1e-9);
-        }
+    // Where the particle stands as they land, pushed aside by the pointer, say.
+    for (const at of [
+      { x: 0.95, y: 0.3 },
+      { x: 1.02, y: 0.36 },
+    ]) {
+      for (const [offset, start] of members.entries()) {
+        const index = 100 + offset;
+        // On their way, each dot of the patch flies its own curve…
+        flightPoint(start, index, towards(42, at), flight(0.5), out);
+        expect(out.light).toBe(1);
+        // …and they all land on the particle, fusing into it.
+        flightPoint(start, index, towards(42, at), flight(1), out);
+        expect(out.x).toBeCloseTo(at.x, 9);
+        expect(out.y).toBeCloseTo(at.y, 9);
+        expect(out.light).toBe(0);
       }
     }
-    const share = inNucleus / (starts.length * 2);
-    expect(share).toBeGreaterThan(FLIGHT_NUCLEUS * 0.7);
-    expect(share).toBeLessThan(FLIGHT_NUCLEUS * 1.3);
   });
 
-  it("turns the city's points with the mark once landed, on its orbit as its dust does", () => {
-    let turned = 0;
-    for (const [index, start] of starts.entries()) {
-      flightPoint(start, index, itself(start, index), flight(1), out, 0);
-      if (out.plasma > 0) {
+  it("leaves nothing of the plan beside the field once landed, even as the mark gives way to the next shapes", () => {
+    // Reported: as the mark left for the cards, the plan's points stayed behind, apart, then
+    // faded. Landed, every dot has fused into a particle of the field: none is drawn on its own.
+    for (const presence of [1, 0.5, 0]) {
+      for (const [index, start] of starts.entries()) {
+        flightPoint(start, index, towards(index, mark), flight(1, { presence }), out);
+        expect(out.light).toBe(0);
+      }
+    }
+  });
+
+  it("keeps the plan's particles unseen, in the mark, until their patch lands, then lights them as its own", () => {
+    const { particles } = fieldFor(2400, 300);
+    const { patches } = particles.flight;
+    const rivers = { weight: 1, box: flight(0).box };
+    for (const progress of [0, 0.5, FLIGHT_LANDING - FLIGHT_MERGE]) {
+      // The rivers hold the field's own particles; the plan's stand unseen in the mark.
+      const { targets, looks } = write(particles, { rivers, flight: flight(progress) });
+      for (let index = 0; index < 300; index += 1) {
+        expect(targets[index * FORMATION_STRIDE + 2]).toBe(1);
+        expect(looks[index * FORMATION_STRIDE + 2]).toBe(0);
+        const fromCentre =
+          Math.hypot(
+            (targets[index * FORMATION_STRIDE] ?? 0) - mark.x,
+            (targets[index * FORMATION_STRIDE + 1] ?? 0) - mark.y,
+          ) / mark.radius;
+        expect(fromCentre).toBeLessThan(1.05);
+      }
+    }
+    const { targets, looks } = write(particles, { flight: flight(1) });
+    let lit = 0;
+    let inNucleus = 0;
+    for (let index = 0; index < 300; index += 1) {
+      const light = patches[index * FLIGHT_PATCH_STRIDE + 2] ?? 0;
+      const glow = looks[index * FORMATION_STRIDE + 2] ?? 0;
+      if (light === 0) {
+        // No patch: it stays unseen.
+        expect(glow).toBe(0);
         continue;
       }
-      const before = inOrbitPlane(out);
-      flightPoint(start, index, itself(start, index), flight(1), out, 2);
-      const after = inOrbitPlane(out);
-      expect(after.away).toBeCloseTo(before.away, 6);
-      const delta = Math.atan2(Math.sin(after.angle - before.angle), Math.cos(after.angle - before.angle));
-      expect(delta).toBeCloseTo(2 * FLIGHT_ORBIT_SPIN, 6);
-      turned += 1;
+      lit += 1;
+      const point = {
+        x: targets[index * FORMATION_STRIDE] ?? 0,
+        y: targets[index * FORMATION_STRIDE + 1] ?? 0,
+      };
+      // Lit as the mark's own: no brighter than its brightest.
+      expect(glow).toBeGreaterThan(0);
+      expect(glow).toBeLessThanOrEqual(1.3);
+      if ((patches[index * FLIGHT_PATCH_STRIDE + 3] ?? 0) > 0.5) {
+        inNucleus += 1;
+        expect(looks[index * FORMATION_STRIDE + 1]).toBeCloseTo(0.9, 6);
+        expect(Math.hypot(point.x - mark.x, point.y - mark.y) / mark.radius).toBeLessThanOrEqual(0.27);
+      } else {
+        expect(looks[index * FORMATION_STRIDE + 3]).toBeCloseTo(0.85, 6);
+        const { away } = inOrbitPlane(point);
+        expect(away).toBeGreaterThanOrEqual(1 - FLIGHT_ORBIT_WIDTH / 2 - 1e-6);
+        expect(away).toBeLessThanOrEqual(1 + FLIGHT_ORBIT_WIDTH / 2 + 1e-6);
+      }
     }
-    expect(turned).toBeGreaterThan(0);
+    expect(lit).toBeGreaterThan(240);
+    expect(inNucleus).toBeGreaterThan(0);
   });
 
-  it("lets the city's points go with the mark when it leaves", () => {
-    const start = { x: -0.7, y: 0.1 };
-    flightPoint(start, 42, itself(start, 42), flight(1, { presence: 0.5 }), out);
-    expect(out.light).toBeCloseTo(FLIGHT_FUSION * 0.5, 6);
-    flightPoint(start, 42, itself(start, 42), flight(1, { presence: 0 }), out);
-    expect(out.light).toBe(0);
+  it("lands each patch on the side of the mark it comes from, then spreads them all along its orbit", () => {
+    const { particles } = fieldFor(2400, 300);
+    const { patches } = particles.flight;
+    const onOrbit = Array.from({ length: 300 }, (_, index) => index).filter(
+      (index) =>
+        (patches[index * FLIGHT_PATCH_STRIDE + 2] ?? 0) > 0 &&
+        (patches[index * FLIGHT_PATCH_STRIDE + 3] ?? 0) < 0.5,
+    );
+    expect(onOrbit.length).toBeGreaterThan(150);
+    /** Where a target stands along the orbit, as a fraction of its length. */
+    const arc = (targets: Float32Array, index: number) =>
+      orbitArc(
+        inOrbitPlane({
+          x: targets[index * FORMATION_STRIDE] ?? 0,
+          y: targets[index * FORMATION_STRIDE + 1] ?? 0,
+        }).angle,
+      );
+    const apart = (a: number, b: number) => Math.abs(a - b - Math.round(a - b));
+    /** How many of them stand in each sixth of the orbit. */
+    const sixths = (targets: Float32Array) => {
+      const counts = new Array<number>(6).fill(0);
+      for (const index of onOrbit) {
+        const sixth = Math.floor(arc(targets, index) * 6) % 6;
+        counts[sixth] = (counts[sixth] ?? 0) + 1;
+      }
+      return counts;
+    };
+    const time = 10;
+    // As they land, each near the side its patch comes from: bunched on the plan's side.
+    const landing = write(particles, { flight: flight(1) }, time).targets;
+    for (const index of onOrbit) {
+      const from = inOrbitPlane({
+        x: map.x + (patches[index * FLIGHT_PATCH_STRIDE] ?? 0) * map.scale,
+        y: map.y + (patches[index * FLIGHT_PATCH_STRIDE + 1] ?? 0) * map.scale,
+      });
+      // Within its scatter of that side, along the orbit, turned as the mark has.
+      const lowest = orbitArc(from.angle - FLIGHT_SCATTER) + time * FLIGHT_ORBIT_SPIN;
+      const highest = orbitArc(from.angle + FLIGHT_SCATTER) + time * FLIGHT_ORBIT_SPIN;
+      const forward = (value: number) => value - Math.floor(value);
+      expect(forward(arc(landing, index) - lowest)).toBeLessThanOrEqual(forward(highest - lowest) + 1e-5);
+    }
+    const mean = onOrbit.length / 6;
+    expect(Math.max(...sixths(landing))).toBeGreaterThan(2 * mean);
+    // Then each goes its own way along the orbit, until they line it as evenly as its dust.
+    const spread = write(particles, { flight: flight(1) }, time + FLIGHT_SPREAD).targets;
+    for (const count of sixths(spread)) {
+      expect(count).toBeGreaterThan(0.6 * mean);
+      expect(count).toBeLessThan(1.4 * mean);
+    }
+    // And they turn with the mark, as its dust does.
+    const later = write(particles, { flight: flight(1) }, time + FLIGHT_SPREAD + 2).targets;
+    for (const index of onOrbit) {
+      expect(apart(arc(later, index), arc(spread, index) + 2 * FLIGHT_ORBIT_SPIN)).toBeLessThan(1e-4);
+      const before = inOrbitPlane({
+        x: spread[index * FORMATION_STRIDE] ?? 0,
+        y: spread[index * FORMATION_STRIDE + 1] ?? 0,
+      });
+      const after = inOrbitPlane({
+        x: later[index * FORMATION_STRIDE] ?? 0,
+        y: later[index * FORMATION_STRIDE + 1] ?? 0,
+      });
+      expect(after.away).toBeCloseTo(before.away, 5);
+    }
   });
 
-  it("flows in streams: neighbouring patches fly the same way, each a little off the others, without a jump", () => {
+  it("gathers them back where they landed as the page scrolls back and the plan comes out of them", () => {
+    const { particles } = fieldFor(2400, 300);
+    const time = 10 + FLIGHT_SPREAD;
+    // Landed a while ago, they have spread…
+    write(particles, { flight: flight(1) }, 10);
+    const spread = write(particles, { flight: flight(1) }, time).targets;
+    // …the page scrolls back: the dots come out of them, and they stand where they landed (as the
+    // mark has turned meanwhile), as when they land anew.
+    const back = write(particles, { flight: flight(0.5) }, time).targets;
+    const anew = write(particles, { flight: flight(1) }, time).targets;
+    let moved = 0;
+    for (let index = 0; index < 300; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      expect(back[offset]).toBeCloseTo(anew[offset] ?? 0, 6);
+      expect(back[offset + 1]).toBeCloseTo(anew[offset + 1] ?? 0, 6);
+      const gone = Math.hypot(
+        (back[offset] ?? 0) - (spread[offset] ?? 0),
+        (back[offset + 1] ?? 0) - (spread[offset + 1] ?? 0),
+      );
+      moved += gone > 0.01 ? 1 : 0;
+    }
+    expect(moved).toBeGreaterThan(200);
+  });
+
+  it("hands the plan's particles on to the next shapes with the others, lit as they are", () => {
+    const { particles } = fieldFor(2400, 300);
+    const { patches } = particles.flight;
+    const card = { weight: 1, box, radius: 0.07, step: 0 };
+    // The mark has given way to the cards: the plan's particles trace them with the field's own.
+    const { targets, looks } = write(particles, { flight: flight(1, { presence: 0 }), card });
+    const own = write(createIonFieldLayout(2400), { card });
+    for (let index = 0; index < 300; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      expect(targets[offset + 2]).toBe(1);
+      const distance = distanceToRoundedBox(targets[offset] ?? 0, targets[offset + 1] ?? 0, 0.07);
+      expect(distance).toBeGreaterThan(0);
+      expect(distance).toBeLessThan(0.25);
+      const light = patches[index * FLIGHT_PATCH_STRIDE + 2] ?? 0;
+      expect(looks[offset + 2]).toBeLessThanOrEqual((own.looks[offset + 2] ?? 0) * light + 1e-6);
+      expect(looks[offset]).toBeCloseTo(own.looks[offset] ?? 0, 6);
+    }
+    // Halfway, they are on their way with the others: still held, halfway between the shapes.
+    const half = write(particles, { flight: flight(1, { presence: 0.5 }), card: { ...card, weight: 0.5 } });
+    const mark = write(particles, { flight: flight(1) });
+    for (let index = 0; index < 300; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      expect(half.targets[offset + 2]).toBe(1);
+      expect(half.targets[offset]).toBeCloseTo(((mark.targets[offset] ?? 0) + (targets[offset] ?? 0)) / 2, 5);
+    }
+  });
+
+  it("brings the plan's particles up gently once the field has the plan", () => {
+    const { particles } = fieldFor(2400, 300);
+    const lit = write(particles, { flight: flight(1) }).looks;
+    const dim = write(
+      { ...particles, flight: { ...particles.flight, reveal: 0.25 } },
+      { flight: flight(1) },
+    ).looks;
+    for (let index = 0; index < 300; index += 1) {
+      expect(dim[index * FORMATION_STRIDE + 2]).toBeCloseTo(
+        (lit[index * FORMATION_STRIDE + 2] ?? 0) * 0.25,
+        6,
+      );
+    }
+  });
+
+  it("flows in streams: the dots of a patch fly the same way, each a little off the others, without a jump", () => {
     const other = { x: 0, y: 0, light: 0, plasma: 0 };
+    const left = { x: mark.x - mark.radius, y: mark.y };
+    const right = { x: mark.x + mark.radius, y: mark.y };
     let neighbours = 0;
     let strangers = 0;
     for (const dot of dots) {
       const start = { x: -1.5 + (dot % 20) * 0.14, y: -0.5 + Math.floor(dot / 20) * 0.07 };
-      flightPoint(start, dot, itself(start, dot), flight(0.45), out);
-      // A neighbouring patch, a few pixels away…
+      flightPoint(start, dot, towards(7, left), flight(0.45), out);
+      // A dot of the same patch, a few pixels away…
       const near = { x: start.x + 0.01, y: start.y };
-      flightPoint(near, dot + 1000, itself(near, dot + 1000), flight(0.45), other);
+      flightPoint(near, dot + 1000, towards(7, left), flight(0.45), other);
       neighbours += Math.hypot(out.x - other.x, out.y - other.y);
-      // …and one from the other side of the plan.
+      // …and one from the other side of the plan, bound elsewhere.
       const far = { x: -start.x * 0.5, y: 0.6 - start.y };
-      flightPoint(far, dot + 2000, itself(far, dot + 2000), flight(0.45), other);
+      flightPoint(far, dot + 2000, towards(8, right), flight(0.45), other);
       strangers += Math.hypot(out.x - other.x, out.y - other.y);
     }
     expect(neighbours / dots.length).toBeGreaterThan(0.02);
@@ -734,18 +1016,48 @@ describe("the plan's flight into the logo mark", () => {
       const start = { x: -0.6, y: -0.3 };
       let previous = { x: start.x, y: start.y };
       for (let progress = 0; progress <= 1.0001; progress += 0.01) {
-        flightPoint(start, dot, itself(start, dot), flight(progress), out);
+        flightPoint(start, dot, towards(dot, left), flight(progress), out);
         expect(Math.hypot(out.x - previous.x, out.y - previous.y)).toBeLessThan(0.12);
         previous = { x: out.x, y: out.y };
       }
     }
   });
 
+  it("makes way for the pointer on its way, as the field's particles do, not at rest nor once landed", () => {
+    const start = { x: -0.6, y: -0.3 };
+    const target = towards(3, mark);
+    const free = { x: 0, y: 0, light: 0, plasma: 0 };
+    let pushed = 0;
+    for (const dot of dots) {
+      // Where it would be without the pointer, and the pointer right beside it.
+      flightPoint(start, dot, target, flight(0.6), free);
+      const pointer = { x: free.x + 0.03, y: free.y, strength: 1 };
+      flightPoint(start, dot, target, flight(0.6), out, pointer);
+      const before = Math.hypot(free.x - pointer.x, free.y - pointer.y);
+      const after = Math.hypot(out.x - pointer.x, out.y - pointer.y);
+      if (after > before + 0.005) {
+        pushed += 1;
+      }
+      expect(after).toBeGreaterThanOrEqual(before - 1e-9);
+      // Away from it, it flies its own way.
+      flightPoint(start, dot, target, flight(0.6), out, { x: free.x + 0.6, y: free.y, strength: 1 });
+      expect(Math.hypot(out.x - free.x, out.y - free.y)).toBeLessThan(1e-6);
+      // At rest it stays as painted, and it lands right on its particle.
+      flightPoint(start, dot, target, flight(0), out, { x: start.x + 0.03, y: start.y, strength: 1 });
+      expect(out.x).toBeCloseTo(start.x, 9);
+      expect(out.y).toBeCloseTo(start.y, 9);
+      flightPoint(start, dot, target, flight(1), out, { x: mark.x + 0.03, y: mark.y, strength: 1 });
+      expect(out.x).toBeCloseTo(mark.x, 9);
+      expect(out.y).toBeCloseTo(mark.y, 9);
+    }
+    expect(pushed / dots.length).toBeGreaterThan(0.9);
+  });
+
   it("rises from below the mark", () => {
     const start = { x: 0.5, y: -0.4 };
     let risen = 0;
     for (const dot of dots) {
-      flightPoint(start, dot, itself(start, dot), flight(0.5), out);
+      flightPoint(start, dot, towards(dot, mark), flight(0.5), out);
       if (out.y > start.y + 0.05) {
         risen += 1;
       }
@@ -761,21 +1073,25 @@ describe("the plan's flight into the logo mark", () => {
         { x: -1.9, y: 0 },
         { x: 1.85, y: 0 },
       ]) {
-        flightPoint(start, 1, itself(start, 1), flight(progress), out);
+        flightPoint(start, 1, towards(1, mark), flight(progress), out);
         expect(out.light).toBe(0);
       }
+      // Nor those with no particle to land as.
+      flightPoint({ x: 0, y: 0 }, 1, null, flight(progress), out);
+      expect(out.light).toBe(0);
     }
     // Halfway down the hero's foot, half lit.
     const foot = { x: -1, y: 1.2 - 0.86 * 2.4 };
-    flightPoint(foot, 1, itself(foot, 1), flight(0), out);
+    flightPoint(foot, 1, towards(1, mark), flight(0), out);
     expect(out.light).toBeCloseTo(0.5, 6);
   });
 
-  it("never loses a dot, even to a mark of no size", () => {
+  it("never loses a dot or a particle, even to a mark of no size", () => {
     const start = { x: 0.2, y: 0.3 };
-    flightPoint(start, 5, itself(start, 5), flight(0.5, { radius: 0 }), out);
+    flightPoint(start, 5, towards(5, mark), flight(0.5, { radius: 0 }), out);
     expect(Number.isFinite(out.x) && Number.isFinite(out.y) && Number.isFinite(out.light)).toBe(true);
-    flightPoint({ x: mark.x, y: mark.y }, 5, itself(mark, 5), flight(1), out);
-    expect(Number.isFinite(out.x) && Number.isFinite(out.y)).toBe(true);
+    const { particles } = fieldFor(400, 40);
+    const { targets, looks } = write(particles, { flight: flight(1, { radius: 0 }) });
+    expect([...targets, ...looks].every(Number.isFinite)).toBe(true);
   });
 });

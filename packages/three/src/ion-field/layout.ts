@@ -189,3 +189,50 @@ export function createIonFieldLayout(count: number, seed: number = ION_FIELD_SEE
 
   return { count, positions, schools, charges, sizes, phases, targets, roles, ranks, along, lanes };
 }
+
+/**
+ * `layout` with `extra` (even) more particles ahead of its own, for the plan
+ * of Lyon in the fleuves hero (formations.ts, FlightParticles): its own keep
+ * their layout exactly, `extra` places further on, and the extra ones go on
+ * with it, as if the field had `layout.count + extra` particles from `seed`.
+ * They come first, so that the quality monitor, which draws the first
+ * particles, never drops them.
+ */
+export function withParticlesAhead(
+  layout: IonFieldLayout,
+  extra: number,
+  seed: number = ION_FIELD_SEED,
+): IonFieldLayout {
+  if (extra <= 0) {
+    return layout;
+  }
+  if (!Number.isInteger(extra) || extra % 2 !== 0) {
+    throw new RangeError("The ion field takes particles in pairs: an even number ahead.");
+  }
+  const { count } = layout;
+  const total = count + extra;
+  const whole = createIonFieldLayout(total, seed);
+  const ahead = <T extends Float32Array | Uint8Array | Int8Array>(
+    own: T,
+    all: T,
+    stride: number,
+    into: T,
+  ): T => {
+    into.set(all.subarray(count * stride));
+    into.set(own, extra * stride);
+    return into;
+  };
+  return {
+    count: total,
+    positions: ahead(layout.positions, whole.positions, 2, new Float32Array(total * 2)),
+    schools: ahead(layout.schools, whole.schools, 1, new Uint8Array(total)),
+    charges: ahead(layout.charges, whole.charges, 1, new Int8Array(total)),
+    sizes: ahead(layout.sizes, whole.sizes, 1, new Float32Array(total)),
+    phases: ahead(layout.phases, whole.phases, 1, new Float32Array(total)),
+    targets: ahead(layout.targets, whole.targets, 2, new Float32Array(total * 2)),
+    roles: ahead(layout.roles, whole.roles, 1, new Uint8Array(total)),
+    ranks: ahead(layout.ranks, whole.ranks, 1, new Float32Array(total)),
+    along: ahead(layout.along, whole.along, 1, new Float32Array(total)),
+    lanes: ahead(layout.lanes, whole.lanes, 1, new Float32Array(total)),
+  };
+}

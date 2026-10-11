@@ -87,21 +87,16 @@ export function cityDotAlpha(dots: CityDots): Float32Array {
   return alpha;
 }
 
-/** Side of the patches of streets whose dots fuse into one point of the logo mark as they land, in kilometres. */
-export const CITY_PATCH = 0.25;
-
 /**
  * The plan's dots as the ion field takes them over when the page scrolls,
- * to fly them into the logo mark (formations.ts, `flightPoint`): the same
- * dots, in the same place, colour and light as painted here, gathered into
- * patches of streets that each fuse into one of their dots, the carrier.
+ * to fly them into the logo mark (formations.ts, `gatherFlight` and
+ * `flightPoint`): the same dots, in the same place, colour and light as
+ * painted here.
  */
 export interface CityFlight {
   readonly count: number;
   /** Per dot: x and y in kilometres. Its index draws its flight (formations.ts, `flightRandom`). */
   readonly place: Float32Array;
-  /** Per dot: its patch's carrier: x and y in kilometres, its index, and 1 if it is the dot itself. */
-  readonly carrier: Float32Array;
   /** Per dot: its colour (gamma-encoded sRGB, 0 to 1) and opacity, as painted. */
   readonly look: Float32Array;
   /** Per dot: its radius in CSS pixels, as painted. */
@@ -112,9 +107,6 @@ export function cityFlight(dots: CityDots, alpha: Float32Array = cityDotAlpha(do
   const { count, x, y, layer } = dots;
   const tints = CITY_LOOK.map((look) => linearSrgbToSrgb(tokenToLinearSrgb(colors[look.color])));
   const place = new Float32Array(count * 2);
-  const carrier = new Float32Array(count * 4);
-  // The first dot of each patch carries it.
-  const carriers = new Map<number, number>();
   const look = new Float32Array(count * 4);
   const radius = new Float32Array(count);
   for (let index = 0; index < count; index += 1) {
@@ -122,23 +114,13 @@ export function cityFlight(dots: CityDots, alpha: Float32Array = cityDotAlpha(do
     const tint = tints[kind] ?? [1, 1, 1];
     place[index * 2] = x[index] ?? 0;
     place[index * 2 + 1] = y[index] ?? 0;
-    const patch =
-      (Math.floor((x[index] ?? 0) / CITY_PATCH) + 4096) * 8192 +
-      Math.floor((y[index] ?? 0) / CITY_PATCH) +
-      4096;
-    const own = carriers.get(patch) ?? index;
-    carriers.set(patch, own);
-    carrier[index * 4] = x[own] ?? 0;
-    carrier[index * 4 + 1] = y[own] ?? 0;
-    carrier[index * 4 + 2] = own;
-    carrier[index * 4 + 3] = own === index ? 1 : 0;
     look[index * 4] = tint[0];
     look[index * 4 + 1] = tint[1];
     look[index * 4 + 2] = tint[2];
     look[index * 4 + 3] = alpha[index] ?? 0;
     radius[index] = CITY_LOOK[kind]?.radius ?? 1;
   }
-  return { count, place, carrier, look, radius };
+  return { count, place, look, radius };
 }
 
 export interface CityPainter {
