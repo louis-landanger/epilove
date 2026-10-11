@@ -93,13 +93,15 @@ export interface RiversFormation {
  * The dots of the plan of Lyon (`/apercu/fleuves`, city.ts), taken over by
  * the field as the page scrolls and flown into the logo mark: `progress` 0
  * keeps them on the map (`box`, fitted as for the rivers), 1 has them all
- * merged into `mark`. Only those the plan's own canvas shows fly, within the
- * hero (`hero`: its top, height and sides), fading out towards its foot as
- * there. Not a shape of particles: the field draws these dots on their own
+ * fused into `mark`, where they stay as long as it shows (`presence`, in
+ * [0, 1]). Only those the plan's own canvas shows fly, within the hero
+ * (`hero`: its top, height and sides), fading out towards its foot as there.
+ * Not a shape of particles: the field draws these dots on their own
  * (scene.ts, `flightPoint`).
  */
 export interface FlightFormation {
   readonly progress: number;
+  readonly presence: number;
   readonly box: WorldBox;
   readonly hero: {
     readonly top: number;
@@ -1034,6 +1036,7 @@ export interface ViewportFormations {
   /** The plan's dots flying into the logo mark (FlightFormation): the map, the hero, the mark in pixels. */
   readonly flight?: {
     readonly progress: number;
+    readonly presence: number;
     readonly box: PixelBox;
     readonly hero: PixelBox;
     readonly mark: { readonly x: number; readonly y: number; readonly radius: number };
@@ -1087,6 +1090,7 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
     flight: flight
       ? {
           progress: flight.progress,
+          presence: flight.presence,
           box: toWorldBox(flight.box, width, height),
           hero: {
             top: (height / 2 - flight.hero.top) * unit,
@@ -1117,22 +1121,34 @@ export const FLIGHT_RISE = 0.4;
 export const FLIGHT_JITTER = 0.1;
 export const FLIGHT_LANDING = 0.85;
 /**
- * Each dot heads for the side of the mark it comes from, give or take
- * FLIGHT_SCATTER radians (in the orbit's plane): the plan flows in streams.
- * Its curve bows upwards by FLIGHT_LIFT radii of the mark, half to one and a
- * half times that, and sideways by up to half of FLIGHT_BOW of its way.
+ * Each patch of streets heads for the side of the mark it comes from, give or
+ * take FLIGHT_SCATTER radians (in the orbit's plane): the plan flows in
+ * streams. Each dot's curve bows upwards by FLIGHT_LIFT radii of the mark,
+ * half to one and a half times that, and sideways by up to half of FLIGHT_BOW
+ * of its way.
  */
-export const FLIGHT_SCATTER = 0.4;
+export const FLIGHT_SCATTER = 1;
 export const FLIGHT_LIFT = 0.5;
 export const FLIGHT_BOW = 0.3;
 /**
- * Share of the dots that land in the mark's nucleus, taking on its colour;
+ * Share of the patches that land in the mark's nucleus, taking on its colour;
  * the others land on its orbit, a little either side of it.
  */
 export const FLIGHT_NUCLEUS = 0.25;
 export const FLIGHT_ORBIT_WIDTH = 0.08;
-/** How long before it lands (in the flight's progress) a dot merges into the mark, where the mark's particles take over. */
-export const FLIGHT_MERGE = 0.12;
+/**
+ * The dots of a patch of streets (cityFlight, city-painter.ts) land together
+ * on the same point of the mark and fuse there: over the last FLIGHT_MERGE of
+ * the flight's progress, the others merge into the patch's carrier, which
+ * grows up to FLIGHT_FUSION times brighter (its opacity at most
+ * FLIGHT_FUSION_LIGHT). The carriers stay in the mark, turning with it.
+ */
+export const FLIGHT_MERGE = 0.05;
+export const FLIGHT_FUSION = 3;
+export const FLIGHT_FUSION_LIGHT = 0.9;
+/** How fast the carriers turn with the mark, in radians a second: on the orbit as its dust does, in the nucleus. */
+export const FLIGHT_ORBIT_SPIN = 0.25;
+export const FLIGHT_NUCLEUS_SPIN = 0.1;
 /** Share of the hero's height over which the plan fades out at its foot, as its canvas does (marketing.css). */
 export const FLIGHT_FOOT = 0.28;
 
@@ -1151,37 +1167,53 @@ export function flightRandom(index: number, channel: number): number {
   return (((word >>> 22) ^ word) >>> 0) / 2 ** 32;
 }
 
+/** The carrier of a dot's patch of streets: where it starts (world units), its index, and whether it is the dot itself. */
+export interface FlightCarrier {
+  readonly x: number;
+  readonly y: number;
+  readonly index: number;
+  readonly self: boolean;
+}
+
 /**
  * Where a dot of the plan stands at the flight's progress, starting from
- * `start` (world units), how much of its light it keeps, and how much it has
- * taken on the colour of the mark's nucleus (`plasma`). Each dot is a
- * particle of its own, from its `index` in the plan: it leaves its street when
- * the flow rising from the foot of the hero reaches it, and flies, along a
- * curve bowed upwards, to the side of the mark it comes from, on the orbit or
- * in the nucleus, where it merges into the mark's particles: the plan flows
- * into the mark in streams, each dot a little off its neighbours. Dots the
- * plan's canvas does not show at rest (outside the hero, or past its foot)
- * stay unseen. The ion field's shader computes the same (scene.ts).
+ * `start` (world units), how much light it gives (above 1 once fused), and
+ * how much it has taken on the colour of the mark's nucleus (`plasma`).
+ *
+ * Each dot is a particle of its own, from its `index` in the plan: it leaves
+ * its street when the flow rising from the foot of the hero reaches it, and
+ * flies along a curve of its own, bowed upwards. Its patch of streets (its
+ * `carrier`'s) heads for the side of the mark it comes from, on the orbit or
+ * in the nucleus, and lands there all at once: its dots fuse into the
+ * carrier, which stays in the mark, turning with it at `time` (seconds), as
+ * long as the mark shows (`presence`). The plan flows into the mark in
+ * streams and becomes part of it. Dots the plan's canvas does not show at
+ * rest (outside the hero, or past its foot) stay unseen. The ion field's
+ * shader computes the same (scene.ts).
  */
 export function flightPoint(
   start: { readonly x: number; readonly y: number },
   index: number,
+  carrier: FlightCarrier,
   flight: FlightFormation,
   out: { x: number; y: number; light: number; plasma: number },
+  time = 0,
 ): void {
-  const random = (channel: number) => flightRandom(index, channel);
+  const own = (channel: number) => flightRandom(index, channel);
+  const patch = (channel: number) => flightRandom(carrier.index, channel);
   const { mark, hero } = flight;
   const radius = Math.max(mark.radius, 1e-6);
-  // When it leaves, and when it lands.
+  // When it leaves (its own), and when its patch lands.
   const fromFoot = Math.min(1, Math.max(0, (start.y - (hero.top - hero.height)) / hero.height));
-  const leave = Math.max(0, FLIGHT_RISE * fromFoot + FLIGHT_JITTER * (random(0) - 0.5));
-  const land = FLIGHT_LANDING + (1 - FLIGHT_LANDING) * random(1);
+  const leave = Math.max(0, FLIGHT_RISE * fromFoot + FLIGHT_JITTER * (own(0) - 0.5));
+  const land = FLIGHT_LANDING + (1 - FLIGHT_LANDING) * patch(1);
   const p = smoothstep(leave, land, flight.progress);
-  // Where it lands: the side of the mark it comes from (seen in the orbit's plane), give or take.
+  // Where its patch lands: the side of the mark its carrier comes from (seen in the orbit's
+  // plane), give or take, turning with the mark.
   const cos = Math.cos(MARK.tilt);
   const sin = Math.sin(MARK.tilt);
-  const dx = start.x - mark.x;
-  const dy = start.y - mark.y;
+  const dx = carrier.x - mark.x;
+  const dy = carrier.y - mark.y;
   let u = dx * cos + dy * sin;
   let v = (dy * cos - dx * sin) / MARK.orbitMinor;
   const away = Math.hypot(u, v);
@@ -1192,29 +1224,34 @@ export function flightPoint(
     u = 1;
     v = 0;
   }
-  const scatter = (random(2) - 0.5) * 2 * FLIGHT_SCATTER;
-  const su = u * Math.cos(scatter) - v * Math.sin(scatter);
-  const sv = u * Math.sin(scatter) + v * Math.cos(scatter);
-  const nucleus = random(3) < FLIGHT_NUCLEUS;
+  const nucleus = patch(3) < FLIGHT_NUCLEUS;
+  const turn =
+    (patch(2) - 0.5) * 2 * FLIGHT_SCATTER + time * (nucleus ? FLIGHT_NUCLEUS_SPIN : FLIGHT_ORBIT_SPIN);
+  const su = u * Math.cos(turn) - v * Math.sin(turn);
+  const sv = u * Math.sin(turn) + v * Math.cos(turn);
   // On the orbit: the circle of the orbit's plane, flattened and tilted into the ring. In the
   // nucleus: a disc.
   const reach = nucleus
-    ? radius * NUCLEUS_REACH * Math.sqrt(random(4))
-    : radius * (1 + (random(4) - 0.5) * FLIGHT_ORBIT_WIDTH);
+    ? radius * NUCLEUS_REACH * Math.sqrt(patch(4))
+    : radius * (1 + (patch(4) - 0.5) * FLIGHT_ORBIT_WIDTH);
   const flat = nucleus ? 1 : MARK.orbitMinor;
   const tx = mark.x + (su * cos - sv * flat * sin) * reach;
   const ty = mark.y + (su * sin + sv * flat * cos) * reach;
-  // How it gets there: a quadratic Bézier, its middle lifted and pushed aside a little.
-  const aside = (random(5) - 0.5) * FLIGHT_BOW;
+  // How it gets there: a quadratic Bézier of its own, its middle lifted and pushed aside a little.
+  const aside = (own(5) - 0.5) * FLIGHT_BOW;
   const cx = (start.x + tx) / 2 - (ty - start.y) * aside;
-  const cy = (start.y + ty) / 2 + (tx - start.x) * aside + FLIGHT_LIFT * radius * (0.5 + random(6));
+  const cy = (start.y + ty) / 2 + (tx - start.x) * aside + FLIGHT_LIFT * radius * (0.5 + own(6));
   const q = 1 - p;
   out.x = q * q * start.x + 2 * q * p * cx + p * p * tx;
   out.y = q * q * start.y + 2 * q * p * cy + p * p * ty;
+  // Its light: as painted, until its patch fuses into the carrier, which stays while the mark shows.
   const shown =
     start.x >= hero.left && start.x <= hero.right && start.y <= hero.top
       ? Math.min(1, Math.max(0, (1 - (hero.top - start.y) / hero.height) / FLIGHT_FOOT))
       : 0;
-  out.light = shown * (1 - smoothstep(land - FLIGHT_MERGE, land, flight.progress));
+  const fused = smoothstep(land - FLIGHT_MERGE, land, flight.progress);
+  out.light = carrier.self
+    ? shown * (1 + (FLIGHT_FUSION - 1) * fused) * (1 - fused + fused * flight.presence)
+    : shown * (1 - fused);
   out.plasma = nucleus ? smoothstep(0.4, 1, p) : 0;
 }

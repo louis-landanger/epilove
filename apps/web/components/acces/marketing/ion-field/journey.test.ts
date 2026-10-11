@@ -192,10 +192,15 @@ describe("journey", () => {
     const midway = at(400);
     expect(midway.flight?.progress).toBeCloseTo(midway.pair?.weight ?? 0, 6);
     expect(midway.flight?.hero.top).toBe(-400);
-    // …and lands in the mark beside the manifesto.
+    // …and lands in the mark beside the manifesto, where it stays as long as the mark shows…
     const settled = at(820);
     expect(settled.flight?.progress).toBe(1);
     expect(settled.flight?.mark).toEqual(settled.pair?.mark);
+    expect(settled.flight?.presence).toBe(1);
+    // …and leaves with it, as the cards take the particles over.
+    const cards = at(2600);
+    expect(cards.flight?.presence ?? 0).toBeLessThan(0.5);
+    expect(cards.flight?.presence).toBeCloseTo(cards.pair ? cards.pair.weight : 0, 6);
     // No plan without the rivers' hero.
     expect(journey(page(0)).formations.flight).toBeNull();
   });

@@ -313,10 +313,11 @@ export function journey(measures: JourneyMeasures): JourneyState {
         rivers && scope && pairShare * (1 - settle) > 0.001
           ? { weight: pairShare * (1 - settle), box: rivers }
           : null,
-      // The plan of Lyon follows the rivers' particles into the mark, at the same pace.
+      // The plan of Lyon follows the rivers' particles into the mark, at the same pace, and
+      // stays in it as long as it shows.
       flight:
         rivers && scope && measures.riversHero
-          ? { progress: settle, box: rivers, hero: measures.riversHero, mark: atom }
+          ? { progress: settle, presence: pairShare, box: rivers, hero: measures.riversHero, mark: atom }
           : null,
     },
   };
