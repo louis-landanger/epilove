@@ -656,14 +656,19 @@ describe("the plan's flight into the logo mark", () => {
     const { particles, landing, side } = fieldFor(2400, 300);
     const { patches } = particles.flight;
     const extent = Array.from({ length: 300 }, () => ({ minX: 99, maxX: -99, minY: 99, maxY: -99, dots: 0 }));
+    // Every dot is checked; the dots that break a rule are listed, then the list asserted empty
+    // once (an assertion per dot made the test slower than the CI allows).
+    const wrong: string[] = [];
     for (let index = 0; index < plan.count; index += 1) {
       const x = plan.place[index * 2] ?? 0;
       const y = plan.place[index * 2 + 1] ?? 0;
       const slot = landing[index * 2] ?? -1;
       // Every dot the hero shows lands as one of them, the others as none.
       if (shownAt(map.x + x * map.scale, map.y + y * map.scale) > 0) {
-        expect(slot).toBeGreaterThanOrEqual(0);
-        expect(slot).toBeLessThan(300);
+        if (!(slot >= 0 && slot < 300)) {
+          wrong.push(`dot ${index} shown, lands as ${slot}`);
+          continue;
+        }
         const box = extent[slot];
         if (box) {
           box.minX = Math.min(box.minX, x);
@@ -672,11 +677,15 @@ describe("the plan's flight into the logo mark", () => {
           box.maxY = Math.max(box.maxY, y);
           box.dots += 1;
         }
-        expect(landing[index * 2 + 1]).toBe(patches[slot * FLIGHT_PATCH_STRIDE + 3]);
-      } else {
-        expect(slot).toBe(-1);
+        if (landing[index * 2 + 1] !== patches[slot * FLIGHT_PATCH_STRIDE + 3]) {
+          wrong.push(`dot ${index} not in its patch's place (nucleus or orbit)`);
+        }
+      } else if (slot !== -1) {
+        wrong.push(`dot ${index} not shown, lands as ${slot}`);
       }
     }
+    expect(wrong.slice(0, 5)).toEqual([]);
+    expect(wrong).toHaveLength(0);
     // Square patches, as many as there are particles for them, or nearly.
     const used = extent.filter((box) => box.dots > 0);
     expect(used.length).toBeLessThanOrEqual(300);
