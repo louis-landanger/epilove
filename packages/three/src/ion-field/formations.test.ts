@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   contourLength,
   contourPoint,
+  FLIGHT_DELAY,
   FLIGHT_FUSION,
+  FLIGHT_JITTER,
   FLIGHT_NUCLEUS,
   FLIGHT_ORBIT_SPIN,
   FLIGHT_ORBIT_WIDTH,
@@ -588,16 +590,24 @@ describe("the plan's flight into the logo mark", () => {
     }
   });
 
-  it("flows from the bottom of the hero up, every dot on its way by halfway", () => {
+  it("holds the plan whole while the rivers set off, then lets it flow from the bottom of the hero up", () => {
     const foot = { x: 0.2, y: -1.15 };
     const top = { x: 0.2, y: 1.15 };
     for (const dot of dots) {
-      flightPoint(foot, dot, itself(foot, dot), flight(0.12), out);
+      // At first, not a dot moves…
+      for (const start of [foot, top]) {
+        flightPoint(start, dot, itself(start, dot), flight(FLIGHT_DELAY - FLIGHT_JITTER / 2), out);
+        expect(out.x).toBeCloseTo(start.x, 9);
+        expect(out.y).toBeCloseTo(start.y, 9);
+      }
+      // …then the foot of the plan leaves first…
+      flightPoint(foot, dot, itself(foot, dot), flight(FLIGHT_DELAY + FLIGHT_JITTER), out);
       expect(Math.hypot(out.x - foot.x, out.y - foot.y)).toBeGreaterThan(1e-4);
-      flightPoint(top, dot, itself(top, dot), flight(0.12), out);
+      flightPoint(top, dot, itself(top, dot), flight(FLIGHT_DELAY + FLIGHT_JITTER), out);
       expect(out.x).toBeCloseTo(top.x, 9);
       expect(out.y).toBeCloseTo(top.y, 9);
-      flightPoint(top, dot, itself(top, dot), flight(0.5), out);
+      // …and its top follows, well before the end.
+      flightPoint(top, dot, itself(top, dot), flight(0.7), out);
       expect(Math.hypot(out.x - top.x, out.y - top.y)).toBeGreaterThan(1e-4);
     }
   });

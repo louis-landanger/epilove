@@ -51,6 +51,7 @@ import type { CityFlight } from "./city-painter";
 import {
   FLIGHT_BOW,
   FLIGHT_CHANNELS,
+  FLIGHT_DELAY,
   FLIGHT_FOOT,
   FLIGHT_FUSION,
   FLIGHT_FUSION_LIGHT,
@@ -776,10 +777,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     // numbers are those of the CPU (flightRandom).
     const own = (channel: number) => hash(instanceIndex.mul(FLIGHT_CHANNELS).add(channel));
     const patch = (channel: number) => hash(carrier.z.mul(FLIGHT_CHANNELS).add(channel));
-    // It leaves when the flow rising from the foot of the hero reaches it, a little ragged, and
-    // its patch lands with the rivers' particles, at the end…
+    // Once the rivers' particles have set off, it leaves when the flow rising from the foot of the
+    // hero reaches it, a little ragged, and its patch lands with the rivers' particles, at the end…
     const fromFoot = clamp(start.y.sub(uFlightHero.x.sub(uFlightHero.y)).div(uFlightHero.y), 0, 1);
-    const leave = max(fromFoot.mul(FLIGHT_RISE).add(own(0).sub(0.5).mul(FLIGHT_JITTER)), 0);
+    const leave = max(fromFoot.mul(FLIGHT_RISE).add(own(0).sub(0.5).mul(FLIGHT_JITTER)).add(FLIGHT_DELAY), 0);
     const land = patch(1)
       .mul(1 - FLIGHT_LANDING)
       .add(FLIGHT_LANDING);

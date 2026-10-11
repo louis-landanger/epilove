@@ -1111,13 +1111,15 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
 /** Below this progress the plan is at rest: the page paints it, the field does not draw it. */
 export const FLIGHT_START = 0.001;
 /**
- * The plan flows into the mark from the bottom up, at the pace of the rivers'
- * particles: a dot leaves when the flight's progress reaches FLIGHT_RISE
- * times its height in the hero (0 at its foot, 1 at its top), give or take
- * half of FLIGHT_JITTER, and lands with the rivers' particles, somewhere from
- * FLIGHT_LANDING to the end: the plan stays on its way as long as they do.
+ * The plan stays whole while the rivers' particles set off, then flows into
+ * the mark from the bottom up, at their pace: a dot leaves when the flight's
+ * progress reaches FLIGHT_DELAY plus FLIGHT_RISE times its height in the hero
+ * (0 at its foot, 1 at its top), give or take half of FLIGHT_JITTER, and
+ * lands with the rivers' particles, somewhere from FLIGHT_LANDING to the
+ * end: the plan stays on its way as long as they do.
  */
-export const FLIGHT_RISE = 0.4;
+export const FLIGHT_DELAY = 0.2;
+export const FLIGHT_RISE = 0.35;
 export const FLIGHT_JITTER = 0.1;
 export const FLIGHT_LANDING = 0.85;
 /**
@@ -1205,7 +1207,7 @@ export function flightPoint(
   const radius = Math.max(mark.radius, 1e-6);
   // When it leaves (its own), and when its patch lands.
   const fromFoot = Math.min(1, Math.max(0, (start.y - (hero.top - hero.height)) / hero.height));
-  const leave = Math.max(0, FLIGHT_RISE * fromFoot + FLIGHT_JITTER * (own(0) - 0.5));
+  const leave = Math.max(0, FLIGHT_DELAY + FLIGHT_RISE * fromFoot + FLIGHT_JITTER * (own(0) - 0.5));
   const land = FLIGHT_LANDING + (1 - FLIGHT_LANDING) * patch(1);
   const p = smoothstep(leave, land, flight.progress);
   // Where its patch lands: the side of the mark its carrier comes from (seen in the orbit's
