@@ -94,11 +94,13 @@ describe("createFrameMonitor", () => {
   });
 
   it("gives the quality back once the device keeps up again, not before", () => {
-    // A heavy stretch of the page: the field lowers its quality…
+    // A 120 Hz display: frames every 8 ms…
     const monitor = createFrameMonitor({ window: 10, windowMs: 1000, budgetMs: 20, cooldown: 20 });
+    expect(Array.from({ length: 40 }, () => monitor.push(8))).not.toContain("degrade");
+    // …a heavy stretch of the page: the field lowers its quality…
     const slow = Array.from({ length: 40 }, () => monitor.push(40, false, true));
     expect(slow).toContain("degrade");
-    // …and frames that only just keep up do not bring it back,
+    // …and frames that do not keep up with the display do not bring it back,
     expect(Array.from({ length: 200 }, () => monitor.push(15, false, true))).not.toContain("upgrade");
     // fast frames do, after a while,
     const fast = Array.from({ length: 400 }, () => monitor.push(6, false, true));
@@ -124,6 +126,42 @@ describe("createFrameMonitor", () => {
     until(40, "degrade");
     const second = until(6, "upgrade");
     expect(second).toBeGreaterThan(first * 1.5);
+  });
+
+  // Frames on time on a 60 Hz display: never under 16.7 ms (the display's own pace), a little jitter.
+  const vsync = (frame: number) => 1000 / 60 + (frame % 2 === 0 ? 0.2 : -0.2);
+
+  it("gives the quality back on a 60 Hz display too, whose frames never come under 16.7 ms", () => {
+    // The field's monitor: frames on time at the best quality…
+    const monitor = createFrameMonitor();
+    expect(Array.from({ length: 180 }, (_, frame) => monitor.push(vsync(frame)))).not.toContain("degrade");
+    // …a heavy stretch at the foot of the page halves the particles, twice…
+    const heavy = Array.from({ length: 100 }, () => monitor.push(45, false, true));
+    expect(heavy.filter((verdict) => verdict === "degrade")).toHaveLength(2);
+    // …and back up, frames on time again: they all come back, the first half within seconds.
+    const back = Array.from({ length: 60 * 20 }, (_, frame) => monitor.push(vsync(frame), false, true));
+    expect(back.filter((verdict) => verdict === "upgrade").length).toBeGreaterThanOrEqual(2);
+    expect(back.indexOf("upgrade")).toBeLessThan(60 * 6);
+  });
+
+  it("asks for more only at the display's pace: not with frames late, nor on a display slower than the budget", () => {
+    // A 60 Hz display where one frame in two comes late after the slowdown…
+    const late = createFrameMonitor();
+    for (let frame = 0; frame < 180; frame += 1) {
+      late.push(vsync(frame));
+    }
+    for (let frame = 0; frame < 100; frame += 1) {
+      late.push(45, false, true);
+    }
+    const halting = Array.from({ length: 60 * 30 }, (_, frame) =>
+      late.push(frame % 2 === 0 ? vsync(frame) : 2000 / 60, false, true),
+    );
+    expect(halting).not.toContain("upgrade");
+    // …and a phone saving its battery, its display at 30 Hz: frames on time, yet over the budget.
+    const saver = createFrameMonitor();
+    expect(Array.from({ length: 30 * 60 }, () => saver.push(1000 / 30, false, true))).not.toContain(
+      "upgrade",
+    );
   });
 
   it("ignores isolated spikes", () => {

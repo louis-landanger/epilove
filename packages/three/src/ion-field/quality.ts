@@ -76,6 +76,13 @@ export function markPlacementFor(aspect: number, mark: typeof MARK = MARK): Mark
   return { scale, x: 0, y: 0.52 };
 }
 
+/** The fastest display there is (240 Hz): no frame interval below counts as the display's pace. */
+const FASTEST_FRAME_MS = 4;
+/** Frames keep up with the display when three in four come within this much of its pace. */
+const KEEPING_UP = 1.15;
+/** Whatever the display, frames over this share of the budget never ask for more (a 30 Hz display). */
+const UPGRADE_CEILING = 0.85;
+
 /**
  * Watches real frame times and asks for a lower quality when the median of
  * the recent frames exceeds the budget. The window and the cooldown are
@@ -86,10 +93,12 @@ export function markPlacementFor(aspect: number, mark: typeof MARK = MARK): Mark
  *
  * A slowdown is often only a moment (a heavy section, another tab, the
  * garbage collector): `canUpgrade` tells it the quality is below its best,
- * and once frames have been fast for a while (well under the budget, for
- * `upgradeHoldMs`) it asks for the quality back. Each time a quality it gave
- * back proves too much (slow again soon after), it waits twice as long
- * before the next attempt: no back and forth.
+ * and once frames have been fast for a while (`upgradeHoldMs`) it asks for
+ * the quality back. Fast means well under the budget, or keeping up with the
+ * display: frames never come faster than its refresh (16.7 ms at 60 Hz, the
+ * pace it learns from the fastest frames), so on time is as fast as they get.
+ * Each time a quality it gave back proves too much (slow again soon after),
+ * it waits twice as long before the next attempt: no back and forth.
  */
 export function createFrameMonitor(
   options: {
@@ -110,6 +119,8 @@ export function createFrameMonitor(
   const upgradeBelow = budget * (options.upgradeRatio ?? 0.45);
   const baseHold = options.upgradeHoldMs ?? 4000;
   let hold = baseHold;
+  /** The display's pace: the fastest tenth of the frames, at its lowest yet. */
+  let display = Number.POSITIVE_INFINITY;
   let samples: number[] = [];
   let sinceLastChange = 0;
   let msSinceLastChange = 0;
@@ -140,7 +151,14 @@ export function createFrameMonitor(
       }
       const sorted = [...samples].sort((a, b) => a - b);
       const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
-      if (canUpgrade && median <= upgradeBelow && msSinceLastChange >= hold) {
+      display = Math.min(
+        display,
+        Math.max(FASTEST_FRAME_MS, sorted[Math.floor(sorted.length / 10)] ?? median),
+      );
+      const onTime =
+        (sorted[Math.floor(sorted.length * 0.75)] ?? median) <=
+        Math.min(budget * UPGRADE_CEILING, display * KEEPING_UP);
+      if (canUpgrade && (median <= upgradeBelow || onTime) && msSinceLastChange >= hold) {
         return change("upgrade");
       }
       const cooledDown = sinceLastChange >= cooldown || msSinceLastChange >= cooldownMs;
