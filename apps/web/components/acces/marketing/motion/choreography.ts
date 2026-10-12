@@ -184,13 +184,21 @@ export function startChoreography(root: HTMLElement): () => void {
         // keeps an AA contrast (large title 3:1, body 4.5:1); the plasma accents
         // start brighter since their contrast is lower to begin with.
         const isTitle = index === 0;
+        const dimmed = (word: Element) =>
+          word.closest("em") ? (isTitle ? 0.8 : 0.92) : isTitle ? 0.45 : 0.62;
+        // GSAP puts the words out of focus one by one, reading each before it writes: the page's
+        // styles are worked out again for every word. Out of focus all at once beforehand, with the
+        // values it writes, in its order, they leave it nothing to change and its reads cost nothing.
+        // Nothing shows in between (the same task), and the words go with the split when it reverts.
+        for (const word of split.words) {
+          if (word instanceof HTMLElement) {
+            word.style.filter = "blur(5px)";
+            word.style.opacity = String(dimmed(word));
+          }
+        }
         timeline.fromTo(
           split.words,
-          {
-            opacity: (_: number, word: Element) =>
-              word.closest("em") ? (isTitle ? 0.8 : 0.92) : isTitle ? 0.45 : 0.62,
-            filter: "blur(5px)",
-          },
+          { opacity: (_: number, word: Element) => dimmed(word), filter: "blur(5px)" },
           { opacity: 1, filter: "blur(0px)", stagger: 0.06, duration: 0.4, ease: "none" },
         );
       }
