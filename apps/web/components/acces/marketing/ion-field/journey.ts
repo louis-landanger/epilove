@@ -82,6 +82,14 @@ interface Stage {
 }
 
 /**
+ * When the next stacked card takes the outline over, in screens above the
+ * top at which it sticks: from `from`, as it slides over the previous one,
+ * to `to`, a quarter of a screen before it settles, so that the particles,
+ * which take a moment to follow, outline it by then.
+ */
+const CARD_HANDOVER = { from: 0.6, to: 0.25 } as const;
+
+/**
  * The stacked cards: present from the moment the first card comes up until
  * the list scrolls away; the shape follows whichever card is on top,
  * morphing into the next one (and the next motif) as it slides in.
@@ -97,11 +105,13 @@ function cardStage(measures: JourneyMeasures): (Stage & { readonly step: number 
     ramp((bottomOf(cardList) - 0.25 * height) / (0.5 * height));
   let box = first.box;
   let step = 0;
-  // Cards follow each other closely: the motif changes over the last stretch of
-  // the next card's climb, so every card keeps its own motif for a while.
-  const handover = 0.35 * height;
+  // Cards follow each other closely: the outline and its motif go to the next card while it slides
+  // over the previous one, and are all around it before it settles, the particles taking a moment to
+  // follow; every card keeps its own motif for a while.
+  const from = CARD_HANDOVER.from * height;
+  const span = (CARD_HANDOVER.from - CARD_HANDOVER.to) * height;
   for (const card of cards.slice(1)) {
-    const arrival = ramp((card.stuckTop + handover - card.box.top) / handover);
+    const arrival = ramp((card.stuckTop + from - card.box.top) / span);
     box = lerpBox(box, card.box, arrival);
     step += arrival;
   }

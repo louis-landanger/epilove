@@ -151,7 +151,7 @@ Structure de la page d'accueil :
 |---|---|
 | Accueil | Ils coulent le long de la Saône (plasma) et du Rhône (volt) dans le plan de Lyon et se rejoignent à la Confluence, chaque paire liée. |
 | Manifeste | Dès le premier défilement, les fleuves et les points du plan de Lyon s'écoulent dans le logo, à sa place à côté du manifeste : orbite, noyau plasma (qui s'allume alors), électron volt. Deux personnes, un atome. |
-| Comment ça marche | Ils tracent le contour de la carte du dessus, un motif par étape : anneau de scan balayé d'impulsions (vérification), couches d'électrons (profil), double hélice dont les brins sont reliés par des liaisons (chimie). Le motif change quand la carte suivante recouvre la précédente. |
+| Comment ça marche | Ils tracent le contour de la carte du dessus, un motif par étape : anneau de scan balayé d'impulsions (vérification), couches d'électrons (profil), double hélice dont les brins sont reliés par des liaisons (chimie). Le contour passe à la carte suivante, avec son motif, pendant qu'elle glisse sur la précédente, et l'entoure avant qu'elle ne s'arrête. |
 | Course des écoles | Chaque atome rejoint l'éprouvette de son école et la remplit jusqu'au niveau réel ; ceux qui n'ont pas encore de place attendent en panache au-dessus. Le liquide CSS devient un verre teinté. |
 | Pacte | Tous les atomes tournent en couples liés sur les trois anneaux. |
 | Entre deux sections | Les deux formes voisines se partagent les atomes (leurs poids font 1) : ils glissent de l'une à l'autre sans jamais redevenir libres. Là où aucune forme n'est en jeu, la plus proche les garde et s'éloigne avec sa section. |

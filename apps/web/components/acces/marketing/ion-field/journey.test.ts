@@ -144,11 +144,11 @@ describe("journey", () => {
     const leaving = journey(page(2200));
     expect(leaving.formations.pair?.weight ?? 0).toBeLessThan(0.3);
 
-    const first = journey(page(2850));
+    const first = journey(page(2600));
     expect(first.formations.pair).toBeNull();
     expect(first.formations.card?.weight).toBeGreaterThan(0.95);
     expect(first.formations.card?.step).toBeCloseTo(0, 1);
-    expect(first.formations.card?.box.top).toBeCloseTo(88, 0);
+    expect(first.formations.card?.box.top).toBeCloseTo(2860 - 2600, 0);
 
     const second = journey(page(3200));
     expect(second.formations.card?.step).toBeGreaterThan(0.95);
@@ -160,10 +160,24 @@ describe("journey", () => {
   });
 
   it("morphs from one card to the next while it slides in", () => {
-    const halfway = journey(page(2900));
+    const halfway = journey(page(2780));
     const step = halfway.formations.card?.step ?? 0;
     expect(step).toBeGreaterThan(0.05);
     expect(step).toBeLessThan(0.95);
+  });
+
+  it("hands the outline over to the next card as it slides in, all around it before it settles", () => {
+    // The second card (natural top 3270) sticks 108 px from the top of the screen.
+    const cardAt = (top: number) => journey(page(3270 - top)).formations.card;
+    // Just come into view, under the first card: the first one keeps its motif…
+    expect(cardAt(0.8 * height)?.step).toBe(0);
+    // …a little higher, sliding over it, the outline is on its way…
+    expect(cardAt(0.6 * height)?.step).toBeGreaterThan(0.2);
+    // …and all around it while it still has a fifth of the screen to climb: the particles take a
+    // moment to follow, and have it outlined by the time it settles.
+    const almost = cardAt(108 + 0.2 * height);
+    expect(almost?.step).toBe(1);
+    expect(almost?.box.top).toBeCloseTo(108 + 0.2 * height, 6);
   });
 
   it("pours into the tubes once the cards have gone, then orbits the Pact", () => {
