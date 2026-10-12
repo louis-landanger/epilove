@@ -42,7 +42,7 @@ import {
   type WorldBox,
   writeFormations,
 } from "./formations";
-import { createIonFieldLayout, MARK, SCHOOL_KEYS } from "./layout";
+import { createIonFieldLayout, MARK, SCHOOL_KEYS, withParticlesAhead } from "./layout";
 import { RHONE_PATH, RIVER_MAP, SAONE_PATH } from "./rivers";
 
 const box: WorldBox = { x: 0.2, y: -0.1, hw: 0.8, hh: 0.4 };
@@ -447,6 +447,104 @@ describe("writeFormations", () => {
       const midway = ((card.targets[offset] ?? 0) + (ring.targets[offset] ?? 0)) / 2;
       expect(both.targets[offset]).toBeCloseTo(midway, 5);
     }
+  });
+});
+
+describe("the shapes after a hero with more particles", () => {
+  // The fleuves hero's field: 5,600 particles of its own for the rivers, 1,400 kept ahead for the
+  // plan of Lyon. The landing's: 1,600. Past the hero, the cards, the tubes and the Pact rings
+  // light the landing's particles, as on the landing; the others fuse into them.
+  const kept = 1400;
+  const lit = 1600;
+  const hero: FormationParticles = {
+    ...withParticlesAhead(createIonFieldLayout(5600), kept),
+    flight: {
+      count: kept,
+      patches: new Float32Array(kept * FLIGHT_PATCH_STRIDE),
+      reveal: 1,
+      landed: new Float32Array(kept).fill(-1),
+    },
+    shapes: lit,
+  };
+  const landing = createIonFieldLayout(lit);
+  const tubes = SCHOOL_KEYS.map((_, school) => ({
+    box: { x: -0.8 + school * 0.4, y: 0, hw: 0.06, hh: 0.4 },
+    level: [0.9, 0.5, 0.2, 0, 0.6][school] ?? 0,
+  }));
+  const shapes: Formations[] = [0, 1, 2].map((step) => ({ card: { weight: 1, box, radius: 0.07, step } }));
+  shapes.push({ tubes: { weight: 1, tubes } }, { pact: { weight: 1, x: 0.5, y: 0.1, radius: 0.6 } });
+  const write = (particles: FormationParticles, formations: Formations) => {
+    const targets = new Float32Array(particles.count * FORMATION_STRIDE);
+    const looks = new Float32Array(particles.count * FORMATION_STRIDE);
+    writeFormations(targets, looks, particles, formations, null, 3, 2 / 900);
+    return { targets, looks };
+  };
+  /** The particle the hero's particle `index` fuses into past the hero: one of the landing's, partners into partners. */
+  const host = (index: number) => kept + ((index < kept ? index : index - kept) % lit);
+
+  it("lights the landing's particles in them, just as the landing does, and fuses the others into them", () => {
+    for (const formations of shapes) {
+      const ours = write(hero, formations);
+      const theirs = write(landing, formations);
+      const wrong: string[] = [];
+      for (let index = 0; index < hero.count; index += 1) {
+        const at = index * FORMATION_STRIDE;
+        const own = index - kept;
+        if (own >= 0 && own < lit) {
+          // One of the landing's: where it stands there, as lit.
+          for (let k = 0; k < FORMATION_STRIDE; k += 1) {
+            if (ours.targets[at + k] !== theirs.targets[own * FORMATION_STRIDE + k]) {
+              wrong.push(`particle ${index} not where the landing's ${own} stands`);
+            }
+            if (ours.looks[at + k] !== theirs.looks[own * FORMATION_STRIDE + k]) {
+              wrong.push(`particle ${index} not lit as the landing's ${own}`);
+            }
+          }
+        } else {
+          // Another: where its host stands, unlit.
+          const there = host(index) * FORMATION_STRIDE;
+          if (ours.targets[at] !== ours.targets[there] || ours.targets[at + 1] !== ours.targets[there + 1]) {
+            wrong.push(`particle ${index} not on its host ${host(index)}`);
+          }
+          if (ours.looks[at + 2] !== 0) {
+            wrong.push(`particle ${index} still lit`);
+          }
+        }
+      }
+      expect(wrong.slice(0, 5)).toEqual([]);
+    }
+  });
+
+  it("fuses them on the way from the logo mark, and brings them back out on the way back", () => {
+    const mark = { x: 0.8, y: 0, radius: 0.45 };
+    const pair = (weight: number) => ({
+      weight,
+      box: { x: mark.x, y: mark.y, hw: mark.radius, hh: mark.radius },
+      bond: 1,
+      merge: 1,
+      mark,
+    });
+    const card = (weight: number) => ({ weight, box, radius: 0.07, step: 2 });
+    const index = kept + 3001;
+    const at = index * FORMATION_STRIDE;
+    const states = [1, 0.75, 0.5, 0.25, 0].map((inMark) => {
+      const { targets, looks } = write(hero, { pair: pair(inMark), card: card(1 - inMark) });
+      return {
+        x: targets[at] ?? 0,
+        glow: looks[at + 2] ?? 0,
+        there: targets[host(index) * FORMATION_STRIDE] ?? 0,
+      };
+    });
+    // In the mark it shines as the others do; it dims as the cards take the particles over…
+    const glows = states.map((state) => state.glow);
+    expect(glows[0]).toBeGreaterThan(0.5);
+    for (let k = 1; k < glows.length; k += 1) {
+      expect(glows[k]).toBeLessThan(glows[k - 1] ?? 0);
+    }
+    expect(glows[glows.length - 1]).toBe(0);
+    // …heading where its host goes, which it reaches as it goes out. (Back up, the same in reverse.)
+    const last = states[states.length - 1];
+    expect(last?.x).toBe(last?.there);
   });
 });
 

@@ -122,6 +122,13 @@ export interface IonFieldOptions {
    */
   readonly flight?: boolean;
   /**
+   * How many particles the shapes past the hero light (cards, tubes, Pact
+   * rings) when the hero needs more (the rivers): the landing's count, so
+   * they look as they do there, drawn as finely; the hero's others, and the
+   * plan's, fuse into them on the way (formations.ts, FormationParticles).
+   */
+  readonly shapeParticles?: number;
+  /**
    * Called when the field takes the plan's dots over from the page (true: the
    * page stops painting them) or hands them back (false), in the frame it
    * starts or stops drawing them.
@@ -292,7 +299,15 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     reveal: 0,
     landed: new Float32Array(kept).fill(-1),
   };
-  const particles: FormationParticles = kept > 0 ? { ...layout, flight: planned } : layout;
+  // Past a hero that needs more particles, the shapes light as many as the landing has.
+  const shapes =
+    options.shapeParticles !== undefined && options.shapeParticles < own.count
+      ? Math.max(2, Math.floor(options.shapeParticles / 2) * 2)
+      : undefined;
+  const particles: FormationParticles =
+    kept > 0 || shapes !== undefined
+      ? { ...layout, ...(kept > 0 ? { flight: planned } : {}), ...(shapes === undefined ? {} : { shapes }) }
+      : layout;
   /** The patches a gathering of the plan fills, which the particles kept for it take up once complete. */
   const gatheredPatches = new Float32Array(planned.patches.length);
   const data = staticData(layout);
@@ -313,6 +328,14 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const uFine = uniform(0);
   const uPixel = uniform(2 / Math.max(1, options.container.clientHeight));
   const uPixelRatio = uniform(1);
+  // About the same overall light whatever the particle count: the more ions,
+  // the finer each one. A desktop's 1,600 read as fine dust, a phone's 900 as
+  // slightly brighter sparks. Past a hero with more particles, the shapes'
+  // own (the landing's count) are drawn as on the landing.
+  const densityFor = (lit: number) => Math.min(1, Math.max(0.45, Math.sqrt(1000 / lit)));
+  const density = densityFor(own.count);
+  const shapeDensity = shapes === undefined ? density : densityFor(shapes);
+  const uDensity = uniform(density);
   /**
    * The plan's flight: its progress, the map (a kilometre, where 0 km lands), the hero (top,
    * height, sides) and the mark's radius (the dots' curves bow by a share of it).
@@ -733,11 +756,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     depthTest: false,
     blending: AdditiveBlending,
   });
-  // About the same overall light whatever the particle count: the more ions,
-  // the finer each one. A desktop's 1,600 read as fine dust, a phone's 900 as
-  // slightly brighter sparks.
-  const density = Math.min(1, Math.max(0.45, Math.sqrt(1000 / own.count)));
-  const radius = colorAttribute.w.mul(density);
+  const radius = colorAttribute.w.mul(uDensity);
   const phase = phaseAttribute;
   const pointerProximity = float(1)
     .sub(smoothstep(0, 0.35, length(uPointer.sub(particleCenter))))
@@ -748,7 +767,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   // Depth: the smallest ions are dimmer, like dust further away.
   const depth = mix(float(0.26), float(1), smoothstep(0.003, 0.014, radius));
   const swell = float(1).add(particleBond.mul(0.45)).add(pointerProximity.mul(0.6));
-  const quadSize = mix(radius.mul(swell).mul(GLOW_QUAD).mul(particleGrain), uPixel.mul(FINE_QUAD), uFine);
+  // An ion with no light adds nothing: drawn at no size, it costs the GPU nothing either.
+  const quadSize = mix(radius.mul(swell).mul(GLOW_QUAD).mul(particleGrain), uPixel.mul(FINE_QUAD), uFine).mul(
+    stepAt(1e-6, particleLook.z),
+  );
   ionMaterial.positionNode = vec3(particleCenter.add(positionGeometry.xy.mul(quadSize)), 0);
   const quadPixels = quadSize.div(uPixel).toVarying();
   // Formations tint some motifs (volt, plasma, paper) and dim the particles that sit them out.
@@ -761,7 +783,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const tinted = tint(colorAttribute.xyz, particleLook);
   const ionColor = tinted
     .mul(twinkle.add(particleBond.mul(0.5)).add(pointerProximity.mul(0.8)))
-    .mul(mix(depth.mul(0.5 + density * 0.5), float(FINE_GAIN), uFine))
+    .mul(mix(depth.mul(uDensity.mul(0.5).add(0.5)), float(FINE_GAIN), uFine))
     .mul(particleLook.z)
     .toVarying();
   const fromCenter = length(uv().sub(0.5)).mul(2);
@@ -788,15 +810,18 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   const along = positionGeometry.x.add(0.5);
   const normal = vec2(segment.y.negate(), segment.x).div(segmentLength);
   bondMaterial.positionNode = vec3(
-    bondA
-      .add(segment.mul(along))
-      .add(normal.mul(positionGeometry.y.mul(mix(float(0.02), uPixel.mul(FINE_BOND), uFine)))),
+    bondA.add(segment.mul(along)).add(
+      normal.mul(
+        // A bond between unlit ions adds nothing: no width.
+        positionGeometry.y.mul(mix(float(0.02), uPixel.mul(FINE_BOND), uFine)).mul(stepAt(1e-6, bondLook.z)),
+      ),
+    ),
     0,
   );
   const bondStrength = float(1)
     .sub(smoothstep(0.03, 0.14, segmentLength))
     .mul(bondLook.z)
-    .mul(0.75 * density)
+    .mul(uDensity.mul(0.75))
     .mul(mix(float(1), float(0.6), uFine))
     .toVarying();
   // Bonds take the tint of their atoms: the title's letters stay white and plasma.
@@ -1096,6 +1121,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const previous = formations;
     const measuredNow = toWorldFormations(measured, width, height);
     formations = { ...measuredNow, flight: updateFlight(measuredNow.flight ?? null, delta) };
+    // Past the hero, the shapes' particles are drawn as finely as on the landing.
+    const past =
+      (formations.card?.weight ?? 0) + (formations.tubes?.weight ?? 0) + (formations.pact?.weight ?? 0);
+    uDensity.value = density + (shapeDensity - density) * Math.min(1, past);
     uFine.value = Math.min(1, formations.rivers?.weight ?? 0);
     writeFormations(
       formationTargets,

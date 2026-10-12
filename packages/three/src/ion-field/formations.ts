@@ -138,6 +138,34 @@ export interface FormationParticles {
   readonly sizes: Float32Array;
   /** The particles the field keeps for the plan of Lyon's flight, if any: its first ones. */
   readonly flight?: FlightParticles;
+  /**
+   * How many of the field's own particles (after those kept for the plan) the
+   * shapes past the hero light (cards, tubes, Pact rings), when the hero
+   * needs more than they do (the rivers): as many as the landing has, laid
+   * out as there, so the shapes look as they do on the landing; the others
+   * fuse into them on the way (`shapeHost`). All of them when unset.
+   */
+  readonly shapes?: number;
+}
+
+/**
+ * The particle the particle `index` fuses into in the shapes past the hero
+ * (FormationParticles.shapes): itself if it is one they light; otherwise one
+ * of those, the partners of a pair into the partners of another. It goes
+ * where its host goes there, unlit.
+ */
+export function shapeHost(particles: FormationParticles, index: number): number {
+  const { shapes } = particles;
+  if (shapes === undefined) {
+    return index;
+  }
+  const lit = Math.floor(shapes / 2) * 2;
+  const ahead = particles.flight ? Math.min(particles.flight.count, particles.count) : 0;
+  const own = index - ahead;
+  if (lit < 2 || (own >= 0 && own < lit)) {
+    return index;
+  }
+  return ahead + ((own >= 0 ? own : index) % lit);
 }
 
 /**
@@ -936,7 +964,7 @@ const contribution: Contribution = {
 const sum = { x: 0, y: 0, total: 0, glow: 0, volt: 0, plasma: 0, paper: 0, carry: 0, grain: 0 };
 
 /** Adds the current `contribution`, weighted by its formation, to `sum`. */
-function accumulate(weight: number): void {
+function accumulate(weight: number, unlit = false): void {
   // A target that is not a number would lose the particle for good: such a contribution is left out.
   if (!Number.isFinite(contribution.x) || !Number.isFinite(contribution.y)) {
     contribution.grain = 1;
@@ -945,7 +973,7 @@ function accumulate(weight: number): void {
   const w = weight * contribution.pull;
   sum.x += contribution.x * w;
   sum.y += contribution.y * w;
-  sum.glow += contribution.glow * w;
+  sum.glow += unlit ? 0 : contribution.glow * w;
   sum.volt += contribution.volt * w;
   sum.plasma += contribution.plasma * w;
   sum.paper += contribution.paper * w;
@@ -1010,6 +1038,9 @@ export function writeFormations(
     // The plan's particles stand in the mark for their patch of streets, in the rivers' stead:
     // unseen until it fuses into them, then spreading round the mark from when it landed.
     const planned = index < keptCount;
+    // Past the hero, the particles a hero with more needed fuse into those the shapes light.
+    const host = shapeHost(particles, index);
+    const fuses = host !== index;
     let fusion = 0;
     if (kept && planned) {
       fusion = plannedFusion(index, flight);
@@ -1044,14 +1075,14 @@ export function writeFormations(
       contribution.glow *= pair.glow ?? 1;
       accumulate(pair.weight);
     }
-    if (card && cardContribution(particles, index, card, previous?.card ?? null, time, unit, contribution)) {
-      accumulate(card.weight);
+    if (card && cardContribution(particles, host, card, previous?.card ?? null, time, unit, contribution)) {
+      accumulate(card.weight, fuses);
     }
-    if (tubes && tubeContribution(particles, index, tubes, previous?.tubes ?? null, time, contribution)) {
-      accumulate(tubes.weight);
+    if (tubes && tubeContribution(particles, host, tubes, previous?.tubes ?? null, time, contribution)) {
+      accumulate(tubes.weight, fuses);
     }
-    if (pact && pactContribution(particles, index, pact, previous?.pact ?? null, time, contribution)) {
-      accumulate(pact.weight);
+    if (pact && pactContribution(particles, host, pact, previous?.pact ?? null, time, contribution)) {
+      accumulate(pact.weight, fuses);
     }
     if (
       !planned &&

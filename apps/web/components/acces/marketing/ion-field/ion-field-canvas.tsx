@@ -184,6 +184,8 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           particleCount: () => (forcedCount > 0 ? forcedCount : particleBudget(profile, rivers)),
           // And particles for the plan's patches of streets to land as in the logo.
           flight: rivers,
+          // Past the hero, the shapes light as many as the landing has, as there: the others fuse into them.
+          ...(rivers ? { shapeParticles: particleBudget(profile) } : {}),
           // While the field flies the plan's dots, the plan's own canvas steps aside.
           onFlightChange: setCityFlying,
           adaptiveQuality: !forced,
