@@ -2,7 +2,7 @@ import { createRandom } from "./layout";
 import { CAMPUS } from "./rivers";
 
 /**
- * The plan of Lyon that the rivers hero (`/apercu/fleuves`) draws in dots:
+ * The plan of Lyon that the rivers hero (the landing page's) draws in dots:
  * streets, railways and green areas from OpenStreetMap (© OpenStreetMap
  * contributors, ODbL), in the projection of rivers.ts (x east and y north of
  * 45.76° N, 4.85° E).

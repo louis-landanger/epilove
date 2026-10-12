@@ -10,32 +10,12 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { onCityFlight, setCityFlying } from "../fleuves/city-flight";
 import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
-import { type HeroCard, type JourneyMeasures, journey } from "./journey";
+import { type JourneyMeasures, journey } from "./journey";
 
 const toBox = (element: Element): PixelBox => {
   const rect = element.getBoundingClientRect();
   return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 };
-
-/** A profile card of the hero as the page draws it: its centre, and its size standing straight. */
-function readCard(card: HTMLElement): HeroCard {
-  const box = card.getBoundingClientRect();
-  return {
-    x: box.left + box.width / 2,
-    y: box.top + box.height / 2,
-    width: card.offsetWidth,
-    height: card.offsetHeight,
-  };
-}
-
-/** The hero's two profile cards (match-stage.tsx). */
-function readProfiles(stage: HTMLElement, cards: readonly HTMLElement[]): JourneyMeasures["profiles"] {
-  const [first, second] = cards;
-  if (!first || !second) {
-    return null;
-  }
-  return { box: toBox(stage), cards: [readCard(first), readCard(second)] };
-}
 
 /**
  * Reads the page for the field's journey (journey.ts). Elements and their
@@ -53,16 +33,10 @@ function createPageMeasurer() {
     const firstCard = steps[0]?.querySelector("article");
     const rack = document.querySelector("[data-field-rack]");
     const pact = document.querySelector("[data-field-pact]");
-    const stage = document.querySelector<HTMLElement>("[data-field-profiles]");
-    const anchor = document.querySelector("[data-field-atom]");
     const rivers = document.querySelector("[data-field-rivers]");
     return {
       rivers,
       riversHero: rivers?.closest("section") ?? null,
-      profiles: stage
-        ? { stage, cards: [...stage.querySelectorAll<HTMLElement>("[data-profile-card]")] }
-        : null,
-      anchor,
       rackSection: rack?.closest("section") ?? null,
       pactSection: pact?.closest("section") ?? null,
       scope: document.querySelector("[data-field-scope]"),
@@ -89,14 +63,6 @@ function createPageMeasurer() {
       elements = lookUp();
     },
     measure(): JourneyMeasures {
-      // What the hero's atom surrounds can change while the page stays (the steps of a game).
-      if (
-        elements.anchor &&
-        !(elements.anchor.isConnected && elements.anchor.hasAttribute("data-field-atom"))
-      ) {
-        elements.anchor = document.querySelector("[data-field-atom]") ?? elements.anchor;
-      }
-      const anchor = elements.anchor?.isConnected ? elements.anchor : null;
       const height = window.innerHeight;
       const near = (section: Element | null) => {
         if (!section) {
@@ -106,13 +72,10 @@ function createPageMeasurer() {
         return rect.bottom > -1.5 * height && rect.top < 2.5 * height;
       };
       const raceNear = near(elements.rackSection);
-      const { profiles } = elements;
       return {
         width: window.innerWidth,
         height,
         scope: elements.scope ? toBox(elements.scope) : null,
-        profiles: profiles ? readProfiles(profiles.stage, profiles.cards) : null,
-        anchor: anchor ? toBox(anchor) : null,
         rivers: elements.rivers?.isConnected ? toBox(elements.rivers) : null,
         riversHero: elements.riversHero?.isConnected ? toBox(elements.riversHero) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
@@ -139,11 +102,11 @@ function createPageMeasurer() {
 /**
  * The live ion field (docs/02-design.md, section 5), behind the whole landing.
  * The three.js chunk is imported only after load, when motion is allowed and
- * the device can afford it; otherwise there is no field, and the hero stays
- * as it is, without atoms. The particles draw the logo mark, large, around
- * the hero's two profile cards, shrink into it beside the manifesto as the
- * cards fade, then trace the stacked cards, fill the school race tubes and
- * orbit the Pact (journey.ts).
+ * the device can afford it; otherwise there is no field, and the hero draws
+ * its rivers in dots instead. The particles flow down Lyon's two rivers in
+ * the hero, gather into the logo mark beside the manifesto with the plan of
+ * Lyon as the hero leaves, then trace the stacked cards, fill the school race
+ * tubes and orbit the Pact (journey.ts).
  */
 export function IonFieldCanvas({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -176,7 +139,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         const profile = deviceProfile();
         const page = createPageMeasurer();
         let followPage = () => {};
-        // The fleuves hero: Lyon's two rivers, in the plan of Lyon the field flies into the logo.
+        // The hero: Lyon's two rivers, in the plan of Lyon the field flies into the logo.
         const rivers = document.querySelector("[data-field-rivers]") !== null;
         const field = await createIonField({
           container,

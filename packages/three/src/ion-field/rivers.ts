@@ -1,7 +1,7 @@
 /**
  * The Saône and the Rhône through Lyon, for the rivers formation
  * (formations.ts) and the static drawing of the hero that shows them
- * (`/apercu/fleuves`): both rivers come down from the north, the Saône past
+ * (the landing page's): both rivers come down from the north, the Saône past
  * Vaise (where four of the schools share a campus) and around Fourvière, the
  * Rhône from the east, and they meet at the Confluence, south of the
  * Presqu'île.

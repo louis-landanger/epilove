@@ -1,21 +1,13 @@
-import { MARK, markPlacementFor, type PixelBox, type ViewportFormations } from "@atomes/three";
+import { markPlacementFor, type PixelBox, type ViewportFormations } from "@atomes/three";
 
 /**
  * The ion field's journey down the landing page (docs/02-design.md, section
  * 5): from the measured position of each section, which shapes the particles
- * draw (the logo mark, around the hero's two profile cards then beside the
- * manifesto, the stacked cards, the school race tubes, the Pact rings) and how
- * they share them. Pure, so it can be tested without a browser; the canvas
+ * draw (Lyon's two rivers in the hero, the logo mark beside the manifesto,
+ * the stacked cards, the school race tubes, the Pact rings) and how they
+ * share them. Pure, so it can be tested without a browser; the canvas
  * measures the page and applies the result every frame.
  */
-
-/** A profile card of the hero, as the page draws it: centre, and size standing straight (CSS pixels). */
-export interface HeroCard {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
 
 export interface JourneyMeasures {
   /** Viewport size, in CSS pixels. */
@@ -23,27 +15,16 @@ export interface JourneyMeasures {
   readonly height: number;
   /** Hero and manifesto (`[data-field-scope]`): the field condenses into the logo mark there. */
   readonly scope: PixelBox | null;
-  /** The hero's two profile cards (`[data-field-profiles]`): the stage and each card. */
-  readonly profiles: {
-    readonly box: PixelBox;
-    readonly cards: readonly [HeroCard, HeroCard];
-  } | null;
   /**
-   * What the hero's atom surrounds when the hero has no profile cards
-   * (`[data-field-atom]`): its orbit spans the element's width, and follows
-   * it when it moves or changes size.
-   */
-  readonly anchor: PixelBox | null;
-  /**
-   * The map of the rivers when the hero shows Lyon's two rivers
-   * (`[data-field-rivers]`): the particles flow down them, then gather into
-   * the logo mark beside the manifesto.
+   * The map of Lyon's two rivers in the hero (`[data-field-rivers]`): the
+   * particles flow down them, then gather into the logo mark beside the
+   * manifesto.
    */
   readonly rivers: PixelBox | null;
   /**
    * The hero that holds the map of the rivers, where the plan of Lyon is
-   * painted (fleuves hero): scrolling, the field flies the plan's dots from
-   * it into the logo mark.
+   * painted: scrolling, the field flies the plan's dots from it into the
+   * logo mark.
    */
   readonly riversHero: PixelBox | null;
   /** The stacked cards of "how it works", in order, with the top at which each one sticks. */
@@ -72,7 +53,7 @@ export interface JourneyState {
 }
 
 /**
- * When the rivers hero hands its particles and its plan to the logo mark, in
+ * When the hero hands its rivers' particles and its plan to the logo mark, in
  * viewports scrolled: from `from`, over `span`. The hero is a screen tall,
  * its copy at its foot: the hand-over ends as the copy leaves the screen.
  */
@@ -136,70 +117,26 @@ function distanceToMiddle(box: PixelBox, height: number): number {
   return Math.min(Math.abs(box.top - middle), Math.abs(bottomOf(box) - middle));
 }
 
-/** Orbit radius of the hero's atom, in card widths, and how much of the stage's width it may take. */
-const HERO_ORBIT = 1.38;
-const HERO_ORBIT_REACH = 0.92;
-/** Light of the hero's atom, next to the cards (the logo mark beside the manifesto: 1). */
-const HERO_GLOW = 0.6;
-/** Half the width of the logo mark's orbit, in orbit radii (tilted ellipse). */
-const ORBIT_HALF_WIDTH = Math.hypot(Math.cos(MARK.tilt), MARK.orbitMinor * Math.sin(MARK.tilt));
-/** Half its height, in orbit radii. */
-const ORBIT_HALF_HEIGHT = Math.hypot(Math.sin(MARK.tilt), MARK.orbitMinor * Math.cos(MARK.tilt));
+/** Light of the logo mark as the rivers start to gather into it (beside the manifesto: 1). */
+const MARK_GLOW_FROM = 0.6;
 
 /**
- * The hero's atom: the logo mark drawn large around the two profile cards.
- * The couple stands for its nucleus (behind the cards, and dark); its orbit
- * is a fine ring passing behind them, a little wider than the pair, and never
- * wider than the stage.
- */
-function heroAtom(profiles: NonNullable<JourneyMeasures["profiles"]>): {
-  x: number;
-  y: number;
-  radius: number;
-} {
-  const [first, second] = profiles.cards;
-  const radius = Math.min(
-    HERO_ORBIT * Math.max(first.width, second.width),
-    (HERO_ORBIT_REACH * profiles.box.width) / 2 / ORBIT_HALF_WIDTH,
-  );
-  return { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2, radius };
-}
-
-/**
- * The hero's atom around an element (`[data-field-atom]`): as wide as it,
- * never wider or taller than the screen.
- */
-function atomAround(box: PixelBox, width: number, height: number): { x: number; y: number; radius: number } {
-  const radius = Math.min(
-    Math.min(box.width / 2, (HERO_ORBIT_REACH * width) / 2) / ORBIT_HALF_WIDTH,
-    (HERO_ORBIT_REACH * height) / 2 / ORBIT_HALF_HEIGHT,
-  );
-  return { x: box.left + box.width / 2, y: box.top + box.height / 2, radius };
-}
-
-/**
- * In the hero the particles draw the logo mark, large, around the two profile
- * cards: the couple is its nucleus, the orbit passes behind them. Scrolling,
- * the cards fade with the hero's text and the atom shrinks into the logo mark
- * beside the manifesto, where its nucleus lights up; further down come the
- * stacked cards, the tubes and the Pact rings. Every particle always belongs
- * to a shape:
- * neighbouring shapes share the particles while one section gives way to the
- * next (their weights add up to 1); between sections the nearest shape keeps
- * them, and scrolls away with its section.
+ * In the hero the particles flow down Lyon's two rivers. Scrolling, they
+ * gather into the logo mark beside the manifesto, where its nucleus lights
+ * up, with the dots of the plan of Lyon; further down come the stacked
+ * cards, the tubes and the Pact rings. Every particle always belongs to a
+ * shape: neighbouring shapes share the particles while one section gives way
+ * to the next (their weights add up to 1); between sections the nearest shape
+ * keeps them, and scrolls away with its section.
  */
 export function journey(measures: JourneyMeasures): JourneyState {
-  const { height, scope, profiles, anchor, rivers, rack, pact } = measures;
+  const { height, scope, rivers, rack, pact } = measures;
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
-  // The atom shrinks into the logo mark as soon as the cards start to fade. The rivers and
-  // the plan of Lyon flow into it as the hero leaves the screen, its copy (at its foot) with it…
-  const settle = rivers
-    ? ramp((scrolled - RIVERS_SETTLE.from) / RIVERS_SETTLE.span)
-    : profiles || anchor
-      ? ramp((scrolled - 0.02) / 0.4)
-      : 1;
+  // The rivers and the plan of Lyon flow into the logo mark as the hero leaves the screen, its copy
+  // (at its foot) with it; without them, the mark stands beside the manifesto from the start…
+  const settle = rivers ? ramp((scrolled - RIVERS_SETTLE.from) / RIVERS_SETTLE.span) : 1;
   // The plan of Lyon flows with them, from its foot, at the pace of the scroll itself rather than
   // easing in as their hand-over does: it sets off at the first notch of the wheel, and lands with
   // them at the end.
@@ -221,19 +158,9 @@ export function journey(measures: JourneyMeasures): JourneyState {
     height: 2 * mark.radius,
   };
 
-  // Around the cards first, then beside the manifesto, pinned in the viewport.
-  const around = profiles ? heroAtom(profiles) : anchor ? atomAround(anchor, measures.width, height) : null;
-  const atom = around
-    ? {
-        x: around.x + (mark.x - around.x) * settle,
-        y: around.y + (mark.y - around.y) * settle,
-        radius: around.radius + (mark.radius - around.radius) * settle,
-      }
-    : mark;
-
   const card = cardStage(measures);
   const stages: ReadonlyArray<Stage | null> = [
-    // The atom leaves with the hero and the manifesto (the nearest-shape rule).
+    // The rivers and the mark leave with the hero and the manifesto (the nearest-shape rule).
     scope ? { presence: opening, box: scope } : null,
     card,
     rack
@@ -292,9 +219,9 @@ export function journey(measures: JourneyMeasures): JourneyState {
     opening,
     hidden: shapesOffScreen || measures.covers.some((cover) => cover.top <= 0 && bottomOf(cover) >= height),
     formations: {
-      // The mark is the two atoms merged (formations.ts): bonded and merged from the start. Dimmer
-      // around the cards, its nucleus dark behind them; it lights up as it leaves them. When the
-      // hero shows the rivers, they hold the particles first and hand them to the mark on scroll.
+      // The mark is the two atoms merged (formations.ts): bonded and merged from the start, pinned
+      // in the viewport. The rivers hold the particles first and hand them to it on scroll: dimmer,
+      // its nucleus dark, it lights up as they gather into it.
       pair:
         scope && pairShare * (rivers ? settle : 1) > 0.001
           ? {
@@ -302,8 +229,8 @@ export function journey(measures: JourneyMeasures): JourneyState {
               box: markBox,
               bond: 1,
               merge: 1,
-              mark: atom,
-              glow: HERO_GLOW + (1 - HERO_GLOW) * settle,
+              mark,
+              glow: MARK_GLOW_FROM + (1 - MARK_GLOW_FROM) * settle,
               core: ramp(settle / 0.5),
             }
           : null,
@@ -321,7 +248,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
       // rivers' particles, and stays in it as long as it shows.
       flight:
         rivers && scope && measures.riversHero
-          ? { progress: flow, presence: pairShare, box: rivers, hero: measures.riversHero, mark: atom }
+          ? { progress: flow, presence: pairShare, box: rivers, hero: measures.riversHero, mark }
           : null,
     },
   };

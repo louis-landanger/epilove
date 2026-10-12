@@ -43,10 +43,10 @@ function RiversDrawing() {
 }
 
 /**
- * Hero under study (`/apercu/fleuves`, docs/02-design.md, section 5): the
- * plan of Lyon drawn in some hundred and fifty thousand dots fills the hero,
- * framed on the campus in Vaise, where the five schools are, marked by a
- * point and lit up from it outwards. The particles of the ion field flow
+ * The hero of the landing page (docs/02-design.md, section 5): the plan of
+ * Lyon drawn in some hundred and fifty thousand dots fills the hero, framed
+ * on the campus in Vaise, where the five schools are, marked by a point and
+ * lit up from it outwards. The particles of the ion field flow
  * down the city's two rivers, the Saône (past the campus) and the Rhône,
  * along their real courses, to meet at the Confluence, where they go
  * on together, side by side, then mixed, each pair bonded. In Lyon, even the

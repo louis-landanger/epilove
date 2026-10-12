@@ -1,7 +1,6 @@
-import type { WaitlistStats } from "@atomes/contracts";
 import { Bricolage_Grotesque, Instrument_Serif } from "next/font/google";
-import type { ReactNode } from "react";
 import { FaqSection } from "./faq-section";
+import { FleuvesHero } from "./fleuves/fleuves-hero";
 import { HowItWorks } from "./how-it-works";
 import { IonFieldLayer } from "./ion-field/ion-field-layer";
 import { Manifesto } from "./manifesto";
@@ -31,13 +30,8 @@ const serif = Instrument_Serif({
   display: "swap",
 });
 
-export type HeroComponent = (props: { stats: WaitlistStats | null }) => ReactNode | Promise<ReactNode>;
-
-/**
- * The landing page (docs/02-design.md, section 5) around a hero: the home
- * page's, or one of the heroes under study (`/apercu/[variante]`).
- */
-export async function Landing({ Hero }: { Hero: HeroComponent }) {
+/** The landing page (docs/02-design.md, section 5). */
+export async function Landing() {
   const stats = await initialWaitlistStats();
   return (
     <div className={`${headline.variable} ${serif.variable}`}>
@@ -45,7 +39,7 @@ export async function Landing({ Hero }: { Hero: HeroComponent }) {
       <main id="contenu" tabIndex={-1} className="outline-none">
         <IonFieldLayer />
         <div data-field-scope className="relative">
-          <Hero stats={stats} />
+          <FleuvesHero />
           <Manifesto />
         </div>
         <HowItWorks />

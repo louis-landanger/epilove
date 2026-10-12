@@ -76,25 +76,9 @@ test.describe("landing", () => {
       "href",
       "#rejoindre",
     );
-    // The count only shows once the list is worth it (LIVE_COUNT_FROM sign-ups).
-    const count = page.getByTestId("live-count");
-    if (await count.isVisible()) {
-      await expect(count).toContainText(/\d+ personnes déjà dans la liste/);
-    }
     await expect(page.getByRole("list", { name: "Écoles concernées" }).getByRole("listitem")).toHaveText(
       SCHOOLS,
     );
-  });
-
-  test("shows two fictional profiles bonding, out of reach of assistive technologies", async ({ page }) => {
-    await page.goto("/");
-    const stage = page.locator("[data-field-profiles]");
-    await expect(stage.locator("[data-profile-card]")).toHaveCount(2);
-    await expect(stage.locator("[data-profile-card]").first()).toBeVisible();
-    await expect(stage).toContainText("Liaison établie");
-    await expect(stage).toContainText("Profils fictifs");
-    // An illustration: inert, so neither focus nor screen readers land in it.
-    await expect(stage).toHaveAttribute("inert", "");
   });
 
   test("tells the story section by section", async ({ page }) => {
@@ -290,238 +274,9 @@ test.describe("legal pages", () => {
   });
 });
 
-test.describe("hero under study: the chemistry test", () => {
-  test("plays with the keyboard, then bonds with a fictional profile", async ({ page }) => {
-    await page.goto("/apercu/jeu");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
-    await page.getByRole("button", { name: "Trouve ton atome" }).click();
-    // Focus follows the game: each question, then the result.
-    await expect(
-      page.getByRole("heading", { level: 2, name: /Question 1 sur 3 Ton QG à Lyon/ }),
-    ).toBeFocused();
-    await expect(page.getByRole("button", { name: "Un bar à la Croix-Rousse" })).toHaveAttribute(
-      "aria-keyshortcuts",
-      "2",
-    );
-    await page.keyboard.press("2");
-    await expect(page.getByRole("heading", { level: 2, name: /Question 2 sur 3/ })).toBeFocused();
-    await page.keyboard.press("3");
-    await expect(page.getByRole("heading", { level: 2, name: /Question 3 sur 3/ })).toBeFocused();
-    await page.getByRole("button", { name: "L’amour" }).click();
-    // A bar in Croix-Rousse and always 10 minutes late: Retardine.
-    await expect(page.getByRole("heading", { level: 2, name: "Ton atome Retardine" })).toBeFocused();
-    await expect(page.getByText(/^Ton atome crochu : .+\.$/)).toBeVisible();
-    await expect(page.getByText("Profil fictif : les vrais arrivent au lancement.")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Rejoindre la liste" }).first()).toHaveAttribute(
-      "href",
-      "#rejoindre",
-    );
-    // The answers stay in the browser: replaying starts over.
-    await page.getByRole("button", { name: "Rejouer" }).click();
-    await expect(page.getByRole("heading", { level: 2, name: /Question 1 sur 3/ })).toBeFocused();
-  });
-
-  test("stays out of search engines, and only the heroes under study have an address", async ({ page }) => {
-    await page.goto("/apercu/jeu");
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
-    const response = await page.goto("/apercu/inconnu");
-    expect(response?.status()).toBe(404);
-  });
-
-  test("has no detectable violations, before and after playing", async ({ page }) => {
-    await page.goto("/apercu/jeu");
-    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
-    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
-    await page.getByRole("button", { name: "Trouve ton atome" }).click();
-    for (const key of ["1", "4", "4"]) {
-      await page.keyboard.press(key);
-      await page.waitForTimeout(600);
-    }
-    await expect(page.getByText(/^Ton atome crochu : /)).toBeVisible();
-    await page.waitForTimeout(1500);
-    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
-  });
-});
-
-test.describe("hero under study: the holographic hand", () => {
-  test("likes a card from the keyboard, then deals it back after the match", async ({ page }) => {
-    await page.goto("/apercu/holo");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
-    const hand = page.getByRole("list", { name: "Profils fictifs" });
-    await expect(hand.getByRole("button")).toHaveCount(5);
-    const lea = hand.getByRole("button", { name: "Liker Léa, ISG" });
-    await lea.focus();
-    await page.keyboard.press("Enter");
-    await expect(page.getByRole("heading", { level: 2, name: "C’est réciproque !" })).toBeFocused();
-    await expect(page.getByText(/^Léa t’a liké aussi\. Une liaison fictive/)).toBeVisible();
-    // Behind the match, the hand and the title are out of reach.
-    await expect(page.locator(".holo-stage")).toHaveAttribute("inert", "");
-    await page.getByRole("button", { name: "Continuer" }).click();
-    await expect(lea).toBeFocused();
-  });
-
-  test("likes one card at a time", async ({ page }) => {
-    await page.goto("/apercu/holo");
-    await expect(page.getByRole("list", { name: "Profils fictifs" }).getByRole("button")).toHaveCount(5);
-    // A second like while the first card is still flying is ignored (both clicks in one go).
-    await page.evaluate(() => {
-      for (const name of ["Liker Léa, ISG", "Liker Yanis, IPSA"]) {
-        document.querySelector<HTMLButtonElement>(`[aria-label="${name}"]`)?.click();
-      }
-    });
-    await expect(page.getByText(/^Léa t’a liké aussi/)).toBeVisible();
-    await page.getByRole("button", { name: "Continuer" }).click();
-    await expect(page.locator(".holo-card[data-away]")).toHaveCount(0);
-  });
-
-  test("passes a card thrown to the left, likes one thrown to the right", async ({ page, isMobile }) => {
-    test.skip(isMobile, "Thrown with a mouse; a tap likes the card like a click");
-    await page.goto("/apercu/holo");
-    const cards = page.locator(".holo-card");
-    const fling = async (index: number, direction: 1 | -1) => {
-      const box = await cards.nth(index).boundingBox();
-      if (!box) {
-        throw new Error("No card to throw");
-      }
-      const x = box.x + box.width / 2;
-      const y = box.y + 40;
-      await page.mouse.move(x, y);
-      await page.mouse.down();
-      for (let step = 1; step <= 8; step += 1) {
-        await page.mouse.move(x + direction * step * 30, y - step * 4);
-      }
-      await page.mouse.up();
-    };
-    const match = page.getByRole("heading", { level: 2, name: "C’est réciproque !" });
-    await page.waitForTimeout(2000);
-    await fling(0, -1);
-    await expect(cards.nth(0)).toHaveAttribute("data-flying", "");
-    // Passed: no match, and the card comes back into the hand.
-    await expect(cards.nth(0)).not.toHaveAttribute("data-flying");
-    await expect(cards.nth(0)).not.toHaveAttribute("data-dealing");
-    await expect(match).toHaveCount(0);
-    await fling(4, 1);
-    await expect(match).toBeVisible();
-    await expect(page.getByText(/^Yanis t’a liké aussi/)).toBeVisible();
-  });
-
-  test("has no detectable violations, in the hand and in the match", async ({ page }) => {
-    await page.goto("/apercu/holo");
-    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
-    await page.waitForTimeout(2000);
-    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
-    await page.getByRole("button", { name: "Liker Inès, Sup'Biotech" }).click();
-    await expect(page.getByRole("heading", { level: 2, name: "C’est réciproque !" })).toBeVisible();
-    await page.waitForTimeout(1500);
-    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
-  });
-});
-
-test.describe("hero under study: people", () => {
-  test("follows the photographs one after the other, and the visitor can pause them", async ({ page }) => {
-    await page.clock.install();
-    await page.goto("/apercu/gens");
-    // The title stays whole for assistive technologies; its last words change on screen.
-    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
-    await expect(page.getByText("Photos d’illustration, pas des membres")).toBeVisible();
-    const scene = page.locator(".gens-photo[data-active]");
-    await expect(scene).toHaveAttribute("data-scene", "crochus");
-    await page.clock.runFor(5300);
-    await expect(scene).toHaveAttribute("data-scene", "amour");
-    await page.getByRole("button", { name: "Mettre le diaporama en pause" }).click();
-    await page.clock.runFor(12_000);
-    await expect(scene).toHaveAttribute("data-scene", "amour");
-    await page.getByRole("button", { name: "Relancer le diaporama" }).click();
-    await page.clock.runFor(5300);
-    await expect(scene).toHaveAttribute("data-scene", "potes");
-  });
-
-  test("has no detectable violations", async ({ page }) => {
-    await page.goto("/apercu/gens");
-    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
-    await page.waitForTimeout(2500);
-    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
-  });
-
-  test.describe("with reduced motion", () => {
-    test.use({ reducedMotion: "reduce" });
-
-    test("keeps the first photograph, with no slideshow to pause", async ({ page }) => {
-      await page.clock.install();
-      await page.goto("/apercu/gens");
-      await expect(page.locator(".gens-photo[data-active]")).toHaveAttribute("data-scene", "crochus");
-      await page.clock.runFor(12_000);
-      await expect(page.locator(".gens-photo[data-active]")).toHaveAttribute("data-scene", "crochus");
-      await expect(page.getByRole("button", { name: "Mettre le diaporama en pause" })).toHaveCount(0);
-    });
-  });
-});
-
-test.describe("hero under study: glass", () => {
-  test("shows the whole title, and draws no glass without a GPU", async ({ page }) => {
-    await page.goto("/apercu/verre");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
-    await expect(page.getByRole("link", { name: "Rejoindre la liste" })).toBeVisible();
-    await page.waitForLoadState("load");
-    await page.waitForTimeout(1500);
-    // The test browser renders in software: the title stays as it is, with no glass over it.
-    await expect(page.locator(".verre-canvas")).not.toHaveAttribute("data-live", /.*/);
-  });
-
-  test("has no detectable violations", async ({ page }) => {
-    await page.goto("/apercu/verre");
-    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
-    await page.waitForTimeout(2000);
-    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
-  });
-});
-
-test.describe("hero under study: liaison", () => {
-  test("shows the whole title over a photograph of Lyon, with one call", async ({ page }) => {
-    await page.goto("/apercu/liaison");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
-    await expect(page.getByRole("link", { name: "Rejoindre la liste" })).toBeVisible();
-    await expect(page.getByText("Photo provisoire")).toBeVisible();
-  });
-
-  test("keeps its call on screen when the page starts to scroll", async ({ page }) => {
-    await page.goto("/apercu/liaison");
-    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
-    await page.mouse.wheel(0, 160);
-    await page.waitForTimeout(800);
-    const call = page.getByRole("link", { name: "Rejoindre la liste" });
-    await expect(call).toBeInViewport();
-    // Nothing fades it: the opacity of the link and of every box around it stays whole.
-    const opacity = await call.evaluate((element) => {
-      let product = 1;
-      for (let node: Element | null = element; node; node = node.parentElement) {
-        product *= Number(getComputedStyle(node).opacity);
-      }
-      return product;
-    });
-    expect(opacity).toBe(1);
-  });
-
-  test("has no detectable violations", async ({ page }) => {
-    await page.goto("/apercu/liaison");
-    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
-    await page.waitForTimeout(1500);
-    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
-  });
-
-  test.describe("with reduced motion", () => {
-    test.use({ reducedMotion: "reduce" });
-
-    test("draws the liaison at once", async ({ page }) => {
-      await page.goto("/apercu/liaison");
-      await expect(page.locator(".liaison-tie path")).toHaveCSS("stroke-dashoffset", "0px");
-    });
-  });
-});
-
-test.describe("hero under study: the rivers", () => {
+test.describe("hero: the rivers of Lyon", () => {
   test("shows the whole title, and draws the rivers when the particles cannot", async ({ page }) => {
-    await page.goto("/apercu/fleuves");
+    await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("Trouve tes atomes crochus.");
     await expect(
       page.getByText("À Lyon, même le Rhône et la Saône ont fini par se rencontrer."),
@@ -539,8 +294,8 @@ test.describe("hero under study: the rivers", () => {
   });
 
   test("draws the plan of Lyon in dots, with or without the particles", async ({ page }) => {
-    const plan = page.waitForResponse((response) => response.url().endsWith("/apercu/fleuves/lyon-plan.bin"));
-    await page.goto("/apercu/fleuves");
+    const plan = page.waitForResponse((response) => response.url().endsWith("/fleuves/lyon-plan.bin"));
+    await page.goto("/");
     const response = await plan;
     expect(response.status()).toBe(200);
     expect((await response.body()).subarray(0, 4).toString("latin1")).toBe("APL1");
@@ -556,7 +311,7 @@ test.describe("hero under study: the rivers", () => {
     test.use({ reducedMotion: "reduce" });
 
     test("draws the whole plan at once, and the rivers in dots", async ({ page }) => {
-      await page.goto("/apercu/fleuves");
+      await page.goto("/");
       await expect(page.locator(".fleuves-city")).toHaveAttribute("data-lit", "true", { timeout: 20_000 });
       await expect(page.locator("[data-ion-field]")).toHaveAttribute("data-live", "false");
       await expect(page.locator(".fleuves-drawing")).toHaveCSS("opacity", "1");
@@ -564,7 +319,7 @@ test.describe("hero under study: the rivers", () => {
   });
 
   test("keeps its call on screen when the page starts to scroll", async ({ page }) => {
-    await page.goto("/apercu/fleuves");
+    await page.goto("/");
     await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
     await page.mouse.wheel(0, 160);
     await page.waitForTimeout(800);
@@ -578,13 +333,6 @@ test.describe("hero under study: the rivers", () => {
       return product;
     });
     expect(opacity).toBe(1);
-  });
-
-  test("has no detectable violations", async ({ page }) => {
-    await page.goto("/apercu/fleuves");
-    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
-    await page.waitForTimeout(1500);
-    expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
   });
 });
 

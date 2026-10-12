@@ -142,12 +142,11 @@ export function startChoreography(root: HTMLElement): () => void {
   const splits: SplitText[] = [];
 
   const context = gsap.context(() => {
-    // Hero copy drifts up and dims as the page starts to scroll; the hero's stage, when it
-    // has one (its profile cards), fades sooner, while the atom around it shrinks into the
-    // logo mark beside the manifesto (ion-field/journey.ts). A game's questions and result
-    // stay: they can be taller than the screen.
+    // The names on the plan of Lyon and its credit drift up and fade as the page starts to
+    // scroll, while the rivers and the plan gather into the logo mark beside the manifesto
+    // (ion-field/journey.ts); the title and its call stay.
     const narrow = window.matchMedia("(max-width: 63.99rem), (max-aspect-ratio: 5/4)").matches;
-    gsap.to(["[data-hero-content]", "[data-hero-aura]"], {
+    gsap.to("[data-hero-content]", {
       yPercent: -8,
       opacity: 0,
       ease: "none",
@@ -158,19 +157,6 @@ export function startChoreography(root: HTMLElement): () => void {
         scrub: true,
       },
     });
-    const stage = gsap.utils.toArray<HTMLElement>("[data-hero-stage]");
-    if (stage.length > 0) {
-      gsap.to(stage, {
-        opacity: 0,
-        ease: "none",
-        scrollTrigger: {
-          trigger: "#hero",
-          start: "top top",
-          end: narrow ? "top -10%" : "top -14%",
-          scrub: true,
-        },
-      });
-    }
 
     // Manifesto: words light up one after the other.
     const manifesto = document.getElementById("manifeste");

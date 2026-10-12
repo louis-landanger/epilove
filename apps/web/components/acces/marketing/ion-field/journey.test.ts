@@ -5,9 +5,9 @@ const width = 1440;
 const height = 900;
 
 /**
- * A page laid out like the landing (hero + manifesto, three stacked cards,
- * the tube rack, the Pact, the safety section), seen with the viewport
- * scrolled to `scroll` pixels.
+ * A page laid out like the landing (hero with the map of the rivers +
+ * manifesto, three stacked cards, the tube rack, the Pact, the safety
+ * section), seen with the viewport scrolled to `scroll` pixels.
  */
 function page(scroll: number): JourneyMeasures {
   const box = (top: number, boxHeight: number, left = 80, boxWidth = 1280) => ({
@@ -30,17 +30,9 @@ function page(scroll: number): JourneyMeasures {
     width,
     height,
     scope: box(0, 2430, 0, width),
-    // The two profile cards, bonded, scrolling with the hero.
-    profiles: {
-      box: box(140, 600, 760, 600),
-      cards: [
-        { x: 980, y: 440 - scroll, width: 260, height: 400 },
-        { x: 1180, y: 440 - scroll, width: 260, height: 400 },
-      ],
-    },
-    anchor: null,
-    rivers: null,
-    riversHero: null,
+    // The map of the rivers, fitted beside the hero's copy, and the hero, a screen tall.
+    rivers: box(40, 830, 700, 560),
+    riversHero: box(0, height, 0, width),
     cards,
     cardList: box(2860, 1620),
     cardRadius: 32,
@@ -55,116 +47,55 @@ function page(scroll: number): JourneyMeasures {
 }
 
 describe("journey", () => {
-  it("opens on the logo mark drawn large around the two profile cards, its nucleus dark behind them", () => {
+  const map = { left: 700, top: 40, width: 560, height: 830 };
+  const hero = { left: 0, top: 0, width, height };
+
+  it("flows down the rivers in the hero, then gathers into the logo mark beside the manifesto", () => {
     const top = journey(page(0));
-    const pair = top.formations.pair;
-    expect(pair?.weight).toBe(1);
-    // The mark is the two atoms already merged.
-    expect(pair?.bond).toBe(1);
-    expect(pair?.merge).toBe(1);
-    // Centred between the cards, its orbit wider than the pair (230 px each side) but inside the stage.
-    expect(pair?.mark.x).toBe(1080);
-    expect(pair?.mark.y).toBe(440);
-    const halfWidth =
-      (pair?.mark.radius ?? 0) * Math.hypot(Math.cos(Math.PI / 6), (9 / 22) * Math.sin(Math.PI / 6));
-    expect(halfWidth).toBeGreaterThan(240);
-    expect(halfWidth).toBeLessThanOrEqual(300);
-    // Dimmer than the logo, and the nucleus, behind the cards, dark.
-    expect(pair?.glow).toBeLessThan(1);
-    expect(pair?.core).toBe(0);
+    // Every particle in the rivers at first, none in the mark.
+    expect(top.formations.rivers?.weight).toBe(1);
+    expect(top.formations.rivers?.box).toEqual(map);
+    expect(top.formations.pair).toBeNull();
     expect(top.formations.card).toBeNull();
     expect(top.hidden).toBe(false);
     expect(top.opening).toBe(1);
-  });
-
-  it("shrinks the atom into the logo mark beside the manifesto as the cards fade, lighting its nucleus", () => {
-    const top = journey(page(0)).formations.pair;
-    const manifesto = journey(page(900)).formations.pair;
-    // Beside the manifesto on a wide screen: right half, vertically centred, at full light.
-    expect(manifesto?.weight).toBe(1);
-    expect(manifesto?.mark.x).toBeGreaterThan(width * 0.6);
-    expect(manifesto?.mark.y).toBeCloseTo(height / 2, 0);
-    expect(manifesto?.mark.radius).toBeLessThan(top?.mark.radius ?? 0);
-    expect(manifesto?.glow).toBe(1);
-    expect(manifesto?.core).toBe(1);
-    // It holds around the cards while they start to scroll, then shrinks on its way.
-    expect(journey(page(10)).formations.pair?.mark.y).toBe(440 - 10);
-    const midway = journey(page(200)).formations.pair;
-    expect(midway?.mark.radius).toBeLessThan(top?.mark.radius ?? 0);
-    expect(midway?.mark.radius).toBeGreaterThan(manifesto?.mark.radius ?? 0);
-    expect(midway?.core).toBeGreaterThan(0.5);
-  });
-
-  it("draws the atom around whatever the hero anchors it to, as wide as it", () => {
-    const anchor = { left: 320, top: 170, width: 800, height: 300 };
-    const top = journey({ ...page(0), profiles: null, anchor }).formations.pair;
-    expect(top?.mark.x).toBe(720);
-    expect(top?.mark.y).toBe(320);
-    const halfWidth =
-      (top?.mark.radius ?? 0) * Math.hypot(Math.cos(Math.PI / 6), (9 / 22) * Math.sin(Math.PI / 6));
-    expect(halfWidth).toBeCloseTo(400, 5);
-    expect(top?.core).toBe(0);
-    // Never wider than the screen.
-    const wide = journey({
-      ...page(0),
-      profiles: null,
-      anchor: { left: -200, top: 0, width: 2000, height: 300 },
-    });
-    const wideHalf =
-      (wide.formations.pair?.mark.radius ?? 0) *
-      Math.hypot(Math.cos(Math.PI / 6), (9 / 22) * Math.sin(Math.PI / 6));
-    expect(wideHalf).toBeLessThanOrEqual(width / 2);
-    // Nor taller: on a short screen, the orbit of a wide title stays within its height.
-    const short = journey({
-      ...page(0),
-      height: 600,
-      profiles: null,
-      anchor: { left: 120, top: 150, width: 1200, height: 300 },
-    });
-    const shortHalfHeight =
-      (short.formations.pair?.mark.radius ?? 0) *
-      Math.hypot(Math.sin(Math.PI / 6), (9 / 22) * Math.cos(Math.PI / 6));
-    expect(shortHalfHeight).toBeLessThanOrEqual(300);
-    expect(shortHalfHeight).toBeGreaterThan(250);
-  });
-
-  it("flows down the rivers in the hero, then gathers into the logo mark beside the manifesto", () => {
-    const map = { left: 700, top: 40, width: 560, height: 830 };
-    const hero = { left: 0, top: 0, width, height };
-    const withRivers = (scroll: number) =>
-      journey({
-        ...page(scroll),
-        profiles: null,
-        rivers: { ...map, top: map.top - scroll },
-        riversHero: { ...hero, top: hero.top - scroll },
-      }).formations;
-    const top = withRivers(0);
-    // Every particle in the rivers at first, none in the mark.
-    expect(top.rivers?.weight).toBe(1);
-    expect(top.rivers?.box).toEqual(map);
-    expect(top.pair).toBeNull();
     // Halfway through the hand-over, both share the particles…
-    const midway = withRivers(400);
+    const midway = journey(page(400)).formations;
     expect((midway.rivers?.weight ?? 0) + (midway.pair?.weight ?? 0)).toBeCloseTo(1, 6);
     expect(midway.rivers?.weight).toBeGreaterThan(0.2);
     expect(midway.pair?.weight).toBeGreaterThan(0.2);
     // …and once the hero has scrolled away, the mark holds them all, beside the manifesto.
-    const settled = withRivers(820);
+    const settled = journey(page(820)).formations;
     expect(settled.rivers).toBeNull();
     expect(settled.pair?.weight).toBe(1);
     expect(settled.pair?.mark).toEqual(journey(page(900)).formations.pair?.mark);
   });
 
+  it("stands the mark beside the manifesto, pinned in the viewport, lighting up as the rivers gather into it", () => {
+    const manifesto = journey(page(900)).formations.pair;
+    // The mark is the two atoms already merged.
+    expect(manifesto?.bond).toBe(1);
+    expect(manifesto?.merge).toBe(1);
+    // Beside the manifesto on a wide screen: right half, vertically centred, at full light.
+    expect(manifesto?.weight).toBe(1);
+    expect(manifesto?.mark.x).toBeGreaterThan(width * 0.6);
+    expect(manifesto?.mark.y).toBeCloseTo(height / 2, 0);
+    expect(manifesto?.glow).toBe(1);
+    expect(manifesto?.core).toBe(1);
+    expect(journey(page(1400)).formations.pair?.mark).toEqual(manifesto?.mark);
+    // Dimmer while the rivers start to gather into it, its nucleus dark, then lit.
+    const early = journey(page(100)).formations.pair;
+    expect(early?.mark).toEqual(manifesto?.mark);
+    expect(early?.glow).toBeLessThan(0.7);
+    expect(early?.core).toBeLessThan(0.1);
+    const midway = journey(page(400)).formations.pair;
+    expect(midway?.glow).toBeGreaterThan(early?.glow ?? 1);
+    expect(midway?.glow).toBeLessThan(1);
+    expect(midway?.core).toBeGreaterThan(0.5);
+  });
+
   it("holds the rivers and the plan while the hero's copy is on screen, and lets go as the hero leaves", () => {
-    const map = { left: 700, top: 40, width: 560, height: 830 };
-    const hero = { left: 0, top: 0, width, height };
-    const at = (scroll: number) =>
-      journey({
-        ...page(scroll),
-        profiles: null,
-        rivers: { ...map, top: map.top - scroll },
-        riversHero: { ...hero, top: hero.top - scroll },
-      }).formations;
+    const at = (scroll: number) => journey(page(scroll)).formations;
     // The copy sits at the foot of the hero: scrolled by 43 % of the screen, all of it still
     // shows. The rivers and the plan are on their way, not gone.
     const copyOnScreen = at(0.43 * height);
@@ -177,15 +108,7 @@ describe("journey", () => {
   });
 
   it("flies the plan of Lyon into the mark from the first scroll, landing with the rivers' particles", () => {
-    const map = { left: 700, top: 40, width: 560, height: 830 };
-    const hero = { left: 0, top: 0, width, height };
-    const at = (scroll: number) =>
-      journey({
-        ...page(scroll),
-        profiles: null,
-        rivers: { ...map, top: map.top - scroll },
-        riversHero: { ...hero, top: hero.top - scroll },
-      }).formations;
+    const at = (scroll: number) => journey(page(scroll)).formations;
     // At rest, the plan stays where the page paints it.
     expect(at(0).flight).toMatchObject({ progress: 0, box: map, hero });
     // Scrolling, it sets off at once, at the pace of the scroll, while the rivers' hand-over to the
@@ -205,16 +128,16 @@ describe("journey", () => {
     const cards = at(2600);
     expect(cards.flight?.presence ?? 0).toBeLessThan(0.5);
     expect(cards.flight?.presence).toBeCloseTo(cards.pair ? cards.pair.weight : 0, 6);
-    // No plan without the rivers' hero.
-    expect(journey(page(0)).formations.flight).toBeNull();
   });
 
-  it("puts the mark beside the manifesto from the start when there are no cards", () => {
-    const top = journey({ ...page(0), profiles: null }).formations.pair;
-    expect(top?.weight).toBe(1);
-    expect(top?.mark).toEqual(journey(page(900)).formations.pair?.mark);
-    expect(top?.glow).toBe(1);
-    expect(top?.core).toBe(1);
+  it("puts the mark beside the manifesto from the start when the page shows no rivers", () => {
+    const { formations } = journey({ ...page(0), rivers: null, riversHero: null });
+    expect(formations.rivers).toBeNull();
+    expect(formations.flight).toBeNull();
+    expect(formations.pair?.weight).toBe(1);
+    expect(formations.pair?.mark).toEqual(journey(page(900)).formations.pair?.mark);
+    expect(formations.pair?.glow).toBe(1);
+    expect(formations.pair?.core).toBe(1);
   });
 
   it("lets go of the mark and gathers around the cards, one motif per card", () => {
@@ -258,6 +181,7 @@ describe("journey", () => {
     for (let scroll = 0; scroll <= 11000; scroll += 37) {
       const { formations } = journey(page(scroll));
       const held =
+        (formations.rivers?.weight ?? 0) +
         (formations.pair?.weight ?? 0) +
         (formations.card?.weight ?? 0) +
         (formations.tubes?.weight ?? 0) +
@@ -289,8 +213,6 @@ describe("journey", () => {
       width,
       height,
       scope: null,
-      profiles: null,
-      anchor: null,
       rivers: null,
       riversHero: null,
       cards: [],

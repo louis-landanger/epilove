@@ -91,7 +91,7 @@ export interface RiversFormation {
 }
 
 /**
- * The dots of the plan of Lyon (`/apercu/fleuves`, city.ts), taken over by
+ * The dots of the plan of Lyon (the rivers hero, city.ts), taken over by
  * the field as the page scrolls and flown into the logo mark: `progress` 0
  * keeps them on the map (`box`, fitted as for the rivers), 1 has them all
  * landed in `mark`, fused into particles the field keeps for them

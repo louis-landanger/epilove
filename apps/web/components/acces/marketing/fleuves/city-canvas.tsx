@@ -6,7 +6,7 @@ import { afterLoadAndIdle } from "../live-scene";
 import type { CityWorkerMessage, CityWorkerReply } from "./city.worker";
 import { onCityFlying, publishCityFlight } from "./city-flight";
 
-const PLAN_URL = "/apercu/fleuves/lyon-plan.bin";
+const PLAN_URL = "/fleuves/lyon-plan.bin";
 
 const box = (element: Element) => {
   const rect = element.getBoundingClientRect();

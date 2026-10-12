@@ -40,7 +40,9 @@ module.exports = {
             "total-blocking-time": ["error", { maxNumericValue: 600, aggregationMethod: "median" }],
             "resource-summary:script:size": ["error", { maxNumericValue: 310 * 1024 }],
             "resource-summary:font:size": ["error", { maxNumericValue: 270 * 1024 }],
-            "resource-summary:total:size": ["error", { maxNumericValue: 750 * 1024 }],
+            // The plan of Lyon the hero draws in dots (public/fleuves/lyon-plan.bin, 200 KB, fetched
+            // once the page has loaded and drawn in a worker) is a quarter of it.
+            "resource-summary:total:size": ["error", { maxNumericValue: 900 * 1024 }],
           },
         },
         {

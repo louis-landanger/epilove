@@ -150,7 +150,7 @@ export interface IonField {
    */
   setFormations(formations: ViewportFormations): void;
   /**
-   * The dots of the plan of Lyon (`/apercu/fleuves`), for the field to fly
+   * The dots of the plan of Lyon (the rivers hero), for the field to fly
    * them into the logo mark when the page scrolls (`flight` formation), where
    * they fuse into the particles it keeps for them (`flight` option); null
    * removes them.

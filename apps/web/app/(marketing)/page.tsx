@@ -1,7 +1,6 @@
 import type { Locale } from "@atomes/core";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Hero } from "@/components/acces/marketing/hero";
 import { Landing } from "@/components/acces/marketing/landing";
 import { publicAlternates } from "@/i18n/paths";
 
@@ -18,5 +17,5 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** The landing page (docs/02-design.md, section 5) and the waiting list (ONB-01). */
 export default function HomePage() {
-  return <Landing Hero={Hero} />;
+  return <Landing />;
 }

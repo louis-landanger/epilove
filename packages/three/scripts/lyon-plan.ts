@@ -1,6 +1,6 @@
 /**
  * Writes the plan of Lyon that the rivers hero draws in dots
- * (apps/web/public/apercu/fleuves/lyon-plan.bin, see src/ion-field/city.ts)
+ * (apps/web/public/fleuves/lyon-plan.bin, see src/ion-field/city.ts)
  * from OpenStreetMap: streets, railways above ground, parks, woods and
  * meadows around the Presqu'île. © OpenStreetMap contributors, ODbL: the
  * hero credits them.
@@ -18,7 +18,7 @@ import { CITY_LAYERS, type CityLayer, type CityLine, encodeCityPlan } from "../s
 
 const OVERPASS = process.env.OVERPASS_URL ?? "https://overpass-api.de/api/interpreter";
 const CACHE = join(tmpdir(), "atomes-lyon-plan");
-const TARGET = new URL("../../../apps/web/public/apercu/fleuves/lyon-plan.bin", import.meta.url);
+const TARGET = new URL("../../../apps/web/public/fleuves/lyon-plan.bin", import.meta.url);
 
 // The projection of rivers.ts: kilometres east and north of 45.76° N, 4.85° E.
 const LAT0 = 45.76;
