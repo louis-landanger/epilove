@@ -200,6 +200,10 @@ export function journey(measures: JourneyMeasures): JourneyState {
     : profiles || anchor
       ? ramp((scrolled - 0.02) / 0.4)
       : 1;
+  // The plan of Lyon flows with them, from its foot, at the pace of the scroll itself rather than
+  // easing in as their hand-over does: it sets off at the first notch of the wheel, and lands with
+  // them at the end.
+  const flow = Math.min(1, Math.max(0, (scrolled - RIVERS_SETTLE.from) / RIVERS_SETTLE.span));
   // …which hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
 
@@ -313,11 +317,11 @@ export function journey(measures: JourneyMeasures): JourneyState {
         rivers && scope && pairShare * (1 - settle) > 0.001
           ? { weight: pairShare * (1 - settle), box: rivers }
           : null,
-      // The plan of Lyon follows the rivers' particles into the mark, at the same pace, and
-      // stays in it as long as it shows.
+      // The plan of Lyon flies into the mark from the first scroll (`flow`), lands with the
+      // rivers' particles, and stays in it as long as it shows.
       flight:
         rivers && scope && measures.riversHero
-          ? { progress: settle, presence: pairShare, box: rivers, hero: measures.riversHero, mark: atom }
+          ? { progress: flow, presence: pairShare, box: rivers, hero: measures.riversHero, mark: atom }
           : null,
     },
   };

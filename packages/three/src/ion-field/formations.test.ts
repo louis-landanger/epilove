@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   contourLength,
   contourPoint,
-  FLIGHT_DELAY,
   FLIGHT_GATHER_STEP,
-  FLIGHT_JITTER,
   FLIGHT_LANDING,
   FLIGHT_LIFT,
   FLIGHT_MERGE,
@@ -13,6 +11,7 @@ import {
   FLIGHT_ORBIT_WIDTH,
   FLIGHT_PACK_STRIDE,
   FLIGHT_PATCH_STRIDE,
+  FLIGHT_RISE,
   FLIGHT_SCATTER,
   FLIGHT_SPREAD,
   type FlightFormation,
@@ -1038,25 +1037,27 @@ describe("the plan's flight into the logo mark", () => {
     }
   });
 
-  it("holds the plan whole while the rivers set off, then lets it flow from the bottom of the hero up", () => {
+  it("lets the plan flow from the bottom of the hero up as soon as the page scrolls, with the rivers", () => {
     const foot = { x: 0.2, y: -1.15 };
     const top = { x: 0.2, y: 1.15 };
+    // Early in the scroll: a quarter of the way up the wave.
+    const early = FLIGHT_RISE / 4;
     for (const dot of dots) {
       const target = towards(dot, mark);
-      // At first, not a dot moves…
+      // At rest, not a dot moves…
       for (const start of [foot, top]) {
-        flightPoint(start, dot, target, flight(FLIGHT_DELAY - FLIGHT_JITTER / 2), out);
+        flightPoint(start, dot, target, flight(0), out);
         expect(out.x).toBeCloseTo(start.x, 9);
         expect(out.y).toBeCloseTo(start.y, 9);
       }
-      // …then the foot of the plan leaves first…
-      flightPoint(foot, dot, target, flight(FLIGHT_DELAY + FLIGHT_JITTER), out);
+      // …from the first scroll the foot of the plan flows, while its top waits…
+      flightPoint(foot, dot, target, flight(early), out);
       expect(Math.hypot(out.x - foot.x, out.y - foot.y)).toBeGreaterThan(1e-4);
-      flightPoint(top, dot, target, flight(FLIGHT_DELAY + FLIGHT_JITTER), out);
+      flightPoint(top, dot, target, flight(early), out);
       expect(out.x).toBeCloseTo(top.x, 9);
       expect(out.y).toBeCloseTo(top.y, 9);
-      // …and its top follows, well before the end.
-      flightPoint(top, dot, target, flight(0.7), out);
+      // …and follows, well before the end.
+      flightPoint(top, dot, target, flight(0.6), out);
       expect(Math.hypot(out.x - top.x, out.y - top.y)).toBeGreaterThan(1e-4);
     }
   });

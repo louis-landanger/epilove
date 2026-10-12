@@ -176,7 +176,7 @@ describe("journey", () => {
     expect(heroGone.flight?.progress).toBe(1);
   });
 
-  it("flies the plan of Lyon into the mark at the pace of the rivers' particles", () => {
+  it("flies the plan of Lyon into the mark from the first scroll, landing with the rivers' particles", () => {
     const map = { left: 700, top: 40, width: 560, height: 830 };
     const hero = { left: 0, top: 0, width, height };
     const at = (scroll: number) =>
@@ -188,9 +188,13 @@ describe("journey", () => {
       }).formations;
     // At rest, the plan stays where the page paints it.
     expect(at(0).flight).toMatchObject({ progress: 0, box: map, hero });
-    // Scrolling, it flies as the rivers hand their particles to the mark…
+    // Scrolling, it sets off at once, at the pace of the scroll, while the rivers' hand-over to the
+    // mark eases in: from the first notch of the wheel, it is well on its way…
+    const firstNotch = at(100);
+    expect(firstNotch.flight?.progress).toBeGreaterThan(0.08);
+    expect(firstNotch.flight?.progress).toBeGreaterThan(3 * (firstNotch.pair?.weight ?? 0));
     const midway = at(400);
-    expect(midway.flight?.progress).toBeCloseTo(midway.pair?.weight ?? 0, 6);
+    expect(midway.flight?.progress).toBeGreaterThan(0.4);
     expect(midway.flight?.hero.top).toBe(-400);
     // …and lands in the mark beside the manifesto, where it stays as long as the mark shows…
     const settled = at(820);

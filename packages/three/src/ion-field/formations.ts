@@ -1243,14 +1243,15 @@ export const FLIGHT_START = 0.001;
  */
 export const FLIGHT_FOLLOW = 4.5;
 /**
- * The plan stays whole while the rivers' particles set off, then flows into
- * the mark from the bottom up, at their pace: a dot leaves when the flight's
- * progress reaches FLIGHT_DELAY plus FLIGHT_RISE times its height in the hero
- * (0 at its foot, 1 at its top), give or take half of FLIGHT_JITTER, gently,
- * and lands with the rivers' particles, softly, somewhere from
- * FLIGHT_LANDING to the end: the plan stays on its way as long as they do.
+ * The plan flows into the mark from the bottom up as soon as the page
+ * scrolls, with the rivers' particles, at their pace: a dot leaves when the
+ * flight's progress reaches FLIGHT_DELAY (none: from the first scroll) plus
+ * FLIGHT_RISE times its height in the hero (0 at its foot, 1 at its top),
+ * give or take half of FLIGHT_JITTER, gently, and lands with the rivers'
+ * particles, softly, somewhere from FLIGHT_LANDING to the end: the plan
+ * stays on its way as long as they do.
  */
-export const FLIGHT_DELAY = 0.2;
+export const FLIGHT_DELAY = 0;
 export const FLIGHT_RISE = 0.45;
 export const FLIGHT_JITTER = 0.1;
 export const FLIGHT_LANDING = 0.85;
