@@ -12,6 +12,7 @@ const UNITS = ["days", "hours", "minutes", "seconds"] as const;
  * (no hydration mismatch): undefined until mounted, null once it has passed.
  */
 export function useRemaining(): Remaining | null | undefined {
+  "use no memo";
   const [remaining, setRemaining] = useState<Remaining | null | undefined>(undefined);
   useEffect(() => {
     const target = Date.parse(PACT_REVEAL_AT);
@@ -34,6 +35,8 @@ export const digits = (value: number | undefined) =>
  * changing every second.
  */
 export function PactCountdown() {
+  // Nothing to memoise: it renders once a second, or once.
+  "use no memo";
   const t = useTranslations("marketing.pact");
   const style = usePactStyle();
   const remaining = useRemaining();
@@ -58,6 +61,30 @@ export function PactCountdown() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** The countdown in the middle of the Pact's dial (pact-stage.tsx): the days, large, then the rest. */
+export function PactDialTime() {
+  "use no memo";
+  const t = useTranslations("marketing.pact");
+  const remaining = useRemaining();
+  if (remaining === null) {
+    return null;
+  }
+  return (
+    <div className="pact-dial-time">
+      <span className="pact-dial-days">{remaining === undefined ? "--" : remaining.days}</span>
+      <span className="pact-dial-unit">{t("days")}</span>
+      <span className="pact-dial-clock">
+        {digits(remaining?.hours)}
+        <span className="pact-dial-colon">:</span>
+        {digits(remaining?.minutes)}
+        <span className="pact-dial-colon">:</span>
+        <span className="pact-dial-seconds">{digits(remaining?.seconds)}</span>
+      </span>
+      <span className="pact-dial-unit">{t("untilReveal")}</span>
     </div>
   );
 }

@@ -1,9 +1,7 @@
-"use client";
-
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { LogoMark } from "./logo";
-import { digits, useRemaining } from "./pact-countdown";
-import { usePactStyle } from "./pact-style";
+import { PactDialTime } from "./pact-countdown";
+import { PactStageRoot } from "./pact-stage-root";
 
 /** The dial's sixty ticks (in a box of 200, its ring 96 from the middle), every fifth longer: as the atoms draw them. */
 const TICKS = Array.from({ length: 60 }, (_, tick) => {
@@ -14,43 +12,6 @@ const TICKS = Array.from({ length: 60 }, (_, tick) => {
   return { tick, hour: tick % 5 === 0, from: at(outer), to: at(inner) };
 });
 const round = (value: number) => Math.round(value * 100) / 100;
-
-/** The dial: the countdown in its middle; its ticks, drawn by the atoms once the field is live. */
-function Dial() {
-  const t = useTranslations("marketing.pact");
-  const remaining = useRemaining();
-  return (
-    <>
-      <svg className="pact-ticks" viewBox="-100 -100 200 200" aria-hidden="true">
-        <circle r="96" />
-        {TICKS.map(({ tick, hour, from, to }) => (
-          <line
-            key={tick}
-            data-hour={hour ? "" : undefined}
-            x1={round(from.x)}
-            y1={round(from.y)}
-            x2={round(to.x)}
-            y2={round(to.y)}
-          />
-        ))}
-      </svg>
-      {remaining === null ? null : (
-        <div className="pact-dial-time">
-          <span className="pact-dial-days">{remaining === undefined ? "--" : remaining.days}</span>
-          <span className="pact-dial-unit">{t("days")}</span>
-          <span className="pact-dial-clock">
-            {digits(remaining?.hours)}
-            <span className="pact-dial-colon">:</span>
-            {digits(remaining?.minutes)}
-            <span className="pact-dial-colon">:</span>
-            <span className="pact-dial-seconds">{digits(remaining?.seconds)}</span>
-          </span>
-          <span className="pact-dial-unit">{t("untilReveal")}</span>
-        </div>
-      )}
-    </>
-  );
-}
 
 /**
  * The couple as the atoms draw it (formations.ts), in a box of 100: two atoms
@@ -73,72 +34,70 @@ const onOrbit = (atom: (typeof ATOMS)[number], theta: number) => {
   };
 };
 
-/** The couple: two atoms and their bond, drawn by the atoms once the field is live. */
-function Couple() {
-  const t = useTranslations("marketing.pact");
+/**
+ * The Pact's stage, beside its countdown (pact-section.tsx), in three
+ * versions to compare (`?pacte=cadran`, `couple` or `fiole`), the one asked
+ * for shown (pact-stage-root.tsx): the dial, the countdown in its middle; the
+ * couple, two atoms and their bond; the sealed vial in its rings. Once the
+ * field is live, its atoms draw the ticks, the couple and the liquid.
+ */
+export async function PactStage() {
+  const t = await getTranslations("marketing.pact");
   const [first, second] = ATOMS;
   return (
-    <>
-      <svg className="pact-couple" viewBox="0 0 100 100" aria-hidden="true">
-        <line x1={first.x} y1={first.y} x2={second.x} y2={second.y} />
-        {ATOMS.map((atom) => {
-          const electron = onOrbit(atom, atom.electron);
-          return (
-            <g key={atom.nucleus}>
-              <ellipse
-                cx={atom.x}
-                cy={atom.y}
-                rx={ORBIT}
-                ry={round((ORBIT * 9) / 22)}
-                transform={`rotate(-30 ${atom.x} ${atom.y})`}
-              />
-              <circle cx={atom.x} cy={atom.y} r={round(NUCLEUS)} className={atom.nucleus} />
-              <circle cx={electron.x} cy={electron.y} r="1.6" className="fill-volt" />
-            </g>
-          );
-        })}
-      </svg>
-      <p className="pact-caption">{t("bond")} · 11.02.2027 · 20:00</p>
-    </>
-  );
-}
-
-/** The sealed vial in its rings: its liquid, drawn by the atoms once the field is live. */
-function Vial() {
-  const t = useTranslations("marketing.pact");
-  return (
-    <>
-      <div className="pact-ring pact-ring-1" />
-      <div className="pact-ring pact-ring-2" />
-      <div className="pact-ring pact-ring-3" />
-      <div className="pact-vial">
-        <div className="pact-vial-glass">
-          <div className="pact-vial-liquid" />
-        </div>
-        <div className="pact-vial-cap">
-          <LogoMark className="pact-vial-mark" />
-        </div>
+    <PactStageRoot>
+      <div className="pact-face pact-face-dial">
+        <svg className="pact-ticks" viewBox="-100 -100 200 200" aria-hidden="true">
+          <circle r="96" />
+          {TICKS.map(({ tick, hour, from, to }) => (
+            <line
+              key={tick}
+              data-hour={hour ? "" : undefined}
+              x1={round(from.x)}
+              y1={round(from.y)}
+              x2={round(to.x)}
+              y2={round(to.y)}
+            />
+          ))}
+        </svg>
+        <PactDialTime />
       </div>
-      <p className="pact-caption">{t("sample")} · 11.02.2027 · 20:00</p>
-    </>
-  );
-}
-
-/**
- * The Pact's stage, beside its countdown (pact-section.tsx), in one of three
- * versions to compare (`?pacte=cadran`, `couple` or `fiole`): the field reads
- * which from `data-pact` (ion-field-canvas.tsx) and draws it with its atoms.
- */
-export function PactStage() {
-  const style = usePactStyle();
-  return (
-    <div
-      aria-hidden="true"
-      data-field-pact
-      data-pact={style}
-      className={`pact-stage pact-stage-${style} relative mx-auto aspect-square w-full max-w-[30rem]`}
-    >
-      {style === "couple" ? <Couple /> : style === "vial" ? <Vial /> : <Dial />}
-    </div>
+      <div className="pact-face pact-face-couple">
+        <svg className="pact-couple" viewBox="0 0 100 100" aria-hidden="true">
+          <line x1={first.x} y1={first.y} x2={second.x} y2={second.y} />
+          {ATOMS.map((atom) => {
+            const electron = onOrbit(atom, atom.electron);
+            return (
+              <g key={atom.nucleus}>
+                <ellipse
+                  cx={atom.x}
+                  cy={atom.y}
+                  rx={ORBIT}
+                  ry={round((ORBIT * 9) / 22)}
+                  transform={`rotate(-30 ${atom.x} ${atom.y})`}
+                />
+                <circle cx={atom.x} cy={atom.y} r={round(NUCLEUS)} className={atom.nucleus} />
+                <circle cx={electron.x} cy={electron.y} r="1.6" className="fill-volt" />
+              </g>
+            );
+          })}
+        </svg>
+        <p className="pact-caption">{t("bond")} · 11.02.2027 · 20:00</p>
+      </div>
+      <div className="pact-face pact-face-vial">
+        <div className="pact-ring pact-ring-1" />
+        <div className="pact-ring pact-ring-2" />
+        <div className="pact-ring pact-ring-3" />
+        <div className="pact-vial">
+          <div className="pact-vial-glass">
+            <div className="pact-vial-liquid" />
+          </div>
+          <div className="pact-vial-cap">
+            <LogoMark className="pact-vial-mark" />
+          </div>
+        </div>
+        <p className="pact-caption">{t("sample")} · 11.02.2027 · 20:00</p>
+      </div>
+    </PactStageRoot>
   );
 }

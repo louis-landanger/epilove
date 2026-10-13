@@ -1,9 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import {
-  COUPLE_BEAT_GLOW,
   contourLength,
   contourPoint,
-  DIAL_HAND_GLOW,
   FLIGHT_GATHER_STEP,
   FLIGHT_LANDING,
   FLIGHT_LIFT,
@@ -37,6 +35,7 @@ import {
   LOGO_ORBIT,
   LOGO_ORBIT_GLOW,
   LOGO_PAPER,
+  loadPactStyles,
   FLIGHT_MERGE as MERGE,
   orbitArc,
   orbitArcPoint,
@@ -56,12 +55,13 @@ import {
 } from "./formations";
 import { createIonFieldLayout, MARK, SCHOOL_KEYS, withParticlesAhead } from "./layout";
 import { type LogoShape, loadSchoolLogos, logoColor, schoolLogoShape } from "./logos";
+import { COUPLE_BEAT_GLOW, DIAL_HAND_GLOW } from "./pact-styles";
 import { RHONE_PATH, RIVER_MAP, SAONE_PATH } from "./rivers";
 
 const box: WorldBox = { x: 0.2, y: -0.1, hw: 0.8, hh: 0.4 };
 
-// The schools' logos load on demand (the field asks as their stage comes near).
-beforeAll(() => loadSchoolLogos());
+// The schools' logos and the Pact's styles load on demand (the field asks as their stage comes near).
+beforeAll(() => Promise.all([loadSchoolLogos(), loadPactStyles()]));
 
 /** Distance from a point to the rounded rectangle `box` (radius r): 0 on its outline. */
 function distanceToRoundedBox(x: number, y: number, r: number): number {

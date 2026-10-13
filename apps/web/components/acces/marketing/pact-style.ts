@@ -11,6 +11,7 @@ const STYLES: Readonly<Record<string, PactStyle>> = { cadran: "dial", couple: "c
  * the address asks for another. Read once mounted, the page being static.
  */
 export function usePactStyle(): PactStyle {
+  "use no memo";
   const [style, setStyle] = useState<PactStyle>("dial");
   useEffect(() => {
     const asked = STYLES[new URLSearchParams(window.location.search).get("pacte") ?? ""];

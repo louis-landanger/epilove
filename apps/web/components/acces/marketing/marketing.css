@@ -1034,6 +1034,17 @@
   place-items: center;
 }
 
+/* Only the face asked for. */
+.pact-face {
+  display: none;
+}
+
+.pact-stage[data-pact="dial"] .pact-face-dial,
+.pact-stage[data-pact="couple"] .pact-face-couple,
+.pact-stage[data-pact="vial"] .pact-face-vial {
+  display: contents;
+}
+
 .pact-caption {
   position: absolute;
   bottom: 4%;

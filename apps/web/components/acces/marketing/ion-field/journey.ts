@@ -5,7 +5,7 @@ import { markPlacementFor, type PactStyle, type PixelBox, type ViewportFormation
  * 5): from the measured position of each section, which shapes the particles
  * draw (Lyon's two rivers in the hero, the logo mark beside the manifesto,
  * the stacked cards, the school race tubes, the schools' logos beside the
- * waiting list, the Pact rings) and how they share them. Pure, so it can be tested without a browser; the canvas
+ * waiting list, the Pact's stage) and how they share them. Pure, so it can be tested without a browser; the canvas
  * measures the page and applies the result every frame.
  */
 
@@ -142,8 +142,8 @@ const MARK_GLOW_FROM = 0.6;
  * In the hero the particles flow down Lyon's two rivers. Scrolling, they
  * gather into the logo mark beside the manifesto, where its nucleus lights
  * up, with the dots of the plan of Lyon; further down come the stacked
- * cards, the tubes, the schools' logos beside the waiting list and the Pact
- * rings. Every particle always belongs to a shape: neighbouring shapes share
+ * cards, the tubes, the schools' logos beside the waiting list and the Pact's
+ * stage. Every particle always belongs to a shape: neighbouring shapes share
  * the particles while one section gives way to the next (their weights add up
  * to 1), each particle whole in one of them, going over as the next one's
  * weight grows (writeFormations); between sections the nearest shape keeps
