@@ -52,16 +52,52 @@ function Dial() {
   );
 }
 
+/**
+ * The couple as the atoms draw it (formations.ts), in a box of 100: two atoms
+ * as the logo's, on a diagonal, the first up on the left, a bond between
+ * their nuclei; each orbit 19.2 across, tilted as the logo's.
+ */
+const ATOMS = [
+  { x: 27.92, y: 39.44, nucleus: "fill-plasma", electron: -2.2 },
+  { x: 72.08, y: 60.56, nucleus: "fill-volt", electron: 0.9 },
+] as const;
+const ORBIT = 19.2;
+const NUCLEUS = (ORBIT * 6) / 22;
+const TILT = -Math.PI / 6;
+const onOrbit = (atom: (typeof ATOMS)[number], theta: number) => {
+  const ex = ORBIT * Math.cos(theta);
+  const ey = ((ORBIT * 9) / 22) * Math.sin(theta);
+  return {
+    x: round(atom.x + ex * Math.cos(TILT) - ey * Math.sin(TILT)),
+    y: round(atom.y + ex * Math.sin(TILT) + ey * Math.cos(TILT)),
+  };
+};
+
 /** The couple: two atoms and their bond, drawn by the atoms once the field is live. */
 function Couple() {
   const t = useTranslations("marketing.pact");
+  const [first, second] = ATOMS;
   return (
     <>
-      <div className="pact-couple">
-        <LogoMark className="pact-couple-atom" />
-        <span className="pact-couple-bond" />
-        <LogoMark className="pact-couple-atom pact-couple-mirrored" />
-      </div>
+      <svg className="pact-couple" viewBox="0 0 100 100" aria-hidden="true">
+        <line x1={first.x} y1={first.y} x2={second.x} y2={second.y} />
+        {ATOMS.map((atom) => {
+          const electron = onOrbit(atom, atom.electron);
+          return (
+            <g key={atom.nucleus}>
+              <ellipse
+                cx={atom.x}
+                cy={atom.y}
+                rx={ORBIT}
+                ry={round((ORBIT * 9) / 22)}
+                transform={`rotate(-30 ${atom.x} ${atom.y})`}
+              />
+              <circle cx={atom.x} cy={atom.y} r={round(NUCLEUS)} className={atom.nucleus} />
+              <circle cx={electron.x} cy={electron.y} r="1.6" className="fill-volt" />
+            </g>
+          );
+        })}
+      </svg>
       <p className="pact-caption">{t("bond")} · 11.02.2027 · 20:00</p>
     </>
   );

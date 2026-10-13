@@ -1119,30 +1119,28 @@
   color: var(--color-plasma);
 }
 
-/* The couple: two atoms, mirrored, and the bond between them. */
+/* The couple: two atoms on a diagonal, and the bond between their nuclei. */
 .pact-couple {
-  display: flex;
-  align-items: center;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  padding: 0 4%;
-}
-
-.pact-couple-atom {
-  flex: none;
-  width: 40%;
-  height: auto;
+  height: 100%;
+  overflow: visible;
   color: var(--color-paper);
 }
 
-.pact-couple-mirrored {
-  scale: -1 1;
+.pact-couple ellipse {
+  fill: none;
+  stroke: currentColor;
+  stroke-opacity: 0.5;
+  stroke-width: 0.8;
 }
 
-.pact-couple-bond {
-  flex: 1;
-  height: 0;
-  margin: 0 -9%;
-  border-top: 1.5px dashed color-mix(in oklch, var(--color-paper) 45%, transparent);
+.pact-couple line {
+  stroke: currentColor;
+  stroke-opacity: 0.45;
+  stroke-width: 0.5;
+  stroke-dasharray: 1.4 1.4;
 }
 
 /* The vial: sealed glass, as the race's tubes, in three rings. */
@@ -1169,6 +1167,13 @@
   position: relative;
   width: 24%;
   height: 58%;
+}
+
+/* Under the outer ring. */
+.pact-stage-vial .pact-caption {
+  top: 100%;
+  bottom: auto;
+  margin-top: 0.75rem;
 }
 
 .pact-vial-glass {

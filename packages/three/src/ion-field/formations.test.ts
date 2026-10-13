@@ -662,36 +662,35 @@ describe("writeFormations", () => {
     }
   });
 
-  it("draws the Pact's couple: two atoms side by side, a pulse along their bond once a second", () => {
+  it("draws the Pact's couple: two atoms on a diagonal, a pulse along their bond once a second", () => {
     const pact = { weight: 1, x: 0.1, y: -0.2, radius: 0.5, style: "couple" as const };
-    const pulseAt = (seconds: number) => {
+    const brightest = (seconds: number) => {
       const { targets, looks, layout } = run({ pact: { ...pact, seconds } });
-      let brightest = { glow: 0, x: 0 };
+      let found = { glow: 0, x: 0, y: 0 };
       let left = 0;
       for (let index = 0; index < layout.count; index += 1) {
         const offset = index * FORMATION_STRIDE;
         const x = (targets[offset] ?? 0) - pact.x;
         const y = (targets[offset + 1] ?? 0) - pact.y;
         expect(Math.abs(x)).toBeLessThan(pact.radius * 0.96);
-        expect(Math.abs(y)).toBeLessThan(pact.radius * 0.5);
+        expect(Math.abs(y)).toBeLessThan(pact.radius * 0.6);
         left += x < 0 ? 1 : 0;
-        // The bond, between the two nuclei.
-        if (
-          Math.abs(y) < 0.01 &&
-          Math.abs(x) < pact.radius * 0.3 &&
-          (looks[offset + 2] ?? 0) > brightest.glow
-        ) {
-          brightest = { glow: looks[offset + 2] ?? 0, x };
+        if ((looks[offset + 2] ?? 0) > found.glow) {
+          found = { glow: looks[offset + 2] ?? 0, x, y };
         }
       }
+      // As many particles in each atom's half.
       expect(left / layout.count).toBeCloseTo(0.5, 1);
-      return brightest;
+      return found;
     };
-    // Just after the countdown ticks, the pulse leaves the first atom; a moment later it is further along.
-    const early = pulseAt(32.9);
-    const later = pulseAt(32.7);
+    // Just after the countdown ticks, the pulse leaves the first atom, up on the left; a moment
+    // later it is further down the bond, towards the second.
+    const early = brightest(32.9);
+    const later = brightest(32.7);
     expect(early.glow).toBeGreaterThan(COUPLE_BEAT_GLOW * 0.8);
+    expect(early.x).toBeLessThan(0);
     expect(later.x).toBeGreaterThan(early.x);
+    expect(later.y).toBeLessThan(early.y);
   });
 
   it("keeps the heavy particles in the nuclei and spreads the orbit evenly", () => {

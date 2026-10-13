@@ -713,15 +713,16 @@ function dialContribution(
 }
 
 /**
- * The Pact's couple, in radii of the stage: two atoms side by side, as the
- * logo's (its orbit tilted, a nucleus, an electron), mirrored, swaying
- * towards each other; between their nuclei, a bond. Shares of the
- * particles: each nucleus, each orbit (COUPLE_ELECTRON of it in the
+ * The Pact's couple, in radii of the stage: two atoms as the logo's (its
+ * orbit tilted, a nucleus, an electron), on a diagonal, the first up on the
+ * left, swaying towards each other; between their nuclei, a bond. Shares of
+ * the particles: each nucleus, each orbit (COUPLE_ELECTRON of it in the
  * electron), the rest the bond.
  */
-const COUPLE_SPAN = 0.5;
+const COUPLE_SPAN_X = 0.46;
+const COUPLE_SPAN_Y = 0.22;
 const COUPLE_ORBIT = 0.4;
-const COUPLE_SWAY = 0.03;
+const COUPLE_SWAY = 0.06;
 const COUPLE_NUCLEUS = 0.13;
 const COUPLE_ORBITS = 0.29;
 const COUPLE_ELECTRON = 0.14;
@@ -745,21 +746,24 @@ function coupleContribution(
   const along = particles.along[index] ?? 0;
   const lanes = particles.lanes[index] ?? 0;
   const phase = particles.phases[index] ?? 0;
-  const span = (COUPLE_SPAN - COUPLE_SWAY * (0.5 + 0.5 * Math.sin(time * 0.6))) * pact.radius;
+  // From the stage's middle to each nucleus: the first up on the left, the second down on the right.
+  const near = 1 - COUPLE_SWAY * (0.5 + 0.5 * Math.sin(time * 0.6));
+  const spanX = COUPLE_SPAN_X * near * pact.radius;
+  const spanY = COUPLE_SPAN_Y * near * pact.radius;
   const orbit = COUPLE_ORBIT * pact.radius;
   const nucleus = MARK.nucleusRadius * orbit;
   // Since the countdown last ticked, in seconds.
   const beat = 1 - fract(pact.seconds ?? 0);
   const pulse = beat / COUPLE_BEAT;
   let share = lanes;
-  // The first atom on the left, the second on the right, mirrored.
+  // Which of the two atoms.
   const side =
     share < COUPLE_NUCLEUS || (share >= 2 * COUPLE_NUCLEUS && share < 2 * COUPLE_NUCLEUS + COUPLE_ORBITS)
       ? -1
       : 1;
   const center = coupleCenter;
-  center.x = pact.x + side * span;
-  center.y = pact.y;
+  center.x = pact.x + side * spanX;
+  center.y = pact.y - side * spanY;
   into.paper = 0.85;
   if (share < 2 * COUPLE_NUCLEUS) {
     // A nucleus, its particles spread as a sunflower's seeds, flashing as the beat leaves it or reaches it.
@@ -785,7 +789,7 @@ function coupleContribution(
       u < COUPLE_ELECTRON
         ? electron + (u / COUPLE_ELECTRON - 0.5) * 0.035
         : fract(along + time * 0.02 * -side);
-    orbitArcPoint(center, orbit, side * MARK.tilt, s, point);
+    orbitArcPoint(center, orbit, MARK.tilt, s, point);
     const bob = 0.004 * pact.radius * Math.sin(time * 1.5 + phase * TAU);
     into.x = point.x;
     into.y = point.y + bob;
@@ -798,10 +802,13 @@ function coupleContribution(
   }
   // The bond, from one nucleus to the other, a pulse of light along it once a second.
   const s = (share - 2 * COUPLE_ORBITS) / (1 - 2 * COUPLE_NUCLEUS - 2 * COUPLE_ORBITS);
-  const from = pact.x - span + nucleus * 1.4;
-  const to = pact.x + span - nucleus * 1.4;
-  into.x = from + (to - from) * s;
-  into.y = pact.y + (phase * 2 - 1) * 0.006 * pact.radius;
+  const length = Math.hypot(spanX, spanY);
+  const ux = spanX / length;
+  const uy = -spanY / length;
+  const reach = (length - nucleus * 1.4) * (2 * s - 1);
+  const across = (phase * 2 - 1) * 0.006 * pact.radius;
+  into.x = pact.x + ux * reach - uy * across;
+  into.y = pact.y + uy * reach + ux * across;
   const light = pulse <= 1.15 ? Math.exp(-(((s - pulse) / 0.08) ** 2)) : 0;
   into.glow = 0.3 + COUPLE_BEAT_GLOW * light;
   into.plasma = light * (1 - s);
@@ -823,8 +830,8 @@ const VIAL_SHARE = 0.4;
 
 /**
  * Vial: the particles swirl in the sealed vial, plasma at the bottom to volt
- * at the top, and orbit the three rings round it in bonded pairs, each ring
- * whole.
+ * at the top, and orbit the three rings round it in pairs, each ring whole,
+ * in fine dots.
  */
 function vialContribution(
   particles: FormationParticles,
@@ -849,14 +856,16 @@ function vialContribution(
     into.x = pact.x + Math.max(-1, Math.min(1, u + swirl)) * across * 0.78;
     into.y =
       pact.y - height + Math.max(width * 0.18, rise) + Math.sin(time * 1.3 + phase * 23) * 0.01 * height;
-    const top = rise / (VIAL_LEVEL * 2 * height);
+    // Plasma at the bottom, volt at the top.
+    const top = smoothstep(0.45, 0.95, rise / (VIAL_LEVEL * 2 * height));
     into.glow = 0.9;
-    into.plasma = 0.85 * (1 - top);
-    into.volt = 0.7 * top;
+    into.plasma = 1 - top;
+    into.volt = top;
     into.paper = 0;
+    into.grain = fineGrain(particles, index, 0.75, 0.008);
     return;
   }
-  // On the rings, each whole: partners ride side by side, close enough for their bond to light up.
+  // On the rings, each whole: partners ride side by side.
   const along = particles.along[pair] ?? 0;
   const ring = Math.min(2, Math.floor(((lanes - VIAL_SHARE) / (1 - VIAL_SHARE)) * 3));
   const direction = ring % 2 === 0 ? 1 : -1;
@@ -865,8 +874,9 @@ function vialContribution(
   const radius = pact.radius * ((PACT_RINGS[ring] ?? 1) + Math.sin(time * 2 + phase * 13) * 0.01);
   into.x = pact.x + Math.cos(angle) * radius;
   into.y = pact.y + Math.sin(angle) * radius;
-  into.glow = 0.5;
+  into.glow = 0.55;
   into.paper = 0.85;
+  into.grain = fineGrain(particles, index, 0.65, 0.0065);
 }
 
 /** Pact: the stage's drawing, in the style asked for. */
