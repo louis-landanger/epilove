@@ -717,16 +717,56 @@ describe("writeFormations", () => {
     for (let index = 0; index < half.layout.count; index += 1) {
       expect(half.targets[index * FORMATION_STRIDE + 2]).toBeCloseTo(0.5, 5);
     }
-    // Between two shapes whose weights add up to 1, particles stay fully held, on their way across.
+    // Between two shapes whose weights add up to 1, particles stay fully held, each in one of them.
     const pact = { weight: 0.5, x: 1.5, y: -0.5, radius: 0.4 };
     const card = run({ card: { weight: 1, box, radius: 0.07, step: 1 } });
     const both = run({ card: { weight: 0.5, box, radius: 0.07, step: 1 }, pact });
     const ring = run({ pact: { ...pact, weight: 1 } });
+    let ringed = 0;
     for (let index = 0; index < both.layout.count; index += 1) {
       const offset = index * FORMATION_STRIDE;
       expect(both.targets[offset + 2]).toBeCloseTo(1, 5);
-      const midway = ((card.targets[offset] ?? 0) + (ring.targets[offset] ?? 0)) / 2;
-      expect(both.targets[offset]).toBeCloseTo(midway, 5);
+      const x = both.targets[offset] ?? 0;
+      const inRing = Math.abs(x - (ring.targets[offset] ?? 0)) < 1e-5;
+      expect(inRing || Math.abs(x - (card.targets[offset] ?? 0)) < 1e-5).toBe(true);
+      ringed += inRing ? 1 : 0;
+    }
+    expect(ringed / both.layout.count).toBeCloseTo(0.5, 1);
+  });
+  it("hands the particles over from one section's shape to the next whole: none hangs between the two", () => {
+    // Reported: between the tubes and the schools' logos, the particles hung in a cloud halfway
+    // across the page for as long as it rested there. Each belongs to one shape or the other, the
+    // next one's share of them growing with its weight.
+    const tubes = {
+      weight: 1,
+      tubes: SCHOOL_KEYS.map((_, school) => ({
+        box: { x: -0.8 + school * 0.4, y: 0.4, hw: 0.06, hh: 0.4 },
+        level: 0.5,
+      })),
+    };
+    const logo = { weight: 1, x: 0.5, y: -0.6, size: 0.4, school: 1 };
+    const inTubes = run({ tubes });
+    const inLogo = run({ logo });
+    for (const share of [0.1, 0.5, 0.9]) {
+      const both = run({ tubes: { ...tubes, weight: 1 - share }, logo: { ...logo, weight: share } });
+      const astray: string[] = [];
+      let moved = 0;
+      for (let index = 0; index < both.layout.count; index += 1) {
+        const offset = index * FORMATION_STRIDE;
+        const at = (shape: { targets: Float32Array }) =>
+          Math.hypot(
+            (both.targets[offset] ?? 0) - (shape.targets[offset] ?? 0),
+            (both.targets[offset + 1] ?? 0) - (shape.targets[offset + 1] ?? 0),
+          ) < 1e-5;
+        expect(both.targets[offset + 2]).toBeCloseTo(1, 5);
+        if (at(inLogo)) {
+          moved += 1;
+        } else if (!at(inTubes)) {
+          astray.push(`particle ${index} between the two shapes`);
+        }
+      }
+      expect(astray.slice(0, 5)).toEqual([]);
+      expect(moved / both.layout.count).toBeCloseTo(share, 1);
     }
   });
 });
@@ -806,26 +846,31 @@ describe("the shapes after a hero with more particles", () => {
       mark,
     });
     const card = (weight: number) => ({ weight, box, radius: 0.07, step: 2 });
-    const index = kept + 3001;
-    const at = index * FORMATION_STRIDE;
-    const states = [1, 0.75, 0.5, 0.25, 0].map((inMark) => {
+    // The particles the hero has beyond those the shapes light.
+    const extras = Array.from({ length: hero.count - kept - lit }, (_, k) => kept + lit + k);
+    const inMarkOnly = write(hero, { pair: pair(1) });
+    for (const inMark of [1, 0.75, 0.5, 0.25, 0]) {
       const { targets, looks } = write(hero, { pair: pair(inMark), card: card(1 - inMark) });
-      return {
-        x: targets[at] ?? 0,
-        glow: looks[at + 2] ?? 0,
-        there: targets[host(index) * FORMATION_STRIDE] ?? 0,
-      };
-    });
-    // In the mark it shines as the others do; it dims as the cards take the particles over…
-    const glows = states.map((state) => state.glow);
-    expect(glows[0]).toBeGreaterThan(0.5);
-    for (let k = 1; k < glows.length; k += 1) {
-      expect(glows[k]).toBeLessThan(glows[k - 1] ?? 0);
+      const wrong: string[] = [];
+      let gone = 0;
+      for (const index of extras) {
+        const at = index * FORMATION_STRIDE;
+        const there = host(index) * FORMATION_STRIDE;
+        if (targets[at] === targets[there] && targets[at + 1] === targets[there + 1]) {
+          // Gone with its host, where it goes, fused into it: unlit.
+          gone += 1;
+          if (looks[at + 2] !== 0) {
+            wrong.push(`particle ${index} still lit on its host`);
+          }
+        } else if (targets[at] !== inMarkOnly.targets[at] || looks[at + 2] !== inMarkOnly.looks[at + 2]) {
+          // Or in the mark, shining as it does there. (Back up, the same in reverse.)
+          wrong.push(`particle ${index} neither in the mark nor on its host`);
+        }
+      }
+      expect(wrong.slice(0, 5)).toEqual([]);
+      // As many gone as the cards hold.
+      expect(gone / extras.length).toBeCloseTo(1 - inMark, 1);
     }
-    expect(glows[glows.length - 1]).toBe(0);
-    // …heading where its host goes, which it reaches as it goes out. (Back up, the same in reverse.)
-    const last = states[states.length - 1];
-    expect(last?.x).toBe(last?.there);
   });
 });
 
@@ -1556,14 +1601,19 @@ describe("the plan's flight into the logo mark", () => {
       expect(looks[offset + 2]).toBeLessThanOrEqual((own.looks[offset + 2] ?? 0) * light + 1e-6);
       expect(looks[offset]).toBeCloseTo(own.looks[offset] ?? 0, 6);
     }
-    // Halfway, they are on their way with the others: still held, halfway between the shapes.
+    // Halfway, they go over with the others: still held, each in the mark or round the cards.
     const half = write(particles, { flight: flight(1, { presence: 0.5 }), card: { ...card, weight: 0.5 } });
     const mark = write(particles, { flight: flight(1) });
+    let over = 0;
     for (let index = 0; index < 300; index += 1) {
       const offset = index * FORMATION_STRIDE;
       expect(half.targets[offset + 2]).toBe(1);
-      expect(half.targets[offset]).toBeCloseTo(((mark.targets[offset] ?? 0) + (targets[offset] ?? 0)) / 2, 5);
+      const x = half.targets[offset] ?? 0;
+      const inCards = Math.abs(x - (targets[offset] ?? 0)) < 1e-5;
+      expect(inCards || Math.abs(x - (mark.targets[offset] ?? 0)) < 1e-5).toBe(true);
+      over += inCards ? 1 : 0;
     }
+    expect(over / 300).toBeCloseTo(0.5, 1);
   });
 
   it("brings the plan's particles up gently once the field has the plan", () => {

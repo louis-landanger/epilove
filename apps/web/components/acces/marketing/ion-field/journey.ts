@@ -142,8 +142,9 @@ const MARK_GLOW_FROM = 0.6;
  * cards, the tubes, the schools' logos beside the waiting list and the Pact
  * rings. Every particle always belongs to a shape: neighbouring shapes share
  * the particles while one section gives way to the next (their weights add up
- * to 1); between sections the nearest shape keeps them, and scrolls away with
- * its section.
+ * to 1), each particle whole in one of them, going over as the next one's
+ * weight grows (writeFormations); between sections the nearest shape keeps
+ * them, and scrolls away with its section.
  */
 export function journey(measures: JourneyMeasures): JourneyState {
   const { height, scope, rivers, rack, logo, pact } = measures;

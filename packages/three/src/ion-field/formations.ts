@@ -1156,6 +1156,12 @@ function accumulate(weight: number, unlit = false): void {
  * mark for their patch of streets instead of the rivers' and the mark's
  * other places, unseen until their patch lands, and take part in the other
  * shapes as every particle does.
+ * Each particle belongs whole to one shape at a time: the hero's (the
+ * rivers, the mark, the plan's landing, which share it as their weights
+ * say) or one section's (the cards, the tubes, the schools' logos, the
+ * Pact). From one to the next, the shapes hand the particles over in turn,
+ * as many as their weights say: none hangs between two sections while the
+ * page rests between them.
  */
 export function writeFormations(
   targets: Float32Array,
@@ -1185,6 +1191,15 @@ export function writeFormations(
   const riverMap = rivers ? riverMapTransform(rivers.box) : null;
   const flightMap = flight ? riverMapTransform(flight.box) : null;
 
+  // The sections' shapes, in the page's order, and what they hold between them.
+  const cardWeight = card?.weight ?? 0;
+  const tubesWeight = tubes?.weight ?? 0;
+  const logoWeight = logo?.weight ?? 0;
+  const pactWeight = pact?.weight ?? 0;
+  const sectionsWeight = cardWeight + tubesWeight + logoWeight + pactWeight;
+  // The last of them that holds any (rounding can push a turn past them all).
+  const lastSection = pact ? 3 : logo ? 2 : tubes ? 1 : 0;
+
   for (let index = 0; index < particles.count; index += 1) {
     sum.x = 0;
     sum.y = 0;
@@ -1206,6 +1221,7 @@ export function writeFormations(
     const host = shapeHost(particles, index);
     const fuses = host !== index;
     let fusion = 0;
+    let landing = 0;
     if (kept && planned) {
       fusion = plannedFusion(index, flight);
       const { landed } = kept;
@@ -1215,57 +1231,97 @@ export function writeFormations(
         landed[index] = time;
       }
       const spread = fusion * smoothstep(0, FLIGHT_SPREAD, time - (landed[index] ?? time));
-      if (
-        flight &&
-        flightMap &&
-        landingContribution(
-          particles,
-          index,
-          flight,
-          flightMap,
-          previous?.flight ?? null,
-          time,
-          spread,
-          contribution,
-        )
+      landing = spread;
+    }
+    // Whole in the hero's shapes or in one section's: its host's turn, the same for the particles
+    // fused into it, comes as the next shape's weight grows past its rank.
+    const heroWeight = planned
+      ? flight && flightMap
+        ? flight.presence
+        : 0
+      : (pair && geometry ? pair.weight : 0) + (rivers && riverMap ? rivers.weight : 0);
+    const whole = heroWeight + sectionsWeight;
+    const turn = (1 - fract(host * GOLDEN_FRACTION)) * whole - heroWeight;
+    if (heroWeight > 0 && turn <= 0) {
+      // As much as all the shapes hold, shared between the hero's as their weights say.
+      const scale = whole / heroWeight;
+      if (planned) {
+        if (
+          flight &&
+          flightMap &&
+          landingContribution(
+            particles,
+            index,
+            flight,
+            flightMap,
+            previous?.flight ?? null,
+            time,
+            landing,
+            contribution,
+          )
+        ) {
+          accumulate(flight.presence * scale);
+        }
+      } else if (
+        pair &&
+        geometry &&
+        pairContribution(particles, index, pair, geometry, previous?.pair ?? null, time, contribution)
       ) {
-        accumulate(flight.presence);
+        contribution.glow *= pair.glow ?? 1;
+        accumulate(pair.weight * scale);
       }
-    } else if (
-      pair &&
-      geometry &&
-      pairContribution(particles, index, pair, geometry, previous?.pair ?? null, time, contribution)
-    ) {
-      contribution.glow *= pair.glow ?? 1;
-      accumulate(pair.weight);
-    }
-    if (card && cardContribution(particles, host, card, previous?.card ?? null, time, unit, contribution)) {
-      accumulate(card.weight, fuses);
-    }
-    if (tubes && tubeContribution(particles, host, tubes, previous?.tubes ?? null, time, contribution)) {
-      accumulate(tubes.weight, fuses);
-    }
-    if (logo && logoContribution(particles, host, logo, previous?.logo ?? null, time, contribution)) {
-      accumulate(logo.weight, fuses);
-    }
-    if (pact && pactContribution(particles, host, pact, previous?.pact ?? null, time, contribution)) {
-      accumulate(pact.weight, fuses);
-    }
-    if (
-      !planned &&
-      rivers &&
-      riverMap &&
-      riversContribution(particles, index, rivers, riverMap, previous?.rivers ?? null, time, contribution)
-    ) {
-      accumulate(rivers.weight);
+      if (
+        !planned &&
+        rivers &&
+        riverMap &&
+        riversContribution(particles, index, rivers, riverMap, previous?.rivers ?? null, time, contribution)
+      ) {
+        accumulate(rivers.weight * scale);
+      }
+    } else {
+      // The section whose share its turn falls in.
+      let section = lastSection;
+      if (turn < cardWeight) {
+        section = 0;
+      } else if (turn < cardWeight + tubesWeight) {
+        section = 1;
+      } else if (turn < cardWeight + tubesWeight + logoWeight) {
+        section = 2;
+      }
+      section = Math.min(section, lastSection);
+      if (
+        section === 0 &&
+        card &&
+        cardContribution(particles, host, card, previous?.card ?? null, time, unit, contribution)
+      ) {
+        accumulate(whole, fuses);
+      } else if (
+        section === 1 &&
+        tubes &&
+        tubeContribution(particles, host, tubes, previous?.tubes ?? null, time, contribution)
+      ) {
+        accumulate(whole, fuses);
+      } else if (
+        section === 2 &&
+        logo &&
+        logoContribution(particles, host, logo, previous?.logo ?? null, time, contribution)
+      ) {
+        accumulate(whole, fuses);
+      } else if (
+        section === 3 &&
+        pact &&
+        pactContribution(particles, host, pact, previous?.pact ?? null, time, contribution)
+      ) {
+        accumulate(whole, fuses);
+      }
     }
     const { x, y, total, glow, volt, plasma, paper, carry, grain, colored, red, green, blue } = sum;
     // Unseen until their patch lands, then particles like the others.
     const seen =
       kept && planned ? (kept.patches[index * FLIGHT_PATCH_STRIDE + 2] ?? 0) * fusion * kept.reveal : 1;
 
-    // Between two formations their weights add up to 1: the particle glides
-    // from one shape to the next, held all the way, never set free.
+    // Between two formations their weights add up to 1: the particle goes
+    // from one shape to the next held all the way, never set free.
     const offset = index * FORMATION_STRIDE;
     if (total > 0) {
       const share = Math.min(1, total);

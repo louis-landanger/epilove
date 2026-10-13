@@ -200,10 +200,15 @@ const FINE_GAIN = 2.1;
 const FORMATION_SPRING = 30;
 const FORMATION_MAX_SPEED = 5;
 /**
- * Seconds in which a particle takes on most of a new paper colour (a school's
- * logo after another): the colours come with the atoms, not ahead of them.
+ * Seconds in which a particle takes on most of a new look (its tints, its
+ * paper's colour, the size of its light) as it goes over to another shape,
+ * or as a school's logo gives way to another: the looks come with the atoms,
+ * not ahead of them. Their light changes at once (the cards' pulses).
  */
-const TINT_FOLLOW = 0.22;
+const LOOK_FOLLOW = 0.22;
+/** A value drawn `follow` of the way to the one written, the rest of the way once close. */
+const followed = (drawn: number, written: number, follow: number) =>
+  Math.abs(written - drawn) < 1e-4 ? written : drawn + (written - drawn) * follow;
 /** Seconds over which the particles kept for the plan come up once the field has it (a page loaded below the hero). */
 const FLIGHT_REVEAL = 1.2;
 /** Width of the texture through which the plan's dots find their particles with WebGL2. */
@@ -371,9 +376,11 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   }
   // And the size of each particle's light (the title draws finer grains).
   const formationGrains = new Float32Array(count).fill(1);
-  // And the paper's colour (formations.ts), white unless a school's logo brings its own: written for
-  // this frame, and as drawn, following it.
+  // And the paper's colour (formations.ts), white unless a school's logo brings its own.
   const formationTints = new Float32Array(count * FORMATION_STRIDE);
+  // The looks as drawn, following those written (LOOK_FOLLOW).
+  const particleLooks = new Float32Array(count * FORMATION_STRIDE);
+  const particleGrains = new Float32Array(count);
   const particleTints = new Float32Array(count * FORMATION_STRIDE);
 
   // Static per-particle attributes, usable by both backends.
@@ -416,7 +423,6 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       formationGrains,
       formationTints,
     );
-    particleTints.set(formationTints);
     for (let index = 0; index < count; index += 1) {
       const offset = index * FORMATION_STRIDE;
       if ((formationTargets[offset + 2] ?? 0) > 0) {
@@ -427,6 +433,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       }
     }
   }
+  particleLooks.set(formationLooks);
+  particleGrains.set(formationGrains);
+  particleTints.set(formationTints);
 
   // ---------------------------------------------------------------------------
   // Data sources: GPU storage buffers (WebGPU) or CPU-updated instanced attributes.
@@ -457,8 +466,8 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const velocities = instancedArray(new Float32Array(count * 2), "vec2");
     const props = instancedArray(data.props, "vec2");
     const targets = instancedArray(formationTargets, "vec4");
-    const looks = instancedArray(formationLooks, "vec4");
-    const grains = instancedArray(formationGrains, "float");
+    const looks = instancedArray(particleLooks, "vec4");
+    const grains = instancedArray(particleGrains, "float");
     const tints = instancedArray(particleTints, "vec4");
 
     const partnerOf = (index: Node<"uint">) => index.add(1).sub(index.mod(2).mul(2));
@@ -592,10 +601,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     bondBuffer.setUsage(DynamicDrawUsage);
     const particleNode = instancedDynamicBufferAttribute<"vec4">(particleBuffer, "vec4");
     const bondNode = instancedDynamicBufferAttribute<"vec4">(bondBuffer, "vec4");
-    const lookBuffer = new InstancedBufferAttribute(formationLooks, 4);
+    const lookBuffer = new InstancedBufferAttribute(particleLooks, 4);
     lookBuffer.setUsage(DynamicDrawUsage);
     particleLook = instancedDynamicBufferAttribute<"vec4">(lookBuffer, "vec4");
-    const grainBuffer = new InstancedBufferAttribute(formationGrains, 1);
+    const grainBuffer = new InstancedBufferAttribute(particleGrains, 1);
     grainBuffer.setUsage(DynamicDrawUsage);
     particleGrain = instancedDynamicBufferAttribute<"float">(grainBuffer, "float");
     const tintBuffer = new InstancedBufferAttribute(particleTints, 4);
@@ -608,12 +617,12 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     uploadFormations = (recolored) => {
       for (let pair = 0; pair < count / 2; pair += 1) {
         const first = pair * 2 * FORMATION_STRIDE;
-        bondLookState[pair * 4] = formationLooks[first] ?? 0;
-        bondLookState[pair * 4 + 1] = formationLooks[first + 1] ?? 0;
+        bondLookState[pair * 4] = particleLooks[first] ?? 0;
+        bondLookState[pair * 4 + 1] = particleLooks[first + 1] ?? 0;
         bondLookState[pair * 4 + 2] =
-          Math.min(formationLooks[first + 2] ?? 1, formationLooks[first + FORMATION_STRIDE + 2] ?? 1) *
-          bondsFor(Math.min(formationGrains[pair * 2] ?? 1, formationGrains[pair * 2 + 1] ?? 1));
-        bondLookState[pair * 4 + 3] = formationLooks[first + 3] ?? 0;
+          Math.min(particleLooks[first + 2] ?? 1, particleLooks[first + FORMATION_STRIDE + 2] ?? 1) *
+          bondsFor(Math.min(particleGrains[pair * 2] ?? 1, particleGrains[pair * 2 + 1] ?? 1));
+        bondLookState[pair * 4 + 3] = particleLooks[first + 3] ?? 0;
       }
       lookBuffer.needsUpdate = true;
       grainBuffer.needsUpdate = true;
@@ -1187,16 +1196,33 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       formationGrains,
       formationTints,
     );
-    // The paper's colours follow those written, so that a new logo's come with its atoms: at once
-    // without a previous frame, or once the formations let go. Uploaded only while they move.
-    const follow = previous && active ? 1 - Math.exp(-delta / TINT_FOLLOW) : 1;
+    // The looks follow those written, so that they come with the atoms as they go over to another
+    // shape, or to another logo: at once without a previous frame, or once the formations let go.
+    // Their light at once. The paper's colours are uploaded only while they move.
+    const follow = previous && active ? 1 - Math.exp(-delta / LOOK_FOLLOW) : 1;
+    for (let offset = 0; offset < particleLooks.length; offset += FORMATION_STRIDE) {
+      particleLooks[offset] = followed(particleLooks[offset] ?? 0, formationLooks[offset] ?? 0, follow);
+      particleLooks[offset + 1] = followed(
+        particleLooks[offset + 1] ?? 0,
+        formationLooks[offset + 1] ?? 0,
+        follow,
+      );
+      particleLooks[offset + 2] = formationLooks[offset + 2] ?? 0;
+      particleLooks[offset + 3] = followed(
+        particleLooks[offset + 3] ?? 0,
+        formationLooks[offset + 3] ?? 0,
+        follow,
+      );
+    }
+    for (let index = 0; index < count; index += 1) {
+      particleGrains[index] = followed(particleGrains[index] ?? 1, formationGrains[index] ?? 1, follow);
+    }
     let recolored = false;
     for (let index = 0; index < particleTints.length; index += 1) {
       const drawn = particleTints[index] ?? 0;
       const written = formationTints[index] ?? 0;
       if (drawn !== written) {
-        particleTints[index] =
-          Math.abs(written - drawn) < 1e-4 ? written : drawn + (written - drawn) * follow;
+        particleTints[index] = followed(drawn, written, follow);
         recolored = true;
       }
     }
