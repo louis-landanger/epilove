@@ -3,6 +3,7 @@
 import {
   canAffordLiveField,
   isSoftwareRenderer,
+  type PactStyle,
   type PixelBox,
   particleBudget,
   SCHOOL_KEYS,
@@ -10,12 +11,16 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { onCityFlight, setCityFlying } from "../fleuves/city-flight";
 import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
+import { PACT_REVEAL_AT } from "../pact";
 import { type JourneyMeasures, journey } from "./journey";
 
 const toBox = (element: Element): PixelBox => {
   const rect = element.getBoundingClientRect();
   return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 };
+
+const PACT_STYLES: readonly PactStyle[] = ["dial", "couple", "vial"];
+const REVEAL = Date.parse(PACT_REVEAL_AT);
 
 /**
  * Reads the page for the field's journey (journey.ts). Elements and their
@@ -32,7 +37,7 @@ function createPageMeasurer() {
     const steps = [...document.querySelectorAll<HTMLElement>("[data-step]")];
     const firstCard = steps[0]?.querySelector("article");
     const rack = document.querySelector("[data-field-rack]");
-    const pact = document.querySelector("[data-field-pact]");
+    const pact = document.querySelector<HTMLElement>("[data-field-pact]");
     const logo = document.querySelector<HTMLElement>("[data-field-logo]");
     const rivers = document.querySelector("[data-field-rivers]");
     return {
@@ -104,6 +109,9 @@ function createPageMeasurer() {
               }
             : null,
         pact: elements.pact && near(elements.pactSection) ? toBox(elements.pact) : null,
+        // The style the stage asks for (pact-stage.tsx), and the countdown's seconds for its hand or beat.
+        pactStyle: PACT_STYLES.find((style) => style === elements.pact?.dataset.pact) ?? "dial",
+        pactSeconds: ((((REVEAL - Date.now()) / 1000) % 60) + 60) % 60,
         covers: elements.covers.map(toBox),
       };
     },

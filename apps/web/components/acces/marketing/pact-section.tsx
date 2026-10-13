@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { accent, Eyebrow } from "./eyebrow";
-import { LogoMark } from "./logo";
 import { PactCountdown } from "./pact-countdown";
+import { PactStage } from "./pact-stage";
 
 /** Teaser of the Pact (PAC-01 to PAC-03) with the countdown to the reveal. */
 export async function PactSection() {
@@ -30,25 +30,7 @@ export async function PactSection() {
           </div>
         </div>
 
-        <div
-          aria-hidden="true"
-          data-field-pact
-          className="pact-stage relative mx-auto aspect-square w-full max-w-[30rem]"
-        >
-          <div className="pact-ring pact-ring-1" />
-          <div className="pact-ring pact-ring-2" />
-          <div className="pact-ring pact-ring-3" />
-          <div className="pact-vial">
-            <div className="pact-vial-liquid" />
-            <div className="pact-vial-shine" />
-          </div>
-          <div className="pact-seal">
-            <LogoMark className="size-12 text-ink" />
-          </div>
-          <p className="-translate-x-1/2 absolute bottom-[6%] left-1/2 whitespace-nowrap font-mono text-[0.65rem] text-paper/70 uppercase tracking-[0.2em]">
-            {t("sample")} · 11.02.2027 · 20:00
-          </p>
-        </div>
+        <PactStage />
       </div>
     </section>
   );

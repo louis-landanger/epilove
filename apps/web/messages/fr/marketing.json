@@ -88,7 +88,10 @@
     "minutes": "minutes",
     "seconds": "secondes",
     "revealed": "C’est l’heure de la révélation.",
-    "sample": "Échantillon scellé"
+    "sample": "Échantillon scellé",
+    "revealLabel": "Révélation",
+    "untilReveal": "avant la révélation",
+    "bond": "Liaison prévue"
   },
   "safety": {
     "eyebrow": "Sécurité et discrétion",

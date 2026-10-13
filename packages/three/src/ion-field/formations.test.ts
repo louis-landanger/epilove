@@ -1,7 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import {
+  COUPLE_BEAT_GLOW,
   contourLength,
   contourPoint,
+  DIAL_HAND_GLOW,
   FLIGHT_GATHER_STEP,
   FLIGHT_LANDING,
   FLIGHT_LIFT,
@@ -322,7 +324,7 @@ describe("writeFormations", () => {
       expect(targets[index * FORMATION_STRIDE + 2]).toBe(0);
       expect(looks[index * FORMATION_STRIDE + 2]).toBeCloseTo(0.4, 6);
     }
-    const half = run({ freeGlow: 0.4, pact: { weight: 0.5, x: 0, y: 0, radius: 0.5 } });
+    const half = run({ freeGlow: 0.4, pact: { weight: 0.5, x: 0, y: 0, radius: 0.5, style: "vial" } });
     for (let index = 0; index < half.layout.count; index += 1) {
       // Halfway between the dust's light and the ring's own glow.
       expect(half.looks[index * FORMATION_STRIDE + 2]).toBeGreaterThan(0.4);
@@ -602,22 +604,94 @@ describe("writeFormations", () => {
     }
   });
 
-  it("orbits the Pact rings in bonded pairs, every particle included", () => {
-    const pact = { weight: 1, x: 0.5, y: 0.1, radius: 0.6 };
+  it("seals the Pact's vial in its rings: bonded pairs round each ring, whole, the rest in the vial", () => {
+    const pact = { weight: 1, x: 0.5, y: 0.1, radius: 0.6, style: "vial" as const };
     const { targets, layout } = run({ pact });
+    const at = (index: number) => ({
+      dx: (targets[index * FORMATION_STRIDE] ?? 0) - pact.x,
+      dy: (targets[index * FORMATION_STRIDE + 1] ?? 0) - pact.y,
+    });
+    const ringOf = ({ dx, dy }: { dx: number; dy: number }) =>
+      [1, 0.77, 0.52].findIndex((r) => Math.abs(Math.hypot(dx, dy) / pact.radius - r) < 0.025);
+    // Each ring's particles all the way round it (they once drew only arcs): every twelfth of each has some.
+    const sectors = [new Set<number>(), new Set<number>(), new Set<number>()];
+    let inVial = 0;
     for (let index = 0; index < layout.count; index += 2) {
-      const a = index * FORMATION_STRIDE;
-      const b = (index + 1) * FORMATION_STRIDE;
-      expect(targets[a + 2]).toBe(1);
-      expect(targets[b + 2]).toBe(1);
-      const radius = Math.hypot((targets[a] ?? 0) - pact.x, (targets[a + 1] ?? 0) - pact.y);
-      expect(radius).toBeGreaterThan(pact.radius * 0.45);
-      expect(radius).toBeLessThan(pact.radius * 1.05);
-      // Partners side by side: close enough for the bond to light up (bonds fade out by 0.14).
-      expect(
-        Math.hypot((targets[a] ?? 0) - (targets[b] ?? 0), (targets[a + 1] ?? 0) - (targets[b + 1] ?? 0)),
-      ).toBeLessThan(0.06);
+      expect(targets[index * FORMATION_STRIDE + 2]).toBe(1);
+      expect(targets[(index + 1) * FORMATION_STRIDE + 2]).toBe(1);
+      const a = at(index);
+      const b = at(index + 1);
+      const ring = ringOf(a);
+      // Partners side by side on a ring: close enough for the bond to light up (bonds fade out by 0.14).
+      if (ring >= 0 && ringOf(b) === ring && Math.hypot(a.dx - b.dx, a.dy - b.dy) < 0.06) {
+        sectors[ring]?.add(Math.floor(((Math.atan2(a.dy, a.dx) / (2 * Math.PI) + 1) % 1) * 12));
+        continue;
+      }
+      // Or both in the vial, in the middle of the stage.
+      for (const { dx, dy } of [a, b]) {
+        expect(Math.abs(dx)).toBeLessThan(pact.radius * 0.26);
+        expect(Math.abs(dy)).toBeLessThan(pact.radius * 0.62);
+      }
+      inVial += 2;
     }
+    expect(sectors.map((sector) => sector.size)).toEqual([12, 12, 12]);
+    expect(inVial / layout.count).toBeCloseTo(0.4, 1);
+  });
+
+  it("draws the Pact's dial, its hand lighting each tick in turn as the countdown's seconds run down", () => {
+    const pact = { weight: 1, x: -0.2, y: 0.3, radius: 0.5, style: "dial" as const };
+    for (const seconds of [59.9, 42.5, 0.4]) {
+      const { targets, looks, layout } = run({ pact: { ...pact, seconds } });
+      // The tick the hand last went by, clockwise from the top.
+      const hand = 60 - seconds;
+      let brightest = { glow: 0, tick: -1 };
+      for (let index = 0; index < layout.count; index += 1) {
+        const offset = index * FORMATION_STRIDE;
+        const dx = (targets[offset] ?? 0) - pact.x;
+        const dy = (targets[offset + 1] ?? 0) - pact.y;
+        const radius = Math.hypot(dx, dy) / pact.radius;
+        expect(radius).toBeGreaterThan(0.75);
+        expect(radius).toBeLessThan(1.01);
+        const tick = (((Math.PI / 2 - Math.atan2(dy, dx)) / (2 * Math.PI)) * 60 + 60) % 60;
+        if (radius < 0.93 && (looks[offset + 2] ?? 0) > brightest.glow) {
+          brightest = { glow: looks[offset + 2] ?? 0, tick: Math.round(tick) % 60 };
+        }
+      }
+      expect(brightest.tick).toBe(Math.floor(hand) % 60);
+      expect(brightest.glow).toBeGreaterThan(DIAL_HAND_GLOW);
+    }
+  });
+
+  it("draws the Pact's couple: two atoms side by side, a pulse along their bond once a second", () => {
+    const pact = { weight: 1, x: 0.1, y: -0.2, radius: 0.5, style: "couple" as const };
+    const pulseAt = (seconds: number) => {
+      const { targets, looks, layout } = run({ pact: { ...pact, seconds } });
+      let brightest = { glow: 0, x: 0 };
+      let left = 0;
+      for (let index = 0; index < layout.count; index += 1) {
+        const offset = index * FORMATION_STRIDE;
+        const x = (targets[offset] ?? 0) - pact.x;
+        const y = (targets[offset + 1] ?? 0) - pact.y;
+        expect(Math.abs(x)).toBeLessThan(pact.radius * 0.96);
+        expect(Math.abs(y)).toBeLessThan(pact.radius * 0.5);
+        left += x < 0 ? 1 : 0;
+        // The bond, between the two nuclei.
+        if (
+          Math.abs(y) < 0.01 &&
+          Math.abs(x) < pact.radius * 0.3 &&
+          (looks[offset + 2] ?? 0) > brightest.glow
+        ) {
+          brightest = { glow: looks[offset + 2] ?? 0, x };
+        }
+      }
+      expect(left / layout.count).toBeCloseTo(0.5, 1);
+      return brightest;
+    };
+    // Just after the countdown ticks, the pulse leaves the first atom; a moment later it is further along.
+    const early = pulseAt(32.9);
+    const later = pulseAt(32.7);
+    expect(early.glow).toBeGreaterThan(COUPLE_BEAT_GLOW * 0.8);
+    expect(later.x).toBeGreaterThan(early.x);
   });
 
   it("keeps the heavy particles in the nuclei and spreads the orbit evenly", () => {
