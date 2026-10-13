@@ -1,12 +1,12 @@
-import { GLYPH_BOX, glyphPoint, SCHOOL_GLYPH_STROKES } from "./glyphs";
 import { MARK } from "./layout";
+import { logoEdgePoint, logoFillPoint, schoolLogoShape } from "./logos";
 import { RHONE_PATH, RIVER_MAP, type RiverPath, riverPoint, SAONE_PATH } from "./rivers";
 
 /**
  * Formations of the ion field down the landing page (docs/02-design.md):
  * where each particle heads, how strongly it is pulled there, and how it
  * glows, while the stacked cards of "how it works", the test tubes of the
- * school race, the schools' glyphs beside the waiting list and the rings of
+ * school race, the schools' logos beside the waiting list and the rings of
  * the Pact go by.
  *
  * Pure functions over the layout (but for when the plan of Lyon's particles
@@ -51,14 +51,14 @@ export interface TubeFormation {
 }
 
 /**
- * The school glyph stage beside the waiting list: the particles of the school
- * it shows (`school`, an index into `SCHOOL_KEYS`, -1 for none) trace that
- * school's glyph (glyphs.ts), in a square of half side `size` round (x, y),
- * each in its place along the strokes; the other schools' particles orbit
- * it, dimmer, on the logo's tilted orbit, the glyph its nucleus. Each
- * school's particles have its colour: the glyph takes its school's.
+ * The school logo stage beside the waiting list: the particles draw the logo
+ * of the school it shows (`school`, an index into `SCHOOL_KEYS`), fitted in a
+ * square of half side `size` round (x, y) (logos.ts), nearly half of them
+ * along its edges and the others filling its ink, each in its place, in one
+ * colour as the logo is. With no school shown (-1), they orbit the stage on
+ * the logo mark's tilted orbit.
  */
-export interface GlyphFormation {
+export interface LogoFormation {
   readonly weight: number;
   readonly x: number;
   readonly y: number;
@@ -140,7 +140,7 @@ export interface Formations {
   readonly pair?: PairFormation | null;
   readonly card?: CardFormation | null;
   readonly tubes?: TubeFormation | null;
-  readonly glyph?: GlyphFormation | null;
+  readonly logo?: LogoFormation | null;
   readonly pact?: PactFormation | null;
   readonly rivers?: RiversFormation | null;
   readonly flight?: FlightFormation | null;
@@ -362,7 +362,7 @@ export function formationStrength(formations: {
   readonly pair?: { readonly weight: number } | null;
   readonly card?: { readonly weight: number } | null;
   readonly tubes?: { readonly weight: number } | null;
-  readonly glyph?: { readonly weight: number } | null;
+  readonly logo?: { readonly weight: number } | null;
   readonly pact?: { readonly weight: number } | null;
   readonly rivers?: { readonly weight: number } | null;
 }): number {
@@ -370,7 +370,7 @@ export function formationStrength(formations: {
     formations.pair?.weight ?? 0,
     formations.card?.weight ?? 0,
     formations.tubes?.weight ?? 0,
-    formations.glyph?.weight ?? 0,
+    formations.logo?.weight ?? 0,
     formations.pact?.weight ?? 0,
     formations.rivers?.weight ?? 0,
   );
@@ -515,54 +515,86 @@ function tubeContribution(
   return true;
 }
 
-/** Radius of the orbit round a school's glyph, in half sides of its square, and its width (± a fraction). */
-export const GLYPH_ORBIT = 1.35;
-const GLYPH_ORBIT_WIDTH = 0.06;
-/** Light of the glyph's particles, and of those orbiting it. */
-export const GLYPH_GLOW = 0.9;
-export const GLYPH_ORBIT_GLOW = 0.25;
-/** How fast the particles turn round the glyph, in turns per second. */
-const GLYPH_SPIN = 0.025;
 /**
- * How far a particle of the glyph wanders round its place on the strokes, in
- * the glyph's units: atoms, not ink. Each keeps its place: one flowing along
- * a stroke would leap from the end of one stroke to the start of the next.
+ * Share of the logo's particles along its edges, picked by their index: a
+ * crisp outline, fine lines (ISG's statue) included; the others fill its ink.
  */
-const GLYPH_WANDER = 0.14;
+export const LOGO_EDGE = 0.45;
+const GOLDEN_FRACTION = (Math.sqrt(5) - 1) / 2;
+/** Light of the logo's particles, along its edges and in its ink: the edges a little brighter. */
+export const LOGO_EDGE_GLOW = 1.3;
+export const LOGO_GLOW = 0.55;
+/** The logo in one colour, as the schools draw it in one: paper white, a hint of each atom's own. */
+export const LOGO_PAPER = 0.9;
+/**
+ * Size of the light of the logo's particles: finer than elsewhere, so that
+ * their halos do not fill the letters cut out of a logo (EPITA's), and fine
+ * enough that the field draws no bonds between them (scene.ts). The bigger
+ * particles (layout.ts) are drawn no bigger than LOGO_DOT: even dots.
+ */
+export const LOGO_GRAIN = 0.6;
+export const LOGO_DOT = 0.0065;
+/**
+ * How far a particle of the logo wanders round its place, in the logo's
+ * units (its longer side is 100): atoms, not ink. Enough to break the even
+ * pattern of the fill, less along the edges, which stay crisp.
+ */
+const LOGO_WANDER = 0.45;
+const LOGO_EDGE_WANDER = 0.25;
+/** With no school shown: radius of the orbit round the stage, in half sides of its square, and its width (± a fraction). */
+export const LOGO_ORBIT = 1.35;
+const LOGO_ORBIT_WIDTH = 0.06;
+export const LOGO_ORBIT_GLOW = 0.25;
+/** How fast the particles turn round the empty stage, in turns per second. */
+const LOGO_SPIN = 0.025;
 
-/** School glyph: the shown school's particles trace its glyph, the others orbit it. */
-function glyphContribution(
+/**
+ * School logo: every particle in its place in the logo shown, on its edges
+ * (one in two across its rows, the others down its columns) or in its ink
+ * (logos.ts), from its formation coordinates: going down the logo with
+ * `lanes`, across it with `along`, it holds about the same part of every
+ * logo, and a new logo takes the place of the last with each atom moving a
+ * short way. With no school, all of them orbit the stage.
+ */
+function logoContribution(
   particles: FormationParticles,
   index: number,
-  glyph: GlyphFormation,
-  previous: GlyphFormation | null,
+  logo: LogoFormation,
+  previous: LogoFormation | null,
   time: number,
   into: Contribution,
 ): boolean {
-  const school = particles.schools[index] ?? 0;
   into.pull = 1;
   into.volt = 0;
   into.plasma = 0;
-  into.paper = 0;
-  into.carry = previous ? glyph.y - previous.y : 0;
-  const strokes = school === glyph.school ? SCHOOL_GLYPH_STROKES[school] : undefined;
-  if (strokes) {
-    // Evenly along the strokes (the school's own ranks), each atom wandering a little round its place.
-    glyphPoint(strokes, particles.ranks[index] ?? 0, point);
+  into.carry = previous ? logo.y - previous.y : 0;
+  const shape = schoolLogoShape(logo.school);
+  const along = particles.along[index] ?? 0;
+  const lanes = particles.lanes[index] ?? 0.5;
+  if (shape) {
+    const edge = fract(index * GOLDEN_FRACTION) < LOGO_EDGE;
+    if (edge) {
+      logoEdgePoint(shape, lanes, along, (index & 1) === 1, point);
+    } else {
+      logoFillPoint(shape, lanes, along, point);
+    }
     const phase = (particles.phases[index] ?? 0) * TAU;
-    const scale = glyph.size / (GLYPH_BOX / 2);
-    into.x = glyph.x + (point.x - GLYPH_BOX / 2 + GLYPH_WANDER * Math.cos(time * 1.7 + phase)) * scale;
-    into.y = glyph.y - (point.y - GLYPH_BOX / 2 + GLYPH_WANDER * Math.sin(time * 1.3 + phase)) * scale;
-    into.glow = GLYPH_GLOW;
+    const wander = edge ? LOGO_EDGE_WANDER : LOGO_WANDER;
+    const scale = (2 * logo.size) / Math.max(shape.width, shape.height);
+    into.x = logo.x + (point.x - shape.width / 2 + wander * Math.cos(time * 1.7 + phase)) * scale;
+    into.y = logo.y - (point.y - shape.height / 2 + wander * Math.sin(time * 1.3 + phase)) * scale;
+    into.glow = edge ? LOGO_EDGE_GLOW : LOGO_GLOW;
+    into.paper = LOGO_PAPER;
+    into.grain = LOGO_GRAIN * Math.min(1, LOGO_DOT / (particles.sizes[index] || LOGO_DOT));
     return true;
   }
-  const theta = ((particles.along[index] ?? 0) + time * GLYPH_SPIN) * TAU;
-  const radius =
-    glyph.size * GLYPH_ORBIT * (1 + ((particles.lanes[index] ?? 0.5) * 2 - 1) * GLYPH_ORBIT_WIDTH);
-  orbitPoint(glyph, radius, MARK.tilt, theta, point);
+  const theta = (along + time * LOGO_SPIN) * TAU;
+  const radius = logo.size * LOGO_ORBIT * (1 + (lanes * 2 - 1) * LOGO_ORBIT_WIDTH);
+  orbitPoint(logo, radius, MARK.tilt, theta, point);
   into.x = point.x;
   into.y = point.y;
-  into.glow = GLYPH_ORBIT_GLOW;
+  into.glow = LOGO_ORBIT_GLOW;
+  into.paper = 0;
   return true;
 }
 
@@ -1084,7 +1116,7 @@ export function writeFormations(
   const pair = formations.pair && formations.pair.weight > 0.001 ? formations.pair : null;
   const card = formations.card && formations.card.weight > 0.001 ? formations.card : null;
   const tubes = formations.tubes && formations.tubes.weight > 0.001 ? formations.tubes : null;
-  const glyph = formations.glyph && formations.glyph.weight > 0.001 ? formations.glyph : null;
+  const logo = formations.logo && formations.logo.weight > 0.001 ? formations.logo : null;
   const pact = formations.pact && formations.pact.weight > 0.001 ? formations.pact : null;
   const rivers = formations.rivers && formations.rivers.weight > 0.001 ? formations.rivers : null;
   const flight = formations.flight ?? null;
@@ -1154,8 +1186,8 @@ export function writeFormations(
     if (tubes && tubeContribution(particles, host, tubes, previous?.tubes ?? null, time, contribution)) {
       accumulate(tubes.weight, fuses);
     }
-    if (glyph && glyphContribution(particles, host, glyph, previous?.glyph ?? null, time, contribution)) {
-      accumulate(glyph.weight, fuses);
+    if (logo && logoContribution(particles, host, logo, previous?.logo ?? null, time, contribution)) {
+      accumulate(logo.weight, fuses);
     }
     if (pact && pactContribution(particles, host, pact, previous?.pact ?? null, time, contribution)) {
       accumulate(pact.weight, fuses);
@@ -1229,8 +1261,8 @@ export interface ViewportFormations {
     readonly weight: number;
     readonly tubes: ReadonlyArray<{ readonly box: PixelBox; readonly level: number } | null>;
   } | null;
-  /** The school glyph stage: the glyph is drawn in the largest square of its box. */
-  readonly glyph?: { readonly weight: number; readonly box: PixelBox; readonly school: number } | null;
+  /** The school logo stage: the logo is drawn in the largest square of its box. */
+  readonly logo?: { readonly weight: number; readonly box: PixelBox; readonly school: number } | null;
   /** The Pact stage: the rings are inscribed in it. */
   readonly pact?: { readonly weight: number; readonly box: PixelBox } | null;
   /** The map of the rivers (rivers.ts), fitted whole in its box. */
@@ -1248,8 +1280,8 @@ export interface ViewportFormations {
 /** Converts measured formations to world units for a canvas of `width` × `height` CSS pixels. */
 export function toWorldFormations(formations: ViewportFormations, width: number, height: number): Formations {
   const unit = 2 / height;
-  const { pair, card, tubes, glyph, pact, rivers, flight } = formations;
-  const glyphBox = glyph ? toWorldBox(glyph.box, width, height) : null;
+  const { pair, card, tubes, logo, pact, rivers, flight } = formations;
+  const logoBox = logo ? toWorldBox(logo.box, width, height) : null;
   const pactBox = pact ? toWorldBox(pact.box, width, height) : null;
   return {
     ...(formations.freeGlow === undefined ? {} : { freeGlow: formations.freeGlow }),
@@ -1285,14 +1317,14 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
           ),
         }
       : null,
-    glyph:
-      glyph && glyphBox
+    logo:
+      logo && logoBox
         ? {
-            weight: glyph.weight,
-            x: glyphBox.x,
-            y: glyphBox.y,
-            size: Math.min(glyphBox.hw, glyphBox.hh),
-            school: glyph.school,
+            weight: logo.weight,
+            x: logoBox.x,
+            y: logoBox.y,
+            size: Math.min(logoBox.hw, logoBox.hh),
+            school: logo.school,
           }
         : null,
     pact:

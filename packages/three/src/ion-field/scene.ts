@@ -175,6 +175,17 @@ const DAMPING_HELD = 9;
 const MAX_SPEED = 1.6;
 const GLOW_QUAD = 7;
 /**
+ * Particles a formation draws finer than this (the schools' logos ask for
+ * fine grains, formations.ts) have no bond to their partner: in a logo,
+ * partners land anywhere, and a bond would be a stray thread across it.
+ * Bonds fade out from a grain of 1 down to this.
+ */
+const BONDLESS_GRAIN = 0.7;
+const bondsFor = (grain: number) => {
+  const t = Math.min(1, Math.max(0, (grain - BONDLESS_GRAIN) / (1 - BONDLESS_GRAIN)));
+  return t * t * (3 - 2 * t);
+};
+/**
  * Fine particles (the rivers of the hero): a crisp dot of this radius, in
  * CSS pixels, drawn on a quad this wide, with no halo; and thinner bonds.
  * The same on every screen, whatever the particle count.
@@ -534,9 +545,12 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     particleLook = looks.element(instanceIndex);
     particleGrain = grains.element(instanceIndex);
     const firstLook = looks.element(instanceIndex.mul(2));
+    const finest = min(grains.element(instanceIndex.mul(2)), grains.element(instanceIndex.mul(2).add(1)));
     bondLook = vec4(
       firstLook.xy,
-      min(firstLook.z, looks.element(instanceIndex.mul(2).add(1)).z),
+      min(firstLook.z, looks.element(instanceIndex.mul(2).add(1)).z).mul(
+        smoothstep(BONDLESS_GRAIN, 1, finest),
+      ),
       firstLook.w,
     );
     uploadFormations = () => {
@@ -575,10 +589,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         const first = pair * 2 * FORMATION_STRIDE;
         bondLookState[pair * 4] = formationLooks[first] ?? 0;
         bondLookState[pair * 4 + 1] = formationLooks[first + 1] ?? 0;
-        bondLookState[pair * 4 + 2] = Math.min(
-          formationLooks[first + 2] ?? 1,
-          formationLooks[first + FORMATION_STRIDE + 2] ?? 1,
-        );
+        bondLookState[pair * 4 + 2] =
+          Math.min(formationLooks[first + 2] ?? 1, formationLooks[first + FORMATION_STRIDE + 2] ?? 1) *
+          bondsFor(Math.min(formationGrains[pair * 2] ?? 1, formationGrains[pair * 2 + 1] ?? 1));
         bondLookState[pair * 4 + 3] = formationLooks[first + 3] ?? 0;
       }
       lookBuffer.needsUpdate = true;
@@ -1125,7 +1138,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const past =
       (formations.card?.weight ?? 0) +
       (formations.tubes?.weight ?? 0) +
-      (formations.glyph?.weight ?? 0) +
+      (formations.logo?.weight ?? 0) +
       (formations.pact?.weight ?? 0);
     uDensity.value = density + (shapeDensity - density) * Math.min(1, past);
     uFine.value = Math.min(1, formations.rivers?.weight ?? 0);

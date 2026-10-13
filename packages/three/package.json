@@ -10,6 +10,7 @@
   },
   "scripts": {
     "plan:lyon": "tsx scripts/lyon-plan.ts",
+    "logos:schools": "tsx scripts/school-logos.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@atomes/config": "workspace:*",
+    "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "@types/three": "catalog:",
     "tsx": "catalog:",

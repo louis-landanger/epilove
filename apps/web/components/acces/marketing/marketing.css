@@ -933,9 +933,10 @@
 
 /*
  * Beside the form (waitlist/school-stage.tsx): a square where the atoms draw
- * each school's glyph in turn, its name underneath. Without the field, the
- * glyph is drawn in dots of its school's colour; once the field is live, the
- * atoms draw it instead.
+ * each school's logo in turn, its name underneath. Without the field, the
+ * logo (public/schools, in paper white) is drawn in dots, or the five side by
+ * side; once the field is live, the atoms draw it instead and these are left
+ * out (their files are then not even fetched).
  */
 .join-stage {
   display: grid;
@@ -943,7 +944,7 @@
   gap: 1.25rem;
 }
 
-.join-glyph {
+.join-logo {
   display: grid;
   place-items: center;
   width: min(100%, 15rem);
@@ -951,47 +952,45 @@
 }
 
 @media (min-width: 64rem) {
-  .join-glyph {
+  .join-logo {
     width: min(100%, 26rem);
   }
 }
 
-.join-glyph-drawing {
-  width: 72%;
-  height: auto;
-  overflow: visible;
-  animation: glyph-in 0.7s var(--ease-out) both;
+.join-logo-mark {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, var(--color-paper) 0 0.9px, transparent 1.4px) center / 4px 4px;
+  mask: var(--logo) center / contain no-repeat;
+  animation: logo-in 0.7s var(--ease-out) both;
 }
 
-.join-glyph-drawing path {
-  stroke-width: 0.34;
-  stroke-dasharray: 0 0.72;
-}
-
-.join-glyph-all {
+.join-logo-all {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.9rem;
+  gap: 1rem 1.25rem;
 }
 
-.join-glyph-small {
-  width: 2.25rem;
-  height: 2.25rem;
+.join-logo-small {
+  width: 3rem;
+  height: 3rem;
+  object-fit: contain;
+  opacity: 0.88;
 }
 
-:root:has([data-ion-field][data-live="true"]) .join-glyph > * {
-  opacity: 0;
+:root:has([data-ion-field][data-live="true"]) .join-logo > * {
+  display: none;
 }
 
-.join-glyph-caption {
+.join-logo-caption {
   display: grid;
   justify-items: center;
   gap: 0.4rem;
   text-align: center;
 }
 
-.join-glyph-label {
+.join-logo-label {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.18em;
@@ -999,16 +998,16 @@
   color: color-mix(in oklch, var(--color-paper) 62%, transparent);
 }
 
-.join-glyph-name {
+.join-logo-name {
   font-family: var(--font-display);
   font-size: clamp(1.4rem, 2.2vw, 1.9rem);
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--color-paper);
-  animation: glyph-in 0.7s var(--ease-out) both;
+  animation: logo-in 0.7s var(--ease-out) both;
 }
 
-@keyframes glyph-in {
+@keyframes logo-in {
   from {
     opacity: 0;
     transform: scale(0.94);
@@ -1016,8 +1015,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .join-glyph-drawing,
-  .join-glyph-name {
+  .join-logo-mark,
+  .join-logo-name {
     animation: none;
   }
 }

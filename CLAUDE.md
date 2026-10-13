@@ -37,6 +37,7 @@ Prérequis : Node 24 (`.node-version`), Corepack activé (`corepack enable`), Do
 | `pnpm --filter @atomes/tokens generate` | Régénère `theme.gen.css` après modification des jetons |
 | `pnpm pact:compute` / `pnpm pact:demo --reveal-in 60` | Calcule une saison du Pacte (solveur Python) / prépare une saison de démonstration révélée dans 60 s (le worker doit tourner) |
 | `pnpm drop:run` | Lance le Drop du soir sans attendre 21 h |
+| `PW_CHROMIUM_PATH=… pnpm --filter @atomes/three logos:schools` | Retrace les logos des écoles (à côté du formulaire de la liste d'attente) depuis leurs fichiers dans `packages/three/scripts/school-logos/` (Chromium de Playwright) |
 | `pnpm --filter @atomes/three plan:lyon` | Régénère le plan de Lyon en points du héros de l'accueil depuis OpenStreetMap (réseau requis ; `OVERPASS_URL` pour un autre serveur Overpass) |
 | `sudo bash infra/dev-host/setup.sh` / `update.sh` | Serveur de développement partagé : toute la stack sur une VM Ubuntu, derrière HTTPS et un mot de passe d'équipe (voir `infra/dev-host/README.md`, ADR 0014) |
 | `infra/load/run.sh 3000 180` | Test de charge k6 de la révélation du Pacte (app compilée, worker et services lancés ; voir `infra/load/README.md`) |
@@ -50,7 +51,7 @@ Nouvelles dépendances : `pnpm --filter <paquet> add --save-catalog <dépendance
 - Les préférences de genre et d'orientation sont des données sensibles (RGPD, article 9) : consentement explicite séparé, jamais exportées.
 - Les corps de messages sont chiffrés côté application ; les médias sont servis uniquement via des URL signées et expirantes.
 - Âge minimum 18 ans, contrôle bloquant.
-- Les noms des écoles servent uniquement à décrire l'éligibilité ; jamais de logo ni de charte graphique d'école.
+- Les noms des écoles servent à décrire l'éligibilité ; jamais de charte graphique d'école. Leurs logos n'apparaissent qu'à un seul endroit, la scène à côté du formulaire de la liste d'attente, en une couleur ([ADR 0016](docs/adr/0016-logos-des-ecoles.md)) : ni dans l'app, ni dans les e-mails, ni ailleurs sur le site.
 - Les mutations sensibles (like, message, signalement) sont idempotentes et soumises à des quotas.
 
 ## Conventions

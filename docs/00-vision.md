@@ -107,7 +107,7 @@ Pistes évaluées :
 Règles d'usage des noms d'écoles, quel que soit le nom retenu :
 
 - les noms des écoles servent uniquement à décrire l'éligibilité (« réservé aux étudiantes et étudiants de… ») ;
-- aucun logo officiel ni charte graphique d'école n'est réutilisé ;
+- aucune charte graphique d'école n'est réutilisée ; les logos officiels n'apparaissent qu'à un seul endroit, à côté du formulaire de la liste d'attente du site vitrine, en une couleur, avec mention de leur propriété ([ADR 0016](adr/0016-logos-des-ecoles.md)) ;
 - mention visible : « Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées ».
 
 ## Métriques de succès

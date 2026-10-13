@@ -37,7 +37,7 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-/** The school of the address being typed, for the glyph stage beside the form. */
+/** The school of the address being typed, for the logo stage beside the form. */
 export function useTypedSchool(): SchoolSlug | null {
   return useSyncExternalStore(
     subscribe,

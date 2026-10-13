@@ -21,7 +21,7 @@
     "again": "Sign up another address"
   },
   "privacy": "Your address is not stored: only an encrypted fingerprint is kept to avoid duplicates. Details in the <link>privacy policy</link>.",
-  "glyphs": {
+  "logos": {
     "campus": "The campus schools",
     "yours": "Your school"
   }

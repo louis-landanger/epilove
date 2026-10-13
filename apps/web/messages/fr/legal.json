@@ -1,7 +1,7 @@
 {
   "draft": "Brouillon — à valider par un juriste",
   "draftNote": "Document de travail, rédigé avant la création de l’association. Les éléments entre crochets sont à compléter. Il sera relu et validé avant l’ouverture du service.",
-  "version": "Version de travail du 2 octobre 2026",
+  "version": "Version de travail du 13 octobre 2026",
   "toc": "Sur cette page",
   "back": "Retour à l’accueil",
   "nav": {
@@ -53,14 +53,14 @@
         "id": "propriete",
         "title": "Propriété intellectuelle",
         "blocks": [
-          "Les textes, éléments graphiques, animations et le code du site appartiennent à l’association ou à leurs autrices et auteurs. Les polices Bricolage Grotesque, Instrument Serif, Geist et Geist Mono sont distribuées sous licence libre (SIL Open Font License) et servies depuis nos propres serveurs."
+          "Les textes, éléments graphiques, animations et le code du site appartiennent à l’association ou à leurs autrices et auteurs. Les polices Bricolage Grotesque, Instrument Serif, Geist et Geist Mono sont distribuées sous licence libre (SIL Open Font License) et servies depuis nos propres serveurs. Les logos d’EPITA, de l’ESME, de Sup’Biotech, de l’ISG et de l’IPSA appartiennent à ces écoles."
         ]
       },
       {
         "id": "independance",
         "title": "Indépendance",
         "blocks": [
-          "Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées. Les noms des écoles servent uniquement à indiquer qui peut s’inscrire ; aucun logo ni élément d’identité visuelle des écoles n’est utilisé.",
+          "Projet étudiant indépendant, non affilié à IONIS Education Group ni aux écoles citées. Les noms des écoles indiquent qui peut s’inscrire. Leurs logos apparaissent seulement à côté du formulaire de la liste d’attente, pour présenter les écoles du campus ; aucun autre élément de leur identité visuelle n’est utilisé.",
           "« Atomes » est un nom provisoire, qui peut encore changer avant l’ouverture du service."
         ]
       }

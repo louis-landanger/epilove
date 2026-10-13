@@ -2,33 +2,35 @@
 
 import { SCHOOLS, type SchoolSlug } from "@atomes/core";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
-import { SchoolGlyph } from "../school-glyph";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useTypedSchool } from "./typed-school";
 
-/** How long each school's glyph shows before the next one's, in milliseconds. */
+/** How long each school's logo shows before the next one's, in milliseconds. */
 const TURN_MS = 3000;
+
+/** The school's logo in one colour (public/schools, written by the three package's logos:schools). */
+const logoFile = (slug: SchoolSlug) => `/schools/${slug}.svg`;
 
 /**
  * Beside the waiting list form (docs/02-design.md, section 5): the atoms of
- * the ion field draw each school's glyph in turn, every three seconds, and
- * hold the school of the address being typed. Our own glyphs, the element
- * families of Atomes, never a school logo; the school's name goes with it.
- * The field reads the school from `data-school` (ion-field-canvas.tsx);
- * without the field (no GPU, reduced motion), the glyph is drawn in dots.
- * It turns only while on screen, and not with reduced motion: the five
- * glyphs then, or the typed school's.
+ * the ion field draw each school's logo in turn, every three seconds, and
+ * hold the school of the address being typed. The schools' own logos, here
+ * and nowhere else (docs/adr/0016-logos-des-ecoles.md), the school's name
+ * underneath. The field reads the school from `data-school`
+ * (ion-field-canvas.tsx); without the field (no GPU, reduced motion), the
+ * logo is drawn in dots. It turns only while on screen, and not with reduced
+ * motion: the five logos then, or the typed school's.
  */
 export function SchoolStage() {
-  const t = useTranslations("waitlist.glyphs");
+  const t = useTranslations("waitlist.logos");
   const typed = useTypedSchool();
-  const glyphRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const [turn, setTurn] = useState<number | null>(null);
   const [turning, setTurning] = useState(false);
 
   useEffect(() => {
-    const glyph = glyphRef.current;
-    if (!glyph) {
+    const stage = stageRef.current;
+    if (!stage) {
       return;
     }
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -38,7 +40,7 @@ export function SchoolStage() {
       visible = entries.some((entry) => entry.isIntersecting);
       update();
     });
-    observer.observe(glyph);
+    observer.observe(stage);
     reducedMotion.addEventListener("change", update);
     return () => {
       observer.disconnect();
@@ -64,20 +66,34 @@ export function SchoolStage() {
 
   return (
     <div className="join-stage" aria-hidden="true">
-      <div ref={glyphRef} className="join-glyph" data-field-glyph data-school={shown ?? ""}>
+      <div ref={stageRef} className="join-logo" data-field-logo data-school={shown ?? ""}>
         {shown ? (
-          <SchoolGlyph key={shown} slug={shown} className="join-glyph-drawing" />
+          // Drawn in dots: the logo masks a grid of them.
+          <span
+            key={shown}
+            className="join-logo-mark"
+            style={{ "--logo": `url(${logoFile(shown)})` } as CSSProperties}
+          />
         ) : (
-          <div className="join-glyph-all">
+          <span className="join-logo-all">
             {SCHOOLS.map((school) => (
-              <SchoolGlyph key={school.slug} slug={school.slug} className="join-glyph-small" />
+              // Fetched only once near the screen, and not at all while the field draws them.
+              // biome-ignore lint/performance/noImgElement: a small static file in one colour, nothing to optimise.
+              <img
+                key={school.slug}
+                src={logoFile(school.slug)}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="join-logo-small"
+              />
             ))}
-          </div>
+          </span>
         )}
       </div>
-      <p className="join-glyph-caption">
-        <span className="join-glyph-label">{typed ? t("yours") : t("campus")}</span>
-        <span key={name ?? "all"} className="join-glyph-name">
+      <p className="join-logo-caption">
+        <span className="join-logo-label">{typed ? t("yours") : t("campus")}</span>
+        <span key={name ?? "all"} className="join-logo-name">
           {name ?? SCHOOLS.map((school) => school.name).join(" · ")}
         </span>
       </p>

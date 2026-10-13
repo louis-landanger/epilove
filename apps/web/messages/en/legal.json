@@ -1,7 +1,7 @@
 {
   "draft": "Draft — to be reviewed by a lawyer",
   "draftNote": "Working document, written before the association is created. Items in square brackets are to be completed. It will be reviewed and approved before the service opens. The French version prevails.",
-  "version": "Working version of 2 October 2026",
+  "version": "Working version of 13 October 2026",
   "toc": "On this page",
   "back": "Back to the home page",
   "nav": {
@@ -53,14 +53,14 @@
         "id": "propriete",
         "title": "Intellectual property",
         "blocks": [
-          "The texts, graphics, animations and code of the site belong to the association or to their authors. The Bricolage Grotesque, Instrument Serif, Geist and Geist Mono typefaces are distributed under a free licence (SIL Open Font License) and served from our own servers."
+          "The texts, graphics, animations and code of the site belong to the association or to their authors. The Bricolage Grotesque, Instrument Serif, Geist and Geist Mono typefaces are distributed under a free licence (SIL Open Font License) and served from our own servers. The logos of EPITA, ESME, Sup'Biotech, ISG and IPSA belong to these schools."
         ]
       },
       {
         "id": "independance",
         "title": "Independence",
         "blocks": [
-          "Independent student project, not affiliated with IONIS Education Group or the schools listed. School names are only used to state who can sign up; no school logo or visual identity element is used.",
+          "Independent student project, not affiliated with IONIS Education Group or the schools listed. School names state who can sign up. Their logos only appear beside the waiting list form, to present the campus schools; no other element of their visual identity is used.",
           "\"Atomes\" is a provisional name, which may still change before the service opens."
         ]
       }

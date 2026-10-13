@@ -26,7 +26,7 @@ function validate(email: string): WaitlistError | null {
  * Waiting list form (ONB-01). Works before JavaScript loads (plain form post
  * to the Server Function); once hydrated it validates inline and keeps focus
  * management accessible. The answer is the same whether the address was
- * already registered or not. As an address is typed, the glyph stage beside
+ * already registered or not. As an address is typed, the logo stage beside
  * the form shows its school (typed-school.ts), in the browser only.
  */
 export function WaitlistForm() {

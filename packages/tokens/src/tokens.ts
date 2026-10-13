@@ -27,21 +27,6 @@ export const schoolColors = {
   ipsa: "oklch(0.75 0.13 210)",
 } as const;
 
-/**
- * The glyph of each school, as SVG path data in a 20 × 20 box: our own sign of
- * each "element family" of Atomes, never a school logo. Colour never carries
- * the school alone: its glyph goes with it. EPITA "Kernel" brackets, ESME
- * "Ampère" bolt, Sup'Biotech "Enzyme" hexagon, ISG "Capital" guilloché
- * rings, IPSA "Stratosphère" star.
- */
-export const schoolGlyphs = {
-  epita: "M8 4 3 10l5 6M12 4l5 6-5 6",
-  esme: "M11.5 2 4.5 11h5l-1 7 7-9h-5l1-7Z",
-  supbiotech: "M10 2.5 16.5 6.25v7.5L10 17.5l-6.5-3.75v-7.5L10 2.5Z",
-  isg: "M7 10a3 3 0 1 0 6 0 3 3 0 1 0-6 0M3.5 10a6.5 6.5 0 1 0 13 0 6.5 6.5 0 1 0-13 0",
-  ipsa: "M10 2c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8Z",
-} as const;
-
 export const schoolFoils = {
   epita: "kernel",
   esme: "ampere",

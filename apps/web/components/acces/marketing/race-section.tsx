@@ -30,8 +30,8 @@ export async function RaceSection({ stats }: { stats: WaitlistStats | null }) {
 
 /**
  * The waiting list (ONB-01): the form on the left half, and on the right the
- * atoms drawing each school's glyph in turn, holding the school of the address
- * being typed (waitlist/school-stage.tsx); on phones, the glyphs come first.
+ * atoms drawing each school's logo in turn, holding the school of the address
+ * being typed (waitlist/school-stage.tsx); on phones, the logos come first.
  */
 export async function JoinSection() {
   const t = await getTranslations("waitlist");

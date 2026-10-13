@@ -7,7 +7,7 @@ const height = 900;
 /**
  * A page laid out like the landing (hero with the map of the rivers +
  * manifesto, three stacked cards, the tube rack, the waiting list with its
- * school glyph stage, the Pact, the safety section), seen with the viewport
+ * school logo stage, the Pact, the safety section), seen with the viewport
  * scrolled to `scroll` pixels.
  */
 function page(scroll: number): JourneyMeasures {
@@ -42,8 +42,8 @@ function page(scroll: number): JourneyMeasures {
       box: box(5110, 400, 110 + index * 126, 72),
       level: 0.2 * index,
     })),
-    // The school glyph stage, beside the waiting list form, showing Sup'Biotech's.
-    glyph: { box: box(5900, 560, 760, 560), school: 2 },
+    // The school logo stage, beside the waiting list form, showing Sup'Biotech's.
+    logo: { box: box(5900, 560, 760, 560), school: 2 },
     pact: box(6800, 480, 840, 480),
     covers: [box(7600, 1100, 0, width)],
   };
@@ -202,40 +202,40 @@ describe("journey", () => {
         (formations.pair?.weight ?? 0) +
         (formations.card?.weight ?? 0) +
         (formations.tubes?.weight ?? 0) +
-        (formations.glyph?.weight ?? 0) +
+        (formations.logo?.weight ?? 0) +
         (formations.pact?.weight ?? 0);
       // Shares under 0.001 are dropped.
       expect(held, `scrolled ${scroll}px`).toBeCloseTo(1, 2);
     }
   });
 
-  it("draws a school's glyph beside the waiting list, between the tubes and the Pact", () => {
+  it("draws a school's logo beside the waiting list, between the tubes and the Pact", () => {
     const join = journey(page(5800));
-    expect(join.formations.glyph).toEqual({ weight: 1, box: page(5800).glyph?.box, school: 2 });
+    expect(join.formations.logo).toEqual({ weight: 1, box: page(5800).logo?.box, school: 2 });
     expect(join.formations.tubes).toBeNull();
     expect(join.formations.pact).toBeNull();
     expect(join.hidden).toBe(false);
     // Whichever school the page shows.
     const stage = { left: 760, top: 100, width: 560, height: 560 };
-    const shown = journey({ ...page(5800), glyph: { box: stage, school: 4 } });
-    expect(shown.formations.glyph?.school).toBe(4);
+    const shown = journey({ ...page(5800), logo: { box: stage, school: 4 } });
+    expect(shown.formations.logo?.school).toBe(4);
     // The tubes hand their particles over to it, and it hands them to the Pact.
     const fromTubes = journey(page(5400)).formations;
     expect(fromTubes.tubes?.weight).toBeGreaterThan(0.1);
-    expect(fromTubes.glyph?.weight).toBeGreaterThan(0.1);
+    expect(fromTubes.logo?.weight).toBeGreaterThan(0.1);
     const toPact = journey(page(6300)).formations;
-    expect(toPact.glyph?.weight).toBeGreaterThan(0.05);
+    expect(toPact.logo?.weight).toBeGreaterThan(0.05);
     expect(toPact.pact?.weight).toBeGreaterThan(0.05);
   });
 
   it("keeps the nearest shape between sections, and rests once it is off screen", () => {
-    // Without the glyph stage, the tubes still hold the particles while the rack scrolls away…
-    const withoutGlyph = (scroll: number) => journey({ ...page(scroll), glyph: null });
-    const leaving = withoutGlyph(5520);
+    // Without the logo stage, the tubes still hold the particles while the rack scrolls away…
+    const withoutLogo = (scroll: number) => journey({ ...page(scroll), logo: null });
+    const leaving = withoutLogo(5520);
     expect(leaving.formations.tubes?.weight).toBe(1);
     expect(leaving.hidden).toBe(false);
     // …and once both they and the Pact are off screen, the field rests.
-    expect(withoutGlyph(5800).hidden).toBe(true);
+    expect(withoutLogo(5800).hidden).toBe(true);
     // Further down, the Pact holds them, off screen: nothing to draw.
     const faq = journey(page(9300));
     expect(faq.formations.pact?.weight).toBe(1);
@@ -257,7 +257,7 @@ describe("journey", () => {
       cardRadius: 32,
       rack: null,
       tubes: [],
-      glyph: null,
+      logo: null,
       pact: null,
       covers: [],
     });
@@ -265,7 +265,7 @@ describe("journey", () => {
       pair: null,
       card: null,
       tubes: null,
-      glyph: null,
+      logo: null,
       pact: null,
       rivers: null,
       flight: null,

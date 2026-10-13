@@ -23,11 +23,16 @@ import {
   flightRandom,
   followFlight,
   formationStrength,
-  GLYPH_GLOW,
-  GLYPH_ORBIT,
-  GLYPH_ORBIT_GLOW,
   gatherFlight,
   gatherFlightSteps,
+  LOGO_DOT,
+  LOGO_EDGE,
+  LOGO_EDGE_GLOW,
+  LOGO_GLOW,
+  LOGO_GRAIN,
+  LOGO_ORBIT,
+  LOGO_ORBIT_GLOW,
+  LOGO_PAPER,
   FLIGHT_MERGE as MERGE,
   orbitArc,
   orbitArcPoint,
@@ -45,8 +50,8 @@ import {
   type WorldBox,
   writeFormations,
 } from "./formations";
-import { GLYPH_BOX, SCHOOL_GLYPH_STROKES } from "./glyphs";
 import { createIonFieldLayout, MARK, SCHOOL_KEYS, withParticlesAhead } from "./layout";
+import { type LogoShape, schoolLogoShape } from "./logos";
 import { RHONE_PATH, RIVER_MAP, SAONE_PATH } from "./rivers";
 
 const box: WorldBox = { x: 0.2, y: -0.1, hw: 0.8, hh: 0.4 };
@@ -56,6 +61,40 @@ function distanceToRoundedBox(x: number, y: number, r: number): number {
   const qx = Math.abs(x - box.x) - (box.hw - r);
   const qy = Math.abs(y - box.y) - (box.hh - r);
   return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
+}
+
+/** Inside a logo's outline by the even-odd rule (its units, y down). */
+function inLogo(shape: LogoShape, x: number, y: number): boolean {
+  const { segments } = shape;
+  let crossings = 0;
+  for (let offset = 0; offset < segments.length; offset += 4) {
+    const x0 = segments[offset] ?? 0;
+    const y0 = segments[offset + 1] ?? 0;
+    const x1 = segments[offset + 2] ?? 0;
+    const y1 = segments[offset + 3] ?? 0;
+    if (y0 <= y !== y1 <= y && x < x0 + ((y - y0) / (y1 - y0)) * (x1 - x0)) {
+      crossings += 1;
+    }
+  }
+  return crossings % 2 === 1;
+}
+
+/** Distance from a point to a logo's outline (its units). */
+function toLogoEdge(shape: LogoShape, x: number, y: number): number {
+  const { segments } = shape;
+  let nearest = Number.POSITIVE_INFINITY;
+  for (let offset = 0; offset < segments.length; offset += 4) {
+    const ax = segments[offset] ?? 0;
+    const ay = segments[offset + 1] ?? 0;
+    const bx = segments[offset + 2] ?? 0;
+    const by = segments[offset + 3] ?? 0;
+    const t = Math.max(
+      0,
+      Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2)),
+    );
+    nearest = Math.min(nearest, Math.hypot(x - (ax + (bx - ax) * t), y - (ay + (by - ay) * t)));
+  }
+  return nearest;
 }
 
 function run(formations: Formations, count = 2000, time = 3) {
@@ -244,7 +283,8 @@ describe("writeFormations", () => {
       { card: { weight: 1, box: empty, radius: 24, step: 1 } },
       { pact: { weight: 1, box: empty } },
       { rivers: { weight: 1, box: empty } },
-      { glyph: { weight: 1, box: empty, school: 0 } },
+      { logo: { weight: 1, box: empty, school: 0 } },
+      { logo: { weight: 1, box: empty, school: -1 } },
     ];
     for (const formations of cases) {
       const { targets, looks } = run(toWorldFormations(formations, 1440, 900));
@@ -289,106 +329,122 @@ describe("writeFormations", () => {
     }
   });
 
-  it("draws the glyph of the school it shows with that school's particles, the others orbiting it, dimmer", () => {
-    const glyph = { weight: 1, x: 0.4, y: -0.1, size: 0.5, school: 2 };
-    const { targets, looks, layout } = run({ glyph });
-    const strokes = SCHOOL_GLYPH_STROKES[2];
-    const segments = strokes?.segments ?? new Float32Array();
-    const scale = glyph.size / (GLYPH_BOX / 2);
+  it("draws the logo of the school it shows with every particle, nearly half along its edges, the rest in its ink", () => {
+    const logo = { weight: 1, x: 0.4, y: -0.1, size: 0.5, school: 2 };
+    const { targets, looks, layout } = run({ logo });
+    const shape = schoolLogoShape(2) as LogoShape;
+    const scale = (2 * logo.size) / Math.max(shape.width, shape.height);
     const astray: string[] = [];
-    let drawing = 0;
+    let edges = 0;
     for (let index = 0; index < layout.count; index += 1) {
       const offset = index * FORMATION_STRIDE;
-      const x = targets[offset] ?? 0;
-      const y = targets[offset + 1] ?? 0;
       expect(targets[offset + 2]).toBe(1);
-      if (layout.schools[index] === 2) {
-        drawing += 1;
-        // Back in the glyph's box (SVG units, y down): on one of its strokes, give or take a shimmer.
-        const gx = GLYPH_BOX / 2 + (x - glyph.x) / scale;
-        const gy = GLYPH_BOX / 2 - (y - glyph.y) / scale;
-        let nearest = Number.POSITIVE_INFINITY;
-        for (let segment = 0; segment < segments.length; segment += 4) {
-          const ax = segments[segment] ?? 0;
-          const ay = segments[segment + 1] ?? 0;
-          const bx = segments[segment + 2] ?? 0;
-          const by = segments[segment + 3] ?? 0;
-          const t = Math.max(
-            0,
-            Math.min(1, ((gx - ax) * (bx - ax) + (gy - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2)),
-          );
-          nearest = Math.min(nearest, Math.hypot(gx - (ax + (bx - ax) * t), gy - (ay + (by - ay) * t)));
-        }
-        if (nearest > 0.25 || looks[offset + 2] !== Math.fround(GLYPH_GLOW)) {
-          astray.push(`glyph particle ${index}: ${nearest.toFixed(3)} from the strokes`);
-        }
-      } else {
-        // On the logo's tilted orbit round the glyph, its nucleus.
-        const dx = x - glyph.x;
-        const dy = y - glyph.y;
-        const ex = dx * Math.cos(MARK.tilt) + dy * Math.sin(MARK.tilt);
-        const ey = -dx * Math.sin(MARK.tilt) + dy * Math.cos(MARK.tilt);
-        const radius = glyph.size * GLYPH_ORBIT;
-        const reach = Math.hypot(ex / radius, ey / (radius * MARK.orbitMinor));
-        if (reach < 0.9 || reach > 1.1 || looks[offset + 2] !== Math.fround(GLYPH_ORBIT_GLOW)) {
-          astray.push(`orbit particle ${index}: ${reach.toFixed(3)} orbit radii`);
-        }
+      expect(looks[offset + 3]).toBeCloseTo(LOGO_PAPER, 6);
+      // Back in the logo's box (its units, y down).
+      const x = shape.width / 2 + ((targets[offset] ?? 0) - logo.x) / scale;
+      const y = shape.height / 2 - ((targets[offset + 1] ?? 0) - logo.y) / scale;
+      const edge = looks[offset + 2] === Math.fround(LOGO_EDGE_GLOW);
+      edges += edge ? 1 : 0;
+      const away = toLogoEdge(shape, x, y);
+      // On an edge, or in the ink: give or take the atom's wander (and, in the ink, half a row).
+      if (
+        edge
+          ? away > 0.55
+          : looks[offset + 2] !== Math.fround(LOGO_GLOW) || (!inLogo(shape, x, y) && away > 1.2)
+      ) {
+        astray.push(`particle ${index}${edge ? " (edge)" : ""}: ${away.toFixed(2)} from the outline`);
       }
     }
     expect(astray.slice(0, 5)).toEqual([]);
-    // A fifth of the particles or so: enough for a clean stroke.
-    expect(drawing).toBeGreaterThan(300);
-    expect(GLYPH_GLOW).toBeGreaterThan(2 * GLYPH_ORBIT_GLOW);
+    expect(edges / layout.count).toBeCloseTo(LOGO_EDGE, 1);
+    expect(LOGO_EDGE_GLOW).toBeGreaterThan(LOGO_GLOW);
+    // In fine, even dots, their halos clear of the letters cut out of the logo: none bigger than LOGO_DOT.
+    const grains = new Float32Array(layout.count);
+    writeFormations(
+      new Float32Array(targets.length),
+      new Float32Array(looks.length),
+      layout,
+      { logo },
+      null,
+      3,
+      2 / 900,
+      grains,
+    );
+    for (let index = 0; index < layout.count; index += 1) {
+      const grain = grains[index] ?? 0;
+      expect(grain).toBeLessThanOrEqual(Math.fround(LOGO_GRAIN));
+      expect(grain * (layout.sizes[index] ?? 0)).toBeLessThanOrEqual(LOGO_GRAIN * LOGO_DOT + 1e-6);
+    }
   });
 
-  it("keeps each particle of the glyph in its place on the strokes, never jumping across the glyph", () => {
-    // EPITA's brackets are two strokes apart: a particle sent from the end of one to the start of
-    // the other would cross the glyph, a stray dot in the middle of it.
-    const glyph = { weight: 1, x: 0, y: 0, size: 0.5, school: 0 };
-    const scale = glyph.size / (GLYPH_BOX / 2);
+  it("keeps each particle in its place in the logo, never jumping across it", () => {
+    // EPITA's letters are cut out of its triangles: a particle sent from one edge to another would
+    // cross a letter, a stray dot in the middle of it.
+    const logo = { weight: 1, x: 0, y: 0, size: 0.5, school: 0 };
+    const shape = schoolLogoShape(0) as LogoShape;
+    const scale = (2 * logo.size) / Math.max(shape.width, shape.height);
     const jumps: string[] = [];
     for (let time = 3; time < 40; time += 0.5) {
-      const now = run({ glyph }, 2000, time);
-      const next = run({ glyph }, 2000, time + 1 / 60);
+      const now = run({ logo }, 2000, time);
+      const next = run({ logo }, 2000, time + 1 / 60);
       for (let index = 0; index < now.layout.count; index += 1) {
-        if (now.layout.schools[index] !== 0) {
-          continue;
-        }
         const offset = index * FORMATION_STRIDE;
         const moved = Math.hypot(
           (next.targets[offset] ?? 0) - (now.targets[offset] ?? 0),
           (next.targets[offset + 1] ?? 0) - (now.targets[offset + 1] ?? 0),
         );
         if (moved / scale > 0.2) {
-          jumps.push(`${time} s, particle ${index}: ${(moved / scale).toFixed(2)} glyph units in a frame`);
+          jumps.push(`${time} s, particle ${index}: ${(moved / scale).toFixed(2)} logo units in a frame`);
         }
       }
     }
     expect(jumps.slice(0, 5)).toEqual([]);
   });
 
-  it("hands the glyph over to the next school's particles, and sends everyone round the orbit with no school", () => {
-    const glyph = { weight: 1, x: 0, y: 0, size: 0.5, school: 3 };
-    const { looks, layout } = run({ glyph });
-    const none = run({ glyph: { ...glyph, school: -1 } });
-    for (let index = 0; index < layout.count; index += 1) {
-      const glow = looks[index * FORMATION_STRIDE + 2];
-      expect(glow).toBe(Math.fround(layout.schools[index] === 3 ? GLYPH_GLOW : GLYPH_ORBIT_GLOW));
-      expect(none.looks[index * FORMATION_STRIDE + 2]).toBe(Math.fround(GLYPH_ORBIT_GLOW));
+  it("takes each atom a short way from one school's logo to the next, and round the orbit with no school", () => {
+    const logo = { weight: 1, x: 0, y: 0, size: 0.5, school: 0 };
+    const logos = SCHOOL_KEYS.map((_, school) => run({ logo: { ...logo, school } }));
+    for (const [school, now] of logos.entries()) {
+      const next = logos[(school + 1) % logos.length] ?? now;
+      let moved = 0;
+      for (let index = 0; index < now.layout.count; index += 1) {
+        const offset = index * FORMATION_STRIDE;
+        moved += Math.hypot(
+          (next.targets[offset] ?? 0) - (now.targets[offset] ?? 0),
+          (next.targets[offset + 1] ?? 0) - (now.targets[offset + 1] ?? 0),
+        );
+      }
+      // The same places handed out at random would send them twice as far: about the stage's half side.
+      expect(moved / now.layout.count).toBeLessThan(0.5 * logo.size);
+    }
+    const none = run({ logo: { ...logo, school: -1 } });
+    for (let index = 0; index < none.layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      // On the logo mark's tilted orbit round the stage.
+      const dx = (none.targets[offset] ?? 0) - logo.x;
+      const dy = (none.targets[offset + 1] ?? 0) - logo.y;
+      const ex = dx * Math.cos(MARK.tilt) + dy * Math.sin(MARK.tilt);
+      const ey = -dx * Math.sin(MARK.tilt) + dy * Math.cos(MARK.tilt);
+      const radius = logo.size * LOGO_ORBIT;
+      const reach = Math.hypot(ex / radius, ey / (radius * MARK.orbitMinor));
+      expect(reach).toBeGreaterThan(0.9);
+      expect(reach).toBeLessThan(1.1);
+      expect(none.looks[offset + 2]).toBe(Math.fround(LOGO_ORBIT_GLOW));
+      expect(none.looks[offset + 3]).toBe(0);
     }
   });
 
-  it("fits the glyph in the largest square of its box, and counts it among the shapes", () => {
+  it("fits the logo in the largest square of its box, and counts it among the shapes", () => {
     const formations = toWorldFormations(
-      { glyph: { weight: 0.7, box: { left: 760, top: 200, width: 600, height: 400 }, school: 4 } },
+      { logo: { weight: 0.7, box: { left: 760, top: 200, width: 600, height: 400 }, school: 4 } },
       1440,
       900,
     );
-    expect(formations.glyph?.weight).toBe(0.7);
-    expect(formations.glyph?.school).toBe(4);
-    expect(formations.glyph?.x).toBeCloseTo(((760 + 300 - 720) * 2) / 900, 6);
-    expect(formations.glyph?.y).toBeCloseTo(((450 - 400) * 2) / 900, 6);
-    expect(formations.glyph?.size).toBeCloseTo(400 / 900, 6);
+    expect(formations.logo?.weight).toBe(0.7);
+    expect(formations.logo?.school).toBe(4);
+    expect(formations.logo?.x).toBeCloseTo(((760 + 300 - 720) * 2) / 900, 6);
+    expect(formations.logo?.y).toBeCloseTo(((450 - 400) * 2) / 900, 6);
+    expect(formations.logo?.size).toBeCloseTo(400 / 900, 6);
     expect(formationStrength(formations)).toBe(0.7);
   });
 
