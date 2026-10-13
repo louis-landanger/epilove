@@ -22,6 +22,10 @@ import {
   flightPoint,
   flightRandom,
   followFlight,
+  formationStrength,
+  GLYPH_GLOW,
+  GLYPH_ORBIT,
+  GLYPH_ORBIT_GLOW,
   gatherFlight,
   gatherFlightSteps,
   FLIGHT_MERGE as MERGE,
@@ -41,6 +45,7 @@ import {
   type WorldBox,
   writeFormations,
 } from "./formations";
+import { GLYPH_BOX, SCHOOL_GLYPH_STROKES } from "./glyphs";
 import { createIonFieldLayout, MARK, SCHOOL_KEYS, withParticlesAhead } from "./layout";
 import { RHONE_PATH, RIVER_MAP, SAONE_PATH } from "./rivers";
 
@@ -239,6 +244,7 @@ describe("writeFormations", () => {
       { card: { weight: 1, box: empty, radius: 24, step: 1 } },
       { pact: { weight: 1, box: empty } },
       { rivers: { weight: 1, box: empty } },
+      { glyph: { weight: 1, box: empty, school: 0 } },
     ];
     for (const formations of cases) {
       const { targets, looks } = run(toWorldFormations(formations, 1440, 900));
@@ -281,6 +287,109 @@ describe("writeFormations", () => {
         }
       }
     }
+  });
+
+  it("draws the glyph of the school it shows with that school's particles, the others orbiting it, dimmer", () => {
+    const glyph = { weight: 1, x: 0.4, y: -0.1, size: 0.5, school: 2 };
+    const { targets, looks, layout } = run({ glyph });
+    const strokes = SCHOOL_GLYPH_STROKES[2];
+    const segments = strokes?.segments ?? new Float32Array();
+    const scale = glyph.size / (GLYPH_BOX / 2);
+    const astray: string[] = [];
+    let drawing = 0;
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      const x = targets[offset] ?? 0;
+      const y = targets[offset + 1] ?? 0;
+      expect(targets[offset + 2]).toBe(1);
+      if (layout.schools[index] === 2) {
+        drawing += 1;
+        // Back in the glyph's box (SVG units, y down): on one of its strokes, give or take a shimmer.
+        const gx = GLYPH_BOX / 2 + (x - glyph.x) / scale;
+        const gy = GLYPH_BOX / 2 - (y - glyph.y) / scale;
+        let nearest = Number.POSITIVE_INFINITY;
+        for (let segment = 0; segment < segments.length; segment += 4) {
+          const ax = segments[segment] ?? 0;
+          const ay = segments[segment + 1] ?? 0;
+          const bx = segments[segment + 2] ?? 0;
+          const by = segments[segment + 3] ?? 0;
+          const t = Math.max(
+            0,
+            Math.min(1, ((gx - ax) * (bx - ax) + (gy - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2)),
+          );
+          nearest = Math.min(nearest, Math.hypot(gx - (ax + (bx - ax) * t), gy - (ay + (by - ay) * t)));
+        }
+        if (nearest > 0.25 || looks[offset + 2] !== Math.fround(GLYPH_GLOW)) {
+          astray.push(`glyph particle ${index}: ${nearest.toFixed(3)} from the strokes`);
+        }
+      } else {
+        // On the logo's tilted orbit round the glyph, its nucleus.
+        const dx = x - glyph.x;
+        const dy = y - glyph.y;
+        const ex = dx * Math.cos(MARK.tilt) + dy * Math.sin(MARK.tilt);
+        const ey = -dx * Math.sin(MARK.tilt) + dy * Math.cos(MARK.tilt);
+        const radius = glyph.size * GLYPH_ORBIT;
+        const reach = Math.hypot(ex / radius, ey / (radius * MARK.orbitMinor));
+        if (reach < 0.9 || reach > 1.1 || looks[offset + 2] !== Math.fround(GLYPH_ORBIT_GLOW)) {
+          astray.push(`orbit particle ${index}: ${reach.toFixed(3)} orbit radii`);
+        }
+      }
+    }
+    expect(astray.slice(0, 5)).toEqual([]);
+    // A fifth of the particles or so: enough for a clean stroke.
+    expect(drawing).toBeGreaterThan(300);
+    expect(GLYPH_GLOW).toBeGreaterThan(2 * GLYPH_ORBIT_GLOW);
+  });
+
+  it("keeps each particle of the glyph in its place on the strokes, never jumping across the glyph", () => {
+    // EPITA's brackets are two strokes apart: a particle sent from the end of one to the start of
+    // the other would cross the glyph, a stray dot in the middle of it.
+    const glyph = { weight: 1, x: 0, y: 0, size: 0.5, school: 0 };
+    const scale = glyph.size / (GLYPH_BOX / 2);
+    const jumps: string[] = [];
+    for (let time = 3; time < 40; time += 0.5) {
+      const now = run({ glyph }, 2000, time);
+      const next = run({ glyph }, 2000, time + 1 / 60);
+      for (let index = 0; index < now.layout.count; index += 1) {
+        if (now.layout.schools[index] !== 0) {
+          continue;
+        }
+        const offset = index * FORMATION_STRIDE;
+        const moved = Math.hypot(
+          (next.targets[offset] ?? 0) - (now.targets[offset] ?? 0),
+          (next.targets[offset + 1] ?? 0) - (now.targets[offset + 1] ?? 0),
+        );
+        if (moved / scale > 0.2) {
+          jumps.push(`${time} s, particle ${index}: ${(moved / scale).toFixed(2)} glyph units in a frame`);
+        }
+      }
+    }
+    expect(jumps.slice(0, 5)).toEqual([]);
+  });
+
+  it("hands the glyph over to the next school's particles, and sends everyone round the orbit with no school", () => {
+    const glyph = { weight: 1, x: 0, y: 0, size: 0.5, school: 3 };
+    const { looks, layout } = run({ glyph });
+    const none = run({ glyph: { ...glyph, school: -1 } });
+    for (let index = 0; index < layout.count; index += 1) {
+      const glow = looks[index * FORMATION_STRIDE + 2];
+      expect(glow).toBe(Math.fround(layout.schools[index] === 3 ? GLYPH_GLOW : GLYPH_ORBIT_GLOW));
+      expect(none.looks[index * FORMATION_STRIDE + 2]).toBe(Math.fround(GLYPH_ORBIT_GLOW));
+    }
+  });
+
+  it("fits the glyph in the largest square of its box, and counts it among the shapes", () => {
+    const formations = toWorldFormations(
+      { glyph: { weight: 0.7, box: { left: 760, top: 200, width: 600, height: 400 }, school: 4 } },
+      1440,
+      900,
+    );
+    expect(formations.glyph?.weight).toBe(0.7);
+    expect(formations.glyph?.school).toBe(4);
+    expect(formations.glyph?.x).toBeCloseTo(((760 + 300 - 720) * 2) / 900, 6);
+    expect(formations.glyph?.y).toBeCloseTo(((450 - 400) * 2) / 900, 6);
+    expect(formations.glyph?.size).toBeCloseTo(400 / 900, 6);
+    expect(formationStrength(formations)).toBe(0.7);
   });
 
   it("pours each school into its own tube, up to the level, and keeps all the rest above", () => {

@@ -20,5 +20,9 @@
     "body": "Si c’est ta première inscription, ton lien de parrainage arrive dans ta boîte mail d’école d’ici quelques minutes. Pense à jeter un œil aux indésirables.",
     "again": "Inscrire une autre adresse"
   },
-  "privacy": "Ton adresse n’est pas conservée : seule une empreinte chiffrée est gardée pour éviter les doublons. Détails dans la <link>politique de confidentialité</link>."
+  "privacy": "Ton adresse n’est pas conservée : seule une empreinte chiffrée est gardée pour éviter les doublons. Détails dans la <link>politique de confidentialité</link>.",
+  "glyphs": {
+    "campus": "Les écoles du campus",
+    "yours": "Ton école"
+  }
 }

@@ -4,8 +4,8 @@ import { markPlacementFor, type PixelBox, type ViewportFormations } from "@atome
  * The ion field's journey down the landing page (docs/02-design.md, section
  * 5): from the measured position of each section, which shapes the particles
  * draw (Lyon's two rivers in the hero, the logo mark beside the manifesto,
- * the stacked cards, the school race tubes, the Pact rings) and how they
- * share them. Pure, so it can be tested without a browser; the canvas
+ * the stacked cards, the school race tubes, the schools' glyphs beside the
+ * waiting list, the Pact rings) and how they share them. Pure, so it can be tested without a browser; the canvas
  * measures the page and applies the result every frame.
  */
 
@@ -37,6 +37,11 @@ export interface JourneyMeasures {
   readonly rack: PixelBox | null;
   /** One entry per school, in `SCHOOL_KEYS` order: glass of the tube and liquid level in [0, 1]. */
   readonly tubes: ReadonlyArray<{ readonly box: PixelBox; readonly level: number } | null>;
+  /**
+   * The school glyph stage beside the waiting list form (`[data-field-glyph]`)
+   * and the school whose glyph it shows: an index into `SCHOOL_KEYS`, -1 for none.
+   */
+  readonly glyph: { readonly box: PixelBox; readonly school: number } | null;
   /** The Pact stage (its rings). */
   readonly pact: PixelBox | null;
   /** Opaque sections: while one fills the viewport, the field is hidden and can rest. */
@@ -134,13 +139,14 @@ const MARK_GLOW_FROM = 0.6;
  * In the hero the particles flow down Lyon's two rivers. Scrolling, they
  * gather into the logo mark beside the manifesto, where its nucleus lights
  * up, with the dots of the plan of Lyon; further down come the stacked
- * cards, the tubes and the Pact rings. Every particle always belongs to a
- * shape: neighbouring shapes share the particles while one section gives way
- * to the next (their weights add up to 1); between sections the nearest shape
- * keeps them, and scrolls away with its section.
+ * cards, the tubes, the schools' glyphs beside the waiting list and the Pact
+ * rings. Every particle always belongs to a shape: neighbouring shapes share
+ * the particles while one section gives way to the next (their weights add up
+ * to 1); between sections the nearest shape keeps them, and scrolls away with
+ * its section.
  */
 export function journey(measures: JourneyMeasures): JourneyState {
-  const { height, scope, rivers, rack, pact } = measures;
+  const { height, scope, rivers, rack, glyph, pact } = measures;
 
   // How far into the hero the page has scrolled, in viewports.
   const scrolled = scope ? Math.max(0, -scope.top) / height : 1;
@@ -181,6 +187,14 @@ export function journey(measures: JourneyMeasures): JourneyState {
           box: rack,
         }
       : null,
+    glyph
+      ? {
+          presence:
+            ramp((0.9 * height - glyph.box.top) / (0.4 * height)) *
+            ramp((bottomOf(glyph.box) - 0.1 * height) / (0.4 * height)),
+          box: glyph.box,
+        }
+      : null,
     pact
       ? {
           presence:
@@ -210,7 +224,8 @@ export function journey(measures: JourneyMeasures): JourneyState {
     }
   }
   const share = (index: number) => (total > 0 ? (weights[index] ?? 0) / total : 0);
-  const [pairShare, cardShare, tubesShare, pactShare] = [0, 1, 2, 3].map(share) as [
+  const [pairShare, cardShare, tubesShare, glyphShare, pactShare] = [0, 1, 2, 3, 4].map(share) as [
+    number,
     number,
     number,
     number,
@@ -221,7 +236,7 @@ export function journey(measures: JourneyMeasures): JourneyState {
   const offScreen = (stage: Stage | null) => !stage || bottomOf(stage.box) < 0 || stage.box.top > height;
   const shapesOffScreen =
     pairShare <= 0.001 &&
-    [cardShare, tubesShare, pactShare].every(
+    [cardShare, tubesShare, glyphShare, pactShare].every(
       (weight, index) => weight <= 0.001 || offScreen(stages[index + 1] ?? null),
     );
 
@@ -249,6 +264,8 @@ export function journey(measures: JourneyMeasures): JourneyState {
           ? { weight: cardShare, box: card.box, radius: measures.cardRadius, step: card.step }
           : null,
       tubes: rack && tubesShare > 0.001 ? { weight: tubesShare, tubes: measures.tubes } : null,
+      glyph:
+        glyph && glyphShare > 0.001 ? { weight: glyphShare, box: glyph.box, school: glyph.school } : null,
       pact: pact && pactShare > 0.001 ? { weight: pactShare, box: pact } : null,
       rivers:
         rivers && scope && pairShare * (1 - settle) > 0.001

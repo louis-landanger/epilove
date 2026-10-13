@@ -20,5 +20,9 @@
     "body": "If this is your first sign-up, your referral link will reach your school inbox within a few minutes. Have a look in your spam folder too.",
     "again": "Sign up another address"
   },
-  "privacy": "Your address is not stored: only an encrypted fingerprint is kept to avoid duplicates. Details in the <link>privacy policy</link>."
+  "privacy": "Your address is not stored: only an encrypted fingerprint is kept to avoid duplicates. Details in the <link>privacy policy</link>.",
+  "glyphs": {
+    "campus": "The campus schools",
+    "yours": "Your school"
+  }
 }

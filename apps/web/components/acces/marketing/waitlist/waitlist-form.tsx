@@ -8,6 +8,7 @@ import { publicHref } from "@/i18n/paths";
 import { refreshWaitlistStats } from "../stats-store";
 import { joinWaitlistAction } from "./actions";
 import { INITIAL_WAITLIST_STATE, type WaitlistError, type WaitlistFormState } from "./state";
+import { schoolOfTypedEmail, setTypedSchool } from "./typed-school";
 
 /** Loose sanity check only: the Server Function validates the exact referral code format. */
 const REFERRAL_LIKE = /^[0-9a-z]{6,32}$/;
@@ -25,7 +26,8 @@ function validate(email: string): WaitlistError | null {
  * Waiting list form (ONB-01). Works before JavaScript loads (plain form post
  * to the Server Function); once hydrated it validates inline and keeps focus
  * management accessible. The answer is the same whether the address was
- * already registered or not.
+ * already registered or not. As an address is typed, the glyph stage beside
+ * the form shows its school (typed-school.ts), in the browser only.
  */
 export function WaitlistForm() {
   const t = useTranslations("waitlist");
@@ -55,6 +57,7 @@ export function WaitlistForm() {
       void refreshWaitlistStats();
     } else if (state.status === "error") {
       inputRef.current?.focus();
+      setTypedSchool(schoolOfTypedEmail(state.email));
     }
   }, [state]);
 
@@ -132,6 +135,7 @@ export function WaitlistForm() {
             }
           }}
           onChange={(event) => {
+            setTypedSchool(schoolOfTypedEmail(event.currentTarget.value));
             if (touched) {
               setClientError(validate(event.currentTarget.value));
             }

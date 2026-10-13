@@ -931,6 +931,97 @@
   outline: 2px solid var(--color-volt);
 }
 
+/*
+ * Beside the form (waitlist/school-stage.tsx): a square where the atoms draw
+ * each school's glyph in turn, its name underneath. Without the field, the
+ * glyph is drawn in dots of its school's colour; once the field is live, the
+ * atoms draw it instead.
+ */
+.join-stage {
+  display: grid;
+  justify-items: center;
+  gap: 1.25rem;
+}
+
+.join-glyph {
+  display: grid;
+  place-items: center;
+  width: min(100%, 15rem);
+  aspect-ratio: 1;
+}
+
+@media (min-width: 64rem) {
+  .join-glyph {
+    width: min(100%, 26rem);
+  }
+}
+
+.join-glyph-drawing {
+  width: 72%;
+  height: auto;
+  overflow: visible;
+  animation: glyph-in 0.7s var(--ease-out) both;
+}
+
+.join-glyph-drawing path {
+  stroke-width: 0.34;
+  stroke-dasharray: 0 0.72;
+}
+
+.join-glyph-all {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
+}
+
+.join-glyph-small {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+:root:has([data-ion-field][data-live="true"]) .join-glyph > * {
+  opacity: 0;
+}
+
+.join-glyph-caption {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.join-glyph-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--color-paper) 62%, transparent);
+}
+
+.join-glyph-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-paper);
+  animation: glyph-in 0.7s var(--ease-out) both;
+}
+
+@keyframes glyph-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .join-glyph-drawing,
+  .join-glyph-name {
+    animation: none;
+  }
+}
+
 /* ------------------------------------------------------------------- pact */
 
 .pact-stage {

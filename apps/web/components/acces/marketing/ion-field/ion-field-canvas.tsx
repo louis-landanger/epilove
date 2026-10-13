@@ -33,6 +33,7 @@ function createPageMeasurer() {
     const firstCard = steps[0]?.querySelector("article");
     const rack = document.querySelector("[data-field-rack]");
     const pact = document.querySelector("[data-field-pact]");
+    const glyph = document.querySelector<HTMLElement>("[data-field-glyph]");
     const rivers = document.querySelector("[data-field-rivers]");
     return {
       rivers,
@@ -53,6 +54,8 @@ function createPageMeasurer() {
         const liquid = slot?.querySelector(".tube-liquid");
         return glass && liquid ? { glass, liquid } : null;
       }),
+      glyph,
+      glyphSection: glyph?.closest("section") ?? null,
       pact,
       covers: [...document.querySelectorAll("[data-field-cover]")],
     };
@@ -92,6 +95,14 @@ function createPageMeasurer() {
           const level = Math.min(1, Math.max(0, (box.top + box.height - surface) / Math.max(1, box.height)));
           return { box, level };
         }),
+        // The school its glyph shows (the stage sets it as it goes, or as an address is typed).
+        glyph:
+          elements.glyph && near(elements.glyphSection)
+            ? {
+                box: toBox(elements.glyph),
+                school: SCHOOL_KEYS.indexOf(elements.glyph.dataset.school as (typeof SCHOOL_KEYS)[number]),
+              }
+            : null,
         pact: elements.pact && near(elements.pactSection) ? toBox(elements.pact) : null,
         covers: elements.covers.map(toBox),
       };
@@ -106,7 +117,8 @@ function createPageMeasurer() {
  * its rivers in dots instead. The particles flow down Lyon's two rivers in
  * the hero, gather into the logo mark beside the manifesto with the plan of
  * Lyon as the hero leaves, then trace the stacked cards, fill the school race
- * tubes and orbit the Pact (journey.ts).
+ * tubes, draw the schools' glyphs beside the waiting list and orbit the Pact
+ * (journey.ts).
  */
 export function IonFieldCanvas({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);

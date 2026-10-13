@@ -1123,7 +1123,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     formations = { ...measuredNow, flight: updateFlight(measuredNow.flight ?? null, delta) };
     // Past the hero, the shapes' particles are drawn as finely as on the landing.
     const past =
-      (formations.card?.weight ?? 0) + (formations.tubes?.weight ?? 0) + (formations.pact?.weight ?? 0);
+      (formations.card?.weight ?? 0) +
+      (formations.tubes?.weight ?? 0) +
+      (formations.glyph?.weight ?? 0) +
+      (formations.pact?.weight ?? 0);
     uDensity.value = density + (shapeDensity - density) * Math.min(1, past);
     uFine.value = Math.min(1, formations.rivers?.weight ?? 0);
     writeFormations(

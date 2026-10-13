@@ -2,6 +2,7 @@ import type { WaitlistStats } from "@atomes/contracts";
 import { getTranslations } from "next-intl/server";
 import { accent, Eyebrow } from "./eyebrow";
 import { SchoolRace } from "./school-race/school-race";
+import { SchoolStage } from "./waitlist/school-stage";
 import { WaitlistForm } from "./waitlist/waitlist-form";
 
 export async function RaceSection({ stats }: { stats: WaitlistStats | null }) {
@@ -27,6 +28,11 @@ export async function RaceSection({ stats }: { stats: WaitlistStats | null }) {
   );
 }
 
+/**
+ * The waiting list (ONB-01): the form on the left half, and on the right the
+ * atoms drawing each school's glyph in turn, holding the school of the address
+ * being typed (waitlist/school-stage.tsx); on phones, the glyphs come first.
+ */
 export async function JoinSection() {
   const t = await getTranslations("waitlist");
   const race = await getTranslations("marketing.race");
@@ -36,22 +42,23 @@ export async function JoinSection() {
       aria-labelledby="join-title"
       className="relative scroll-mt-20 px-4 pb-24 sm:px-10 sm:pb-36"
     >
-      <div className="join-panel relative mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] border border-paper/10 p-6 sm:p-12 lg:p-16">
-        <div className="relative grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
-          <div>
-            <Eyebrow>{t("eyebrow")}</Eyebrow>
-            <h2
-              id="join-title"
-              className="mt-6 font-display font-semibold text-[clamp(2.4rem,5.5vw,5rem)] text-paper leading-[0.95] tracking-[-0.03em]"
-            >
-              {t.rich("title", accent)}
-            </h2>
-            <p className="mt-6 max-w-lg text-lg text-paper/85 leading-relaxed">{t("lead")}</p>
-            <p className="mt-4 max-w-lg text-paper/70 text-sm leading-relaxed">{race("referral")}</p>
-          </div>
-          <div className="lg:pt-16">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
+        <div className="join-panel relative overflow-hidden rounded-[2.5rem] border border-paper/10 p-6 sm:p-12">
+          <Eyebrow>{t("eyebrow")}</Eyebrow>
+          <h2
+            id="join-title"
+            className="mt-6 font-display font-semibold text-[clamp(2.4rem,5.5vw,5rem)] text-paper leading-[0.95] tracking-[-0.03em] lg:text-[clamp(2.6rem,3.9vw,4.25rem)]"
+          >
+            {t.rich("title", accent)}
+          </h2>
+          <p className="mt-6 max-w-lg text-lg text-paper/85 leading-relaxed">{t("lead")}</p>
+          <p className="mt-4 max-w-lg text-paper/70 text-sm leading-relaxed">{race("referral")}</p>
+          <div className="mt-10">
             <WaitlistForm />
           </div>
+        </div>
+        <div className="-order-1 lg:order-none">
+          <SchoolStage />
         </div>
       </div>
     </section>
