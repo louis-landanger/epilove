@@ -1,5 +1,4 @@
 import { SCHOOL_KEYS } from "./layout";
-import { SCHOOL_LOGOS } from "./school-logos.gen";
 
 /**
  * The schools' logos as the atoms draw them beside the waiting list form
@@ -255,19 +254,44 @@ export function logoEdgePoint(
   out.y = columns ? position : across;
 }
 
-/** A school left out of the script (docs/adr/0016-logos-des-ecoles.md) has no logo: its turn, the atoms orbit. */
-const LOGOS: Partial<
+type SchoolLogos = Partial<
   Record<
     (typeof SCHOOL_KEYS)[number],
     { readonly width: number; readonly height: number; readonly path: string }
   >
-> = SCHOOL_LOGOS;
+>;
+
+/** The schools' logos once loaded; a school left out of the script has none (docs/adr/0016-logos-des-ecoles.md). */
+let logos: SchoolLogos | null = null;
+let loading: Promise<void> | null = null;
 const shapes: Array<LogoShape | undefined> = [];
 
-/** The logo of the school `school` (an index into SCHOOL_KEYS), cut into rows and columns the first time it is asked for. */
+/**
+ * Loads the schools' logos (school-logos.gen.ts, some 30 KB) the first time
+ * they are asked for: the field asks as the waiting list's stage comes near,
+ * so that a visit that never gets there never fetches them. Resolves once
+ * they are in, or once loading failed, in which case the next call tries again.
+ */
+export function loadSchoolLogos(): Promise<void> {
+  loading ??= import("./school-logos.gen").then(
+    (module) => {
+      logos = module.SCHOOL_LOGOS;
+    },
+    () => {
+      loading = null;
+    },
+  );
+  return loading;
+}
+
+/**
+ * The logo of the school `school` (an index into SCHOOL_KEYS), cut into rows
+ * and columns the first time it is asked for; none until the logos are loaded
+ * (loadSchoolLogos), nor for a school without one: the atoms then orbit.
+ */
 export function schoolLogoShape(school: number): LogoShape | undefined {
   const key = SCHOOL_KEYS[school];
-  const logo = key ? LOGOS[key] : undefined;
+  const logo = key ? logos?.[key] : undefined;
   if (!logo) {
     return undefined;
   }

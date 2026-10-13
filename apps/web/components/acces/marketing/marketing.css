@@ -947,7 +947,7 @@
 .join-logo {
   display: grid;
   place-items: center;
-  width: min(100%, 15rem);
+  width: min(100%, 18rem);
   aspect-ratio: 1;
 }
 

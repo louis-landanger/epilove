@@ -80,6 +80,7 @@ import {
   SCHOOL_KEYS,
   withParticlesAhead,
 } from "./layout";
+import { loadSchoolLogos } from "./logos";
 import { createFrameMonitor } from "./quality";
 
 export type IonFieldBackend = "webgpu" | "webgl2";
@@ -1134,6 +1135,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const previous = formations;
     const measuredNow = toWorldFormations(measured, width, height);
     formations = { ...measuredNow, flight: updateFlight(measuredNow.flight ?? null, delta) };
+    // The schools' logos load as their stage comes near (the atoms orbit it until they are in).
+    if (formations.logo) {
+      void loadSchoolLogos();
+    }
     // Past the hero, the shapes' particles are drawn as finely as on the landing.
     const past =
       (formations.card?.weight ?? 0) +

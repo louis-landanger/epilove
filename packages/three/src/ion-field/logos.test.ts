@@ -1,6 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { createIonFieldLayout, SCHOOL_KEYS } from "./layout";
-import { type LogoShape, logoEdgePoint, logoFillPoint, logoShape, outlineOf, schoolLogoShape } from "./logos";
+import {
+  type LogoShape,
+  loadSchoolLogos,
+  logoEdgePoint,
+  logoFillPoint,
+  logoShape,
+  outlineOf,
+  schoolLogoShape,
+} from "./logos";
 import { SCHOOL_LOGOS } from "./school-logos.gen";
 
 const point = { x: 0, y: 0 };
@@ -140,7 +148,19 @@ describe("logoShape", () => {
   });
 });
 
+describe("loadSchoolLogos", () => {
+  it("loads the logos the first time they are asked for: none until then", async () => {
+    expect(schoolLogoShape(0)).toBeUndefined();
+    const first = loadSchoolLogos();
+    expect(loadSchoolLogos()).toBe(first);
+    await first;
+    expect(schoolLogoShape(0)?.width).toBe(SCHOOL_LOGOS.epita.width);
+  });
+});
+
 describe("the schools' logos", () => {
+  beforeAll(() => loadSchoolLogos());
+
   it("has every school's logo, its outline inside its box", () => {
     for (const [school, key] of SCHOOL_KEYS.entries()) {
       const logo = SCHOOL_LOGOS[key];

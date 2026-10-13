@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   contourLength,
   contourPoint,
@@ -51,10 +51,13 @@ import {
   writeFormations,
 } from "./formations";
 import { createIonFieldLayout, MARK, SCHOOL_KEYS, withParticlesAhead } from "./layout";
-import { type LogoShape, schoolLogoShape } from "./logos";
+import { type LogoShape, loadSchoolLogos, schoolLogoShape } from "./logos";
 import { RHONE_PATH, RIVER_MAP, SAONE_PATH } from "./rivers";
 
 const box: WorldBox = { x: 0.2, y: -0.1, hw: 0.8, hh: 0.4 };
+
+// The schools' logos load on demand (the field asks as their stage comes near).
+beforeAll(() => loadSchoolLogos());
 
 /** Distance from a point to the rounded rectangle `box` (radius r): 0 on its outline. */
 function distanceToRoundedBox(x: number, y: number, r: number): number {
