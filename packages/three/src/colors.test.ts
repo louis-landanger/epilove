@@ -1,6 +1,13 @@
 import { colors, schoolColors } from "@atomes/tokens";
 import { describe, expect, it } from "vitest";
-import { linearSrgbToHex, oklchToLinearSrgb, parseOklch, tokenToLinearSrgb } from "./colors";
+import {
+  linearSrgbToHex,
+  linearSrgbToSrgb,
+  oklchToLinearSrgb,
+  parseOklch,
+  srgbToLinear,
+  tokenToLinearSrgb,
+} from "./colors";
 
 describe("parseOklch", () => {
   it("reads the token syntax", () => {
@@ -37,6 +44,19 @@ describe("oklchToLinearSrgb", () => {
         expect(channel).toBeGreaterThanOrEqual(0);
         expect(channel).toBeLessThanOrEqual(1);
       }
+    }
+  });
+});
+
+describe("srgbToLinear", () => {
+  it("undoes the sRGB encoding, linear near black", () => {
+    expect(srgbToLinear(0)).toBe(0);
+    expect(srgbToLinear(1)).toBe(1);
+    expect(srgbToLinear(0.04)).toBeCloseTo(0.04 / 12.92, 9);
+    // Half the light is about 188 out of 255.
+    expect(srgbToLinear(188 / 255)).toBeCloseTo(0.5, 2);
+    for (const channel of [0.002, 0.03, 0.2, 0.5, 0.9]) {
+      expect(linearSrgbToSrgb([srgbToLinear(channel), 0, 0])[0]).toBeCloseTo(channel, 6);
     }
   });
 });

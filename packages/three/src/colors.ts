@@ -48,6 +48,11 @@ export function oklchToLinearSrgb({ l, c, h }: Oklch): LinearRgb {
   ];
 }
 
+/** A gamma-encoded sRGB channel in [0, 1] to linear light. */
+export function srgbToLinear(channel: number): number {
+  return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+}
+
 /** Linear sRGB to gamma-encoded sRGB, each channel in [0, 1]. */
 export function linearSrgbToSrgb(rgb: LinearRgb): readonly [r: number, g: number, b: number] {
   const encode = (channel: number) =>

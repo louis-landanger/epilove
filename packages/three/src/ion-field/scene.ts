@@ -199,6 +199,11 @@ const FINE_GAIN = 2.1;
 // Formations follow page elements while they scroll: stiffer, and allowed to move faster.
 const FORMATION_SPRING = 30;
 const FORMATION_MAX_SPEED = 5;
+/**
+ * Seconds in which a particle takes on most of a new paper colour (a school's
+ * logo after another): the colours come with the atoms, not ahead of them.
+ */
+const TINT_FOLLOW = 0.22;
 /** Seconds over which the particles kept for the plan come up once the field has it (a page loaded below the hero). */
 const FLIGHT_REVEAL = 1.2;
 /** Width of the texture through which the plan's dots find their particles with WebGL2. */
@@ -366,6 +371,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   }
   // And the size of each particle's light (the title draws finer grains).
   const formationGrains = new Float32Array(count).fill(1);
+  // And the paper's colour (formations.ts), white unless a school's logo brings its own: written for
+  // this frame, and as drawn, following it.
+  const formationTints = new Float32Array(count * FORMATION_STRIDE);
+  const particleTints = new Float32Array(count * FORMATION_STRIDE);
 
   // Static per-particle attributes, usable by both backends.
   const colorAttribute = instancedBufferAttribute<"vec4">(
@@ -405,7 +414,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       0,
       2 / Math.max(1, initialHeight),
       formationGrains,
+      formationTints,
     );
+    particleTints.set(formationTints);
     for (let index = 0; index < count; index += 1) {
       const offset = index * FORMATION_STRIDE;
       if ((formationTargets[offset + 2] ?? 0) > 0) {
@@ -424,13 +435,14 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   let particleBond: Node<"float">;
   let particleLook: Node<"vec4">;
   let particleGrain: Node<"float">;
+  let particleTint: Node<"vec4">;
   /**
    * Look of each bond: the tints of its first end, and the glow of the dimmer
    * one (formations dim the particles that sit them out).
    */
   let bondLook: Node<"vec4">;
-  /** Uploads the formation buffers after `writeFormations`. */
-  let uploadFormations: () => void;
+  /** Uploads the formation buffers after `writeFormations`, and the paper's colours if they moved. */
+  let uploadFormations: (recolored: boolean) => void;
   let bondA: Node<"vec2">;
   let bondB: Node<"vec2">;
   let step: (delta: number) => void;
@@ -447,6 +459,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const targets = instancedArray(formationTargets, "vec4");
     const looks = instancedArray(formationLooks, "vec4");
     const grains = instancedArray(formationGrains, "float");
+    const tints = instancedArray(particleTints, "vec4");
 
     const partnerOf = (index: Node<"uint">) => index.add(1).sub(index.mod(2).mul(2));
 
@@ -545,6 +558,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     bondB = positions.element(instanceIndex.mul(2).add(1));
     particleLook = looks.element(instanceIndex);
     particleGrain = grains.element(instanceIndex);
+    particleTint = tints.element(instanceIndex);
     const firstLook = looks.element(instanceIndex.mul(2));
     const finest = min(grains.element(instanceIndex.mul(2)), grains.element(instanceIndex.mul(2).add(1)));
     bondLook = vec4(
@@ -554,10 +568,13 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       ),
       firstLook.w,
     );
-    uploadFormations = () => {
+    uploadFormations = (recolored) => {
       targets.value.needsUpdate = true;
       looks.value.needsUpdate = true;
       grains.value.needsUpdate = true;
+      if (recolored) {
+        tints.value.needsUpdate = true;
+      }
     };
 
     step = () => {
@@ -581,11 +598,14 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const grainBuffer = new InstancedBufferAttribute(formationGrains, 1);
     grainBuffer.setUsage(DynamicDrawUsage);
     particleGrain = instancedDynamicBufferAttribute<"float">(grainBuffer, "float");
+    const tintBuffer = new InstancedBufferAttribute(particleTints, 4);
+    tintBuffer.setUsage(DynamicDrawUsage);
+    particleTint = instancedDynamicBufferAttribute<"vec4">(tintBuffer, "vec4");
     const bondLookState = new Float32Array((count / 2) * 4);
     const bondLookBuffer = new InstancedBufferAttribute(bondLookState, 4);
     bondLookBuffer.setUsage(DynamicDrawUsage);
     bondLook = instancedDynamicBufferAttribute<"vec4">(bondLookBuffer, "vec4");
-    uploadFormations = () => {
+    uploadFormations = (recolored) => {
       for (let pair = 0; pair < count / 2; pair += 1) {
         const first = pair * 2 * FORMATION_STRIDE;
         bondLookState[pair * 4] = formationLooks[first] ?? 0;
@@ -597,6 +617,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       }
       lookBuffer.needsUpdate = true;
       grainBuffer.needsUpdate = true;
+      if (recolored) {
+        tintBuffer.needsUpdate = true;
+      }
       bondLookBuffer.needsUpdate = true;
     };
 
@@ -788,13 +811,19 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   ionMaterial.positionNode = vec3(particleCenter.add(positionGeometry.xy.mul(quadSize)), 0);
   const quadPixels = quadSize.div(uPixel).toVarying();
   // Formations tint some motifs (volt, plasma, paper) and dim the particles that sit them out.
-  const tint = (color: Node<"vec3">, look: Node<"vec4">) =>
+  const paperWhite = vec3(PAPER[0], PAPER[1], PAPER[2]);
+  const tint = (color: Node<"vec3">, look: Node<"vec4">, paper: Node<"vec3">) =>
     mix(
       mix(mix(color, vec3(VOLT[0], VOLT[1], VOLT[2]), look.x), vec3(PLASMA[0], PLASMA[1], PLASMA[2]), look.y),
-      vec3(PAPER[0], PAPER[1], PAPER[2]),
+      paper,
       look.w,
     );
-  const tinted = tint(colorAttribute.xyz, particleLook);
+  // A school's logo brings its own paper colours (premultiplied by their share, the rest white).
+  const tinted = tint(
+    colorAttribute.xyz,
+    particleLook,
+    paperWhite.mul(float(1).sub(particleTint.w)).add(particleTint.xyz),
+  );
   const ionColor = tinted
     .mul(twinkle.add(particleBond.mul(0.5)).add(pointerProximity.mul(0.8)))
     .mul(mix(depth.mul(uDensity.mul(0.5).add(0.5)), float(FINE_GAIN), uFine))
@@ -839,7 +868,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     .mul(mix(float(1), float(0.6), uFine))
     .toVarying();
   // Bonds take the tint of their atoms: the title's letters stay white and plasma.
-  const bondColor = tint(mix(bondColorA, bondColorB, along), bondLook).toVarying();
+  const bondColor = tint(mix(bondColorA, bondColorB, along), bondLook, paperWhite).toVarying();
   const across = abs(uv().y.sub(0.5)).mul(2);
   const beam = exp(across.mul(across).mul(-42)).add(exp(across.mul(across).mul(-5)).mul(0.14));
   bondMaterial.colorNode = vec4(bondColor.mul(beam).mul(bondStrength).mul(0.9), 1);
@@ -1156,8 +1185,22 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
       uTime.value,
       2 / height,
       formationGrains,
+      formationTints,
     );
-    uploadFormations();
+    // The paper's colours follow those written, so that a new logo's come with its atoms: at once
+    // without a previous frame, or once the formations let go. Uploaded only while they move.
+    const follow = previous && active ? 1 - Math.exp(-delta / TINT_FOLLOW) : 1;
+    let recolored = false;
+    for (let index = 0; index < particleTints.length; index += 1) {
+      const drawn = particleTints[index] ?? 0;
+      const written = formationTints[index] ?? 0;
+      if (drawn !== written) {
+        particleTints[index] =
+          Math.abs(written - drawn) < 1e-4 ? written : drawn + (written - drawn) * follow;
+        recolored = true;
+      }
+    }
+    uploadFormations(recolored);
     freeLookOn = freeLook;
     formationsOn = active;
     if (!active) {

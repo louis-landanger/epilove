@@ -3,6 +3,7 @@ import { createIonFieldLayout, SCHOOL_KEYS } from "./layout";
 import {
   type LogoShape,
   loadSchoolLogos,
+  logoColor,
   logoEdgePoint,
   logoFillPoint,
   logoShape,
@@ -43,6 +44,14 @@ function toOutline(segments: Float32Array, x: number, y: number): number {
     nearest = Math.min(nearest, Math.hypot(x - (ax + (bx - ax) * t), y - (ay + (by - ay) * t)));
   }
   return nearest;
+}
+
+/** OKLab lightness of a colour in linear light (Björn Ottosson's matrices). */
+function lightness({ red, green, blue }: { red: number; green: number; blue: number }): number {
+  const l = Math.cbrt(0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue);
+  const m = Math.cbrt(0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue);
+  const s = Math.cbrt(0.0883024619 * red + 0.2817188376 * green + 0.6299787005 * blue);
+  return 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
 }
 
 /** The fill points of the field's first `count` particles, from their formation coordinates. */
@@ -134,6 +143,34 @@ describe("logoShape", () => {
     }
   });
 
+  it("colours each point from the cells round it, blended between their middles, in linear light", () => {
+    // Cells 5 wide: red and blue in the first row, a grey of half the light (188) in the second (sRGB bytes).
+    const rgb = btoa(String.fromCharCode(255, 0, 0, 0, 0, 255, 188, 188, 188, 188, 188, 188));
+    const square = logoShape({
+      width: 10,
+      height: 10,
+      path: "M0 0H10V10H0Z",
+      colors: { cell: 5, columns: 2, rgb },
+    });
+    const color = { red: 0, green: 0, blue: 0 };
+    expect(logoColor(square, 2.5, 2.5, color)).toBe(true);
+    expect(color).toEqual({ red: 1, green: 0, blue: 0 });
+    // Halfway between two middles, halfway between their colours.
+    logoColor(square, 5, 2.5, color);
+    expect(color).toEqual({ red: 0.5, green: 0, blue: 0.5 });
+    logoColor(square, 2.5, 7.5, color);
+    expect(color.red).toBeCloseTo(0.5, 2);
+    expect(color.green).toBe(color.red);
+    // Out to the box's edges, the colour of the nearest middle.
+    logoColor(square, 10, 0, color);
+    expect(color).toEqual({ red: 0, green: 0, blue: 1 });
+    logoColor(square, 0, 0, color);
+    expect(color).toEqual({ red: 1, green: 0, blue: 0 });
+    // A logo without colours leaves the colour as it was.
+    expect(logoColor(frame, 5, 5, color)).toBe(false);
+    expect(color).toEqual({ red: 1, green: 0, blue: 0 });
+  });
+
   it("goes down the logo as the first coordinate grows, along each row as the second does", () => {
     let previous = -1;
     for (let index = 0; index <= 100; index += 1) {
@@ -179,6 +216,42 @@ describe("the schools' logos", () => {
     }
     expect(schoolLogoShape(-1)).toBeUndefined();
     expect(schoolLogoShape(SCHOOL_KEYS.length)).toBeUndefined();
+  });
+
+  it("has every school's colours over the whole of its box, lifted to stand out on the dark page", () => {
+    const color = { red: 0, green: 0, blue: 0 };
+    for (const school of SCHOOL_KEYS.keys()) {
+      const shape = schoolLogoShape(school) as LogoShape;
+      const colors = shape.colors;
+      expect(colors).not.toBeNull();
+      expect((colors?.columns ?? 0) * (colors?.cell ?? 0)).toBeGreaterThanOrEqual(shape.width);
+      expect((colors?.rows ?? 0) * (colors?.cell ?? 0)).toBeGreaterThanOrEqual(shape.height);
+      for (let y = 0; y <= shape.height; y += 1) {
+        for (let x = 0; x <= shape.width; x += 1) {
+          logoColor(shape, x, y, color);
+          expect(lightness(color)).toBeGreaterThan(0.54);
+        }
+      }
+    }
+  });
+
+  it("keeps each school's own colours where its logo has them", () => {
+    const color = { red: 0, green: 0, blue: 0 };
+    const at = (school: (typeof SCHOOL_KEYS)[number], x: number, y: number) => {
+      logoColor(schoolLogoShape(SCHOOL_KEYS.indexOf(school)) as LogoShape, x, y, color);
+      return { ...color };
+    };
+    // ESME: blue at the top, green at the bottom.
+    const top = at("esme", 50, 5);
+    expect(top.blue).toBeGreaterThan(top.green);
+    const bottom = at("esme", 50, 95);
+    expect(bottom.green).toBeGreaterThan(bottom.blue);
+    // Sup'Biotech: its molecule lime, its name a petrol blue.
+    const molecule = at("supbiotech", 65, 5);
+    expect(Math.min(molecule.red, molecule.green)).toBeGreaterThan(2 * molecule.blue);
+    const name = at("supbiotech", 25, 40);
+    expect(name.blue).toBeGreaterThan(name.green);
+    expect(name.green).toBeGreaterThan(name.red);
   });
 
   it("puts every fill point in the ink, or within a hair of its edge", () => {

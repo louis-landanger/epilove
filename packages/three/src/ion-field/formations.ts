@@ -1,5 +1,5 @@
 import { MARK } from "./layout";
-import { logoEdgePoint, logoFillPoint, schoolLogoShape } from "./logos";
+import { logoColor, logoEdgePoint, logoFillPoint, schoolLogoShape } from "./logos";
 import { RHONE_PATH, RIVER_MAP, type RiverPath, riverPoint, SAONE_PATH } from "./rivers";
 
 /**
@@ -390,6 +390,14 @@ interface Contribution {
   carry: number;
   /** Size of the particle's light (1: its own); a formation may ask for finer grains. */
   grain: number;
+  /**
+   * 1 if the paper is of the colour `red`, `green`, `blue` (linear light)
+   * rather than white: a school's logo draws in its own colours. Opt-in.
+   */
+  colored: number;
+  red: number;
+  green: number;
+  blue: number;
 }
 
 const point = { x: 0, y: 0 };
@@ -524,8 +532,16 @@ const GOLDEN_FRACTION = (Math.sqrt(5) - 1) / 2;
 /** Light of the logo's particles, along its edges and in its ink: the edges a little brighter. */
 export const LOGO_EDGE_GLOW = 1.3;
 export const LOGO_GLOW = 0.55;
-/** The logo in one colour, as the schools draw it in one: paper white, a hint of each atom's own. */
+/** The logo in its school's colours (logos.ts), a hint of each atom's own. */
 export const LOGO_PAPER = 0.9;
+/**
+ * Light of the logo's colours: darker than paper white (a deep blue gives
+ * barely a third of its light), each is brightened towards this luminance,
+ * hue kept, at most LOGO_BOOST times, so that a logo shines in its colours
+ * nearly as in white.
+ */
+export const LOGO_LIGHT = 0.6;
+export const LOGO_BOOST = 1.8;
 /**
  * Size of the light of the logo's particles: finer than elsewhere, so that
  * their halos do not fill the letters cut out of a logo (EPITA's), and fine
@@ -585,6 +601,15 @@ function logoContribution(
     into.y = logo.y - (point.y - shape.height / 2 + wander * Math.sin(time * 1.3 + phase)) * scale;
     into.glow = edge ? LOGO_EDGE_GLOW : LOGO_GLOW;
     into.paper = LOGO_PAPER;
+    // The colour of its place in the logo, brightened.
+    if (logoColor(shape, point.x, point.y, into)) {
+      const luminance = 0.2126 * into.red + 0.7152 * into.green + 0.0722 * into.blue;
+      const boost = Math.min(LOGO_BOOST, Math.max(1, LOGO_LIGHT / Math.max(luminance, 1e-6)));
+      into.red *= boost;
+      into.green *= boost;
+      into.blue *= boost;
+      into.colored = 1;
+    }
     into.grain = LOGO_GRAIN * Math.min(1, LOGO_DOT / (particles.sizes[index] || LOGO_DOT));
     return true;
   }
@@ -1064,14 +1089,33 @@ const contribution: Contribution = {
   paper: 0,
   carry: 0,
   grain: 1,
+  colored: 0,
+  red: 0,
+  green: 0,
+  blue: 0,
 };
-const sum = { x: 0, y: 0, total: 0, glow: 0, volt: 0, plasma: 0, paper: 0, carry: 0, grain: 0 };
+const sum = {
+  x: 0,
+  y: 0,
+  total: 0,
+  glow: 0,
+  volt: 0,
+  plasma: 0,
+  paper: 0,
+  carry: 0,
+  grain: 0,
+  colored: 0,
+  red: 0,
+  green: 0,
+  blue: 0,
+};
 
 /** Adds the current `contribution`, weighted by its formation, to `sum`. */
 function accumulate(weight: number, unlit = false): void {
   // A target that is not a number would lose the particle for good: such a contribution is left out.
   if (!Number.isFinite(contribution.x) || !Number.isFinite(contribution.y)) {
     contribution.grain = 1;
+    contribution.colored = 0;
     return;
   }
   const w = weight * contribution.pull;
@@ -1084,15 +1128,25 @@ function accumulate(weight: number, unlit = false): void {
   sum.carry += contribution.carry * w;
   sum.grain += contribution.grain * w;
   sum.total += w;
-  // The grain is opt-in: back to the default for the next formation.
+  // The paper in a colour of its own, as much of it as the formation tints.
+  const colored = contribution.paper * contribution.colored * w;
+  sum.colored += colored;
+  sum.red += contribution.red * colored;
+  sum.green += contribution.green * colored;
+  sum.blue += contribution.blue * colored;
+  // The grain and the colour are opt-in: back to the defaults for the next formation.
   contribution.grain = 1;
+  contribution.colored = 0;
 }
 
 /**
  * Writes, for every particle:
  * - `targets`: x, y (world units), pull in [0, 1] (0 drifts freely), carry;
  * - `looks`: volt tint, plasma tint, glow multiplier, paper tint;
- * - `grains` (optional): size of each particle's light (1: its own).
+ * - `grains` (optional): size of each particle's light (1: its own);
+ * - `tints` (optional): the paper's colour, white unless a formation brings
+ *   its own (a school's logo): red, green, blue (linear light) premultiplied
+ *   by the share of the paper tint in that colour, then that share.
  * The carry is how far the particle's shape moved up or down since
  * `previous` (the formations of the last frame): the simulation moves the
  * particle by as much, so shapes stay glued to their element while the page
@@ -1112,6 +1166,7 @@ export function writeFormations(
   time: number,
   unit: number,
   grains?: Float32Array,
+  tints?: Float32Array,
 ): void {
   const pair = formations.pair && formations.pair.weight > 0.001 ? formations.pair : null;
   const card = formations.card && formations.card.weight > 0.001 ? formations.card : null;
@@ -1140,6 +1195,10 @@ export function writeFormations(
     sum.paper = 0;
     sum.carry = 0;
     sum.grain = 0;
+    sum.colored = 0;
+    sum.red = 0;
+    sum.green = 0;
+    sum.blue = 0;
     // The plan's particles stand in the mark for their patch of streets, in the rivers' stead:
     // unseen until it fuses into them, then spreading round the mark from when it landed.
     const planned = index < keptCount;
@@ -1200,7 +1259,7 @@ export function writeFormations(
     ) {
       accumulate(rivers.weight);
     }
-    const { x, y, total, glow, volt, plasma, paper, carry, grain } = sum;
+    const { x, y, total, glow, volt, plasma, paper, carry, grain, colored, red, green, blue } = sum;
     // Unseen until their patch lands, then particles like the others.
     const seen =
       kept && planned ? (kept.patches[index * FLIGHT_PATCH_STRIDE + 2] ?? 0) * fusion * kept.reveal : 1;
@@ -1217,9 +1276,19 @@ export function writeFormations(
       looks[offset] = (volt / total) * share;
       looks[offset + 1] = (plasma / total) * share;
       looks[offset + 2] = (freeGlow + (glow / total - freeGlow) * share) * seen;
-      looks[offset + 3] = freePaper + (paper / total - freePaper) * share;
+      const tinted = freePaper + (paper / total - freePaper) * share;
+      looks[offset + 3] = tinted;
       if (grains) {
         grains[index] = 1 + (grain / total - 1) * share;
+      }
+      if (tints) {
+        // The share of the paper tint in colours of its own, the rest white, and their mean.
+        const own = colored > 0 && tinted > 0 ? Math.min(1, ((colored / total) * share) / tinted) : 0;
+        const scale = own > 0 ? own / colored : 0;
+        tints[offset] = red * scale;
+        tints[offset + 1] = green * scale;
+        tints[offset + 2] = blue * scale;
+        tints[offset + 3] = own;
       }
     } else {
       targets[offset + 2] = 0;
@@ -1231,6 +1300,7 @@ export function writeFormations(
       if (grains) {
         grains[index] = 1;
       }
+      tints?.fill(0, offset, offset + FORMATION_STRIDE);
     }
   }
 }

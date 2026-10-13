@@ -25,11 +25,13 @@ import {
   formationStrength,
   gatherFlight,
   gatherFlightSteps,
+  LOGO_BOOST,
   LOGO_DOT,
   LOGO_EDGE,
   LOGO_EDGE_GLOW,
   LOGO_GLOW,
   LOGO_GRAIN,
+  LOGO_LIGHT,
   LOGO_ORBIT,
   LOGO_ORBIT_GLOW,
   LOGO_PAPER,
@@ -51,7 +53,7 @@ import {
   writeFormations,
 } from "./formations";
 import { createIonFieldLayout, MARK, SCHOOL_KEYS, withParticlesAhead } from "./layout";
-import { type LogoShape, loadSchoolLogos, schoolLogoShape } from "./logos";
+import { type LogoShape, loadSchoolLogos, logoColor, schoolLogoShape } from "./logos";
 import { RHONE_PATH, RIVER_MAP, SAONE_PATH } from "./rivers";
 
 const box: WorldBox = { x: 0.2, y: -0.1, hw: 0.8, hh: 0.4 };
@@ -100,12 +102,23 @@ function toLogoEdge(shape: LogoShape, x: number, y: number): number {
   return nearest;
 }
 
+/** Luminance of a colour in linear light. */
+const luminance = ({ red, green, blue }: { red: number; green: number; blue: number }) =>
+  0.2126 * red + 0.7152 * green + 0.0722 * blue;
+
+/** A logo's colour as its atoms take it: brightened towards LOGO_LIGHT, at most LOGO_BOOST times. */
+function brightened(color: { red: number; green: number; blue: number }) {
+  const boost = Math.min(LOGO_BOOST, Math.max(1, LOGO_LIGHT / luminance(color)));
+  return { red: color.red * boost, green: color.green * boost, blue: color.blue * boost };
+}
+
 function run(formations: Formations, count = 2000, time = 3) {
   const layout = createIonFieldLayout(count);
   const targets = new Float32Array(layout.count * FORMATION_STRIDE);
   const looks = new Float32Array(layout.count * FORMATION_STRIDE);
-  writeFormations(targets, looks, layout, formations, null, time, 2 / 900);
-  return { layout, targets, looks };
+  const tints = new Float32Array(layout.count * FORMATION_STRIDE);
+  writeFormations(targets, looks, layout, formations, null, time, 2 / 900, undefined, tints);
+  return { layout, targets, looks, tints };
 }
 
 describe("toWorldBox", () => {
@@ -290,8 +303,8 @@ describe("writeFormations", () => {
       { logo: { weight: 1, box: empty, school: -1 } },
     ];
     for (const formations of cases) {
-      const { targets, looks } = run(toWorldFormations(formations, 1440, 900));
-      expect([...targets, ...looks].every(Number.isFinite)).toBe(true);
+      const { targets, looks, tints } = run(toWorldFormations(formations, 1440, 900));
+      expect([...targets, ...looks, ...tints].every(Number.isFinite)).toBe(true);
     }
   });
 
@@ -434,6 +447,107 @@ describe("writeFormations", () => {
       expect(reach).toBeLessThan(1.1);
       expect(none.looks[offset + 2]).toBe(Math.fround(LOGO_ORBIT_GLOW));
       expect(none.looks[offset + 3]).toBe(0);
+    }
+  });
+
+  it("colours each atom of the logo in its school's colours, those of its place in the logo", () => {
+    // ESME: blue at the top, green at the bottom.
+    const school = SCHOOL_KEYS.indexOf("esme");
+    const logo = { weight: 1, x: 0.4, y: -0.1, size: 0.5, school };
+    const { targets, tints, layout } = run({ logo });
+    const shape = schoolLogoShape(school) as LogoShape;
+    const scale = (2 * logo.size) / Math.max(shape.width, shape.height);
+    const color = { red: 0, green: 0, blue: 0 };
+    const top = { green: 0, blue: 0 };
+    const bottom = { green: 0, blue: 0 };
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      // All of its paper tint in the logo's colours, those of where it stands, give or take its wander,
+      // brightened.
+      expect(tints[offset + 3]).toBe(1);
+      const x = shape.width / 2 + ((targets[offset] ?? 0) - logo.x) / scale;
+      const y = shape.height / 2 - ((targets[offset + 1] ?? 0) - logo.y) / scale;
+      logoColor(shape, x, y, color);
+      const { red, green, blue } = brightened(color);
+      expect(tints[offset]).toBeCloseTo(red, 1);
+      expect(tints[offset + 1]).toBeCloseTo(green, 1);
+      expect(tints[offset + 2]).toBeCloseTo(blue, 1);
+      const end = y < 20 ? top : y > 80 ? bottom : null;
+      if (end) {
+        end.green += tints[offset + 1] ?? 0;
+        end.blue += tints[offset + 2] ?? 0;
+      }
+    }
+    expect(top.blue).toBeGreaterThan(top.green);
+    expect(bottom.green).toBeGreaterThan(bottom.blue);
+  });
+
+  it("brightens a logo's darker colours, hue kept, nearly as bright as paper white, and leaves the light ones", () => {
+    const logo = { weight: 1, x: 0, y: 0, size: 0.5, school: 0 };
+    const tinted = (index: number, tints: Float32Array) => ({
+      red: tints[index * FORMATION_STRIDE] ?? 0,
+      green: tints[index * FORMATION_STRIDE + 1] ?? 0,
+      blue: tints[index * FORMATION_STRIDE + 2] ?? 0,
+    });
+    // ISG's blue gives about a third of white's light: each atom brought up to LOGO_LIGHT, as blue.
+    const isg = SCHOOL_KEYS.indexOf("isg");
+    const blue = { red: 0, green: 0, blue: 0 };
+    logoColor(schoolLogoShape(isg) as LogoShape, 50, 50, blue);
+    expect(luminance(blue)).toBeLessThan(0.4);
+    const ink = run({ logo: { ...logo, school: isg } });
+    for (let index = 0; index < ink.layout.count; index += 1) {
+      const lit = tinted(index, ink.tints);
+      expect(luminance(lit)).toBeCloseTo(LOGO_LIGHT, 3);
+      expect(lit.red / lit.blue).toBeCloseTo(blue.red / blue.blue, 3);
+      expect(lit.green / lit.blue).toBeCloseTo(blue.green / blue.blue, 3);
+    }
+    // Sup'Biotech's lime is light enough: the atoms of its molecule (the top of its biggest atom) take it as it is.
+    const supbiotech = SCHOOL_KEYS.indexOf("supbiotech");
+    const shape = schoolLogoShape(supbiotech) as LogoShape;
+    const scale = (2 * logo.size) / Math.max(shape.width, shape.height);
+    const lime = { red: 0, green: 0, blue: 0 };
+    const molecule = run({ logo: { ...logo, school: supbiotech } });
+    let atoms = 0;
+    for (let index = 0; index < molecule.layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      const x = shape.width / 2 + (molecule.targets[offset] ?? 0) / scale;
+      const y = shape.height / 2 - (molecule.targets[offset + 1] ?? 0) / scale;
+      if (Math.hypot(x - 65, y - 19) < 3.5) {
+        atoms += 1;
+        logoColor(shape, x, y, lime);
+        expect(luminance(lime)).toBeGreaterThan(LOGO_LIGHT);
+        const lit = tinted(index, molecule.tints);
+        expect(lit.red).toBeCloseTo(lime.red, 2);
+        expect(lit.green).toBeCloseTo(lime.green, 2);
+        expect(lit.blue).toBeCloseTo(lime.blue, 2);
+      }
+    }
+    expect(atoms).toBeGreaterThan(5);
+  });
+
+  it("keeps the paper white in the other shapes, round the empty stage, and blends it with a logo's colours", () => {
+    const school = SCHOOL_KEYS.indexOf("isg");
+    const logo = { weight: 1, x: 0, y: 0, size: 0.5, school };
+    for (const formations of [
+      { pact: { weight: 1, x: 0, y: 0, radius: 0.5 } },
+      { card: { weight: 1, box, radius: 0.07, step: 1 }, freePaper: 0.4 },
+      { logo: { ...logo, school: -1 } },
+    ]) {
+      const { tints } = run(formations);
+      expect(tints.every((value) => value === 0)).toBe(true);
+    }
+    // Half held by the logo, the paper half white (that of the free particles), half the logo's colours.
+    const { looks, tints, layout } = run({ freePaper: 0.5, logo: { ...logo, weight: 0.5 } });
+    const own = (LOGO_PAPER * 0.5) / (0.5 + (LOGO_PAPER - 0.5) * 0.5);
+    const probed = { red: 0, green: 0, blue: 0 };
+    logoColor(schoolLogoShape(school) as LogoShape, 50, 50, probed);
+    const color = brightened(probed);
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      expect(looks[offset + 3]).toBeCloseTo(0.5 + (LOGO_PAPER - 0.5) * 0.5, 6);
+      expect(tints[offset + 3]).toBeCloseTo(own, 6);
+      // ISG's logo is of one colour: premultiplied by its share.
+      expect(tints[offset + 2]).toBeCloseTo(color.blue * own, 3);
     }
   });
 

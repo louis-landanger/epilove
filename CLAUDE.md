@@ -51,7 +51,7 @@ Nouvelles dépendances : `pnpm --filter <paquet> add --save-catalog <dépendance
 - Les préférences de genre et d'orientation sont des données sensibles (RGPD, article 9) : consentement explicite séparé, jamais exportées.
 - Les corps de messages sont chiffrés côté application ; les médias sont servis uniquement via des URL signées et expirantes.
 - Âge minimum 18 ans, contrôle bloquant.
-- Les noms des écoles servent à décrire l'éligibilité ; jamais de charte graphique d'école. Leurs logos n'apparaissent qu'à un seul endroit, la scène à côté du formulaire de la liste d'attente, en une couleur ([ADR 0016](docs/adr/0016-logos-des-ecoles.md)) : ni dans l'app, ni dans les e-mails, ni ailleurs sur le site.
+- Les noms des écoles servent à décrire l'éligibilité ; jamais de charte graphique d'école. Leurs logos n'apparaissent qu'à un seul endroit, la scène à côté du formulaire de la liste d'attente, dans leurs couleurs éclaircies pour le fond sombre ([ADR 0016](docs/adr/0016-logos-des-ecoles.md)) : ni dans l'app, ni dans les e-mails, ni ailleurs sur le site.
 - Les mutations sensibles (like, message, signalement) sont idempotentes et soumises à des quotas.
 
 ## Conventions

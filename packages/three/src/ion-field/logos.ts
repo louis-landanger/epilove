@@ -1,3 +1,4 @@
+import { srgbToLinear } from "../colors";
 import { SCHOOL_KEYS } from "./layout";
 
 /**
@@ -5,7 +6,8 @@ import { SCHOOL_KEYS } from "./layout";
  * (school-logos.gen.ts, docs/adr/0016-logos-des-ecoles.md): for any number
  * of particles, places that fill a logo's ink evenly and places on its
  * edges, in its box (y down), each particle in about the same part of every
- * logo, so that one logo turns into the next with each atom moving a short way.
+ * logo, so that one logo turns into the next with each atom moving a short
+ * way; and the logo's colours at each place.
  */
 
 // Any letter is a command, so that one it cannot draw is refused rather than skipped.
@@ -128,9 +130,29 @@ function crossingsOf(segments: Float32Array, extent: number, columns: boolean): 
 }
 
 /**
+ * A logo as school-logos.gen.ts writes it: its box, its outline, and its
+ * colours over a grid of square cells `cell` wide, `columns` across, row by
+ * row from the top left (`rgb`: base64 of red, green, blue bytes, sRGB).
+ */
+export interface Logo {
+  readonly width: number;
+  readonly height: number;
+  readonly path: string;
+  readonly colors?: { readonly cell: number; readonly columns: number; readonly rgb: string };
+}
+
+/** A logo's colours, read: red, green, blue of each cell of its grid, row by row, in linear light. */
+export interface LogoColors {
+  readonly cell: number;
+  readonly columns: number;
+  readonly rows: number;
+  readonly rgb: Float32Array;
+}
+
+/**
  * A logo ready to be drawn: its box, its outline, the outline's crossings
- * with its rows and columns, and the ink from the top down to the end of
- * each row.
+ * with its rows and columns, the ink from the top down to the end of each
+ * row, and its colours (none for a logo without).
  */
 export interface LogoShape {
   readonly width: number;
@@ -140,13 +162,26 @@ export interface LogoShape {
   readonly rows: Crossings;
   readonly columns: Crossings;
   readonly ink: Float32Array;
+  readonly colors: LogoColors | null;
 }
 
-export function logoShape(logo: {
-  readonly width: number;
-  readonly height: number;
-  readonly path: string;
-}): LogoShape {
+function colorsOf(colors: Logo["colors"]): LogoColors | null {
+  if (!colors || !(colors.cell > 0) || !(colors.columns >= 1)) {
+    return null;
+  }
+  const bytes = atob(colors.rgb);
+  const rows = Math.floor(bytes.length / 3 / colors.columns);
+  if (rows < 1) {
+    return null;
+  }
+  const rgb = new Float32Array(colors.columns * rows * 3);
+  for (let index = 0; index < rgb.length; index += 1) {
+    rgb[index] = srgbToLinear(bytes.charCodeAt(index) / 255);
+  }
+  return { cell: colors.cell, columns: colors.columns, rows, rgb };
+}
+
+export function logoShape(logo: Logo): LogoShape {
   const segments = outlineOf(logo.path);
   const rows = crossingsOf(segments, logo.height, false);
   const columns = crossingsOf(segments, logo.width, true);
@@ -159,7 +194,15 @@ export function logoShape(logo: {
     }
     ink[row] = total;
   }
-  return { width: logo.width, height: logo.height, segments, rows, columns, ink };
+  return {
+    width: logo.width,
+    height: logo.height,
+    segments,
+    rows,
+    columns,
+    ink,
+    colors: colorsOf(logo.colors),
+  };
 }
 
 /**
@@ -254,12 +297,47 @@ export function logoEdgePoint(
   out.y = columns ? position : across;
 }
 
-type SchoolLogos = Partial<
-  Record<
-    (typeof SCHOOL_KEYS)[number],
-    { readonly width: number; readonly height: number; readonly path: string }
-  >
->;
+/** One channel of a logo's colours at (x, y) between the middles of the cells a, b (below a), c, d (below c). */
+function blend(rgb: Float32Array, a: number, b: number, c: number, d: number, x: number, y: number): number {
+  const top = (rgb[a] ?? 0) + ((rgb[c] ?? 0) - (rgb[a] ?? 0)) * x;
+  const bottom = (rgb[b] ?? 0) + ((rgb[d] ?? 0) - (rgb[b] ?? 0)) * x;
+  return top + (bottom - top) * y;
+}
+
+/**
+ * The logo's colour at (x, y) in its box, in linear light, blended between
+ * the middles of the cells round it (as a browser smooths the fallback's
+ * grid, public/schools), that of the nearest middle up to the box's edges.
+ * False, `out` untouched, for a logo without colours. Allocation-free.
+ */
+export function logoColor(
+  shape: LogoShape,
+  x: number,
+  y: number,
+  out: { red: number; green: number; blue: number },
+): boolean {
+  const { colors } = shape;
+  if (!colors) {
+    return false;
+  }
+  const { cell, columns, rows, rgb } = colors;
+  const across = Math.min(columns - 1, Math.max(0, x / cell - 0.5)) || 0;
+  const down = Math.min(rows - 1, Math.max(0, y / cell - 0.5)) || 0;
+  const left = Math.floor(across);
+  const top = Math.floor(down);
+  const right = Math.min(columns - 1, left + 1);
+  const bottom = Math.min(rows - 1, top + 1);
+  const a = (top * columns + left) * 3;
+  const b = (bottom * columns + left) * 3;
+  const c = (top * columns + right) * 3;
+  const d = (bottom * columns + right) * 3;
+  out.red = blend(rgb, a, b, c, d, across - left, down - top);
+  out.green = blend(rgb, a + 1, b + 1, c + 1, d + 1, across - left, down - top);
+  out.blue = blend(rgb, a + 2, b + 2, c + 2, d + 2, across - left, down - top);
+  return true;
+}
+
+type SchoolLogos = Partial<Record<(typeof SCHOOL_KEYS)[number], Logo>>;
 
 /** The schools' logos once loaded; a school left out of the script has none (docs/adr/0016-logos-des-ecoles.md). */
 let logos: SchoolLogos | null = null;
@@ -267,7 +345,7 @@ let loading: Promise<void> | null = null;
 const shapes: Array<LogoShape | undefined> = [];
 
 /**
- * Loads the schools' logos (school-logos.gen.ts, some 30 KB) the first time
+ * Loads the schools' logos (school-logos.gen.ts, some 50 KB) the first time
  * they are asked for: the field asks as the waiting list's stage comes near,
  * so that a visit that never gets there never fetches them. Resolves once
  * they are in, or once loading failed, in which case the next call tries again.

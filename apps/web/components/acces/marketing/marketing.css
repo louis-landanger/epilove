@@ -934,7 +934,7 @@
 /*
  * Beside the form (waitlist/school-stage.tsx): a square where the atoms draw
  * each school's logo in turn, its name underneath. Without the field, the
- * logo (public/schools, in paper white) is drawn in dots, or the five side by
+ * logo (public/schools, in its colours) is drawn in dots, or the five side by
  * side; once the field is live, the atoms draw it instead and these are left
  * out (their files are then not even fetched).
  */
@@ -960,8 +960,9 @@
 .join-logo-mark {
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle, var(--color-paper) 0 0.9px, transparent 1.4px) center / 4px 4px;
-  mask: var(--logo) center / contain no-repeat;
+  /* The logo in its colours, seen through a grid of dots. */
+  background: var(--logo) center / contain no-repeat;
+  mask: radial-gradient(circle, #000 0 0.9px, transparent 1.4px) center / 4px 4px;
   animation: logo-in 0.7s var(--ease-out) both;
 }
 

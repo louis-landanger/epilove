@@ -8,7 +8,7 @@ import { useTypedSchool } from "./typed-school";
 /** How long each school's logo shows before the next one's, in milliseconds. */
 const TURN_MS = 3000;
 
-/** The school's logo in one colour (public/schools, written by the three package's logos:schools). */
+/** The school's logo in its colours, lifted for the dark page (public/schools, written by the three package's logos:schools). */
 const logoFile = (slug: SchoolSlug) => `/schools/${slug}.svg`;
 
 /**
@@ -68,7 +68,7 @@ export function SchoolStage() {
     <div className="join-stage" aria-hidden="true">
       <div ref={stageRef} className="join-logo" data-field-logo data-school={shown ?? ""}>
         {shown ? (
-          // Drawn in dots: the logo masks a grid of them.
+          // Drawn in dots: the logo seen through a grid of them.
           <span
             key={shown}
             className="join-logo-mark"
@@ -78,7 +78,7 @@ export function SchoolStage() {
           <span className="join-logo-all">
             {SCHOOLS.map((school) => (
               // Fetched only once near the screen, and not at all while the field draws them.
-              // biome-ignore lint/performance/noImgElement: a small static file in one colour, nothing to optimise.
+              // biome-ignore lint/performance/noImgElement: a small static file, nothing to optimise.
               <img
                 key={school.slug}
                 src={logoFile(school.slug)}
