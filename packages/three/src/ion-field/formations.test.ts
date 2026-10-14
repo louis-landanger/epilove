@@ -347,6 +347,34 @@ describe("writeFormations", () => {
     }
   });
 
+  it("draws the card's motifs within the room the screen leaves beside it, on a phone", () => {
+    const unit = 2 / 900;
+    for (const step of [0, 1, 2]) {
+      // A phone's margins: 16 px beside the card.
+      const { targets, layout } = run({ card: { weight: 1, box, radius: 0.07, step, room: 16 * unit } });
+      let furthest = 0;
+      for (let index = 0; index < layout.count; index += 1) {
+        const offset = index * FORMATION_STRIDE;
+        const distance = distanceToRoundedBox(targets[offset] ?? 0, targets[offset + 1] ?? 0, 0.07);
+        expect(distance).toBeGreaterThan(0);
+        furthest = Math.max(furthest, distance);
+      }
+      expect(furthest).toBeLessThanOrEqual(16 * unit);
+      expect(furthest).toBeGreaterThan(4 * unit);
+    }
+    // Plenty of room: as on the landing, the motifs reach a good way out.
+    const { targets, layout } = run({ card: { weight: 1, box, radius: 0.07, step: 1, room: 200 * unit } });
+    let furthest = 0;
+    for (let index = 0; index < layout.count; index += 1) {
+      const offset = index * FORMATION_STRIDE;
+      furthest = Math.max(
+        furthest,
+        distanceToRoundedBox(targets[offset] ?? 0, targets[offset + 1] ?? 0, 0.07),
+      );
+    }
+    expect(furthest).toBeGreaterThan(50 * unit);
+  });
+
   it("draws the logo of the school it shows with every particle, nearly half along its edges, the rest in its ink", () => {
     const logo = { weight: 1, x: 0.4, y: -0.1, size: 0.5, school: 2 };
     const { targets, looks, layout } = run({ logo });

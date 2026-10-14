@@ -49,7 +49,7 @@ function Tube({
     >
       <div className="flex h-7 items-end justify-center">
         {leader ? (
-          <span className="rounded-full bg-volt px-2 py-0.5 font-mono font-semibold text-[0.6rem] text-ink uppercase tracking-[0.14em]">
+          <span className="whitespace-nowrap rounded-full bg-volt px-2 py-0.5 font-mono font-semibold text-[0.6rem] text-ink uppercase tracking-[0.14em]">
             {t("leader")}
           </span>
         ) : (

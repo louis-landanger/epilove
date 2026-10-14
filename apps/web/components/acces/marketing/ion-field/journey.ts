@@ -16,6 +16,11 @@ export interface JourneyMeasures {
   /** Hero and manifesto (`[data-field-scope]`): the field condenses into the logo mark there. */
   readonly scope: PixelBox | null;
   /**
+   * The manifesto's text (`[data-field-manifesto]`), stuck to the screen while its section scrolls,
+   * then leaving with it: on a portrait screen, the mark stands above it and leaves with it too.
+   */
+  readonly manifesto: PixelBox | null;
+  /**
    * The map of Lyon's two rivers in the hero (`[data-field-rivers]`): the
    * particles flow down them, then gather into the logo mark beside the
    * manifesto.
@@ -163,11 +168,15 @@ export function journey(measures: JourneyMeasures): JourneyState {
   // …which hands the particles over to the cards as the manifesto leaves.
   const opening = scope ? ramp((bottomOf(scope) - 0.3 * height) / (0.7 * height)) : 0;
 
-  // Where the logo mark stands: beside the manifesto on wide screens, above it on narrow ones.
+  // Where the logo mark stands: beside the manifesto on wide screens, above it on narrow ones. Beside
+  // it, pinned in the viewport; above it, in the text's column, it leaves with the text once the
+  // manifesto's section scrolls it away (the cards take the particles over meanwhile), rather than
+  // let the text slide up through it.
   const placement = markPlacementFor(measures.width / height);
+  const lift = placement.above && measures.manifesto ? Math.min(0, measures.manifesto.top) : 0;
   const mark = {
     x: measures.width / 2 + (placement.x * height) / 2,
-    y: height / 2 - (placement.y * height) / 2,
+    y: height / 2 - (placement.y * height) / 2 + lift,
     radius: (placement.scale * height) / 2,
   };
   const markBox: PixelBox = {
@@ -264,7 +273,14 @@ export function journey(measures: JourneyMeasures): JourneyState {
           : null,
       card:
         card && cardShare > 0.001
-          ? { weight: cardShare, box: card.box, radius: measures.cardRadius, step: card.step }
+          ? {
+              weight: cardShare,
+              box: card.box,
+              radius: measures.cardRadius,
+              step: card.step,
+              // The free width beside the card (a phone's margins): the motifs keep within it.
+              room: Math.max(0, Math.min(card.box.left, measures.width - (card.box.left + card.box.width))),
+            }
           : null,
       tubes: rack && tubesShare > 0.001 ? { weight: tubesShare, tubes: measures.tubes } : null,
       logo: logo && logoShare > 0.001 ? { weight: logoShare, box: logo.box, school: logo.school } : null,

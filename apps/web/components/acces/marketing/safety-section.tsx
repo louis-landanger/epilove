@@ -47,7 +47,7 @@ export async function SafetySection() {
             <p className="mt-6 max-w-md text-ink/80 text-lg leading-relaxed">{t("lead")}</p>
             <Link
               href={publicHref(locale, "/legal/confidentialite")}
-              className="mt-8 inline-flex items-center gap-2 font-mono text-ink text-xs uppercase tracking-[0.16em] underline decoration-ink/30 underline-offset-4 hover:decoration-ink"
+              className="mt-5 inline-flex items-center gap-2 py-3 font-mono text-ink text-xs uppercase tracking-[0.16em] underline decoration-ink/30 underline-offset-4 hover:decoration-ink"
             >
               {t("link")}
             </Link>

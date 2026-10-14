@@ -384,11 +384,25 @@ test.describe("hero: the rivers of Lyon", () => {
   test.describe("with reduced motion", () => {
     test.use({ reducedMotion: "reduce" });
 
-    test("draws the whole plan at once, and the rivers in dots", async ({ page }) => {
+    test("draws the whole plan at once, the rivers in dots, and the logo mark beside the manifesto", async ({
+      page,
+    }) => {
       await page.goto("/");
       await expect(page.locator(".fleuves-city")).toHaveAttribute("data-lit", "true", { timeout: 20_000 });
       await expect(page.locator("[data-ion-field]")).toHaveAttribute("data-live", "false");
       await expect(page.locator(".fleuves-drawing")).toHaveCSS("opacity", "1");
+      // The mark the particles would form stands drawn in dots, inside the screen.
+      const mark = page.locator(".mark-drawing");
+      await expect(mark).toHaveCSS("opacity", "1");
+      const box = await mark.boundingBox();
+      const viewport = page.viewportSize();
+      expect(box).not.toBeNull();
+      expect(viewport).not.toBeNull();
+      if (box && viewport) {
+        // Its orbit (44 of the mark's 64 units wide, tilted) stays within the screen's width.
+        expect(box.x + box.width * 0.16).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width * 0.84).toBeLessThanOrEqual(viewport.width);
+      }
     });
   });
 

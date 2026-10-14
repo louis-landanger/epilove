@@ -156,7 +156,7 @@ export async function HowItWorks() {
                   </div>
                   <figure className="step-stage flex flex-col items-center gap-3">
                     <Illustration />
-                    <figcaption className="font-mono text-[0.65rem] text-paper/60 uppercase tracking-[0.18em]">
+                    <figcaption className="font-mono text-[0.7rem] text-paper/60 uppercase tracking-[0.18em]">
                       {t("illustration")}
                     </figcaption>
                   </figure>

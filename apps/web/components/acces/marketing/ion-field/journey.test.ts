@@ -31,6 +31,13 @@ function page(scroll: number): JourneyMeasures {
     width,
     height,
     scope: box(0, 2430, 0, width),
+    // The manifesto's text, a screen tall, stuck to the screen from the hero's end to its section's.
+    manifesto: {
+      left: 0,
+      top: Math.min(Math.max(height - scroll, 0), 2430 - height - scroll),
+      width,
+      height,
+    },
     // The map of the rivers, fitted beside the hero's copy, and the hero, a screen tall.
     rivers: box(40, 830, 700, 560),
     riversHero: box(0, height, 0, width),
@@ -131,6 +138,53 @@ describe("journey", () => {
     const cards = at(2600);
     expect(cards.flight?.presence ?? 0).toBeLessThan(0.5);
     expect(cards.flight?.presence).toBeCloseTo(cards.pair ? cards.pair.weight : 0, 6);
+  });
+
+  it("stands the mark above the manifesto on a phone, and takes it away with the text", () => {
+    // A phone: the manifesto's text sits at the foot of the screen, the mark above it.
+    const phoneHeight = 844;
+    const phone = (scroll: number): JourneyMeasures => {
+      const desktop = page(scroll);
+      const scopeHeight = phoneHeight + 1.7 * phoneHeight;
+      return {
+        ...desktop,
+        width: 390,
+        height: phoneHeight,
+        scope: { left: 0, top: -scroll, width: 390, height: scopeHeight },
+        manifesto: {
+          left: 0,
+          top: Math.min(Math.max(phoneHeight - scroll, 0), scopeHeight - phoneHeight - scroll),
+          width: 390,
+          height: phoneHeight,
+        },
+        rivers: { left: 0, top: 60 - scroll, width: 390, height: 700 },
+        riversHero: { left: 0, top: -scroll, width: 390, height: phoneHeight },
+        cards: [],
+        cardList: null,
+      };
+    };
+    const stuck = journey(phone(phoneHeight)).formations.pair;
+    expect(stuck?.mark.x).toBeCloseTo(195, 6);
+    expect(stuck?.mark.y).toBeLessThan(phoneHeight * 0.4);
+    // Pinned while the text is stuck to the screen…
+    expect(journey(phone(phoneHeight + 400)).formations.pair?.mark).toEqual(stuck?.mark);
+    // …and once the section scrolls the text away, the mark goes up with it, by as much.
+    const leaving = journey(phone(2 * phoneHeight + 300)).formations.pair;
+    const textTop = phone(2 * phoneHeight + 300).manifesto?.top ?? 0;
+    expect(textTop).toBeLessThan(0);
+    expect(leaving?.mark.y).toBeCloseTo((stuck?.mark.y ?? 0) + textTop, 6);
+    expect(leaving?.mark.x).toBe(stuck?.mark.x);
+    // On a wide screen, beside the text, it stays pinned as the text leaves.
+    const wideStuck = journey(page(1200)).formations.pair?.mark;
+    expect(page(2000).manifesto?.top).toBeLessThan(0);
+    expect(journey(page(2000)).formations.pair?.mark).toEqual(wideStuck);
+  });
+
+  it("tells the cards how much room the screen leaves beside them, for their motifs to keep within", () => {
+    expect(journey(page(2900)).formations.card?.room).toBe(80);
+    const narrow = { ...page(2900), width: 390 };
+    const cards = narrow.cards.map((card) => ({ ...card, box: { ...card.box, left: 16, width: 358 } }));
+    expect(journey({ ...narrow, cards }).formations.card?.room).toBe(16);
   });
 
   it("puts the mark beside the manifesto from the start when the page shows no rivers", () => {
@@ -250,6 +304,7 @@ describe("journey", () => {
       width,
       height,
       scope: null,
+      manifesto: null,
       rivers: null,
       riversHero: null,
       cards: [],

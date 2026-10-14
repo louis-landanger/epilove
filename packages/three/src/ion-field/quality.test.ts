@@ -78,7 +78,8 @@ describe("markPlacementFor", () => {
 
   it("sits beside the text on wide screens and above it on portrait screens", () => {
     expect(markPlacementFor(16 / 9).x).toBeGreaterThan(0.5);
-    expect(markPlacementFor(360 / 740)).toMatchObject({ x: 0 });
+    expect(markPlacementFor(16 / 9).above).toBe(false);
+    expect(markPlacementFor(360 / 740)).toMatchObject({ x: 0, above: true });
     expect(markPlacementFor(360 / 740).y).toBeGreaterThan(0.3);
   });
 });

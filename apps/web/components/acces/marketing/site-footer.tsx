@@ -39,7 +39,7 @@ export async function SiteFooter({ onLanding = true }: { onLanding?: boolean }) 
         <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-3">
           <nav aria-label={t("explore")}>
             <p className="font-mono text-paper/70 text-xs uppercase tracking-[0.18em]">{t("explore")}</p>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-1.5">
               {(
                 [
                   ["concept", nav("how")],
@@ -60,7 +60,7 @@ export async function SiteFooter({ onLanding = true }: { onLanding?: boolean }) 
           </nav>
           <nav aria-label={t("legal")}>
             <p className="font-mono text-paper/70 text-xs uppercase tracking-[0.18em]">{t("legal")}</p>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-1.5">
               <li>
                 <Link href={publicHref(locale, "/legal/mentions-legales")} className="footer-link">
                   {t("legalNotice")}
@@ -87,7 +87,7 @@ export async function SiteFooter({ onLanding = true }: { onLanding?: boolean }) 
             <p>{common("notAffiliated")}</p>
             <p>{t("codename")}</p>
             <p className="font-mono text-paper/70 text-xs uppercase tracking-[0.16em]">{t("made")}</p>
-            <a href="#top" className="footer-link inline-block">
+            <a href="#top" className="footer-link">
               {t("backToTop")} ↑
             </a>
           </div>

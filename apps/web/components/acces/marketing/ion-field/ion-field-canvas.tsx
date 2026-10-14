@@ -41,6 +41,7 @@ function createPageMeasurer() {
     return {
       rivers,
       riversHero: rivers?.closest("section") ?? null,
+      manifesto: document.querySelector("[data-field-manifesto]"),
       rackSection: rack?.closest("section") ?? null,
       pactSection: pact?.closest("section") ?? null,
       scope: document.querySelector("[data-field-scope]"),
@@ -84,6 +85,7 @@ function createPageMeasurer() {
         scope: elements.scope ? toBox(elements.scope) : null,
         rivers: elements.rivers?.isConnected ? toBox(elements.rivers) : null,
         riversHero: elements.riversHero?.isConnected ? toBox(elements.riversHero) : null,
+        manifesto: elements.manifesto ? toBox(elements.manifesto) : null,
         cards: elements.cards.map(({ card, stuckTop }) => ({ box: toBox(card), stuckTop })),
         cardList: elements.cardList ? toBox(elements.cardList) : null,
         cardRadius: elements.cardRadius,

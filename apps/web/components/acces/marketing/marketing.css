@@ -52,14 +52,14 @@
   color: var(--color-ink);
   font-weight: 600;
   box-shadow:
-    inset 0 1px 0 color-mix(in oklch, white 45%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 45%, transparent),
     0 18px 50px -18px var(--color-plasma);
 }
 
 .cta-primary:hover {
   background: color-mix(in oklch, var(--color-plasma) 82%, white);
   box-shadow:
-    inset 0 1px 0 color-mix(in oklch, white 45%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 45%, transparent),
     0 22px 70px -12px var(--color-plasma);
 }
 
@@ -75,7 +75,7 @@
   color: var(--color-ink);
   font-size: 0.875rem;
   font-weight: 600;
-  box-shadow: 0 0 0 1px color-mix(in oklch, var(--color-ink) 12%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-ink) 12%, transparent);
 }
 
 .cta-small:hover {
@@ -102,11 +102,18 @@
   }
 }
 
+/* A phone held sideways: the map's names would sit on the title and its lead. */
+@media (max-height: 30rem) and (orientation: landscape) {
+  .fleuves-names {
+    display: none;
+  }
+}
+
 /* A middle dot between the schools, silent for screen readers (empty alternative text). */
 .hero-schools li + li::before {
   content: "·" / "";
   padding: 0 0.5rem;
-  color: color-mix(in oklch, var(--color-paper) 30%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 30%, transparent);
 }
 
 /* ----------------------------------------------------------- fleuves hero */
@@ -191,8 +198,8 @@
   pointer-events: none;
   background: linear-gradient(
     to top,
-    color-mix(in oklch, var(--color-ink) 94%, transparent) 0%,
-    color-mix(in oklch, var(--color-ink) 78%, transparent) 36%,
+    color-mix(in oklab, var(--color-ink) 94%, transparent) 0%,
+    color-mix(in oklab, var(--color-ink) 78%, transparent) 36%,
     transparent 64%
   );
 }
@@ -201,8 +208,8 @@
   .fleuves-shade {
     background: radial-gradient(
       ellipse 60% 78% at 8% 80%,
-      color-mix(in oklch, var(--color-ink) 92%, transparent) 0%,
-      color-mix(in oklch, var(--color-ink) 62%, transparent) 50%,
+      color-mix(in oklab, var(--color-ink) 92%, transparent) 0%,
+      color-mix(in oklab, var(--color-ink) 62%, transparent) 50%,
       transparent 80%
     );
   }
@@ -219,6 +226,75 @@
 
 /* Once the particles flow (`data-field-live`, ion-field-canvas.tsx), the drawing steps aside. */
 :root[data-field-live] .marketing .fleuves-drawing {
+  opacity: 0;
+}
+
+/*
+ * The logo mark drawn in dots beside the manifesto (manifesto.tsx), where the
+ * field condenses it (ion-field/journey.ts, markPlacementFor): above the text
+ * on a portrait screen, its orbit four fifths of the width at most; beside it
+ * on a wide one, in the right half. The mark's box is 64 units for an orbit
+ * of major radius 22. It steps aside once the particles flow, as the rivers'
+ * drawing does.
+ */
+.mark-drawing {
+  --mark-radius: min(21svh, 43vw);
+  position: absolute;
+  top: 24svh;
+  left: 50%;
+  width: calc(var(--mark-radius) * 2.91);
+  height: calc(var(--mark-radius) * 2.91);
+  translate: -50% -50%;
+  overflow: visible;
+  pointer-events: none;
+  transition: opacity 1.2s var(--ease-out);
+}
+
+@media (min-aspect-ratio: 11 / 10) {
+  .mark-drawing {
+    --mark-radius: min(25svh, 21.5vw);
+    top: 50svh;
+    left: 76%;
+  }
+}
+
+/* Dotted lines, as the rivers' drawing: round dashes of no length, a dot's width apart. */
+.mark-drawing-orbit,
+.mark-drawing-nucleus,
+.mark-drawing-electron {
+  fill: none;
+  stroke-width: 0.65;
+  stroke-linecap: round;
+  stroke-dasharray: 0.01 1.3;
+}
+
+.mark-drawing-orbit {
+  stroke: var(--color-paper);
+  opacity: 0.6;
+}
+
+.mark-drawing-nucleus {
+  stroke: var(--color-plasma);
+}
+
+.mark-drawing-electron {
+  stroke: var(--color-volt);
+}
+
+.mark-drawing-core {
+  fill: currentColor;
+  stroke: none;
+}
+
+.mark-drawing-nucleus.mark-drawing-core {
+  fill: var(--color-plasma);
+}
+
+.mark-drawing-electron.mark-drawing-core {
+  fill: var(--color-volt);
+}
+
+:root[data-field-live] .marketing .mark-drawing {
   opacity: 0;
 }
 
@@ -239,7 +315,7 @@
 }
 
 .fleuves-merged {
-  stroke: color-mix(in oklch, var(--color-paper) 80%, transparent);
+  stroke: color-mix(in oklab, var(--color-paper) 80%, transparent);
   stroke-width: 0.034;
 }
 
@@ -260,7 +336,7 @@
   font-family: var(--font-instrument), ui-serif, Georgia, serif;
   font-size: clamp(1rem, 1.4vw, 1.25rem);
   font-style: italic;
-  color: color-mix(in oklch, var(--color-paper) 82%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 82%, transparent);
 }
 
 /* Phones: the Rhône is named on its west bank, clear of the screen's edge. */
@@ -278,7 +354,7 @@
   translate: -100% -50%;
   padding-right: 0.75rem;
   font-size: 0.8125rem;
-  color: color-mix(in oklch, var(--color-paper) 68%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 68%, transparent);
 }
 
 /* Phones: the Confluence lies under the copy, unnamed. */
@@ -326,8 +402,8 @@
   height: 0.8125rem;
   background: var(--color-paper);
   box-shadow:
-    0 0 0 0.1875rem color-mix(in oklch, var(--color-plasma) 60%, transparent),
-    0 0 1rem 0.25rem color-mix(in oklch, var(--color-plasma) 40%, transparent);
+    0 0 0 0.1875rem color-mix(in oklab, var(--color-plasma) 60%, transparent),
+    0 0 1rem 0.25rem color-mix(in oklab, var(--color-plasma) 40%, transparent);
 }
 
 .fleuves-campus::after {
@@ -389,7 +465,7 @@
 .fleuves-campus-detail {
   font-size: 0.75rem;
   letter-spacing: 0.02em;
-  color: color-mix(in oklch, var(--color-paper) 72%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 72%, transparent);
 }
 
 .fleuves-copy {
@@ -428,7 +504,7 @@
   font-size: clamp(1rem, 1.2vw, 1.125rem);
   line-height: 1.5;
   text-wrap: pretty;
-  color: color-mix(in oklch, var(--color-paper) 84%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 84%, transparent);
 }
 
 .fleuves-call {
@@ -465,7 +541,7 @@
   display: flex;
   flex-wrap: wrap;
   font-size: 0.875rem;
-  color: color-mix(in oklch, var(--color-paper) 66%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 66%, transparent);
 }
 
 /* Where the plan and the courses come from. */
@@ -474,7 +550,7 @@
   right: var(--hero-gutter);
   bottom: 0.75rem;
   font-size: 0.6875rem;
-  color: color-mix(in oklch, var(--color-paper) 52%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 52%, transparent);
 }
 
 /* Text is painted from the first frame (no hidden LCP): it only comes into focus. */
@@ -729,15 +805,15 @@
 /* ------------------------------------------------------------------ steps */
 
 .glass-card {
-  border: 1px solid color-mix(in oklch, var(--color-paper) 14%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-paper) 14%, transparent);
   border-radius: 1.75rem;
   background: linear-gradient(
     160deg,
-    color-mix(in oklch, var(--color-paper) 10%, transparent),
-    color-mix(in oklch, var(--color-paper) 3%, transparent)
+    color-mix(in oklab, var(--color-paper) 10%, transparent),
+    color-mix(in oklab, var(--color-paper) 3%, transparent)
   );
   box-shadow:
-    inset 0 1px 0 color-mix(in oklch, var(--color-paper) 22%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--color-paper) 22%, transparent),
     0 40px 90px -40px oklch(0 0 0 / 0.85);
   backdrop-filter: blur(16px);
 }
@@ -814,22 +890,23 @@
   animation: flash 3.6s var(--ease-out) infinite;
 }
 
+/* Scaled only: the mark is centred by its own `translate` (how-it-works.tsx), which a transform here would double. */
 @keyframes flash {
   0%,
   40% {
-    transform: translate(-50%, -50%) scale(0.4);
+    transform: scale(0.4);
     opacity: 0;
   }
   55% {
-    transform: translate(-50%, -50%) scale(1.15);
+    transform: scale(1.15);
     opacity: 1;
   }
   85% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
     opacity: 1;
   }
   100% {
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: scale(0.9);
     opacity: 0;
   }
 }
@@ -842,7 +919,7 @@
   height: 60%;
   background: radial-gradient(
     45% 50% at 30% 50%,
-    color-mix(in oklch, var(--color-plasma) 14%, transparent),
+    color-mix(in oklab, var(--color-plasma) 14%, transparent),
     transparent 70%
   );
   filter: blur(30px);
@@ -859,10 +936,10 @@
   position: relative;
   height: var(--tube-h);
   margin-top: 1.75rem;
-  border-right: 1px solid color-mix(in oklch, var(--color-paper) 14%, transparent);
+  border-right: 1px solid color-mix(in oklab, var(--color-paper) 14%, transparent);
   font-family: var(--font-mono);
-  font-size: 0.62rem;
-  color: color-mix(in oklch, var(--color-paper) 62%, transparent);
+  font-size: 0.7rem;
+  color: color-mix(in oklab, var(--color-paper) 62%, transparent);
 }
 
 .race-scale span {
@@ -872,8 +949,10 @@
   white-space: nowrap;
 }
 
+/* Narrower than its tubes' labels on the narrowest phones: they overflow their slot, not the screen. */
 .race-tubes {
   display: flex;
+  min-width: 0;
 }
 
 .tube-slot {
@@ -899,9 +978,9 @@
   right: -0.3rem;
   z-index: 2;
   height: 0.6rem;
-  border: 1.5px solid color-mix(in oklch, var(--color-paper) 55%, transparent);
+  border: 1.5px solid color-mix(in oklab, var(--color-paper) 55%, transparent);
   border-radius: 999px;
-  background: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  background: color-mix(in oklab, var(--color-ink) 70%, transparent);
 }
 
 /* Glow pooled on the bench under the tube. */
@@ -923,22 +1002,22 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border: 1.5px solid color-mix(in oklch, var(--color-paper) 32%, transparent);
+  border: 1.5px solid color-mix(in oklab, var(--color-paper) 32%, transparent);
   border-top: 0;
   border-radius: 0 0 999px 999px;
   background:
     radial-gradient(
       120% 40% at 50% 100%,
-      color-mix(in oklch, var(--school) 22%, transparent),
+      color-mix(in oklab, var(--school) 22%, transparent),
       transparent 70%
     ),
     linear-gradient(
       90deg,
-      color-mix(in oklch, var(--color-paper) 9%, transparent),
-      color-mix(in oklch, var(--color-paper) 2%, transparent) 45%,
-      color-mix(in oklch, var(--color-paper) 10%, transparent)
+      color-mix(in oklab, var(--color-paper) 9%, transparent),
+      color-mix(in oklab, var(--color-paper) 2%, transparent) 45%,
+      color-mix(in oklab, var(--color-paper) 10%, transparent)
     );
-  box-shadow: 0 0 calc(var(--level) * 70px) color-mix(in oklch, var(--school) 45%, transparent);
+  box-shadow: 0 0 calc(var(--level) * 70px) color-mix(in oklab, var(--school) 45%, transparent);
   transition: box-shadow 1.8s var(--ease-out);
 }
 
@@ -953,7 +1032,7 @@
   inset: 8% 55% 14% 14%;
   background: repeating-linear-gradient(
     to bottom,
-    color-mix(in oklch, var(--color-paper) 32%, transparent) 0 1px,
+    color-mix(in oklab, var(--color-paper) 32%, transparent) 0 1px,
     transparent 1px 10%
   );
   mask-image: linear-gradient(to right, black 55%, transparent);
@@ -969,7 +1048,7 @@
     var(--school) 55%,
     color-mix(in oklch, var(--school) 70%, white)
   );
-  box-shadow: inset 0 0 24px color-mix(in oklch, white 30%, transparent);
+  box-shadow: inset 0 0 24px color-mix(in oklab, white 30%, transparent);
   transform: translateY(calc((1 - var(--level)) * 100% + 0.7rem));
   transition: transform 1.8s var(--ease-out);
 }
@@ -1003,7 +1082,7 @@
   width: 0.35rem;
   height: 0.35rem;
   border-radius: 50%;
-  background: color-mix(in oklch, white 70%, transparent);
+  background: color-mix(in oklab, white 70%, transparent);
   animation: bubble 4.2s ease-in infinite;
 }
 
@@ -1028,14 +1107,14 @@
 :root[data-field-live] .marketing .tube-liquid {
   background: linear-gradient(
     to top,
-    color-mix(in oklch, var(--school) 30%, transparent),
-    color-mix(in oklch, var(--school) 10%, transparent)
+    color-mix(in oklab, var(--school) 30%, transparent),
+    color-mix(in oklab, var(--school) 10%, transparent)
   );
   box-shadow: none;
 }
 
 :root[data-field-live] .marketing .tube-wave {
-  fill: color-mix(in oklch, var(--school) 55%, transparent);
+  fill: color-mix(in oklab, var(--school) 55%, transparent);
 }
 
 :root[data-field-live] .marketing .tube-bubble {
@@ -1049,10 +1128,10 @@
   background: linear-gradient(
     90deg,
     transparent 12%,
-    color-mix(in oklch, white 22%, transparent) 22%,
+    color-mix(in oklab, white 22%, transparent) 22%,
     transparent 34%,
     transparent 72%,
-    color-mix(in oklch, white 10%, transparent) 82%,
+    color-mix(in oklab, white 10%, transparent) 82%,
     transparent 92%
   );
   pointer-events: none;
@@ -1068,15 +1147,15 @@
 .race-table th,
 .race-table td {
   padding: 0.7rem 0.35rem;
-  border-bottom: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--color-paper) 12%, transparent);
 }
 
 .race-table thead th {
-  font-size: 0.66rem;
+  font-size: 0.7rem;
   font-weight: 400;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: color-mix(in oklch, var(--color-paper) 72%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 72%, transparent);
 }
 
 .race-table tbody th {
@@ -1088,7 +1167,7 @@
   height: 0.75rem;
   overflow: hidden;
   border-radius: 999px;
-  background: color-mix(in oklch, var(--color-paper) 10%, transparent);
+  background: color-mix(in oklab, var(--color-paper) 10%, transparent);
 }
 
 .goal-bar-fill {
@@ -1106,12 +1185,12 @@
   background:
     radial-gradient(
       110% 130% at 0% 0%,
-      color-mix(in oklch, var(--color-plasma) 20%, transparent),
+      color-mix(in oklab, var(--color-plasma) 20%, transparent),
       transparent 55%
     ),
     radial-gradient(
       90% 110% at 100% 100%,
-      color-mix(in oklch, var(--color-volt) 11%, transparent),
+      color-mix(in oklab, var(--color-volt) 11%, transparent),
       transparent 55%
     ),
     oklch(0.18 0.025 285);
@@ -1120,20 +1199,20 @@
 .waitlist-input {
   min-height: 3.5rem;
   padding: 0 1.4rem;
-  border: 1px solid color-mix(in oklch, var(--color-paper) 30%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-paper) 30%, transparent);
   border-radius: 999px;
-  background: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  background: color-mix(in oklab, var(--color-ink) 70%, transparent);
   color: var(--color-paper);
   font-size: 1.05rem;
   transition: border-color 0.2s var(--ease-out);
 }
 
 .waitlist-input::placeholder {
-  color: color-mix(in oklch, var(--color-paper) 60%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 60%, transparent);
 }
 
 .waitlist-input:hover {
-  border-color: color-mix(in oklch, var(--color-paper) 55%, transparent);
+  border-color: color-mix(in oklab, var(--color-paper) 55%, transparent);
 }
 
 .waitlist-input[aria-invalid="true"] {
@@ -1217,7 +1296,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: color-mix(in oklch, var(--color-paper) 62%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 62%, transparent);
 }
 
 .join-logo-name {
@@ -1309,7 +1388,7 @@
   font-size: 0.7rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: color-mix(in oklch, var(--color-paper) 62%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 62%, transparent);
 }
 
 .pact-dial-clock {
@@ -1323,7 +1402,7 @@
 
 .pact-dial-colon {
   padding: 0 0.2em;
-  color: color-mix(in oklch, var(--color-paper) 40%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 40%, transparent);
 }
 
 .pact-dial-seconds {
@@ -1407,8 +1486,11 @@
   }
 }
 
+/* Padded to a thumb's size (44px), the padding standing in for the list's spacing. */
 .footer-link {
-  color: color-mix(in oklch, var(--color-paper) 82%, transparent);
+  display: inline-block;
+  padding-block: 0.7rem;
+  color: color-mix(in oklab, var(--color-paper) 82%, transparent);
   transition: color 0.2s var(--ease-out);
 }
 
@@ -1418,7 +1500,7 @@
 
 .footer-giant {
   margin: 1rem 0 -0.16em;
-  color: color-mix(in oklch, var(--color-paper) 94%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 94%, transparent);
   font-family: var(--font-display);
   /* "atomes" is about 3.4 em wide: the word fits on one line, edge to edge. */
   font-size: 28vw;
@@ -1470,7 +1552,7 @@
   width: 2.25rem;
   height: 2.25rem;
   margin: -1.125rem 0 0 -1.125rem;
-  border: 1px solid color-mix(in oklch, var(--color-paper) 55%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-paper) 55%, transparent);
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
@@ -1505,7 +1587,7 @@
   height: 4rem;
   margin: -2rem 0 0 -2rem;
   border-color: var(--color-plasma);
-  background: color-mix(in oklch, var(--color-plasma) 14%, transparent);
+  background: color-mix(in oklab, var(--color-plasma) 14%, transparent);
 }
 
 /* Lenis (smooth scrolling on the landing only). */
@@ -1540,7 +1622,7 @@ html.lenis body {
   max-width: 46rem;
   font-size: 1.05rem;
   line-height: 1.7;
-  color: color-mix(in oklch, var(--color-paper) 86%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 86%, transparent);
 }
 
 .legal-body p {
@@ -1564,14 +1646,14 @@ html.lenis body {
 .legal-body mark {
   padding: 0 0.25em;
   border-radius: 0.3em;
-  background: color-mix(in oklch, var(--color-volt) 22%, transparent);
+  background: color-mix(in oklab, var(--color-volt) 22%, transparent);
   color: var(--color-paper);
 }
 
 .legal-table-wrapper {
   margin-top: 1.25rem;
   overflow-x: auto;
-  border: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-paper) 12%, transparent);
   border-radius: 1rem;
 }
 
@@ -1589,17 +1671,17 @@ html.lenis body {
   letter-spacing: 0.14em;
   text-align: left;
   text-transform: uppercase;
-  color: color-mix(in oklch, var(--color-paper) 72%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 72%, transparent);
 }
 
 .legal-body table th,
 .legal-body table td {
   padding: 0.75rem 1rem;
-  border-top: 1px solid color-mix(in oklch, var(--color-paper) 10%, transparent);
+  border-top: 1px solid color-mix(in oklab, var(--color-paper) 10%, transparent);
   line-height: 1.5;
   text-align: left;
   vertical-align: top;
-  color: color-mix(in oklch, var(--color-paper) 88%, transparent);
+  color: color-mix(in oklab, var(--color-paper) 88%, transparent);
 }
 
 .legal-body table thead th {

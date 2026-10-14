@@ -42,6 +42,11 @@ export interface CardFormation {
    * (profile), 2 a double helix (chemistry). Fractional while cards change.
    */
   readonly step: number;
+  /**
+   * The free width beside the card, in world units (a phone's margins; unlimited by default): the
+   * motifs draw closer to the card to keep within it, where the screen's edge would cut them.
+   */
+  readonly room?: number;
 }
 
 export interface TubeFormation {
@@ -403,6 +408,11 @@ interface Contribution {
 const point = { x: 0, y: 0 };
 
 /** Card motifs: the outline of the current card, traced three ways. */
+/** How far from the card its motifs reach (the third electron shell), in CSS pixels. */
+const CARD_REACH = 60;
+/** The motifs never draw closer than this share of their distances: a thread, still, at the card's edge. */
+const CARD_FIT_FLOOR = 0.12;
+
 function cardContribution(
   particles: FormationParticles,
   index: number,
@@ -418,6 +428,12 @@ function cardContribution(
   const scan = 1 - smoothstep(0, 1, card.step);
   const helix = smoothstep(1, 2, card.step);
   const shells = Math.max(0, 1 - scan - helix);
+  // The motifs' distances from the card, drawn in as the room beside it closes (a phone: the card's
+  // own box hides what lies within it, the screen's edge cuts what lies beyond its margins).
+  const fit =
+    card.room === undefined
+      ? 1
+      : Math.min(1, Math.max(CARD_FIT_FLOOR, (card.room - 2 * unit) / (CARD_REACH * unit)));
   into.x = 0;
   into.y = 0;
   into.glow = 0;
@@ -429,9 +445,9 @@ function cardContribution(
   if (scan > 0.001) {
     // Verify: one ring that zigzags around the card, swept by two pulses of light.
     const s = fract(along + time * 0.035);
-    const base = 16 * unit;
+    const base = 16 * unit * fit;
     const distance = s * contourLength(card.box, card.radius, base);
-    const offset = base + 7 * unit * Math.sin((distance / (36 * unit)) * TAU + time * 3);
+    const offset = base + 7 * unit * fit * Math.sin((distance / (36 * unit)) * TAU + time * 3);
     contourPoint(card.box, card.radius, offset, s, point);
     const head = fract(time * 0.11);
     const pulse = Math.exp(-fract(s - head) * 16) + Math.exp(-fract(s - head - 0.5) * 16);
@@ -445,7 +461,7 @@ function cardContribution(
     const shell = Math.floor(fract(along * 3.7) * 3);
     const direction = shell % 2 === 0 ? 1 : -1;
     const s = fract(along + direction * time * (0.022 + 0.012 * shell));
-    const offset = (12 + 22 * shell + 3 * Math.sin(time * 1.3 + phase * TAU)) * unit;
+    const offset = (12 + 22 * shell + 3 * Math.sin(time * 1.3 + phase * TAU)) * unit * fit;
     contourPoint(card.box, card.radius, offset, s, point);
     into.x += point.x * shells;
     into.y += point.y * shells;
@@ -455,10 +471,10 @@ function cardContribution(
     // Chemistry: partners ride the two strands of a double helix, bonded across.
     const strand = index & 1;
     const s = fract((particles.along[pair] ?? 0) + time * 0.02);
-    const base = 34 * unit;
+    const base = 34 * unit * fit;
     const distance = s * contourLength(card.box, card.radius, base);
     const offset =
-      base + 22 * unit * Math.sin((distance / (170 * unit)) * TAU + time * 1.6 + strand * Math.PI);
+      base + 22 * unit * fit * Math.sin((distance / (170 * unit)) * TAU + time * 1.6 + strand * Math.PI);
     contourPoint(card.box, card.radius, offset, s, point);
     into.x += point.x * helix;
     into.y += point.y * helix;
@@ -1483,6 +1499,8 @@ export interface ViewportFormations {
     /** Corner radius, in CSS pixels. */
     readonly radius: number;
     readonly step: number;
+    /** The free width beside the card, in CSS pixels (CardFormation.room). */
+    readonly room?: number;
   } | null;
   readonly tubes?: {
     readonly weight: number;
@@ -1539,6 +1557,7 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
           box: toWorldBox(card.box, width, height),
           radius: card.radius * unit,
           step: card.step,
+          ...(card.room === undefined ? {} : { room: card.room * unit }),
         }
       : null,
     tubes: tubes

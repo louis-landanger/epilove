@@ -47,7 +47,7 @@ export function LocaleSwitcher({
               lang={locale}
               aria-pressed={active}
               className={cn(
-                "min-h-9 min-w-11 rounded-full px-3 font-mono text-xs uppercase tracking-[0.14em] transition-colors focus-visible:outline-2 focus-visible:outline-volt focus-visible:outline-offset-2",
+                "min-h-10 min-w-11 rounded-full px-3 font-mono text-xs uppercase tracking-[0.14em] transition-colors focus-visible:outline-2 focus-visible:outline-volt focus-visible:outline-offset-2",
                 active ? "bg-paper text-ink" : "text-paper/80 hover:bg-paper/10 hover:text-paper",
               )}
             >

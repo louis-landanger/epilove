@@ -61,6 +61,8 @@ export interface MarkPlacement {
   /** Centre of the mark in world units (x in [-aspect, aspect], y in [-1, 1]). */
   readonly x: number;
   readonly y: number;
+  /** Above the manifesto's text (a portrait screen) rather than beside it. */
+  readonly above: boolean;
 }
 
 /**
@@ -70,10 +72,10 @@ export interface MarkPlacement {
 export function markPlacementFor(aspect: number, mark: typeof MARK = MARK): MarkPlacement {
   if (aspect >= 1.1) {
     const scale = Math.min(0.5, (aspect * 0.4) / markExtent(mark));
-    return { scale, x: aspect * 0.52, y: 0 };
+    return { scale, x: aspect * 0.52, y: 0, above: false };
   }
   const scale = Math.min(0.42, markScaleFor(aspect, mark));
-  return { scale, x: 0, y: 0.52 };
+  return { scale, x: 0, y: 0.52, above: true };
 }
 
 /**
