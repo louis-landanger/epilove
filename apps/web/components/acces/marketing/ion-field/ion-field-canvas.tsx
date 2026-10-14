@@ -3,7 +3,6 @@
 import {
   canAffordLiveField,
   isSoftwareRenderer,
-  type PactStyle,
   type PixelBox,
   particleBudget,
   SCHOOL_KEYS,
@@ -19,7 +18,6 @@ const toBox = (element: Element): PixelBox => {
   return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 };
 
-const PACT_STYLES: readonly PactStyle[] = ["dial", "couple", "vial"];
 const REVEAL = Date.parse(PACT_REVEAL_AT);
 
 /**
@@ -37,7 +35,7 @@ function createPageMeasurer() {
     const steps = [...document.querySelectorAll<HTMLElement>("[data-step]")];
     const firstCard = steps[0]?.querySelector("article");
     const rack = document.querySelector("[data-field-rack]");
-    const pact = document.querySelector<HTMLElement>("[data-field-pact]");
+    const pact = document.querySelector("[data-field-pact]");
     const logo = document.querySelector<HTMLElement>("[data-field-logo]");
     const rivers = document.querySelector("[data-field-rivers]");
     return {
@@ -109,8 +107,7 @@ function createPageMeasurer() {
               }
             : null,
         pact: elements.pact && near(elements.pactSection) ? toBox(elements.pact) : null,
-        // The style the stage asks for (pact-stage.tsx), and the countdown's seconds for its hand or beat.
-        pactStyle: PACT_STYLES.find((style) => style === elements.pact?.dataset.pact) ?? "dial",
+        // The countdown's seconds, which the hand of the Pact's dial goes round with.
         pactSeconds: ((((REVEAL - Date.now()) / 1000) % 60) + 60) % 60,
         covers: elements.covers.map(toBox),
       };

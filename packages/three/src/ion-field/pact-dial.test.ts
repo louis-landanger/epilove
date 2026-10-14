@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { FORMATION_STRIDE, loadPactStyles, writeFormations } from "./formations";
+import { FORMATION_STRIDE, loadPactDial, writeFormations } from "./formations";
 import { createIonFieldLayout } from "./layout";
 
-describe("loadPactStyles", () => {
-  it("rings the Pact's stage until its styles are in, then draws the style asked for", async () => {
+describe("loadPactDial", () => {
+  it("rings the Pact's stage until its dial is in, then draws the dial", async () => {
     const layout = createIonFieldLayout(400);
-    const pact = { weight: 1, x: 0.2, y: -0.1, radius: 0.5, style: "dial" as const, seconds: 30 };
+    const pact = { weight: 1, x: 0.2, y: -0.1, radius: 0.5, seconds: 30 };
     const write = () => {
       const targets = new Float32Array(layout.count * FORMATION_STRIDE);
       writeFormations(targets, new Float32Array(targets.length), layout, { pact }, null, 3, 2 / 900);
@@ -22,8 +22,8 @@ describe("loadPactStyles", () => {
     for (const radius of radii(write())) {
       expect(radius).toBeCloseTo(pact.radius, 6);
     }
-    const first = loadPactStyles();
-    expect(loadPactStyles()).toBe(first);
+    const first = loadPactDial();
+    expect(loadPactDial()).toBe(first);
     await first;
     // In: the dial's ticks reach inside the ring.
     expect(Math.min(...radii(write()))).toBeLessThan(pact.radius * 0.85);

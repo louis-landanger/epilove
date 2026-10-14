@@ -67,7 +67,7 @@ import {
   followFlight,
   formationStrength,
   gatherFlightSteps,
-  loadPactStyles,
+  loadPactDial,
   packFlightSteps,
   riverMapTransform,
   toWorldFormations,
@@ -1174,13 +1174,13 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const previous = formations;
     const measuredNow = toWorldFormations(measured, width, height);
     formations = { ...measuredNow, flight: updateFlight(measuredNow.flight ?? null, delta) };
-    // The schools' logos and the Pact's styles load as their stage comes near (the atoms ring it
+    // The schools' logos and the Pact's dial load as their stage comes near (the atoms ring it
     // until they are in).
     if (formations.logo) {
       void loadSchoolLogos();
     }
     if (formations.pact) {
-      void loadPactStyles();
+      void loadPactDial();
     }
     // Past the hero, the shapes' particles are drawn as finely as on the landing.
     const past =

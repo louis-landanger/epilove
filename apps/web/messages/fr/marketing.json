@@ -81,17 +81,11 @@
     "eyebrow": "Le Pacte",
     "title": "45 questions. Un match. <em>Le même soir</em> pour tout le campus.",
     "body": "Réponds au questionnaire du Pacte avant le 7 février. Le 11 février à 20 h, chaque personne découvre la personne la plus compatible avec elle, en même temps que tout le campus. Mieux vaut aucun match qu’un mauvais match.",
-    "countdownLabel": "Révélation dans",
     "date": "Jeudi 11 février 2027, 20 h",
     "days": "jours",
-    "hours": "heures",
-    "minutes": "minutes",
-    "seconds": "secondes",
     "revealed": "C’est l’heure de la révélation.",
-    "sample": "Échantillon scellé",
     "revealLabel": "Révélation",
-    "untilReveal": "avant la révélation",
-    "bond": "Liaison prévue"
+    "untilReveal": "avant la révélation"
   },
   "safety": {
     "eyebrow": "Sécurité et discrétion",

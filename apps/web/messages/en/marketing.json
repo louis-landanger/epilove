@@ -81,17 +81,11 @@
     "eyebrow": "The Pact",
     "title": "45 questions. One match. <em>The same night</em> for the whole campus.",
     "body": "Answer the Pact questionnaire before 7 February. On 11 February at 8 p.m., everyone discovers their most compatible person, at the same time as the whole campus. Better no match than a bad match.",
-    "countdownLabel": "Reveal in",
     "date": "Thursday 11 February 2027, 8 p.m.",
     "days": "days",
-    "hours": "hours",
-    "minutes": "minutes",
-    "seconds": "seconds",
     "revealed": "It's reveal time.",
-    "sample": "Sealed sample",
     "revealLabel": "The reveal",
-    "untilReveal": "until the reveal",
-    "bond": "Bond expected"
+    "untilReveal": "until the reveal"
   },
   "safety": {
     "eyebrow": "Safety and discretion",

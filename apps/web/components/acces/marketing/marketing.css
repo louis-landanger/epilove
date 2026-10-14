@@ -1025,40 +1025,15 @@
 /* ------------------------------------------------------------------- pact */
 
 /*
- * The Pact's stage (pact-stage.tsx), in three versions to compare: the dial,
- * the couple, the sealed vial. Without the field, CSS draws them; once it is
- * live, the atoms draw the ticks, the couple and the liquid instead.
+ * The Pact's stage (pact-stage.tsx): a watch's dial of sixty ticks, every
+ * fifth longer, the countdown in its middle. Without the field, CSS draws the
+ * ticks; once it is live, the atoms draw the dial, its hand a couple of atoms.
  */
 .pact-stage {
   display: grid;
   place-items: center;
 }
 
-/* Only the face asked for. */
-.pact-face {
-  display: none;
-}
-
-.pact-stage[data-pact="dial"] .pact-face-dial,
-.pact-stage[data-pact="couple"] .pact-face-couple,
-.pact-stage[data-pact="vial"] .pact-face-vial {
-  display: contents;
-}
-
-.pact-caption {
-  position: absolute;
-  bottom: 4%;
-  left: 50%;
-  translate: -50% 0;
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: color-mix(in oklch, var(--color-paper) 70%, transparent);
-}
-
-/* The dial: sixty ticks, every fifth longer, and the countdown in its middle. */
 .pact-ticks {
   position: absolute;
   inset: 0;
@@ -1085,6 +1060,10 @@
 .pact-ticks line[data-hour] {
   stroke-opacity: 0.7;
   stroke-width: 1.8;
+}
+
+.marketing:has([data-ion-field][data-live="true"]) .pact-ticks line {
+  display: none;
 }
 
 .pact-dial-time {
@@ -1128,155 +1107,6 @@
 
 .pact-dial-seconds {
   color: var(--color-plasma);
-}
-
-/* The couple: two atoms on a diagonal, and the bond between their nuclei. */
-.pact-couple {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  color: var(--color-paper);
-}
-
-.pact-couple ellipse {
-  fill: none;
-  stroke: currentColor;
-  stroke-opacity: 0.5;
-  stroke-width: 0.8;
-}
-
-.pact-couple line {
-  stroke: currentColor;
-  stroke-opacity: 0.45;
-  stroke-width: 0.5;
-  stroke-dasharray: 1.4 1.4;
-}
-
-/* The vial: sealed glass, as the race's tubes, in three rings. */
-.pact-ring {
-  position: absolute;
-  border: 1px solid color-mix(in oklch, var(--color-paper) 12%, transparent);
-  border-radius: 50%;
-}
-
-.pact-ring-1 {
-  inset: 2%;
-}
-
-.pact-ring-2 {
-  inset: 13%;
-}
-
-.pact-ring-3 {
-  inset: 25%;
-  border-style: dashed;
-}
-
-.pact-vial {
-  position: relative;
-  width: 24%;
-  height: 58%;
-}
-
-/* Under the outer ring. */
-.pact-stage-vial .pact-caption {
-  top: 100%;
-  bottom: auto;
-  margin-top: 0.75rem;
-}
-
-.pact-vial-glass {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border: 1.5px solid color-mix(in oklch, var(--color-paper) 32%, transparent);
-  border-top: 0;
-  border-radius: 0 0 999px 999px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklch, var(--color-paper) 10%, transparent),
-    transparent 30%,
-    transparent 70%,
-    color-mix(in oklch, var(--color-paper) 6%, transparent)
-  );
-}
-
-.pact-vial-liquid {
-  position: absolute;
-  inset: 36% 0 0;
-  background: linear-gradient(
-    to top,
-    var(--color-plasma),
-    color-mix(in oklch, var(--color-plasma) 55%, var(--color-volt))
-  );
-  opacity: 0.85;
-}
-
-.pact-vial-cap {
-  position: absolute;
-  bottom: 100%;
-  left: -12%;
-  right: -12%;
-  display: grid;
-  height: 14%;
-  place-items: center;
-  border: 1.5px solid color-mix(in oklch, var(--color-paper) 45%, transparent);
-  border-radius: 0.6rem 0.6rem 0.25rem 0.25rem;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in oklch, var(--color-paper) 22%, transparent),
-    color-mix(in oklch, var(--color-paper) 6%, transparent)
-  );
-}
-
-.pact-vial-mark {
-  width: 46%;
-  height: auto;
-  color: var(--color-paper);
-}
-
-/* Once the field is live, its atoms draw them. */
-.marketing:has([data-ion-field][data-live="true"]) :is(.pact-ticks line, .pact-couple, .pact-vial-liquid) {
-  display: none;
-}
-
-/* The countdown beside the stage, in a line (the dial shows it in its middle). */
-.pact-countdown {
-  display: flex;
-}
-
-.pact-countdown-unit {
-  display: grid;
-  gap: 0.5rem;
-  padding: 0 clamp(0.9rem, 2.2vw, 1.6rem);
-  border-left: 1px solid color-mix(in oklch, var(--color-paper) 14%, transparent);
-}
-
-.pact-countdown-unit:first-child {
-  padding-left: 0;
-  border-left: 0;
-}
-
-.pact-countdown-value {
-  font-family: var(--font-mono);
-  font-size: clamp(2rem, 5vw, 3.4rem);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-paper);
-}
-
-.pact-countdown-unit:last-child .pact-countdown-value {
-  color: var(--color-plasma);
-}
-
-.pact-countdown-label {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: color-mix(in oklch, var(--color-paper) 62%, transparent);
 }
 
 /* ----------------------------------------------------------------- safety */

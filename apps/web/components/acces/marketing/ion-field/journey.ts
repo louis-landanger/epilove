@@ -1,4 +1,4 @@
-import { markPlacementFor, type PactStyle, type PixelBox, type ViewportFormations } from "@atomes/three";
+import { markPlacementFor, type PixelBox, type ViewportFormations } from "@atomes/three";
 
 /**
  * The ion field's journey down the landing page (docs/02-design.md, section
@@ -42,10 +42,9 @@ export interface JourneyMeasures {
    * and the school whose logo it shows: an index into `SCHOOL_KEYS`, -1 for none.
    */
   readonly logo: { readonly box: PixelBox; readonly school: number } | null;
-  /** The Pact stage. */
+  /** The Pact stage, its dial. */
   readonly pact: PixelBox | null;
-  /** How the Pact's stage is drawn (default: the dial), and the seconds left in the countdown's minute. */
-  readonly pactStyle?: PactStyle;
+  /** Seconds left in the current minute of the countdown to the reveal: the dial's hand goes round with them. */
   readonly pactSeconds?: number;
   /** Opaque sections: while one fills the viewport, the field is hidden and can rest. */
   readonly covers: ReadonlyArray<PixelBox>;
@@ -274,7 +273,6 @@ export function journey(measures: JourneyMeasures): JourneyState {
           ? {
               weight: pactShare,
               box: pact,
-              ...(measures.pactStyle ? { style: measures.pactStyle } : {}),
               ...(measures.pactSeconds === undefined ? {} : { seconds: measures.pactSeconds }),
             }
           : null,

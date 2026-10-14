@@ -66,26 +66,14 @@ export interface LogoFormation {
   readonly school: number;
 }
 
-/**
- * How the Pact's stage is drawn: a dial round the countdown, a couple of
- * atoms bonding, or a sealed vial in its rings. Three versions, to compare
- * (`?pacte=` on the landing).
- */
-export type PactStyle = "dial" | "couple" | "vial";
-
+/** The Pact's dial round the countdown (pact-dial.ts). */
 export interface PactFormation {
   readonly weight: number;
   readonly x: number;
   readonly y: number;
-  /** Radius of the stage's drawing (its outer ring), in world units. */
+  /** Radius of the dial's ring, in world units. */
   readonly radius: number;
-  /** Default: the dial. */
-  readonly style?: PactStyle;
-  /**
-   * Seconds left in the current minute of the countdown to the reveal, in
-   * [0, 60): the dial's hand goes round with them, the couple's bond beats
-   * with each.
-   */
+  /** Seconds left in the current minute of the countdown to the reveal, in [0, 60): the hand goes round with them. */
   readonly seconds?: number;
 }
 
@@ -636,17 +624,17 @@ function logoContribution(
 }
 
 /**
- * The Pact's styles (pact-styles.ts), loaded the first time its stage comes
+ * The Pact's dial (pact-dial.ts), loaded the first time its stage comes
  * near, as the schools' logos are: a visit that never gets there never
- * fetches them. Resolves once they are in, or once loading failed, in which
- * case the next call tries again.
+ * fetches it. Resolves once it is in, or once loading failed, in which case
+ * the next call tries again.
  */
-let pactStyles: typeof import("./pact-styles") | null = null;
+let pactDial: typeof import("./pact-dial") | null = null;
 let pactLoading: Promise<void> | null = null;
-export function loadPactStyles(): Promise<void> {
-  pactLoading ??= import("./pact-styles").then(
+export function loadPactDial(): Promise<void> {
+  pactLoading ??= import("./pact-dial").then(
     (module) => {
-      pactStyles = module;
+      pactDial = module;
     },
     () => {
       pactLoading = null;
@@ -655,7 +643,7 @@ export function loadPactStyles(): Promise<void> {
   return pactLoading;
 }
 
-/** Pact: the stage's drawing, in the style asked for; until its styles are in, a ring round it. */
+/** Pact: the dial round the countdown; until it is in, a ring round the stage. */
 function pactContribution(
   particles: FormationParticles,
   index: number,
@@ -669,8 +657,8 @@ function pactContribution(
   into.plasma = 0;
   into.paper = 0;
   into.carry = previous ? pact.y - previous.y : 0;
-  if (pactStyles) {
-    pactStyles.pactStyleContribution(particles, index, pact, time, into);
+  if (pactDial) {
+    pactDial.pactDialContribution(particles, index, pact, time, into);
     return true;
   }
   const angle = ((particles.along[index] ?? 0) + time * 0.02) * TAU;
@@ -1418,11 +1406,10 @@ export interface ViewportFormations {
   } | null;
   /** The school logo stage: the logo is drawn in the largest square of its box. */
   readonly logo?: { readonly weight: number; readonly box: PixelBox; readonly school: number } | null;
-  /** The Pact stage: its drawing is inscribed in it, in the style asked for (default: the dial). */
+  /** The Pact stage: its dial is inscribed in it. */
   readonly pact?: {
     readonly weight: number;
     readonly box: PixelBox;
-    readonly style?: PactStyle;
     /** Seconds left in the current minute of the countdown to the reveal. */
     readonly seconds?: number;
   } | null;
@@ -1495,7 +1482,6 @@ export function toWorldFormations(formations: ViewportFormations, width: number,
             x: pactBox.x,
             y: pactBox.y,
             radius: Math.min(pactBox.hw, pactBox.hh) * 0.96,
-            style: pact.style ?? "dial",
             seconds: pact.seconds ?? 0,
           }
         : null,
