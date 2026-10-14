@@ -76,11 +76,14 @@ export function markPlacementFor(aspect: number, mark: typeof MARK = MARK): Mark
   return { scale, x: 0, y: 0.52 };
 }
 
-/** The fastest display there is (240 Hz): no frame interval below counts as the display's pace. */
-const FASTEST_FRAME_MS = 4;
-/** Frames keep up with the display when three in four come within this much of its pace. */
-const KEEPING_UP = 1.15;
-/** Whatever the display, frames over this share of the budget never ask for more (a 30 Hz display). */
+/**
+ * Room for more: three frames in four come within this share of the budget.
+ * Frames come at a multiple of the display's refresh (16.7 ms at 60 Hz, or
+ * at 120 Hz when a frame's work takes more than one refresh), so they are
+ * judged against the budget alone: a share that admits 16.7 ms (60 frames a
+ * second, as fast as a 60 Hz display shows), and keeps out a 30 Hz display
+ * (33 ms, on time there yet over the budget).
+ */
 const UPGRADE_CEILING = 0.85;
 
 /**
@@ -93,12 +96,10 @@ const UPGRADE_CEILING = 0.85;
  *
  * A slowdown is often only a moment (a heavy section, another tab, the
  * garbage collector): `canUpgrade` tells it the quality is below its best,
- * and once frames have been fast for a while (`upgradeHoldMs`) it asks for
- * the quality back. Fast means well under the budget, or keeping up with the
- * display: frames never come faster than its refresh (16.7 ms at 60 Hz, the
- * pace it learns from the fastest frames), so on time is as fast as they get.
- * Each time a quality it gave back proves too much (slow again soon after),
- * it waits twice as long before the next attempt: no back and forth.
+ * and once frames have left room under the budget for a while
+ * (`upgradeHoldMs`, UPGRADE_CEILING) it asks for the quality back. Each time
+ * a quality it gave back proves too much (slow again soon after), it waits
+ * twice as long before the next attempt: no back and forth.
  */
 export function createFrameMonitor(
   options: {
@@ -116,19 +117,19 @@ export function createFrameMonitor(
   const budget = options.budgetMs ?? 24;
   const cooldown = options.cooldown ?? 180;
   const cooldownMs = options.cooldownMs ?? 2000;
-  const upgradeBelow = budget * (options.upgradeRatio ?? 0.45);
-  const baseHold = options.upgradeHoldMs ?? 4000;
+  const upgradeBelow = budget * (options.upgradeRatio ?? UPGRADE_CEILING);
+  // A couple of seconds of room before the first attempt: from the floor, the particles are
+  // all back within ten seconds on a device that can afford them. A failed attempt doubles it.
+  const baseHold = options.upgradeHoldMs ?? 2000;
   let hold = baseHold;
-  /** The display's pace: the fastest tenth of the frames, at its lowest yet. */
-  let display = Number.POSITIVE_INFINITY;
   let samples: number[] = [];
   let sinceLastChange = 0;
   let msSinceLastChange = 0;
   let lastChange: "degrade" | "upgrade" | null = null;
   const change = (verdict: "degrade" | "upgrade") => {
     if (verdict === "degrade" && lastChange === "upgrade" && msSinceLastChange < 2 * hold) {
-      // The quality given back was too much: next time, wait longer.
-      hold = Math.min(16 * baseHold, 2 * hold);
+      // The quality given back was too much: next time, wait longer (a minute at most).
+      hold = Math.min(32 * baseHold, 2 * hold);
     }
     lastChange = verdict;
     samples = [];
@@ -151,14 +152,8 @@ export function createFrameMonitor(
       }
       const sorted = [...samples].sort((a, b) => a - b);
       const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
-      display = Math.min(
-        display,
-        Math.max(FASTEST_FRAME_MS, sorted[Math.floor(sorted.length / 10)] ?? median),
-      );
-      const onTime =
-        (sorted[Math.floor(sorted.length * 0.75)] ?? median) <=
-        Math.min(budget * UPGRADE_CEILING, display * KEEPING_UP);
-      if (canUpgrade && (median <= upgradeBelow || onTime) && msSinceLastChange >= hold) {
+      const room = (sorted[Math.floor(sorted.length * 0.75)] ?? median) <= upgradeBelow;
+      if (canUpgrade && room && msSinceLastChange >= hold) {
         return change("upgrade");
       }
       const cooledDown = sinceLastChange >= cooldown || msSinceLastChange >= cooldownMs;
