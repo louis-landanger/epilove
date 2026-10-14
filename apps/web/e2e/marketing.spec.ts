@@ -153,6 +153,55 @@ test.describe("landing", () => {
   });
 });
 
+test.describe("smooth scrolling", () => {
+  test.skip(
+    ({ isMobile }) => isMobile,
+    "Lenis glides the wheel's scrolling: phones scroll by touch, natively, and have no menu.",
+  );
+
+  /** The landing once its choreography (Lenis smooth scrolling) runs. */
+  async function smoothLanding(page: Page) {
+    await page.goto("/");
+    await page.waitForFunction(() => document.documentElement.classList.contains("lenis"));
+  }
+
+  test("keeps what is on screen in place when a section above it is laid out late", async ({ page }) => {
+    await smoothLanding(page);
+    // Straight down to the safety commitments, as a reload there lands: the sections passed over
+    // are not laid out yet (content-visibility: auto), at a placeholder height.
+    const safety = page.locator("#securite");
+    await safety.evaluate((element) =>
+      window.scrollTo({ top: element.getBoundingClientRect().top + window.scrollY, behavior: "instant" }),
+    );
+    await page.waitForTimeout(500);
+    const top = () => safety.evaluate((element) => element.getBoundingClientRect().top);
+    const before = await top();
+    // Back up with the wheel: the sections above are laid out at their real height as they come near.
+    await page.mouse.move(200, 300);
+    for (let notch = 0; notch < 20; notch += 1) {
+      await page.mouse.wheel(0, -100);
+      await page.waitForTimeout(50);
+    }
+    await page.waitForTimeout(2000);
+    // The page went up by what the wheel asked, nothing jumping as the sections above changed height.
+    expect((await top()) - before).toBeCloseTo(2000, -1);
+  });
+
+  test("lands a menu link on its section, though the sections before it are not laid out yet", async ({
+    page,
+  }) => {
+    await smoothLanding(page);
+    await page
+      .getByRole("navigation", { name: "Navigation principale" })
+      .getByRole("link", { name: "Sécurité" })
+      .click();
+    const safety = page.locator("#securite");
+    await expect(safety).toBeFocused();
+    // Just below the fixed header (choreography.ts, HEADER_OFFSET).
+    expect(await safety.evaluate((element) => element.getBoundingClientRect().top)).toBeCloseTo(72, -1);
+  });
+});
+
 test.describe("waiting list", () => {
   test("joins with a school address and sends the welcome email with the referral link", async ({
     page,

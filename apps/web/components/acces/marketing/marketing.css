@@ -1396,3 +1396,8 @@ html.lenis body {
   content-visibility: auto;
   contain-intrinsic-size: auto 1100px;
 }
+
+/* All laid out before an in-page link glides, so that it lands on its target (choreography.ts). */
+.sections-laid-out :is(#course, #pacte, #securite, #faq, .site-footer) {
+  content-visibility: visible;
+}

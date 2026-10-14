@@ -5,6 +5,8 @@ import Lenis from "lenis";
 
 const HEADER_OFFSET = 72;
 const INTERACTIVE = "a, button, summary, input, label, [data-cursor]";
+/** How smoothly the page glides (Lenis): the share of the way left it covers at each frame. */
+const GLIDE = 0.11;
 
 /** One-way scrubbing: once revealed, text stays revealed when scrolling back up. */
 function revealOnce(timeline: gsap.core.Timeline, trigger: Element, start: string, end: string) {
@@ -22,9 +24,58 @@ function revealOnce(timeline: gsap.core.Timeline, trigger: Element, start: strin
   });
 }
 
+/**
+ * Keeps what is on screen in place when a section above it changes height: a section far up laid
+ * out at last, its placeholder height replaced (marketing.css). The browser moves the page as
+ * much (scroll anchoring), but not always, and never while Lenis glides: it writes its own
+ * position at every frame, and the page would jump. As the sections are laid out, before the
+ * frame is painted, the page moves as much as the browser left out, and a glide goes on from
+ * there to an end moved as much. Left to the browser while it scrolls the page itself (touch,
+ * keyboard), and to in-page links, which glide to their target measured on the laid-out page.
+ */
+function keepPlaceAsSectionsResize(lenis: Lenis, cleanups: Array<() => void>) {
+  const heights = new Map<Element, number>();
+  const observer = new ResizeObserver((entries) => {
+    // Where the page stood before this layout (Lenis wrote it, or followed the browser there),
+    // and how far the browser has moved it since.
+    const before = lenis.animatedScroll;
+    const anchored = lenis.actualScroll - before;
+    let shift = 0;
+    for (const entry of entries) {
+      const height = entry.borderBoxSize[0]?.blockSize ?? entry.target.getBoundingClientRect().height;
+      const previous = heights.get(entry.target);
+      heights.set(entry.target, height);
+      // It ended above the screen: all that is on screen moved with it.
+      if (previous !== undefined && entry.target.getBoundingClientRect().top + anchored + previous <= 0) {
+        shift += height - previous;
+      }
+    }
+    if (shift === 0 || lenis.isScrolling === "native" || lenis.userData.link === true) {
+      return;
+    }
+    const at = before + shift;
+    if (lenis.isScrolling === "smooth") {
+      const end = lenis.targetScroll + shift;
+      lenis.resize();
+      lenis.animatedScroll = at;
+      // Lenis glides again only towards another end, and at the top or the bottom it may stay the same.
+      lenis.targetScroll = Number.NaN;
+      lenis.scrollTo(end, { programmatic: false, lerp: GLIDE });
+    }
+    if (Math.abs(lenis.actualScroll - at) >= 1) {
+      window.scrollTo({ top: at, behavior: "instant" });
+    }
+  });
+  for (const section of document.querySelectorAll("#contenu > *, .site-footer")) {
+    observer.observe(section);
+  }
+  cleanups.push(() => observer.disconnect());
+}
+
 function setUpSmoothScroll(cleanups: Array<() => void>): Lenis {
-  const lenis = new Lenis({ lerp: 0.11, stopInertiaOnNavigate: true });
+  const lenis = new Lenis({ lerp: GLIDE, stopInertiaOnNavigate: true });
   lenis.on("scroll", ScrollTrigger.update);
+  keepPlaceAsSectionsResize(lenis, cleanups);
   const tick = (time: number) => lenis.raf(time * 1000);
   gsap.ticker.add(tick);
   gsap.ticker.lagSmoothing(0);
@@ -52,16 +103,26 @@ function setUpSmoothScroll(cleanups: Array<() => void>): Lenis {
     }
     event.preventDefault();
     history.pushState(null, "", url.hash);
-    lenis.scrollTo(target, {
-      offset: url.hash === "#top" ? 0 : -HEADER_OFFSET,
-      duration: 1.4,
-      onComplete: () => {
-        if (!target.hasAttribute("tabindex")) {
-          target.setAttribute("tabindex", "-1");
-        }
-        target.focus({ preventScroll: true });
-      },
-    });
+    // The sections far down are laid out only as they come near, at a placeholder height until
+    // then (marketing.css): measured among them, the glide would end off its target. They are all
+    // laid out first, the page kept in place (keepPlaceAsSectionsResize), and the glide measured
+    // two frames later, once they are.
+    document.documentElement.classList.add("sections-laid-out");
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        lenis.scrollTo(target, {
+          offset: url.hash === "#top" ? 0 : -HEADER_OFFSET,
+          duration: 1.4,
+          userData: { link: true },
+          onComplete: () => {
+            if (!target.hasAttribute("tabindex")) {
+              target.setAttribute("tabindex", "-1");
+            }
+            target.focus({ preventScroll: true });
+          },
+        }),
+      ),
+    );
   };
   document.addEventListener("click", onClick);
 
