@@ -9,6 +9,11 @@ import { useSyncExternalStore } from "react";
  * The RPC client is loaded lazily so it stays out of the initial JavaScript.
  */
 const POLL_MS = 20_000;
+/**
+ * The first refresh, once the page has settled: any sooner and the RPC client
+ * lands in the page's load, which Lighthouse measures for its scripts budget.
+ */
+const FIRST_REFRESH_MS = 10_000;
 
 let current: WaitlistStats | null = null;
 const listeners = new Set<() => void>();
@@ -55,13 +60,14 @@ function onVisibilityChange() {
   }
 }
 
-function subscribe(listener: () => void) {
+/** Calls `listener` whenever fresh statistics come in, until the returned function is called. */
+export function watchWaitlistStats(listener: () => void): () => void {
   listeners.add(listener);
   if (listeners.size === 1) {
     document.addEventListener("visibilitychange", onVisibilityChange);
     // The server snapshot may be a few seconds old (cached for 30 s on the
     // server): refresh soon after load, once the page has settled.
-    schedule(current ? POLL_MS : 2_500);
+    schedule(current ? POLL_MS : FIRST_REFRESH_MS);
   }
   return () => {
     listeners.delete(listener);
@@ -75,7 +81,7 @@ function subscribe(listener: () => void) {
 /** The latest statistics, starting from the server-rendered snapshot. */
 export function useWaitlistStats(initial: WaitlistStats | null): WaitlistStats | null {
   return useSyncExternalStore(
-    subscribe,
+    watchWaitlistStats,
     () => current ?? initial,
     () => initial,
   );
