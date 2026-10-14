@@ -176,6 +176,8 @@ const DAMPING_FREE = 1.15;
 const DAMPING_HELD = 9;
 const MAX_SPEED = 1.6;
 const GLOW_QUAD = 7;
+/** Partners further apart than this (world units) show no bond. */
+const BOND_REACH = 0.14;
 /**
  * Particles a formation draws finer than this (the schools' logos ask for
  * fine grains, formations.ts) have no bond to their partner: in a logo,
@@ -654,12 +656,18 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         const y = positions[index * 2 + 1] ?? 0;
         const dx = (positions[partner * 2] ?? 0) - x;
         const dy = (positions[partner * 2 + 1] ?? 0) - y;
-        const distance = Math.hypot(dx, dy);
+        // Math.sqrt rather than Math.hypot (here and below): at most a last-digit rounding apart, and
+        // several times faster.
+        const distance = Math.sqrt(dx * dx + dy * dy);
         particleState[index * 4] = x;
         particleState[index * 4 + 1] = y;
         particleState[index * 4 + 2] = 1 - smooth(0.03, 0.2, distance);
         if (index % 2 === 0) {
-          bondState.set([x, y, x + dx, y + dy], (index >> 1) * 4);
+          const bond = (index >> 1) * 4;
+          bondState[bond] = x;
+          bondState[bond + 1] = y;
+          bondState[bond + 2] = x + dx;
+          bondState[bond + 3] = y + dy;
         }
       }
       particleBuffer.needsUpdate = true;
@@ -702,7 +710,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
 
           const dx = (positions[partner * 2] ?? 0) - px;
           const dy = (positions[partner * 2 + 1] ?? 0) - py;
-          const distance = Math.hypot(dx, dy) + 0.0001;
+          const distance = Math.sqrt(dx * dx + dy * dy) + 0.0001;
           const nx = dx / distance;
           const ny = dy / distance;
           const phase = data.props[index * 2 + 1] ?? 0;
@@ -719,7 +727,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
         if (pointing) {
           const tx = pointer.x - px;
           const ty = pointer.y - py;
-          const pointerDistance = Math.hypot(tx, ty) + 0.02;
+          const pointerDistance = Math.sqrt(tx * tx + ty * ty) + 0.02;
           const qx = tx / pointerDistance;
           const qy = ty / pointerDistance;
           if (free !== 0) {
@@ -771,7 +779,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
             : Math.exp(-(DAMPING_FREE + (DAMPING_HELD - DAMPING_FREE) * hold) * delta);
         let vx = ((velocities[index * 2] ?? 0) + ax * delta) * damping;
         let vy = ((velocities[index * 2 + 1] ?? 0) + ay * delta) * damping;
-        const speed = Math.hypot(vx, vy);
+        const speed = Math.sqrt(vx * vx + vy * vy);
         const maxSpeed = pull === held ? heldSpeed : MAX_SPEED + (FORMATION_MAX_SPEED - MAX_SPEED) * pull;
         if (speed > maxSpeed) {
           vx *= maxSpeed / speed;
@@ -865,14 +873,18 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   bondMaterial.positionNode = vec3(
     bondA.add(segment.mul(along)).add(
       normal.mul(
-        // A bond between unlit ions adds nothing: no width.
-        positionGeometry.y.mul(mix(float(0.02), uPixel.mul(FINE_BOND), uFine)).mul(stepAt(1e-6, bondLook.z)),
+        // A bond between unlit ions, or between ions too far apart to show one (bondStrength), adds
+        // nothing: no width, and the GPU draws none of the pixels along it.
+        positionGeometry.y
+          .mul(mix(float(0.02), uPixel.mul(FINE_BOND), uFine))
+          .mul(stepAt(1e-6, bondLook.z))
+          .mul(stepAt(segmentLength, float(BOND_REACH))),
       ),
     ),
     0,
   );
   const bondStrength = float(1)
-    .sub(smoothstep(0.03, 0.14, segmentLength))
+    .sub(smoothstep(0.03, BOND_REACH, segmentLength))
     .mul(bondLook.z)
     .mul(uDensity.mul(0.75))
     .mul(mix(float(1), float(0.6), uFine))

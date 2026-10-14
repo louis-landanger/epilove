@@ -1127,6 +1127,85 @@ const sum = {
   blue: 0,
 };
 
+/**
+ * The sections' contributions worked out this frame (writeFormations), one per host: past a hero
+ * with more particles, most particles are fused into one of the shapes' (shapeHost) and take its
+ * contribution as it is. Each is kept whole, the values `contribution` held after it, and whether
+ * it applied: recalled, the particle adds exactly what working it out again would. Only those
+ * worked out from the defaults are kept (`grain` 1, `colored` 0), and recalled onto them.
+ */
+const MEMO_STRIDE = 14;
+const sectionMemo = {
+  frame: 0,
+  stamps: new Uint32Array(0),
+  sections: new Int8Array(0),
+  values: new Float64Array(0),
+};
+
+/** A new frame of contributions, for `count` particles: none kept yet. */
+function startSectionMemo(count: number): void {
+  if (sectionMemo.stamps.length < count) {
+    sectionMemo.stamps = new Uint32Array(count);
+    sectionMemo.sections = new Int8Array(count);
+    sectionMemo.values = new Float64Array(count * MEMO_STRIDE);
+    sectionMemo.frame = 0;
+  }
+  sectionMemo.frame += 1;
+}
+
+/** Keeps the host's contribution to `section`, just worked out from the defaults, for this frame. */
+function keepSection(host: number, section: number, contributed: boolean): void {
+  const { values } = sectionMemo;
+  const offset = host * MEMO_STRIDE;
+  values[offset] = contribution.x;
+  values[offset + 1] = contribution.y;
+  values[offset + 2] = contribution.pull;
+  values[offset + 3] = contribution.glow;
+  values[offset + 4] = contribution.volt;
+  values[offset + 5] = contribution.plasma;
+  values[offset + 6] = contribution.paper;
+  values[offset + 7] = contribution.carry;
+  values[offset + 8] = contribution.grain;
+  values[offset + 9] = contribution.colored;
+  values[offset + 10] = contribution.red;
+  values[offset + 11] = contribution.green;
+  values[offset + 12] = contribution.blue;
+  values[offset + 13] = contributed ? 1 : 0;
+  sectionMemo.stamps[host] = sectionMemo.frame;
+  sectionMemo.sections[host] = section;
+}
+
+/**
+ * The host's contribution to `section` kept this frame, back in `contribution`, and whether it
+ * applied; null when there is none to recall (not worked out yet, or not from the defaults).
+ */
+function recallSection(host: number, section: number): boolean | null {
+  if (
+    sectionMemo.stamps[host] !== sectionMemo.frame ||
+    sectionMemo.sections[host] !== section ||
+    contribution.grain !== 1 ||
+    contribution.colored !== 0
+  ) {
+    return null;
+  }
+  const { values } = sectionMemo;
+  const offset = host * MEMO_STRIDE;
+  contribution.x = values[offset] ?? 0;
+  contribution.y = values[offset + 1] ?? 0;
+  contribution.pull = values[offset + 2] ?? 0;
+  contribution.glow = values[offset + 3] ?? 0;
+  contribution.volt = values[offset + 4] ?? 0;
+  contribution.plasma = values[offset + 5] ?? 0;
+  contribution.paper = values[offset + 6] ?? 0;
+  contribution.carry = values[offset + 7] ?? 0;
+  contribution.grain = values[offset + 8] ?? 1;
+  contribution.colored = values[offset + 9] ?? 0;
+  contribution.red = values[offset + 10] ?? 0;
+  contribution.green = values[offset + 11] ?? 0;
+  contribution.blue = values[offset + 12] ?? 0;
+  return values[offset + 13] === 1;
+}
+
 /** Adds the current `contribution`, weighted by its formation, to `sum`. */
 function accumulate(weight: number, unlit = false): void {
   // A target that is not a number would lose the particle for good: such a contribution is left out.
@@ -1216,6 +1295,7 @@ export function writeFormations(
   const sectionsWeight = cardWeight + tubesWeight + logoWeight + pactWeight;
   // The last of them that holds any (rounding can push a turn past them all).
   const lastSection = pact ? 3 : logo ? 2 : tubes ? 1 : 0;
+  startSectionMemo(particles.count);
 
   for (let index = 0; index < particles.count; index += 1) {
     sum.x = 0;
@@ -1306,30 +1386,34 @@ export function writeFormations(
         section = 2;
       }
       section = Math.min(section, lastSection);
-      if (
-        section === 0 &&
-        card &&
-        cardContribution(particles, host, card, previous?.card ?? null, time, unit, contribution)
-      ) {
-        accumulate(whole, fuses);
-      } else if (
-        section === 1 &&
-        tubes &&
-        tubeContribution(particles, host, tubes, previous?.tubes ?? null, time, contribution)
-      ) {
-        accumulate(whole, fuses);
-      } else if (
-        section === 2 &&
-        logo &&
-        logoContribution(particles, host, logo, previous?.logo ?? null, time, contribution)
-      ) {
-        accumulate(whole, fuses);
-      } else if (
-        section === 3 &&
-        pact &&
-        pactContribution(particles, host, pact, previous?.pact ?? null, time, contribution)
-      ) {
-        accumulate(whole, fuses);
+      // The host's contribution, the same for every particle fused into it: worked out once this
+      // frame, by whichever of them comes first, then recalled (sectionMemo).
+      const recalled = recallSection(host, section);
+      if (recalled !== null) {
+        if (recalled) {
+          accumulate(whole, fuses);
+        }
+      } else {
+        const fresh = contribution.grain === 1 && contribution.colored === 0;
+        const contributed =
+          (section === 0 &&
+            card !== null &&
+            cardContribution(particles, host, card, previous?.card ?? null, time, unit, contribution)) ||
+          (section === 1 &&
+            tubes !== null &&
+            tubeContribution(particles, host, tubes, previous?.tubes ?? null, time, contribution)) ||
+          (section === 2 &&
+            logo !== null &&
+            logoContribution(particles, host, logo, previous?.logo ?? null, time, contribution)) ||
+          (section === 3 &&
+            pact !== null &&
+            pactContribution(particles, host, pact, previous?.pact ?? null, time, contribution));
+        if (fresh) {
+          keepSection(host, section, contributed);
+        }
+        if (contributed) {
+          accumulate(whole, fuses);
+        }
       }
     }
     const { x, y, total, glow, volt, plasma, paper, carry, grain, colored, red, green, blue } = sum;

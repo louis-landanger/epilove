@@ -885,6 +885,41 @@ describe("the shapes after a hero with more particles", () => {
     }
   });
 
+  it("gives each particle fused into a host the host's whole contribution, bit for bit, but no light", () => {
+    const logoStage: Formations = { logo: { weight: 1, x: 0, y: 0, size: 0.5, school: 0 } };
+    for (const formations of [...shapes, logoStage]) {
+      const targets = new Float32Array(hero.count * FORMATION_STRIDE);
+      const looks = new Float32Array(hero.count * FORMATION_STRIDE);
+      const grains = new Float32Array(hero.count);
+      const tints = new Float32Array(hero.count * FORMATION_STRIDE);
+      writeFormations(targets, looks, hero, formations, null, 3, 2 / 900, grains, tints);
+      const wrong: string[] = [];
+      for (let index = 0; index < hero.count; index += 1) {
+        const own = index - kept;
+        if (own >= 0 && own < lit) {
+          continue;
+        }
+        const at = index * FORMATION_STRIDE;
+        const there = host(index) * FORMATION_STRIDE;
+        for (let k = 0; k < FORMATION_STRIDE; k += 1) {
+          if (targets[at + k] !== targets[there + k]) {
+            wrong.push(`particle ${index}: target ${k} not its host's`);
+          }
+          if (k !== 2 && looks[at + k] !== looks[there + k]) {
+            wrong.push(`particle ${index}: look ${k} not its host's`);
+          }
+          if (tints[at + k] !== tints[there + k]) {
+            wrong.push(`particle ${index}: tint ${k} not its host's`);
+          }
+        }
+        if (grains[index] !== grains[host(index)]) {
+          wrong.push(`particle ${index}: grain not its host's`);
+        }
+      }
+      expect(wrong.slice(0, 5)).toEqual([]);
+    }
+  });
+
   it("fuses them on the way from the logo mark, and brings them back out on the way back", () => {
     const mark = { x: 0.8, y: 0, radius: 0.45 };
     const pair = (weight: number) => ({
