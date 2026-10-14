@@ -72,6 +72,31 @@ function keepPlaceAsSectionsResize(lenis: Lenis, cleanups: Array<() => void>) {
   cleanups.push(() => observer.disconnect());
 }
 
+/**
+ * Marks the sections out of sight (`data-offscreen`), a quarter of a screen ahead, for their
+ * endless animations to hold still meanwhile (marketing.css).
+ */
+function pauseOffscreenAnimations(cleanups: Array<() => void>) {
+  const sections = [...document.querySelectorAll("#contenu > *, .site-footer")];
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        entry.target.toggleAttribute("data-offscreen", !entry.isIntersecting);
+      }
+    },
+    { rootMargin: "25% 0px" },
+  );
+  for (const section of sections) {
+    observer.observe(section);
+  }
+  cleanups.push(() => {
+    observer.disconnect();
+    for (const section of sections) {
+      section.removeAttribute("data-offscreen");
+    }
+  });
+}
+
 function setUpSmoothScroll(cleanups: Array<() => void>): Lenis {
   const lenis = new Lenis({ lerp: GLIDE, stopInertiaOnNavigate: true });
   lenis.on("scroll", ScrollTrigger.update);
@@ -316,6 +341,7 @@ export function startChoreography(root: HTMLElement): () => void {
   });
 
   setUpPointerEffects(root, cleanups);
+  pauseOffscreenAnimations(cleanups);
   ScrollTrigger.refresh();
 
   // Sections far below the fold are laid out only when they come near

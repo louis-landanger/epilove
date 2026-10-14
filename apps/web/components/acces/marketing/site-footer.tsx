@@ -27,7 +27,7 @@ export async function SiteFooter({ onLanding = true }: { onLanding?: boolean }) 
                   className="flex items-center gap-8 font-display font-semibold text-[clamp(1.75rem,4vw,3.5rem)] text-paper tracking-tight"
                 >
                   {item}
-                  <LogoMark className="size-[0.9em] text-paper" />
+                  <LogoMark className="relative size-[0.9em] text-paper" />
                 </span>
               ))}
             </div>

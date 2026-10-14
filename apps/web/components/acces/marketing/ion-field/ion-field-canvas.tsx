@@ -7,7 +7,7 @@ import {
   particleBudget,
   SCHOOL_KEYS,
 } from "@atomes/three";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { onCityFlight, setCityFlying } from "../fleuves/city-flight";
 import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
 import { PACT_REVEAL_AT } from "../pact";
@@ -210,15 +210,20 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         // their way never freeze in view (a jump down the page, for instance).
         let hidden = journey(page.measure()).hidden;
         let restTimer = 0;
+        let running = false;
+        const run = (next: boolean) => {
+          running = next;
+          field.setRunning(next);
+        };
         const update = () => {
           window.clearTimeout(restTimer);
           container.dataset.resting = hidden ? "true" : "false";
           if (document.visibilityState !== "visible") {
-            field.setRunning(false);
+            run(false);
           } else if (hidden) {
-            restTimer = window.setTimeout(() => field.setRunning(false), 1300);
+            restTimer = window.setTimeout(() => run(false), 1300);
           } else {
-            field.setRunning(true);
+            run(true);
           }
         };
         const setHidden = (next: boolean) => {
@@ -243,10 +248,13 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           setHidden(state.hidden);
         };
 
-        // While the field rests, scrolling wakes it up.
+        // While the field rests, scrolling wakes it up (running, it follows the page every frame).
         let scrollFrame = 0;
         const onScroll = () => {
           cancelAnimationFrame(scrollFrame);
+          if (running) {
+            return;
+          }
           scrollFrame = requestAnimationFrame(() => setHidden(journey(page.measure()).hidden));
         };
         window.addEventListener("scroll", onScroll, { passive: true });
@@ -333,6 +341,15 @@ export function IonFieldCanvas({ className }: { className?: string }) {
       }
     };
   }, []);
+
+  // Once the particles flow, the page sets some of its drawings aside (marketing.css), keyed on this
+  // attribute of the root, set along with `data-live` before the page paints. Not on
+  // `:has([data-live="true"])`: with it, Chrome restyles the whole page at every element added to it
+  // or removed from it (the schools' stage swaps its logo every three seconds).
+  useLayoutEffect(() => {
+    document.documentElement.toggleAttribute("data-field-live", live);
+    return () => document.documentElement.removeAttribute("data-field-live");
+  }, [live]);
 
   // The scene creates its own canvas in here (it may need a fresh one to fall back to WebGL2).
   return (

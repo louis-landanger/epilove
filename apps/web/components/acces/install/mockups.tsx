@@ -48,7 +48,7 @@ function AppIcon({ className }: { className?: string }) {
         className,
       )}
     >
-      <LogoMark className="size-[72%] text-paper" />
+      <LogoMark className="relative size-[72%] text-paper" />
     </span>
   );
 }

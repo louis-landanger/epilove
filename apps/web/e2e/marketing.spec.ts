@@ -202,6 +202,31 @@ test.describe("smooth scrolling", () => {
   });
 });
 
+test.describe("rendering cost", () => {
+  test("restyles an element added to the landing, not the whole page", async ({ page, browser }) => {
+    await page.goto("/");
+    // The schools' stage beside the form swaps its logo and name every three seconds: elements
+    // removed from the page, others added.
+    const caption = page.locator(".join-logo-caption");
+    await caption.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(1000);
+    await browser.startTracing(page, { categories: ["devtools.timeline"] });
+    await caption.evaluate((element) => {
+      element.append(document.createElement("span"));
+      // Styles the page now, within the trace.
+      void document.body.offsetHeight;
+    });
+    const trace = JSON.parse((await browser.stopTracing()).toString()) as {
+      traceEvents: Array<{ name: string; args?: { elementCount?: number } }>;
+    };
+    const restyled = trace.traceEvents
+      .filter((event) => event.name === "UpdateLayoutTree")
+      .map((event) => event.args?.elementCount ?? 0);
+    // A handful of elements (the new one, and those animating meanwhile), not the hundreds on the page.
+    expect(Math.max(0, ...restyled)).toBeLessThan(50);
+  });
+});
+
 test.describe("waiting list", () => {
   test("joins with a school address and sends the welcome email with the referral link", async ({
     page,

@@ -217,8 +217,8 @@
   transition: opacity 1.2s var(--ease-out);
 }
 
-/* Once the particles flow, the drawing steps aside. */
-:root:has([data-ion-field][data-live="true"]) .fleuves-drawing {
+/* Once the particles flow (`data-field-live`, ion-field-canvas.tsx), the drawing steps aside. */
+:root[data-field-live] .marketing .fleuves-drawing {
   opacity: 0;
 }
 
@@ -493,15 +493,236 @@
   opacity: 0;
 }
 
+/*
+ * The logo's electron (logo.tsx, where it rests at the orbit's right end) round
+ * the orbit clockwise, at an even speed, as it went along the mark's former
+ * offset-path ("M51.05 21A22 9 -30 1 1 12.95 43A22 9 -30 1 1 51.05 21"): that
+ * path's point at each 72nd of its length as Chrome measures it, in percents
+ * of the mark. A transform, so that the compositor alone moves it.
+ */
 .logo-electron {
-  offset-path: path("M51.05 21A22 9 -30 1 1 12.95 43A22 9 -30 1 1 51.05 21");
-  offset-rotate: 0deg;
   animation: logo-orbit 7s linear infinite;
 }
 
 @keyframes logo-orbit {
-  to {
-    offset-distance: 100%;
+  0% {
+    transform: translate(29.7656%, -17.1875%);
+  }
+  1.39% {
+    transform: translate(30.5632%, -15.1309%);
+  }
+  2.78% {
+    transform: translate(30.6484%, -12.9214%);
+  }
+  4.17% {
+    transform: translate(30.2094%, -10.7503%);
+  }
+  5.56% {
+    transform: translate(29.422%, -8.678%);
+  }
+  6.94% {
+    transform: translate(28.3976%, -6.7111%);
+  }
+  8.33% {
+    transform: translate(27.2035%, -4.8419%);
+  }
+  9.72% {
+    transform: translate(25.8813%, -3.0608%);
+  }
+  11.11% {
+    transform: translate(24.4584%, -1.359%);
+  }
+  12.5% {
+    transform: translate(22.9536%, 0.271%);
+  }
+  13.89% {
+    transform: translate(21.3804%, 1.8351%);
+  }
+  15.28% {
+    transform: translate(19.7485%, 3.338%);
+  }
+  16.67% {
+    transform: translate(18.0654%, 4.7832%);
+  }
+  18.06% {
+    transform: translate(16.3364%, 6.1734%);
+  }
+  19.44% {
+    transform: translate(14.5661%, 7.5105%);
+  }
+  20.83% {
+    transform: translate(12.758%, 8.796%);
+  }
+  22.22% {
+    transform: translate(10.915%, 10.0309%);
+  }
+  23.61% {
+    transform: translate(9.0393%, 11.2157%);
+  }
+  25% {
+    transform: translate(7.1328%, 12.3503%);
+  }
+  26.39% {
+    transform: translate(5.1971%, 13.4341%);
+  }
+  27.78% {
+    transform: translate(3.2332%, 14.4662%);
+  }
+  29.17% {
+    transform: translate(1.2423%, 15.445%);
+  }
+  30.56% {
+    transform: translate(-0.775%, 16.3682%);
+  }
+  31.94% {
+    transform: translate(-2.8181%, 17.2329%);
+  }
+  33.33% {
+    transform: translate(-4.8864%, 18.0352%);
+  }
+  34.72% {
+    transform: translate(-6.9796%, 18.7703%);
+  }
+  36.11% {
+    transform: translate(-9.097%, 19.4323%);
+  }
+  37.5% {
+    transform: translate(-11.2381%, 20.0129%);
+  }
+  38.89% {
+    transform: translate(-13.4021%, 20.5013%);
+  }
+  40.28% {
+    transform: translate(-15.5873%, 20.8828%);
+  }
+  41.67% {
+    transform: translate(-17.7909%, 21.1375%);
+  }
+  43.06% {
+    transform: translate(-20.0067%, 21.2374%);
+  }
+  44.44% {
+    transform: translate(-22.2223%, 21.1415%);
+  }
+  45.83% {
+    transform: translate(-24.4107%, 20.7878%);
+  }
+  47.22% {
+    transform: translate(-26.5107%, 20.0832%);
+  }
+  48.61% {
+    transform: translate(-28.3822%, 18.9056%);
+  }
+  50% {
+    transform: translate(-29.7656%, 17.1875%);
+  }
+  51.39% {
+    transform: translate(-30.5632%, 15.1309%);
+  }
+  52.78% {
+    transform: translate(-30.6484%, 12.9214%);
+  }
+  54.17% {
+    transform: translate(-30.2094%, 10.7503%);
+  }
+  55.56% {
+    transform: translate(-29.422%, 8.678%);
+  }
+  56.94% {
+    transform: translate(-28.3976%, 6.7111%);
+  }
+  58.33% {
+    transform: translate(-27.2035%, 4.8419%);
+  }
+  59.72% {
+    transform: translate(-25.8813%, 3.0608%);
+  }
+  61.11% {
+    transform: translate(-24.4584%, 1.359%);
+  }
+  62.5% {
+    transform: translate(-22.9536%, -0.2711%);
+  }
+  63.89% {
+    transform: translate(-21.3804%, -1.8351%);
+  }
+  65.28% {
+    transform: translate(-19.7486%, -3.3381%);
+  }
+  66.67% {
+    transform: translate(-18.0654%, -4.7833%);
+  }
+  68.06% {
+    transform: translate(-16.3364%, -6.1734%);
+  }
+  69.44% {
+    transform: translate(-14.5661%, -7.5105%);
+  }
+  70.83% {
+    transform: translate(-12.758%, -8.796%);
+  }
+  72.22% {
+    transform: translate(-10.9149%, -10.0309%);
+  }
+  73.61% {
+    transform: translate(-9.0393%, -11.2157%);
+  }
+  75% {
+    transform: translate(-7.1328%, -12.3503%);
+  }
+  76.39% {
+    transform: translate(-5.1971%, -13.4341%);
+  }
+  77.78% {
+    transform: translate(-3.2332%, -14.4662%);
+  }
+  79.17% {
+    transform: translate(-1.2423%, -15.445%);
+  }
+  80.56% {
+    transform: translate(0.775%, -16.3682%);
+  }
+  81.94% {
+    transform: translate(2.8181%, -17.2329%);
+  }
+  83.33% {
+    transform: translate(4.8864%, -18.0352%);
+  }
+  84.72% {
+    transform: translate(6.9795%, -18.7704%);
+  }
+  86.11% {
+    transform: translate(9.097%, -19.4323%);
+  }
+  87.5% {
+    transform: translate(11.2381%, -20.0129%);
+  }
+  88.89% {
+    transform: translate(13.4021%, -20.5013%);
+  }
+  90.28% {
+    transform: translate(15.5873%, -20.8828%);
+  }
+  91.67% {
+    transform: translate(17.7909%, -21.1375%);
+  }
+  93.06% {
+    transform: translate(20.0067%, -21.2374%);
+  }
+  94.44% {
+    transform: translate(22.2223%, -21.1415%);
+  }
+  95.83% {
+    transform: translate(24.4107%, -20.7878%);
+  }
+  97.22% {
+    transform: translate(26.5108%, -20.0832%);
+  }
+  98.61% {
+    transform: translate(28.3822%, -18.9056%);
+  }
+  100% {
+    transform: translate(29.7656%, -17.1875%);
   }
 }
 
@@ -804,7 +1025,7 @@
  * With the live field, the atoms of each school pour into its tube and are the
  * liquid: the CSS liquid thins to a tinted glass, its surface still drawn.
  */
-.marketing:has([data-ion-field][data-live="true"]) .tube-liquid {
+:root[data-field-live] .marketing .tube-liquid {
   background: linear-gradient(
     to top,
     color-mix(in oklch, var(--school) 30%, transparent),
@@ -813,11 +1034,11 @@
   box-shadow: none;
 }
 
-.marketing:has([data-ion-field][data-live="true"]) .tube-wave {
+:root[data-field-live] .marketing .tube-wave {
   fill: color-mix(in oklch, var(--school) 55%, transparent);
 }
 
-.marketing:has([data-ion-field][data-live="true"]) .tube-bubble {
+:root[data-field-live] .marketing .tube-bubble {
   display: none;
 }
 
@@ -980,7 +1201,7 @@
   opacity: 0.88;
 }
 
-:root:has([data-ion-field][data-live="true"]) .join-logo > * {
+:root[data-field-live] .marketing .join-logo > * {
   display: none;
 }
 
@@ -1062,7 +1283,7 @@
   stroke-width: 1.8;
 }
 
-.marketing:has([data-ion-field][data-live="true"]) .pact-ticks line {
+:root[data-field-live] .marketing .pact-ticks line {
   display: none;
 }
 
@@ -1395,6 +1616,24 @@ html.lenis body {
 .site-footer {
   content-visibility: auto;
   contain-intrinsic-size: auto 1100px;
+}
+
+/* Out of sight, a section's endless animations hold still (choreography.ts): they would be
+   restyled every frame, laid out and painted again for those within an SVG, for nobody. Back in
+   sight they go on, all from where they stopped. */
+[data-offscreen]
+:is(
+  .bond-arc,
+  .bond-atom,
+  .bond-flash,
+  .tube-wave,
+  .tube-bubble,
+  .marquee-track,
+  .logo-electron,
+  .animate-ping
+),
+[data-offscreen] .fleuves-campus::after {
+  animation-play-state: paused;
 }
 
 /* All laid out before an in-page link glides, so that it lands on its target (choreography.ts). */
