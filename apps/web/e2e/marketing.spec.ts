@@ -119,6 +119,25 @@ test.describe("landing", () => {
     await expect(goal).toHaveAttribute("aria-valuetext", /sur 1\s000/);
   });
 
+  test("holds the race within the narrowest phones' screen", async ({ page }) => {
+    // At 320 px the table's natural width once widened its column past the screen, the tubes'
+    // rack with it, and the section clipped both.
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto("/");
+    const table = page.getByRole("table", { name: /Classement de la course des écoles/ });
+    await table.scrollIntoViewIfNeeded();
+    const column = await table.locator("..").boundingBox();
+    const box = await table.boundingBox();
+    const rack = await page.locator(".race-rack").boundingBox();
+    expect(column).not.toBeNull();
+    expect(box).not.toBeNull();
+    expect(rack).not.toBeNull();
+    if (column && box && rack) {
+      expect(box.x + box.width).toBeLessThanOrEqual(column.x + column.width + 0.5);
+      expect(rack.x + rack.width).toBeLessThanOrEqual(320);
+    }
+  });
+
   test("opens and closes the FAQ with the keyboard, one answer at a time", async ({ page }) => {
     await page.goto("/");
     const first = page.locator("summary", { hasText: "Qui peut s’inscrire" });

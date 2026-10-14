@@ -1162,6 +1162,26 @@
   font-family: var(--font-sans);
 }
 
+/* The table's natural width (330 px in French) passes its column under 362 px of screen, and
+   the section clips it: tighter cells and closer letters bring it to 302 px, which 360 px
+   phones hold; under 336 px the row glyphs are left to the tubes (288 px of column at 320). */
+@media (max-width: 22.5rem) {
+  .race-table th,
+  .race-table td {
+    padding-inline: 0.25rem;
+  }
+
+  .race-table thead th {
+    letter-spacing: 0.08em;
+  }
+}
+
+@media (max-width: 21rem) {
+  .race-table tbody th svg {
+    display: none;
+  }
+}
+
 .goal-bar {
   position: relative;
   height: 0.75rem;

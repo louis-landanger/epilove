@@ -86,7 +86,9 @@ function Tube({
         <span className="whitespace-nowrap font-sans text-[0.68rem] text-paper/85 tracking-tight sm:font-mono sm:text-xs sm:uppercase sm:tracking-[0.08em]">
           {standing.name}
         </span>
-        <span className="font-mono text-paper text-sm tabular-nums sm:text-lg">
+        {/* Six characters ("12,7 %") in a 48 px slot at 320 px: the share grows with the screen up
+            to the small size at 400 px. */}
+        <span className="font-mono text-[clamp(0.7rem,3.5vw,0.875rem)]/5 text-paper tabular-nums sm:text-lg">
           {format.number(share, { style: "percent", maximumFractionDigits: 1 })}
         </span>
       </div>
@@ -135,8 +137,10 @@ export function SchoolRace({ initial }: { initial: WaitlistStats | null }) {
   const goal = stats?.goal ?? 1000;
   const ticks = [1, 0.5, 0];
 
+  // One column no wider than the section (the table's natural width would widen it past a
+  // narrow phone's screen, the rack with it), two from the laptop width.
   return (
-    <div className="mt-14 grid gap-12 lg:mt-20 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-16">
+    <div className="mt-14 grid grid-cols-[minmax(0,1fr)] gap-12 lg:mt-20 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-16">
       <div
         ref={rackRef}
         aria-hidden="true"
