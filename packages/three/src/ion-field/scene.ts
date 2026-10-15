@@ -86,6 +86,16 @@ import { createFrameMonitor } from "./quality";
 
 export type IonFieldBackend = "webgpu" | "webgl2";
 
+/** One frame of the field, in milliseconds: the real interval since the last, and the time of each phase. */
+export interface FrameTimings {
+  readonly frame: number;
+  /** `beforeFrame`: the page measuring its formations. */
+  readonly page: number;
+  readonly formations: number;
+  readonly step: number;
+  readonly render: number;
+}
+
 export interface IonFieldOptions {
   /**
    * Element the scene draws into: it creates (and removes) its own canvas there,
@@ -111,6 +121,8 @@ export interface IonFieldOptions {
   readonly adaptiveQuality?: boolean;
   /** Called at the start of every frame, before the simulation: the page measures its formations here. */
   readonly beforeFrame?: () => void;
+  /** Called after every frame with its time per phase (diagnostics on a device): timed only when given. */
+  readonly onFrameTimings?: (timings: FrameTimings) => void;
   /**
    * Formations on screen when the field starts: particles start right by
    * their place in them (instead of the scattered starting layout), so the
@@ -160,6 +172,8 @@ export interface IonField {
   setFlight(flight: CityFlight | null): void;
   setRunning(running: boolean): void;
   resize(width: number, height: number): void;
+  /** What the field draws now, as the monitor adapts it: the particles on screen and the pixel ratio. */
+  quality(): { readonly pixelRatio: number; readonly visibleParticles: number };
   dispose(): void;
 }
 
@@ -1267,6 +1281,10 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     uAspect.value = aspect;
   };
 
+  // Diagnostics: the time of each phase, only when someone listens (a clock that costs nothing otherwise).
+  const onFrameTimings = options.onFrameTimings;
+  const clock = onFrameTimings ? () => performance.now() : () => 0;
+
   const frame = (timestamp: number) => {
     const now = timestamp / 1000;
     // Real frame time, for the quality monitor.
@@ -1281,11 +1299,22 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     const pointer = uPointer.value;
     pointer.lerp(pointerWorld, Math.min(1, delta * 14));
 
+    const t0 = clock();
     try {
       options.beforeFrame?.();
+      const t1 = clock();
       updateFormations(delta);
+      const t2 = clock();
       step(delta);
+      const t3 = clock();
       renderer.render(scene, camera);
+      onFrameTimings?.({
+        frame: frameMs,
+        page: t1 - t0,
+        formations: t2 - t1,
+        step: t3 - t2,
+        render: clock() - t3,
+      });
     } catch (error) {
       fail(error);
       return;
@@ -1417,6 +1446,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     setFlight,
     setRunning,
     resize,
+    quality() {
+      return { pixelRatio, visibleParticles: ions.count };
+    },
     dispose: release,
   };
 }

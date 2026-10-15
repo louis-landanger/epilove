@@ -7,10 +7,12 @@ import {
   particleBudget,
   SCHOOL_KEYS,
 } from "@atomes/three";
+import type { FrameTimings, IonField } from "@atomes/three/ion-field";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { onCityFlight, setCityFlying } from "../fleuves/city-flight";
-import { afterLoadAndIdle, deviceProfile, forcedLiveScenes, rendererName } from "../live-scene";
+import { afterLoadAndIdle, deviceProfile, landingSwitches, rendererName } from "../live-scene";
 import { PACT_REVEAL_AT } from "../pact";
+import type { FieldHud } from "./field-hud";
 import { type JourneyMeasures, journey } from "./journey";
 
 const toBox = (element: Element): PixelBox => {
@@ -137,13 +139,34 @@ export function IonFieldCanvas({ className }: { className?: string }) {
       return;
     }
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const { forced, particles: forcedCount } = forcedLiveScenes();
-    if (reducedMotion.matches || (!forced && !canAffordLiveField(deviceProfile()))) {
-      return;
-    }
-
+    const { forced, particles: forcedCount, debug, off } = landingSwitches();
     let disposed = false;
     const cleanups: Array<() => void> = [];
+
+    // Diagnostics over the page (`?debug=field`, live-scene.ts): their own chunk, loaded only then.
+    let liveField: IonField | null = null;
+    let hud: FieldHud | null = null;
+    if (debug) {
+      void import("./field-hud").then((module) => {
+        if (disposed) {
+          return;
+        }
+        hud = module.mountFieldHud(container, off);
+        cleanups.push(() => hud?.dispose());
+        if (liveField) {
+          hud.attach(liveField);
+        }
+      });
+    }
+
+    if (reducedMotion.matches || off.includes("field") || (!forced && !canAffordLiveField(deviceProfile()))) {
+      return () => {
+        disposed = true;
+        for (const cleanup of cleanups.splice(0)) {
+          cleanup();
+        }
+      };
+    }
 
     const start = async (forceWebGL = false) => {
       if (!forced && isSoftwareRenderer(rendererName())) {
@@ -172,6 +195,7 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           onFlightChange: setCityFlying,
           adaptiveQuality: !forced,
           beforeFrame: () => followPage(),
+          ...(debug ? { onFrameTimings: (timings: FrameTimings) => hud?.frame(timings) } : {}),
           // The particles start in the shapes on screen (a reload further down the page).
           initialFormations: journey(page.measure()).formations,
           onFirstFrame: () => setLive(true),
@@ -205,6 +229,8 @@ export function IonFieldCanvas({ className }: { className?: string }) {
         }
         container.dataset.backend = field.backend;
         cleanups.push(() => field.dispose());
+        liveField = field;
+        hud?.attach(field);
 
         // Run only while something shows: in the foreground tab, not behind an opaque
         // section, and not while the shape holding the particles is off screen.

@@ -69,12 +69,26 @@ export function afterLoadAndIdle(task: () => void): () => void {
 }
 
 /**
- * Development only: `?field=live` runs the scenes on software renderers too,
- * at full quality, and `&particles=8000` sets the ion field's particle count
- * (to preview another device's budget).
+ * Switches in the page's address, to try the landing on a device:
+ * - `?debug=field` shows the field's diagnostics over the page (field-hud.ts),
+ *   and `&no=grain,backdrop,filters,anim,field` turns the named costs off
+ *   (marketing.css, trial switches; the field itself), to compare;
+ * - development only, `?field=live` runs the scenes on software renderers too,
+ *   at full quality, and `&particles=8000` sets the ion field's particle count
+ *   (to preview another device's budget).
  */
-export function forcedLiveScenes(): { readonly forced: boolean; readonly particles: number } {
+export function landingSwitches(): {
+  readonly forced: boolean;
+  readonly particles: number;
+  readonly debug: boolean;
+  readonly off: readonly string[];
+} {
   const query = new URLSearchParams(window.location.search);
   const forced = process.env.NODE_ENV !== "production" && query.get("field") === "live";
-  return { forced, particles: forced ? Number(query.get("particles")) || 0 : 0 };
+  return {
+    forced,
+    particles: forced ? Number(query.get("particles")) || 0 : 0,
+    debug: query.get("debug") === "field",
+    off: query.get("no")?.split(",") ?? [],
+  };
 }

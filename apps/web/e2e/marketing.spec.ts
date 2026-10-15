@@ -119,6 +119,13 @@ test.describe("landing", () => {
     await expect(goal).toHaveAttribute("aria-valuetext", /sur 1\s000/);
   });
 
+  test("shows the field's diagnostics with ?debug=field, costs turned off with &no=", async ({ page }) => {
+    await page.goto("/?debug=field&no=grain,anim");
+    await expect(page.getByText("toucher pour copier")).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("data-no", "grain anim");
+    await expect(page.locator(".grain")).toBeHidden();
+  });
+
   test("holds the race within the narrowest phones' screen", async ({ page }) => {
     // At 320 px the table's natural width once widened its column past the screen, the tubes'
     // rack with it, and the section clipped both.

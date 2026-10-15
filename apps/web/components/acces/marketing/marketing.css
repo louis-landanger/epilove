@@ -1535,7 +1535,9 @@
 
 .grain {
   position: fixed;
-  inset: -50%;
+  /* Past the screen by 5 % on each side, as far as the jitter below moves it (4 % of its size at most):
+     a layer hardly larger than the screen, composited every frame (at -50 % it was four screens). */
+  inset: -5%;
   z-index: 50;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   opacity: 0.075;
@@ -1741,4 +1743,28 @@ html.lenis body {
 /* All laid out before an in-page link glides, so that it lands on its target (choreography.ts). */
 .sections-laid-out :is(#course, #pacte, #securite, #faq, .site-footer) {
   content-visibility: visible;
+}
+
+/* ------------------------------------------------------ trial switches */
+
+/* `?debug=field&no=…` (live-scene.ts, field-hud.ts): each named cost turned off, to compare how the
+   page feels without it on a device. The field itself is `no=field` (ion-field-canvas.tsx). */
+:root[data-no~="grain"] .grain {
+  display: none;
+}
+
+:root[data-no~="backdrop"] .step-panel article {
+  backdrop-filter: none;
+}
+
+:root[data-no~="filters"] :is(.bond-arc, .bond-atom, .race-glow),
+:root[data-no~="filters"] .tube::after {
+  filter: none;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: a switch over every animation, whatever its rule */
+:root[data-no~="anim"] body *,
+:root[data-no~="anim"] body *::before,
+:root[data-no~="anim"] body *::after {
+  animation-play-state: paused;
 }
