@@ -99,7 +99,7 @@ Une migration doit rester compatible avec la version précédente du code : ajou
 
 - **Vérifier aussi** : l'affichage sur mobile (outils de développement du navigateur, puis un vrai téléphone via le serveur de dev), le clavier seul, le mode « mouvement réduit » du système, et l'anglais.
 - **Sur un vrai téléphone** : déployer la branche sur le serveur de dev (§ 9) et ouvrir l'adresse du serveur.
-- **Si l'accueil saccade sur un appareil** : l'ouvrir avec `?debug=field`. Un cadran en bas de l'écran donne le moteur du champ de particules (WebGPU ou WebGL2), sa qualité (particules et finesse), la fréquence de l'écran, le rythme des images, le temps de chaque phase du champ et les scripts qui ont allongé les images ; le toucher copie le rapport, à coller dans l'issue. Avec `&no=grain,backdrop,filters,anim,field`, les coûts nommés sont coupés (le grain, le flou derrière les cartes, les filtres, les animations CSS, le champ) pour sentir lequel pèse.
+- **Si l'accueil saccade sur un appareil** : l'ouvrir avec `?debug=field`. Un cadran en bas de l'écran donne le moteur du champ de particules (WebGPU ou WebGL2), sa qualité (particules et finesse), la fréquence de l'écran, le rythme des images, le temps de chaque phase du champ et les scripts qui ont allongé les images ; le toucher copie le rapport, à coller dans l'issue. Avec `&no=grain,backdrop,filters,anim,field,cap`, les coûts nommés sont coupés (le grain, le flou derrière les cartes, les filtres, les animations CSS, le champ, son plafond de 60 images par seconde sur écran tactile) pour sentir lequel pèse.
 
 ## 6. Vérifier avant de pousser
 
