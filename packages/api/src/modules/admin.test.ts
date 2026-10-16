@@ -1,6 +1,6 @@
 import { uuidv7 } from "@atomes/core";
 import { schema } from "@atomes/db";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApi, insertActiveMember } from "../test-support";
 
@@ -76,6 +76,11 @@ describe.skipIf(!url)("back-office", () => {
         createdAt: new Date(now - 3 * hour),
       },
     ]);
+    // Active within the week: this test's own members, which no other test file changes.
+    await api.db
+      .update(schema.appUser)
+      .set({ lastActiveAt: new Date(now - 24 * hour) })
+      .where(inArray(schema.appUser.id, [reporter, target]));
     const after = await moderator.admin.dashboard({ days: 30 });
     const p1 = (dashboard: typeof after) => dashboard.moderation.reports.find((row) => row.priority === "p1");
     const p2 = (dashboard: typeof after) => dashboard.moderation.reports.find((row) => row.priority === "p2");
@@ -86,7 +91,8 @@ describe.skipIf(!url)("back-office", () => {
     expect(p2(after)?.targetHours).toBe(24);
     expect(p1(after)?.open).toBeGreaterThanOrEqual((p1(before)?.open ?? 0) + 1);
     expect(p1(after)?.oldestOpenHours).toBeGreaterThanOrEqual(2.9);
-    expect(after.members.activeLast7Days).toBeGreaterThanOrEqual(before.members.activeLast7Days);
+    // Not compared with `before`: other test files pause, ban or idle their members meanwhile.
+    expect(after.members.activeLast7Days).toBeGreaterThanOrEqual(2);
     expect(after.members.schools.map((row) => row.slug).sort()).toEqual([
       "epita",
       "esme",
