@@ -229,6 +229,49 @@ test.describe("smooth scrolling", () => {
 });
 
 test.describe("rendering cost", () => {
+  test("moves the steps and lights the manifesto without filters, which the GPU redraws at every frame", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForFunction(() => document.documentElement.classList.contains("motion-ready"));
+    // The manifesto read through: its words in focus, none of them still drawn apart.
+    await page.evaluate(() => {
+      const manifesto = document.getElementById("manifeste");
+      if (manifesto) {
+        window.scrollTo(0, manifesto.getBoundingClientRect().bottom + window.scrollY - window.innerHeight);
+      }
+    });
+    await expect
+      .poll(() =>
+        page
+          .locator("#manifeste [data-reveal-words] *")
+          .evaluateAll((words) => words.filter((word) => getComputedStyle(word).filter !== "none").length),
+      )
+      .toBe(0);
+
+    // Halfway through the second step's arrival, the first recedes: darkened by its veil, not a filter.
+    await page.evaluate(() => {
+      const second = document.querySelectorAll("[data-step]")[1];
+      if (second) {
+        window.scrollTo(0, second.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.62);
+      }
+    });
+    const first = page.locator("[data-step]").first();
+    await expect
+      .poll(() => first.locator(".step-veil").evaluate((veil) => Number(getComputedStyle(veil).opacity)))
+      .toBeGreaterThan(0.1);
+    expect(await first.locator("article").evaluate((article) => getComputedStyle(article).filter)).toBe(
+      "none",
+    );
+    // The glass cards stand on their opaque panels: nothing behind them to blur.
+    const blurred = await page
+      .locator(".glass-card")
+      .evaluateAll(
+        (cards) => cards.filter((card) => getComputedStyle(card).backdropFilter !== "none").length,
+      );
+    expect(blurred).toBe(0);
+  });
+
   test("restyles an element added to the landing, not the whole page", async ({ page, browser }) => {
     await page.goto("/");
     // The schools' stage beside the form swaps its logo and name every three seconds: elements

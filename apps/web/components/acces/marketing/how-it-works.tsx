@@ -135,7 +135,7 @@ export async function HowItWorks() {
                 className="step-panel sticky"
                 style={{ top: `calc(5.5rem + ${index * 1.25}rem)` }}
               >
-                <article className="grid gap-8 rounded-[2rem] border border-paper/10 bg-[oklch(0.19_0.025_285)] p-6 shadow-[0_-30px_80px_-40px_oklch(0_0_0/0.9)] sm:p-10 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:p-14">
+                <article className="relative grid gap-8 rounded-[2rem] border border-paper/10 bg-[oklch(0.19_0.025_285)] p-6 shadow-[0_-30px_80px_-40px_oklch(0_0_0/0.9)] sm:p-10 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:p-14">
                   <div>
                     <p className="font-mono text-plasma text-sm tracking-[0.2em]">
                       <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
@@ -160,6 +160,7 @@ export async function HowItWorks() {
                       {t("illustration")}
                     </figcaption>
                   </figure>
+                  <div aria-hidden="true" className="step-veil" />
                 </article>
               </li>
             );

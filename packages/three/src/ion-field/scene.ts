@@ -82,7 +82,7 @@ import {
   withParticlesAhead,
 } from "./layout";
 import { loadSchoolLogos } from "./logos";
-import { createFrameMonitor, frameDue } from "./quality";
+import { createFrameMonitor } from "./quality";
 
 export type IonFieldBackend = "webgpu" | "webgl2";
 
@@ -119,13 +119,6 @@ export interface IonFieldOptions {
   readonly forceWebGL?: boolean;
   /** Lower the quality, then give up, when the device cannot keep up (default: true). */
   readonly adaptiveQuality?: boolean;
-  /**
-   * Frames per second at most (default: the screen's rate). On a screen
-   * faster than this, the field skips the frames between two of its own: on
-   * a 120 Hz phone, drawing at 60 leaves the main thread half its time for
-   * the page's own scrolling, where everything the field does fits.
-   */
-  readonly maxFps?: number;
   /** Called at the start of every frame, before the simulation: the page measures its formations here. */
   readonly beforeFrame?: () => void;
   /** Called after every frame with its time per phase (diagnostics on a device): timed only when given. */
@@ -179,12 +172,8 @@ export interface IonField {
   setFlight(flight: CityFlight | null): void;
   setRunning(running: boolean): void;
   resize(width: number, height: number): void;
-  /** What the field draws now, as the monitor adapts it: the particles on screen, the pixel ratio, the frame rate cap. */
-  quality(): {
-    readonly pixelRatio: number;
-    readonly visibleParticles: number;
-    readonly maxFps: number | null;
-  };
+  /** What the field draws now, as the monitor adapts it: the particles on screen and the pixel ratio. */
+  quality(): { readonly pixelRatio: number; readonly visibleParticles: number };
   dispose(): void;
 }
 
@@ -1295,12 +1284,9 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
   // Diagnostics: the time of each phase, only when someone listens (a clock that costs nothing otherwise).
   const onFrameTimings = options.onFrameTimings;
   const clock = onFrameTimings ? () => performance.now() : () => 0;
+
   const frame = (timestamp: number) => {
     const now = timestamp / 1000;
-    // The frame rate cap (`maxFps`): the frames between two of the field's own are skipped.
-    if (lastTime >= 0 && !frameDue((now - lastTime) * 1000, options.maxFps)) {
-      return;
-    }
     // Real frame time, for the quality monitor.
     const frameMs = lastTime < 0 ? 1000 / 60 : (now - lastTime) * 1000;
     // Capped time step: stable integration, and slow devices are only slightly slowed down.
@@ -1461,7 +1447,7 @@ async function startIonField(options: IonFieldOptions, forceWebGL: boolean): Pro
     setRunning,
     resize,
     quality() {
-      return { pixelRatio, visibleParticles: ions.count, maxFps: options.maxFps ?? null };
+      return { pixelRatio, visibleParticles: ions.count };
     },
     dispose: release,
   };

@@ -3,7 +3,6 @@ import {
   canAffordLiveField,
   createFrameMonitor,
   type DeviceProfile,
-  frameDue,
   isSoftwareRenderer,
   markPlacementFor,
   markScaleFor,
@@ -212,36 +211,6 @@ describe("createFrameMonitor", () => {
     const monitor = createFrameMonitor({ window: 10, budgetMs: 20, cooldown: 0 });
     const verdicts = Array.from({ length: 30 }, (_, index) => monitor.push(index % 5 === 0 ? 80 : 16));
     expect(verdicts).not.toContain("degrade");
-  });
-});
-
-describe("frameDue", () => {
-  /** Frames drawn over a second of a screen at `hz`, its vsync jittering by ±1 ms, under a cap. */
-  const drawnInASecond = (hz: number, maxFps?: number) => {
-    let drawn = 0;
-    let lastDrawn = -1;
-    for (let i = 0; i < hz; i += 1) {
-      const now = (i * 1000) / hz + (i % 2 === 0 ? 1 : -1);
-      if (lastDrawn < 0 || frameDue(now - lastDrawn, maxFps)) {
-        drawn += 1;
-        lastDrawn = now;
-      }
-    }
-    return drawn;
-  };
-
-  it("draws every other frame of a 120 Hz screen under a cap of 60", () => {
-    expect(drawnInASecond(120, 60)).toBe(60);
-  });
-
-  it("draws every frame of a 60 Hz screen under a cap of 60, its vsync jittering or not", () => {
-    expect(drawnInASecond(60, 60)).toBe(60);
-    expect(frameDue(15, 60)).toBe(true);
-  });
-
-  it("draws every frame without a cap", () => {
-    expect(drawnInASecond(120)).toBe(120);
-    expect(frameDue(1)).toBe(true);
   });
 });
 

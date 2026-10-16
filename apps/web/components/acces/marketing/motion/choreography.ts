@@ -271,7 +271,22 @@ export function startChoreography(root: HTMLElement): () => void {
         timeline.fromTo(
           split.words,
           { opacity: (_: number, word: Element) => dimmed(word), filter: "blur(5px)" },
-          { opacity: 1, filter: "blur(0px)", stagger: 0.06, duration: 0.4, ease: "none" },
+          {
+            opacity: 1,
+            filter: "blur(0px)",
+            stagger: {
+              each: 0.06,
+              // In focus, a word drops its filter: even at blur(0px), each word would stay drawn
+              // apart from the page, at every frame. The reveal only goes forward (revealOnce).
+              onComplete(this: gsap.core.Tween) {
+                for (const target of this.targets<HTMLElement>()) {
+                  target.style.removeProperty("filter");
+                }
+              },
+            },
+            duration: 0.4,
+            ease: "none",
+          },
         );
       }
       revealOnce(timeline, manifesto, "top 70%", "bottom bottom");
@@ -288,24 +303,18 @@ export function startChoreography(root: HTMLElement): () => void {
       });
     }
 
-    // Steps: each pinned card recedes as the next one slides over it, and the
-    // illustrations straighten up as they arrive.
+    // Steps: each pinned card recedes as the next one slides over it (a little smaller, and
+    // darker under its veil), and the illustrations straighten up as they arrive.
     const steps = gsap.utils.toArray<HTMLElement>("[data-step]");
     steps.forEach((step, index) => {
       const card = step.querySelector("article");
+      const veil = step.querySelector(".step-veil");
       const next = steps[index + 1];
-      if (card && next) {
-        // Explicit start values: GSAP would read "none" as brightness(0).
-        gsap.fromTo(
-          card,
-          { scale: 1, filter: "brightness(1)" },
-          {
-            scale: 0.94,
-            filter: "brightness(0.55)",
-            ease: "none",
-            scrollTrigger: { trigger: next, start: "top bottom", end: "top 25%", scrub: true },
-          },
-        );
+      if (card && veil && next) {
+        gsap
+          .timeline({ scrollTrigger: { trigger: next, start: "top bottom", end: "top 25%", scrub: true } })
+          .fromTo(card, { scale: 1 }, { scale: 0.94, ease: "none" })
+          .fromTo(veil, { opacity: 0 }, { opacity: 0.45, ease: "none" }, 0);
       }
       const illustration = step.querySelector(".step-card-3d");
       if (illustration) {

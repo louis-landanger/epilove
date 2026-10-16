@@ -194,9 +194,6 @@ export function IonFieldCanvas({ className }: { className?: string }) {
           // While the field flies the plan's dots, the plan's own canvas steps aside.
           onFlightChange: setCityFlying,
           adaptiveQuality: !forced,
-          // On a touch screen, 60 frames a second at most: a 120 Hz phone keeps half its frames for
-          // its own scrolling (`no=cap` lifts it, to compare).
-          ...(profile.coarsePointer && !off.includes("cap") ? { maxFps: 60 } : {}),
           beforeFrame: () => followPage(),
           ...(debug ? { onFrameTimings: (timings: FrameTimings) => hud?.frame(timings) } : {}),
           // The particles start in the shapes on screen (a reload further down the page).

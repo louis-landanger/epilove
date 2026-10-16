@@ -8,9 +8,9 @@ import type { FrameTimings, IonField } from "@atomes/three/ion-field";
  * page was, whether it scrolled, how late the frames were), the field's time
  * per phase, the long animation frames and what ran in them, the memory. A
  * tap copies the whole report, to paste in a bug report. With
- * `&no=grain,backdrop,filters,anim,field,cap`, the named costs are turned off
- * (marketing.css, trial switches; the field and its frame rate cap in
- * ion-field-canvas.tsx), to compare how the page feels without them.
+ * `&no=grain,filters,anim,field`, the named costs are turned off
+ * (marketing.css, trial switches; the field in ion-field-canvas.tsx), to
+ * compare how the page feels without them.
  */
 
 export interface FieldHud {
@@ -264,9 +264,7 @@ export function mountFieldHud(container: HTMLElement, off: readonly string[]): F
         window.scrollY,
       )}`,
       `field ${container.dataset.backend ?? "-"} · ${
-        quality
-          ? `${quality.visibleParticles}@${quality.pixelRatio} · cap ${quality.maxFps ?? "none"}`
-          : (container.dataset.quality ?? "-")
+        quality ? `${quality.visibleParticles}@${quality.pixelRatio}` : (container.dataset.quality ?? "-")
       } · live=${container.dataset.live ?? "-"} resting=${container.dataset.resting ?? "-"}${
         off.length > 0 ? ` · no: ${off.join(" ")}` : ""
       }`,

@@ -178,23 +178,6 @@ export function createFrameMonitor(
   };
 }
 
-/** A screen's vsync jitters by a millisecond or two: within this, a frame at the cap's rate is due. */
-const FRAME_JITTER_MS = 2.5;
-
-/**
- * Whether the field draws this frame under a frame rate cap (`maxFps`), given
- * the time since the last frame it drew: on a screen faster than the cap it
- * skips the frames between two of its own (every other one at 120 Hz for a
- * cap of 60), and on a screen at the cap's rate it draws every frame, early
- * by a jitter or not. No cap: every frame.
- */
-export function frameDue(sinceLastDrawnMs: number, maxFps?: number): boolean {
-  if (!maxFps || maxFps <= 0) {
-    return true;
-  }
-  return sinceLastDrawnMs >= 1000 / maxFps - FRAME_JITTER_MS;
-}
-
 /**
  * Software rasterisers (no GPU acceleration): the field would hog the main
  * thread for little effect, so the poster stays.

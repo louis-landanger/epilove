@@ -71,9 +71,8 @@ export function afterLoadAndIdle(task: () => void): () => void {
 /**
  * Switches in the page's address, to try the landing on a device:
  * - `?debug=field` shows the field's diagnostics over the page (field-hud.ts),
- *   and `&no=grain,backdrop,filters,anim,field,cap` turns the named costs off
- *   (marketing.css, trial switches; the field itself and its frame rate cap on
- *   touch screens, ion-field-canvas.tsx), to compare;
+ *   and `&no=grain,filters,anim,field` turns the named costs off
+ *   (marketing.css, trial switches; the field itself), to compare;
  * - development only, `?field=live` runs the scenes on software renderers too,
  *   at full quality, and `&particles=8000` sets the ion field's particle count
  *   (to preview another device's budget).
