@@ -8,8 +8,9 @@ import type { FrameTimings, IonField } from "@atomes/three/ion-field";
  * page was, whether it scrolled, how late the frames were), the field's time
  * per phase, the long animation frames and what ran in them, the memory. A
  * tap copies the whole report, to paste in a bug report. With
- * `&no=grain,filters,anim,field`, the named costs are turned off
- * (marketing.css, trial switches; the field in ion-field-canvas.tsx), to
+ * `&no=grain,filters,anim,field,tilt,recede`, the named costs are turned off
+ * (marketing.css, trial switches; the field in ion-field-canvas.tsx; the
+ * steps' tilting illustrations and receding cards in choreography.ts), to
  * compare how the page feels without them.
  */
 
@@ -251,6 +252,17 @@ export function mountFieldHud(container: HTMLElement, off: readonly string[]): F
             second.longFrames > 0 ? `, ${second.longFrames} long` : ""
           }`,
       );
+    // Late frames by section, in the order of the page: the line to compare between two trials.
+    const bySection = new Map<string, { frames: number; late: number }>();
+    for (const second of seconds) {
+      const entry = bySection.get(second.section) ?? { frames: 0, late: 0 };
+      entry.frames += second.frames;
+      entry.late += second.late;
+      bySection.set(second.section, entry);
+    }
+    const sectionLine = [...bySection.entries()]
+      .map(([section, entry]) => `${section} ${percent(entry.late, entry.frames)}`)
+      .join(" · ");
     const topScripts = [...scripts.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
@@ -278,6 +290,7 @@ export function mountFieldHud(container: HTMLElement, off: readonly string[]): F
         counts.stutters,
         counts.frames,
       )}`,
+      `late by section: ${sectionLine || "-"}`,
       ...(worst.length > 0 ? ["worst seconds:", ...worst] : ["worst seconds: none late"]),
       `field ms ${PHASES.map((phase) => `${phase} ${ms(phases[phase].percentile(0.5))}`).join(" ")} · sum med ${ms(
         total.percentile(0.5),

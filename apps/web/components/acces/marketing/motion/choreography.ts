@@ -2,6 +2,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import Lenis from "lenis";
+import { landingSwitches } from "../live-scene";
 
 const HEADER_OFFSET = 72;
 const INTERACTIVE = "a, button, summary, input, label, [data-cursor]";
@@ -304,20 +305,22 @@ export function startChoreography(root: HTMLElement): () => void {
     }
 
     // Steps: each pinned card recedes as the next one slides over it (a little smaller, and
-    // darker under its veil), and the illustrations straighten up as they arrive.
+    // darker under its veil), and the illustrations straighten up as they arrive. Either can be
+    // turned off to try a device without it (`?debug=field&no=recede,tilt`, live-scene.ts).
+    const { off } = landingSwitches();
     const steps = gsap.utils.toArray<HTMLElement>("[data-step]");
     steps.forEach((step, index) => {
       const card = step.querySelector("article");
       const veil = step.querySelector(".step-veil");
       const next = steps[index + 1];
-      if (card && veil && next) {
+      if (card && veil && next && !off.includes("recede")) {
         gsap
           .timeline({ scrollTrigger: { trigger: next, start: "top bottom", end: "top 25%", scrub: true } })
           .fromTo(card, { scale: 1 }, { scale: 0.94, ease: "none" })
           .fromTo(veil, { opacity: 0 }, { opacity: 0.45, ease: "none" }, 0);
       }
       const illustration = step.querySelector(".step-card-3d");
-      if (illustration) {
+      if (illustration && !off.includes("tilt")) {
         gsap.fromTo(
           illustration,
           { rotateX: 18, rotateY: -22, y: 60 },
