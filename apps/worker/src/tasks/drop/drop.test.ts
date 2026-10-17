@@ -20,7 +20,13 @@ describe.skipIf(!url)("evening Drop", () => {
   const { db, close } = createDatabase(url ?? "", { maxConnections: 4 });
   beforeAll(() => prepareTestDatabase(db));
   afterAll(async () => {
-    await db.delete(schema.drop).where(eq(schema.drop.day, DAY));
+    // The day's Drops include other test files' members (computeDrops takes every active member),
+    // which those files may be deleting meanwhile, their Drops with them by cascade, in another
+    // order: waiting for those rows deadlocked. They go anyway; the others go here, unwaited.
+    await db.execute(sql`
+      delete from ${schema.drop} where ${schema.drop.id} in (
+        select ${schema.drop.id} from ${schema.drop} where ${schema.drop.day} = ${DAY} for update skip locked
+      )`);
     await db.delete(schema.dropRun).where(eq(schema.dropRun.day, DAY));
     await cleanupTestMembers(db);
     await close();
