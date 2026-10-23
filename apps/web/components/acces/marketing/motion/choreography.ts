@@ -309,13 +309,55 @@ export function startChoreography(root: HTMLElement): () => void {
     // turned off to try a device without it (`?debug=field&no=recede,tilt`, live-scene.ts).
     const { off } = landingSwitches();
     const steps = gsap.utils.toArray<HTMLElement>("[data-step]");
+    // While the page scrolls, the shrinking cards and the illustrations are layers the compositor
+    // moves as drawn (`will-change`); once it rests, they are drawn again, once, crisp. Otherwise
+    // a card's scale written at every frame had a phone's GPU draw the whole card again at each
+    // one (on a Galaxy S26 Ultra, `?debug=field&no=recede` took the steps' late frames from 34 %
+    // to 3 %), and the illustrations' own animations, repainted, the card around them.
+    const lifted = new Set<HTMLElement>();
+    const lift = (element: HTMLElement) => {
+      if (!lifted.has(element)) {
+        lifted.add(element);
+        element.style.willChange = "transform";
+      }
+    };
+    const settle = () => {
+      for (const element of lifted) {
+        element.style.removeProperty("will-change");
+      }
+      lifted.clear();
+    };
+    ScrollTrigger.addEventListener("scrollEnd", settle);
+    cleanups.push(() => {
+      ScrollTrigger.removeEventListener("scrollEnd", settle);
+      settle();
+    });
+    const illustrations = steps.flatMap((step) => step.querySelector<HTMLElement>(".step-card-3d") ?? []);
+    ScrollTrigger.create({
+      trigger: "[data-steps]",
+      start: "top bottom",
+      end: "bottom top",
+      onUpdate: () => {
+        for (const illustration of illustrations) {
+          lift(illustration);
+        }
+      },
+    });
     steps.forEach((step, index) => {
       const card = step.querySelector("article");
       const veil = step.querySelector(".step-veil");
       const next = steps[index + 1];
       if (card && veil && next && !off.includes("recede")) {
         gsap
-          .timeline({ scrollTrigger: { trigger: next, start: "top bottom", end: "top 25%", scrub: true } })
+          .timeline({
+            scrollTrigger: {
+              trigger: next,
+              start: "top bottom",
+              end: "top 25%",
+              scrub: true,
+              onUpdate: () => lift(card),
+            },
+          })
           .fromTo(card, { scale: 1 }, { scale: 0.94, ease: "none" })
           .fromTo(veil, { opacity: 0 }, { opacity: 0.45, ease: "none" }, 0);
       }

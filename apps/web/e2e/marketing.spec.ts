@@ -270,6 +270,18 @@ test.describe("rendering cost", () => {
         (cards) => cards.filter((card) => getComputedStyle(card).backdropFilter !== "none").length,
       );
     expect(blurred).toBe(0);
+    // Layers of their own only while the page scrolls: at rest, the cards and illustrations are
+    // drawn again, crisp at their size.
+    await expect
+      .poll(() =>
+        page
+          .locator("[data-step] article, [data-step] .step-card-3d")
+          .evaluateAll(
+            (elements) =>
+              elements.filter((element) => getComputedStyle(element).willChange !== "auto").length,
+          ),
+      )
+      .toBe(0);
   });
 
   test("restyles an element added to the landing, not the whole page", async ({ page, browser }) => {
