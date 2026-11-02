@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import type { NextConfig } from "next";
@@ -19,7 +20,17 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
 
+// The commit built, which the landing's device diagnostics show (`?debug=field`, field-hud.ts).
+const buildCommit = (() => {
+  try {
+    return execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
+  } catch {
+    return "unknown";
+  }
+})();
+
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_BUILD_COMMIT: buildCommit },
   reactCompiler: true,
   typedRoutes: true,
   poweredByHeader: false,

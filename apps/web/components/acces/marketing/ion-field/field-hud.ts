@@ -252,23 +252,29 @@ export function mountFieldHud(container: HTMLElement, off: readonly string[]): F
             second.longFrames > 0 ? `, ${second.longFrames} long` : ""
           }`,
       );
-    // Late frames by section, in the order of the page: the line to compare between two trials.
-    const bySection = new Map<string, { frames: number; late: number }>();
+    // Late frames by section, in the order of the page, and how fast it scrolled there (a fling
+    // brings whole sections in at once): the line to compare between two trials.
+    const bySection = new Map<string, { frames: number; late: number; seconds: number; scrolled: number }>();
     for (const second of seconds) {
-      const entry = bySection.get(second.section) ?? { frames: 0, late: 0 };
+      const entry = bySection.get(second.section) ?? { frames: 0, late: 0, seconds: 0, scrolled: 0 };
       entry.frames += second.frames;
       entry.late += second.late;
+      entry.seconds += 1;
+      entry.scrolled += second.scrolled;
       bySection.set(second.section, entry);
     }
     const sectionLine = [...bySection.entries()]
-      .map(([section, entry]) => `${section} ${percent(entry.late, entry.frames)}`)
+      .map(
+        ([section, entry]) =>
+          `${section} ${percent(entry.late, entry.frames)} @${Math.round(entry.scrolled / entry.seconds)} px/s`,
+      )
       .join(" · ");
     const topScripts = [...scripts.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([key, duration]) => `  ${ms(duration)} ms  ${key}`);
     return [
-      `atomes · champ · ${elapsed().toFixed(0)} s · toucher pour copier`,
+      `atomes · champ · build ${process.env.NEXT_PUBLIC_BUILD_COMMIT ?? "?"} · ${elapsed().toFixed(0)} s · toucher pour copier`,
       `${navigator.userAgent.split(") ").pop() ?? navigator.userAgent}`,
       `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio} · cores ${navigator.hardwareConcurrency} · mem ${
         nav.deviceMemory ?? "?"
