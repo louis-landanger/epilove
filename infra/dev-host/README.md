@@ -53,6 +53,14 @@ Compter 10 à 15 minutes (Docker, Node 24, Caddy, uv, build de production, base 
 
 Les adresses `sslip.io` pointent vers l'IP qu'elles contiennent : pas de nom de domaine à acheter, Caddy obtient les certificats tout seul. Pour un autre nom (par exemple un sous-domaine DuckDNS dont `*.` pointe vers la machine) : `DOMAIN=atomes.duckdns.org`, puis supprimer `.env` et `infra/dev-host/generated/domain` avant de relancer le script.
 
+**Machine sans adresse publique** (un ordinateur à la maison, joint par [Tailscale](https://tailscale.com)) : Let's Encrypt ne peut pas la joindre pour vérifier le nom. Faire pointer un nom DuckDNS vers son adresse Tailscale (`100.x.y.z`, à saisir sur la page du compte duckdns.org), puis :
+
+```bash
+sudo DOMAIN=atomes.duckdns.org CERTS=duckdns bash infra/dev-host/setup.sh
+```
+
+Le script demande le jeton DuckDNS (en haut de la page du compte) et le mot de passe d'équipe, sans les afficher. Caddy obtient alors un seul certificat `*.atomes.duckdns.org` par l'API de DuckDNS : les adresses sont les mêmes (`app.`, `admin.`, `mail.`…, sauf le nom nu), joignables seulement depuis les appareils du réseau Tailscale (un téléphone aussi, avec l'app Tailscale). Le jeton reste dans `infra/dev-host/generated/duckdns-token` et `/etc/caddy/duckdns.env`, lisibles par root seul ; Caddy est figé (`apt-mark hold caddy`) pour garder le module DuckDNS.
+
 Options : `TEAM_USER` (identifiant, `atomes` par défaut), `SEED_DEV=0` (sans membres fictifs).
 
 ## 4. Au quotidien
@@ -95,7 +103,7 @@ puis, sur la nouvelle machine : étapes 1 à 3, copier `atomes.sql`, et `docker 
 | Symptôme | Piste |
 |---|---|
 | `git clone` : `connect to host github.com port 22: Connection timed out` | Port 22 sortant bloqué (hébergeur ou réseau) : passer par le port 443, `ssh://git@ssh.github.com:443/louis-landanger/epilove.git` au lieu de `git@github.com:louis-landanger/epilove.git` |
-| Certificat refusé | `journalctl -u caddy` : limites de Let's Encrypt sur le domaine partagé `sslip.io` → passer à DuckDNS (`DOMAIN=…`) |
+| Certificat refusé | `journalctl -u caddy` : limites de Let's Encrypt sur le domaine partagé `sslip.io` → passer à DuckDNS (`DOMAIN=…`) ; avec `CERTS=duckdns`, un jeton DuckDNS faux ou périmé (le saisir de nouveau : `sudo DUCKDNS_TOKEN='…' bash infra/dev-host/setup.sh`) |
 | 502 sur l'app | `journalctl -u atomes-web` ; `systemctl status atomes-web` |
 | Photos qui restent « en traitement » | `journalctl -u atomes-worker` |
 | Messages qui n'arrivent pas en direct | `docker compose … logs centrifugo` ; `CENTRIFUGO_WS_URL` dans `.env` |

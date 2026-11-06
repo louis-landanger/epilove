@@ -29,4 +29,5 @@ Une seule machine Ubuntu 24.04 installée par `infra/dev-host/setup.sh` :
 - Aucune adaptation du code : ce qui marche en local marche sur la machine, et l'inverse.
 - **Données fictives uniquement** : pas de sauvegarde, pas de garanties RGPD (docs/08), et la connexion de développement contourne l'authentification.
 - Une machine unique : son arrêt arrête tout. Sans importance pour du développement.
+- Une machine sans adresse publique (un ordinateur à la maison, derrière Tailscale) garde les mêmes adresses : un nom DuckDNS pointe vers son adresse Tailscale et Caddy prouve le nom par l'API de DuckDNS (`CERTS=duckdns`, un certificat `*.` unique). Le site n'est alors joignable que depuis le réseau Tailscale.
 - La préproduction et la production suivent l'ADR 003 (VPS européen, Coolify, R2, Brevo, Cloudflare). `setup.sh` n'est pas un outil de production.
