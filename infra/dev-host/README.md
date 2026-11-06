@@ -51,7 +51,7 @@ Compter 10 à 15 minutes (Docker, Node 24, Caddy, uv, build de production, base 
 | `https://admin.….sslip.io` | Back-office |
 | `https://mail.….sslip.io` | Mailpit : tous les e-mails envoyés (codes de connexion compris) arrivent ici, rien ne part vraiment |
 
-Les adresses `sslip.io` pointent vers l'IP qu'elles contiennent : pas de nom de domaine à acheter, Caddy obtient les certificats tout seul. Pour un autre nom (par exemple un sous-domaine DuckDNS dont `*.` pointe vers la machine) : `DOMAIN=atomes.duckdns.org`, puis supprimer `.env` et `infra/dev-host/generated/domain` avant de relancer le script.
+Les adresses `sslip.io` pointent vers l'IP qu'elles contiennent : pas de nom de domaine à acheter, Caddy obtient les certificats tout seul. Pour un autre nom (par exemple un sous-domaine DuckDNS dont `*.` pointe vers la machine) : relancer le script avec `DOMAIN=atomes.duckdns.org`. Les adresses de `.env` suivent le domaine, le reste du fichier est gardé.
 
 **Machine sans adresse publique** (un ordinateur à la maison, joint par [Tailscale](https://tailscale.com)) : Let's Encrypt ne peut pas la joindre pour vérifier le nom. Faire pointer un nom DuckDNS vers son adresse Tailscale (`100.x.y.z`, à saisir sur la page du compte duckdns.org), puis :
 
@@ -59,7 +59,20 @@ Les adresses `sslip.io` pointent vers l'IP qu'elles contiennent : pas de nom de 
 sudo DOMAIN=atomes.duckdns.org CERTS=duckdns bash infra/dev-host/setup.sh
 ```
 
-Le script demande le jeton DuckDNS (en haut de la page du compte) et le mot de passe d'équipe, sans les afficher. Caddy obtient alors un seul certificat `*.atomes.duckdns.org` par l'API de DuckDNS : les adresses sont les mêmes (`app.`, `admin.`, `mail.`…, sauf le nom nu), joignables seulement depuis les appareils du réseau Tailscale (un téléphone aussi, avec l'app Tailscale). Le jeton reste dans `infra/dev-host/generated/duckdns-token` et `/etc/caddy/duckdns.env`, lisibles par root seul ; Caddy est figé (`apt-mark hold caddy`) pour garder le module DuckDNS.
+Le script demande le jeton DuckDNS (en haut de la page du compte) et le mot de passe d'équipe, sans les afficher. Caddy obtient alors un seul certificat `*.atomes.duckdns.org` par l'API de DuckDNS : les adresses sont les mêmes (`app.`, `admin.`, `mail.`…, sauf le nom nu), joignables seulement depuis les appareils du réseau Tailscale (un téléphone aussi, avec l'app Tailscale). Le jeton reste dans `/etc/caddy/duckdns.env` (lisible par root seul) et dans `infra/dev-host/generated/duckdns-token`, avec les autres secrets ; Caddy est figé (`apt-mark hold caddy`) pour garder le module DuckDNS.
+
+**Machine sans adresse publique, site public** : un [tunnel Cloudflare](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/) (gratuit). La machine ouvre elle-même la connexion vers Cloudflare : rien à ouvrir sur la box, l'adresse IP de la maison reste cachée. Il faut un nom de domaine dont le DNS est géré par Cloudflare (offre gratuite : ajouter le domaine sur dash.cloudflare.com, puis remplacer ses serveurs DNS chez le registraire par ceux que Cloudflare indique). Ensuite :
+
+```bash
+sudo DOMAIN=exemple.fr CERTS=tunnel bash infra/dev-host/setup.sh
+```
+
+À la première exécution, le script affiche un lien : l'ouvrir dans n'importe quel navigateur, se connecter à Cloudflare et choisir le domaine. Il crée ensuite le tunnel `atomes` et six entrées DNS (`app.`, `admin.`, `mail.`, `ws.`, `media.`, `img.` du domaine ; le nom nu et les autres noms ne sont pas touchés). Il s'arrête sans rien écraser si l'un de ces noms est déjà utilisé. Cloudflare présente les certificats et transmet les visites par le tunnel à Caddy, qui n'écoute plus que sur la machine elle-même ; le mot de passe d'équipe protège toujours l'app, le back-office et Mailpit. Deux limites :
+
+- `DOMAIN` est le domaine lui-même (`exemple.fr`), pas un sous-domaine : le certificat gratuit de Cloudflare ne couvre qu'un niveau (`app.exemple.fr`, pas `app.atomes.exemple.fr`).
+- Cloudflare déchiffre le trafic avant de le passer au tunnel : acceptable pour des données fictives, c'est aussi le schéma prévu en production (ADR 003).
+
+Les quotas par adresse IP lisent alors l'en-tête `cf-connecting-ip` (posé par Cloudflare) au lieu de `x-forwarded-for` ; le script règle `.env` en conséquence.
 
 Options : `TEAM_USER` (identifiant, `atomes` par défaut), `SEED_DEV=0` (sans membres fictifs).
 
@@ -91,12 +104,13 @@ puis, sur la nouvelle machine : étapes 1 à 3, copier `atomes.sql`, et `docker 
 
 ## Ce que fait `setup.sh`
 
-1. Installe Docker, Node 24 (Corepack, pnpm), Caddy, uv (solveur du Pacte) et, sous 6 Go de RAM, 4 Go de swap.
-2. Pare-feu : SSH, 80 et 443 uniquement. Les ports des services restent liés à `127.0.0.1`.
-3. Génère des secrets propres à la machine (`infra/dev-host/generated/`, mode 700) et écrit `.env` à partir de `.env.example`. Les deux sont gardés aux exécutions suivantes.
+1. Installe Docker, Node 24 (Corepack, pnpm), Caddy, uv (solveur du Pacte), cloudflared avec `CERTS=tunnel` et, sous 6 Go de RAM, 4 Go de swap.
+2. Pare-feu : SSH, 80 et 443 uniquement (SSH seul avec `CERTS=tunnel`). Les ports des services restent liés à `127.0.0.1`. Avec `CERTS=tunnel`, connexion à Cloudflare, tunnel et entrées DNS.
+3. Génère des secrets propres à la machine (`infra/dev-host/generated/`, mode 700) et écrit `.env` à partir de `.env.example`. Les deux sont gardés aux exécutions suivantes ; seules les adresses de `.env` sont réécrites, pour suivre le domaine.
 4. Démarre les services Docker avec ces secrets (`infra/dev-host/compose.yaml` remplace les valeurs de développement du compose local), construit l'app, migre et remplit la base.
 5. Crée trois services systemd (`atomes-web`, `atomes-admin`, `atomes-worker`) qui redémarrent seuls, avec l'utilisateur `atomes`.
 6. Configure Caddy : HTTPS pour `app`, `admin`, `mail`, `ws` (WebSocket de Centrifugo uniquement), `media` (envois présignés) et `img` (photos signées) ; mot de passe d'équipe devant l'app, le back-office et Mailpit. Le script remplace `/etc/caddy/Caddyfile` : si la machine en avait déjà un, écrit à la main (d'autres sites), il le met de côté dans `/etc/caddy/Caddyfile.before-atomes-<date>` et le signale. Caddy ne sert alors plus que les adresses d'Atomes.
+7. Avec `CERTS=tunnel` : écrit `/etc/cloudflared/config.yml` (les six noms vers Caddy) et lance le service systemd `atomes-tunnel`.
 
 ## En cas de souci
 
@@ -104,6 +118,8 @@ puis, sur la nouvelle machine : étapes 1 à 3, copier `atomes.sql`, et `docker 
 |---|---|
 | `git clone` : `connect to host github.com port 22: Connection timed out` | Port 22 sortant bloqué (hébergeur ou réseau) : passer par le port 443, `ssh://git@ssh.github.com:443/louis-landanger/epilove.git` au lieu de `git@github.com:louis-landanger/epilove.git` |
 | Certificat refusé | `journalctl -u caddy` : limites de Let's Encrypt sur le domaine partagé `sslip.io` → passer à DuckDNS (`DOMAIN=…`) ; avec `CERTS=duckdns`, un jeton DuckDNS faux ou périmé (le saisir de nouveau : `sudo DUCKDNS_TOKEN='…' bash infra/dev-host/setup.sh`) |
+| `Could not route app.… to the tunnel` | Une entrée DNS utilise déjà ce nom sur Cloudflare : la supprimer (DNS → Records), ou choisir un autre `DOMAIN` |
+| Erreur Cloudflare 1033 ou 502 avec le tunnel | `journalctl -u atomes-tunnel` (le tunnel est-il connecté ?) ; `systemctl status caddy` |
 | 502 sur l'app | `journalctl -u atomes-web` ; `systemctl status atomes-web` |
 | Photos qui restent « en traitement » | `journalctl -u atomes-worker` |
 | Messages qui n'arrivent pas en direct | `docker compose … logs centrifugo` ; `CENTRIFUGO_WS_URL` dans `.env` |

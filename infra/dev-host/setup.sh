@@ -10,8 +10,11 @@
 # SEED_DEV=0 to skip the fictional members, CERTS=duckdns for a machine the
 # Internet cannot reach (behind Tailscale): DOMAIN is then a DuckDNS name pointing
 # at its private address, and Caddy proves it owns the name through DuckDNS's API
-# (DUCKDNS_TOKEN, asked if missing). Safe to run again: secrets, .env and data are
-# kept; see infra/dev-host/README.md.
+# (DUCKDNS_TOKEN, asked if missing). CERTS=tunnel for a machine the Internet cannot
+# reach that must still be public: DOMAIN is a domain whose DNS is on Cloudflare, and
+# a Cloudflare Tunnel carries the traffic (a link to sign in to Cloudflare is shown
+# on the first run). Safe to run again: secrets, .env and data are kept, the
+# addresses in .env follow DOMAIN; see infra/dev-host/README.md.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -43,14 +46,20 @@ if [ -z "${DOMAIN:-}" ] && [ -f "$GENERATED/domain" ]; then
 fi
 # Certificates: Let's Encrypt reaches the machine over HTTP by default. With
 # CERTS=duckdns (a machine behind Tailscale, which Let's Encrypt cannot reach), it
-# checks a TXT record that Caddy writes through DuckDNS's API instead.
+# checks a TXT record that Caddy writes through DuckDNS's API instead. With
+# CERTS=tunnel, Cloudflare holds the certificates and reaches Caddy through a tunnel
+# that the machine opens itself.
 CERTS="${CERTS:-$(cat "$GENERATED/certs" 2>/dev/null || echo http)}"
 case "$CERTS" in
-  http | duckdns) ;;
-  *) echo "CERTS is http (default) or duckdns, not '$CERTS'." >&2; exit 1 ;;
+  http | duckdns | tunnel) ;;
+  *) echo "CERTS is http (default), duckdns or tunnel, not '$CERTS'." >&2; exit 1 ;;
 esac
 if [ "$CERTS" = duckdns ] && [ -z "${DOMAIN:-}" ]; then
   echo "CERTS=duckdns needs DOMAIN, the DuckDNS name (for example atomes.duckdns.org)." >&2
+  exit 1
+fi
+if [ "$CERTS" = tunnel ] && [ -z "${DOMAIN:-}" ]; then
+  echo "CERTS=tunnel needs DOMAIN, a domain whose DNS is on Cloudflare (for example example.com)." >&2
   exit 1
 fi
 if [ -z "${DOMAIN:-}" ]; then
@@ -99,6 +108,14 @@ if [ "$CERTS" = duckdns ] && ! caddy list-modules 2>/dev/null | grep -qx 'dns.pr
   caddy add-package github.com/caddy-dns/duckdns >/dev/null
   apt-mark hold caddy >/dev/null
 fi
+if [ "$CERTS" = tunnel ] && ! command -v cloudflared >/dev/null; then
+  install -d -m 755 /usr/share/keyrings
+  curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg >/usr/share/keyrings/cloudflare-main.gpg
+  echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" \
+    >/etc/apt/sources.list.d/cloudflared.list
+  apt-get update -q
+  apt-get install -yq cloudflared >/dev/null
+fi
 
 # Next.js builds want a few gigabytes of memory.
 if [ "$(awk '/MemTotal/ {print int($2 / 1024 / 1024)}' /proc/meminfo)" -lt 6 ] && ! swapon --show | grep -q .; then
@@ -110,9 +127,49 @@ fi
 # --- Firewall: SSH and HTTPS only (every service port is bound to 127.0.0.1) --
 log "Firewall"
 ufw allow OpenSSH >/dev/null
-ufw allow 80/tcp >/dev/null
-ufw allow 443/tcp >/dev/null
+if [ "$CERTS" != tunnel ]; then
+  # Through a tunnel, nothing comes in: cloudflared opens the connections itself.
+  ufw allow 80/tcp >/dev/null
+  ufw allow 443/tcp >/dev/null
+fi
 ufw --force enable >/dev/null
+
+# --- Cloudflare Tunnel: sign-in, tunnel and DNS records (CERTS=tunnel) ---------
+# Done early, while whoever runs the script is still watching: the first run shows a
+# link to open in any browser. The sign-in (cert.pem) and the tunnel's credentials
+# stay with root, out of the checkout.
+TUNNEL_NAME=atomes
+TUNNEL_CREDENTIALS=/etc/cloudflared/tunnel.json
+# The names Caddy serves (the `site` calls below), routed to the tunnel.
+NAMES=(app admin mail ws media img)
+if [ "$CERTS" = tunnel ]; then
+  log "Cloudflare Tunnel"
+  install -d -m 700 /etc/cloudflared
+  # `login` writes to $HOME/.cloudflared, which `sudo -E` would leave elsewhere.
+  export TUNNEL_ORIGIN_CERT=/root/.cloudflared/cert.pem
+  if [ ! -s "$TUNNEL_ORIGIN_CERT" ]; then
+    echo "Open the link below, sign in to Cloudflare and choose $DOMAIN:"
+    HOME=/root cloudflared tunnel login
+  fi
+  if [ ! -s "$TUNNEL_CREDENTIALS" ]; then
+    if cloudflared tunnel list --name "$TUNNEL_NAME" --output json | python3 -c 'import json, sys; sys.exit(0 if json.load(sys.stdin) else 1)'; then
+      # The tunnel exists (another install): fetch its credentials again.
+      cloudflared tunnel token --cred-file "$TUNNEL_CREDENTIALS" "$TUNNEL_NAME"
+    else
+      cloudflared tunnel create --cred-file "$TUNNEL_CREDENTIALS" "$TUNNEL_NAME"
+    fi
+    chmod 600 "$TUNNEL_CREDENTIALS"
+  fi
+  TUNNEL_ID="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["TunnelID"])' "$TUNNEL_CREDENTIALS")"
+  for name in "${NAMES[@]}"; do
+    # Never overwrites a record: a name already in use stops the script.
+    cloudflared tunnel route dns "$TUNNEL_ID" "$name.$DOMAIN" || {
+      echo "Could not route $name.$DOMAIN to the tunnel (see above). Usually a DNS record already" \
+        "uses the name: delete it on Cloudflare, or choose another DOMAIN." >&2
+      exit 1
+    }
+  done
+fi
 
 # --- Service user -------------------------------------------------------------
 id "$RUN_USER" >/dev/null 2>&1 || useradd --create-home --shell /bin/bash "$RUN_USER"
@@ -148,11 +205,28 @@ fi
 sed -i '/^APP_URL=/d' "$GENERATED/services.env"
 echo "APP_URL=https://app.$DOMAIN" >>"$GENERATED/services.env"
 
-DOMAIN="$DOMAIN" REPO_DIR="$REPO_DIR" GENERATED="$GENERATED" python3 - <<'PY'
+DOMAIN="$DOMAIN" CERTS="$CERTS" REPO_DIR="$REPO_DIR" GENERATED="$GENERATED" python3 - <<'PY'
 import json, os, pathlib
 
 domain, repo, generated = os.environ["DOMAIN"], pathlib.Path(os.environ["REPO_DIR"]), pathlib.Path(os.environ["GENERATED"])
 secrets = dict(line.split("=", 1) for line in (generated / "services.env").read_text().splitlines() if "=" in line)
+# Through the tunnel, every request reaches Caddy from cloudflared: the visitor's
+# address is in the header Cloudflare sets, not in X-Forwarded-For.
+ip_headers = "cf-connecting-ip" if os.environ["CERTS"] == "tunnel" else "x-forwarded-for"
+# What follows the domain and the mode, rewritten on every run; the rest of .env is kept.
+addresses = {
+    "CENTRIFUGO_WS_URL": f"wss://ws.{domain}/connection/websocket",
+    "S3_PUBLIC_ENDPOINT": f"https://media.{domain}",
+    "IMGPROXY_URL": f"https://img.{domain}",
+    "EMAIL_FROM": f"Atomes <no-reply@{domain}>",
+    "APP_URL": f"https://app.{domain}",
+    "AUTH_TRUSTED_ORIGINS": f"https://admin.{domain}",
+    "PASSKEY_RP_ID": f"app.{domain}",
+    "AUTH_IP_HEADERS": ip_headers,
+    "API_IP_HEADERS": ip_headers,
+    "ADMIN_URL": f"https://admin.{domain}",
+    "SITE_URL": f"https://app.{domain}",
+}
 
 (generated / "s3.json").write_text(json.dumps({"identities": [{
     "name": "atomes",
@@ -162,18 +236,29 @@ secrets = dict(line.split("=", 1) for line in (generated / "services.env").read_
 
 env_path = repo / ".env"
 if env_path.exists():
-    print(".env kept as it is (delete it to regenerate)")
+    lines, changed = env_path.read_text().splitlines(), []
+    for index, line in enumerate(lines):
+        key = line.split("=", 1)[0]
+        if key in addresses and "=" in line and line != f"{key}={addresses[key]}":
+            lines[index] = f"{key}={addresses[key]}"
+            changed.append(key)
+    present = {line.split("=", 1)[0] for line in lines if "=" in line}
+    missing = [key for key in addresses if key not in present]
+    lines += [f"{key}={addresses[key]}" for key in missing]
+    changed += missing
+    if changed:
+        env_path.write_text("\n".join(lines) + "\n")
+        print(f".env kept, addresses updated: {', '.join(changed)}")
+    else:
+        print(".env kept as it is (delete it to regenerate)")
 else:
     values = {
         "APP_ENV": "development",
         "DATABASE_URL": f"postgres://atomes:{secrets['POSTGRES_PASSWORD']}@127.0.0.1:5432/atomes",
         "CENTRIFUGO_HTTP_API_KEY": secrets["CENTRIFUGO_HTTP_API_KEY"],
         "CENTRIFUGO_TOKEN_SECRET": secrets["CENTRIFUGO_TOKEN_SECRET"],
-        "CENTRIFUGO_WS_URL": f"wss://ws.{domain}/connection/websocket",
         "S3_ACCESS_KEY_ID": secrets["S3_ACCESS_KEY_ID"],
         "S3_SECRET_ACCESS_KEY": secrets["S3_SECRET_ACCESS_KEY"],
-        "S3_PUBLIC_ENDPOINT": f"https://media.{domain}",
-        "IMGPROXY_URL": f"https://img.{domain}",
         "IMGPROXY_KEY": secrets["IMGPROXY_KEY"],
         "IMGPROXY_SALT": secrets["IMGPROXY_SALT"],
         "ENCRYPTION_KEYS": f"dev1:{secrets['ENCRYPTION_KEY']}",
@@ -181,14 +266,9 @@ else:
         "EMAIL_HMAC_SECRET": secrets["EMAIL_HMAC_SECRET"],
         # The whole site sits behind the team password (Caddy), so the /dev member picker can stay.
         "DEV_AUTH": "1",
-        "EMAIL_FROM": f"Atomes <no-reply@{domain}>",
-        "APP_URL": f"https://app.{domain}",
-        "AUTH_TRUSTED_ORIGINS": f"https://admin.{domain}",
         "BETTER_AUTH_SECRET": secrets["BETTER_AUTH_SECRET"],
-        "PASSKEY_RP_ID": f"app.{domain}",
         "AUTH_TRUSTED_PROXIES": "127.0.0.1,::1",
-        "ADMIN_URL": f"https://admin.{domain}",
-        "SITE_URL": f"https://app.{domain}",
+        **addresses,
     }
     lines, seen = [], set()
     for line in (repo / ".env.example").read_text().splitlines():
@@ -272,6 +352,10 @@ if [ "$CERTS" = duckdns ]; then
   mkdir -p /etc/systemd/system/caddy.service.d
   printf '[Service]\nEnvironmentFile=/etc/caddy/duckdns.env\n' >/etc/systemd/system/caddy.service.d/duckdns.conf
   systemctl daemon-reload
+elif [ -f /etc/systemd/system/caddy.service.d/duckdns.conf ]; then
+  # Left by an earlier run with CERTS=duckdns.
+  rm -f /etc/systemd/system/caddy.service.d/duckdns.conf /etc/caddy/duckdns.env
+  systemctl daemon-reload
 fi
 
 # What each name serves, whatever the certificates.
@@ -302,6 +386,7 @@ route_img='reverse_proxy 127.0.0.1:8080'
 # A site per name with certificates over HTTP; with DuckDNS, one wildcard site whose
 # certificate covers them all: DuckDNS keeps a single TXT record per domain, so a
 # certificate asked for each name at once would overwrite the others' records.
+# Through the tunnel, a plain HTTP site per name: Cloudflare holds the certificates.
 site() {
   local name="$1" comment="$2" body="$3"
   if [ "$CERTS" = duckdns ]; then
@@ -311,7 +396,11 @@ site() {
     printf '\t}\n\n'
   else
     [ -z "$comment" ] || printf '# %s\n' "$comment"
-    printf '%s.%s {\n' "$name" "$DOMAIN"
+    if [ "$CERTS" = tunnel ]; then
+      printf 'http://%s.%s {\n\timport https_only\n' "$name" "$DOMAIN"
+    else
+      printf '%s.%s {\n' "$name" "$DOMAIN"
+    fi
     printf '%s\n' "$body" | sed 's/^/\t/'
     printf '}\n\n'
   fi
@@ -333,11 +422,19 @@ fi
   echo "# Generated by infra/dev-host/setup.sh: edit the script, not this file."
   if [ "$CERTS" = duckdns ]; then
     printf '{\n\tacme_dns duckdns {env.DUCKDNS_TOKEN}\n}\n\n'
+  elif [ "$CERTS" = tunnel ]; then
+    # Only cloudflared, on this machine, talks to Caddy; its X-Forwarded-Proto is kept.
+    printf '{\n\tdefault_bind 127.0.0.1\n\tservers {\n\t\ttrusted_proxies static 127.0.0.1/32\n\t}\n}\n\n'
+    # Cloudflare also forwards plain HTTP visits: sent to HTTPS before the team password.
+    printf '(https_only) {\n\t@insecure header X-Forwarded-Proto http\n\tredir @insecure https://{host}{uri} 308\n}\n\n'
   fi
   printf '(team) {\n\tbasic_auth {\n\t\t%s %s\n\t}\n}\n\n' "$TEAM_USER" "$TEAM_HASH"
   if [ "$CERTS" = duckdns ]; then
     # The bare name would need its own certificate, another TXT record: left out.
     printf '*.%s {\n' "$DOMAIN"
+  elif [ "$CERTS" = tunnel ]; then
+    # The bare name is left alone: it may well serve another site.
+    :
   else
     printf '# The bare name leads to the app instead of failing the TLS handshake.\n'
     printf '%s {\n\tredir https://app.%s{uri}\n}\n\n' "$DOMAIN" "$DOMAIN"
@@ -354,13 +451,52 @@ fi
 } >/etc/caddy/Caddyfile
 if [ "$CERTS" = duckdns ]; then
   env "$(cat /etc/caddy/duckdns.env)" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
-  systemctl enable caddy >/dev/null
-  # A restart, not a reload: the token comes with the service's environment.
-  systemctl restart caddy
 else
   caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
-  systemctl enable caddy >/dev/null
+fi
+systemctl enable caddy >/dev/null
+if [ "$CERTS" = http ]; then
   systemctl reload caddy 2>/dev/null || systemctl restart caddy
+else
+  # A restart, not a reload: the DuckDNS token comes with the service's environment,
+  # and the tunnel moves Caddy from every address to the loopback one.
+  systemctl restart caddy
+fi
+
+# --- Cloudflare Tunnel: Cloudflare → cloudflared → Caddy (CERTS=tunnel) -------------
+if [ "$CERTS" = tunnel ]; then
+  log "Tunnel service"
+  {
+    echo "# Generated by infra/dev-host/setup.sh: edit the script, not this file."
+    echo "tunnel: $TUNNEL_ID"
+    echo "credentials-file: $TUNNEL_CREDENTIALS"
+    echo "ingress:"
+    for name in "${NAMES[@]}"; do
+      printf '  - hostname: %s.%s\n    service: http://127.0.0.1:80\n' "$name" "$DOMAIN"
+    done
+    echo "  - service: http_status:404"
+  } >/etc/cloudflared/config.yml
+  cloudflared tunnel --config /etc/cloudflared/config.yml ingress validate >/dev/null
+  cat >/etc/systemd/system/atomes-tunnel.service <<EOF
+[Unit]
+Description=Atomes Cloudflare Tunnel
+After=network-online.target caddy.service
+Wants=network-online.target
+
+[Service]
+ExecStart=$(command -v cloudflared) --no-autoupdate --config /etc/cloudflared/config.yml tunnel run
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  systemctl daemon-reload
+  systemctl enable atomes-tunnel >/dev/null
+  systemctl restart atomes-tunnel
+elif [ -f /etc/systemd/system/atomes-tunnel.service ]; then
+  # Left by an earlier run with CERTS=tunnel.
+  systemctl disable --now atomes-tunnel >/dev/null 2>&1 || true
 fi
 
 log "Done"
