@@ -96,7 +96,7 @@ puis, sur la nouvelle machine : étapes 1 à 3, copier `atomes.sql`, et `docker 
 3. Génère des secrets propres à la machine (`infra/dev-host/generated/`, mode 700) et écrit `.env` à partir de `.env.example`. Les deux sont gardés aux exécutions suivantes.
 4. Démarre les services Docker avec ces secrets (`infra/dev-host/compose.yaml` remplace les valeurs de développement du compose local), construit l'app, migre et remplit la base.
 5. Crée trois services systemd (`atomes-web`, `atomes-admin`, `atomes-worker`) qui redémarrent seuls, avec l'utilisateur `atomes`.
-6. Configure Caddy : HTTPS pour `app`, `admin`, `mail`, `ws` (WebSocket de Centrifugo uniquement), `media` (envois présignés) et `img` (photos signées) ; mot de passe d'équipe devant l'app, le back-office et Mailpit.
+6. Configure Caddy : HTTPS pour `app`, `admin`, `mail`, `ws` (WebSocket de Centrifugo uniquement), `media` (envois présignés) et `img` (photos signées) ; mot de passe d'équipe devant l'app, le back-office et Mailpit. Le script remplace `/etc/caddy/Caddyfile` : si la machine en avait déjà un, écrit à la main (d'autres sites), il le met de côté dans `/etc/caddy/Caddyfile.before-atomes-<date>` et le signale. Caddy ne sert alors plus que les adresses d'Atomes.
 
 ## En cas de souci
 
